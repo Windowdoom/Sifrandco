@@ -933,6 +933,105 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 .elev-floor-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.2em;
   color:var(--t3);text-transform:uppercase;}
 
+/* ── EXPLORE MODE (2D top-down hospital walk) ── */
+#explore-mode{position:fixed;inset:0;z-index:5400;background:#020a14;display:none;
+  overflow:hidden;font-family:var(--font-m);}
+#explore-mode.show{display:block;}
+.ex-floor{position:absolute;left:0;top:0;width:100%;height:100%;
+  background:
+    repeating-linear-gradient(0deg,transparent 0,transparent 30px,rgba(255,255,255,.015) 30px,rgba(255,255,255,.015) 31px),
+    repeating-linear-gradient(90deg,transparent 0,transparent 30px,rgba(255,255,255,.015) 30px,rgba(255,255,255,.015) 31px),
+    linear-gradient(180deg,#0a1828,#040b16);overflow:hidden;}
+.ex-world{position:absolute;left:0;top:0;width:1600px;height:900px;transform-origin:0 0;will-change:transform;}
+.ex-corridor{position:absolute;left:80px;right:200px;top:280px;height:200px;
+  background:linear-gradient(180deg,#162538,#0e1a2a);border-top:2px solid #1d3a58;border-bottom:2px solid #1d3a58;}
+.ex-room{position:absolute;background:linear-gradient(160deg,#0e2540,#091828);
+  border:2px solid #1c3858;border-radius:6px;cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ex-room:hover{border-color:var(--teal3);box-shadow:0 0 20px rgba(29,214,196,.3);}
+.ex-room.empty{opacity:.45;cursor:default;}
+.ex-room.empty:hover{border-color:#1c3858;box-shadow:none;}
+.ex-room.critical{border-color:var(--crimson2);box-shadow:0 0 14px rgba(198,40,40,.4);animation:pulseRed 1.6s infinite;}
+.ex-room.active{border-color:var(--gold3);box-shadow:0 0 30px rgba(245,166,35,.6);}
+.ex-room-num{position:absolute;top:4px;left:6px;font-family:var(--font-m);font-size:9px;
+  letter-spacing:.15em;color:var(--teal2);opacity:.7;font-weight:700;}
+.ex-bed{width:80px;height:46px;background:linear-gradient(180deg,#fff,#cdd6e2);
+  border-radius:5px;border:1px solid #94a4bc;position:relative;margin-bottom:6px;}
+.ex-bed::before{content:'';position:absolute;top:-3px;left:50%;transform:translateX(-50%);
+  width:35px;height:6px;background:#94a4bc;border-radius:3px;}
+.ex-bed-sprite{position:absolute;top:-26px;left:50%;transform:translateX(-50%);
+  width:34px;height:34px;border-radius:50%;background:var(--s3);border:1.5px solid var(--b2);overflow:hidden;}
+.ex-bed-sprite svg{width:100%;height:100%;}
+.ex-pt-name{font-family:var(--font-h);font-size:11px;font-weight:900;color:var(--t1);
+  letter-spacing:.05em;text-align:center;max-width:160px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;}
+.ex-pt-status{font-family:var(--font-m);font-size:8px;color:var(--t3);
+  letter-spacing:.15em;text-transform:uppercase;margin-top:2px;}
+.ex-pt-status.crit{color:var(--crimson3);}
+.ex-prompt{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);
+  background:var(--gold2);color:#000;font-family:var(--font-m);font-size:9px;font-weight:900;
+  padding:3px 10px;border-radius:10px;letter-spacing:.15em;text-transform:uppercase;
+  white-space:nowrap;animation:fadeDown .3s ease;pointer-events:none;z-index:60;}
+.ex-empty-label{font-family:var(--font-m);font-size:10px;color:var(--t3);letter-spacing:.2em;text-transform:uppercase;}
+.ex-elevator{position:absolute;right:30px;top:300px;width:140px;height:160px;
+  background:linear-gradient(160deg,#3a2a1a,#1c1410);border:2px solid var(--gold2);border-radius:8px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
+.ex-elevator:hover{box-shadow:0 0 30px rgba(245,166,35,.4);}
+.ex-elevator.active{box-shadow:0 0 50px rgba(245,166,35,.7);}
+.ex-elev-ico{font-size:40px;margin-bottom:8px;}
+.ex-elev-lbl{font-family:var(--font-h);font-size:11px;font-weight:900;color:var(--gold3);letter-spacing:.2em;}
+.ex-nurse-station{position:absolute;left:50%;top:330px;transform:translateX(-50%);width:200px;height:90px;
+  background:linear-gradient(180deg,#1a3a48,#0e2030);border:2px solid var(--teal2);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;}
+.ex-nurse-station-lbl{font-family:var(--font-h);font-size:11px;font-weight:900;color:var(--teal3);letter-spacing:.2em;}
+.ex-nurse-station-sub{font-family:var(--font-m);font-size:8px;color:var(--t3);letter-spacing:.15em;text-transform:uppercase;margin-top:3px;}
+.ex-actor{position:absolute;width:42px;height:42px;will-change:transform;
+  transition:transform .08s linear;pointer-events:none;z-index:50;}
+.ex-actor svg{width:100%;height:100%;border-radius:50%;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));border:2px solid var(--gold2);background:var(--s3);}
+.ex-actor.player svg{border-color:var(--teal3);box-shadow:0 0 14px rgba(29,214,196,.5);}
+.ex-actor.npc svg{border-color:var(--blue3);opacity:.75;}
+.ex-actor-name{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);
+  font-family:var(--font-m);font-size:8px;color:var(--teal3);text-shadow:0 1px 2px rgba(0,0,0,.9);
+  white-space:nowrap;letter-spacing:.1em;text-transform:uppercase;}
+.ex-hud{position:fixed;top:0;left:0;right:0;height:48px;
+  background:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.5));
+  display:flex;align-items:center;padding:0 16px;gap:14px;z-index:100;border-bottom:1px solid var(--b1);}
+.ex-hud-floor{font-family:var(--font-hero);font-size:18px;font-weight:900;color:var(--gold3);letter-spacing:.1em;}
+.ex-hud-sub{font-family:var(--font-m);font-size:9px;color:var(--t3);letter-spacing:.2em;text-transform:uppercase;}
+.ex-hud-spacer{flex:1;}
+.ex-hud-help{font-family:var(--font-m);font-size:10px;color:var(--t2);letter-spacing:.1em;}
+.ex-hud-help kbd{background:var(--b1);border:1px solid var(--b2);padding:1px 6px;border-radius:3px;color:var(--t1);}
+.ex-hud-btn{background:var(--s2);border:1px solid var(--b2);color:var(--t1);padding:6px 14px;
+  border-radius:var(--r);font-family:var(--font-m);font-size:10px;letter-spacing:.15em;cursor:pointer;text-transform:uppercase;}
+.ex-hud-btn:hover{background:var(--s3);border-color:var(--teal2);}
+#ex-joystick{position:fixed;bottom:30px;left:30px;width:120px;height:120px;
+  background:radial-gradient(circle,rgba(29,214,196,.08),rgba(0,0,0,.5));
+  border:2px solid var(--teal2);border-radius:50%;z-index:200;display:none;touch-action:none;}
+#ex-joystick.show{display:block;}
+#ex-joystick-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:50px;height:50px;border-radius:50%;background:rgba(29,214,196,.3);border:2px solid var(--teal3);
+  box-shadow:0 0 14px rgba(29,214,196,.4);}
+#ex-action-btn{position:fixed;bottom:50px;right:40px;width:80px;height:80px;border-radius:50%;
+  background:var(--gold2);color:#000;border:none;font-family:var(--font-hero);font-size:14px;font-weight:900;
+  letter-spacing:.05em;cursor:pointer;z-index:200;display:none;box-shadow:0 8px 24px rgba(245,166,35,.5);}
+#ex-action-btn.show{display:block;}
+#ex-action-btn:active{transform:scale(0.95);}
+#ex-floor-picker{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:300;
+  background:linear-gradient(180deg,var(--s2),var(--s1));border:2px solid var(--gold2);
+  border-radius:var(--r3);padding:24px;min-width:340px;display:none;
+  box-shadow:0 0 60px rgba(245,166,35,.3),0 30px 80px rgba(0,0,0,.8);}
+#ex-floor-picker.show{display:block;animation:popIn .25s ease;}
+.ex-fp-hd{font-family:var(--font-hero);font-size:18px;font-weight:900;color:var(--gold3);
+  text-align:center;margin-bottom:14px;letter-spacing:.1em;}
+.ex-fp-list{display:flex;flex-direction:column;gap:5px;max-height:60vh;overflow-y:auto;}
+.ex-fp-btn{background:var(--s3);border:1px solid var(--b2);color:var(--t1);
+  padding:11px 16px;text-align:left;border-radius:var(--r);font-family:var(--font-m);font-size:11px;
+  letter-spacing:.1em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+.ex-fp-btn:hover{background:var(--b1);border-color:var(--teal3);}
+.ex-fp-btn.current{background:rgba(245,166,35,.15);border-color:var(--gold2);color:var(--gold3);}
+.ex-fp-btn .ct{font-family:var(--font-m);font-size:10px;background:var(--b2);padding:2px 7px;border-radius:10px;color:var(--t2);}
+
 /* Splash boot polish */
 .boot-skip{position:fixed;top:14px;right:14px;background:rgba(0,0,0,.4);border:1px solid var(--b2);
   color:var(--t2);padding:6px 14px;border-radius:20px;font-family:var(--font-m);font-size:10px;
@@ -1286,6 +1385,13 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
       <div class="ms-tile-desc">Story mode. MS-4 to attending. Mentors, rivals, relationships.</div>
       <div class="ms-tile-cta">BEGIN ›</div>
     </div>
+    <div class="ms-tile" style="--tile-c:var(--blue3);" onclick="startMode('explore')">
+      <span class="ms-tile-badge">NEW</span>
+      <span class="ms-tile-ico">🏥</span>
+      <div class="ms-tile-name">Explore Hospital</div>
+      <div class="ms-tile-desc">Walk the floors. Visit patients in their rooms. Top-down sim.</div>
+      <div class="ms-tile-cta">WALK IN ›</div>
+    </div>
   </div>
   <div class="ms-streak-banner" id="ms-streak-banner"></div>
   <div class="ms-foot">
@@ -1361,6 +1467,46 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 <div id="pa-ticker">
   <span class="pa-prefix">📢 OVERHEAD</span>
   <span id="pa-msg">Code Blue — Room 4B. All available staff respond.</span>
+</div>
+
+<!-- ═══ EXPLORE MODE ═══ -->
+<div id="explore-mode">
+  <div class="ex-hud">
+    <div>
+      <div class="ex-hud-floor" id="ex-hud-floor">1F · EMERGENCY</div>
+      <div class="ex-hud-sub" id="ex-hud-sub">Find a room · press E to enter</div>
+    </div>
+    <div class="ex-hud-spacer"></div>
+    <div class="ex-hud-help">Move <kbd>WASD</kbd>/<kbd>↑↓←→</kbd> · Enter <kbd>E</kbd> · Elevator <kbd>F</kbd> · Menu <kbd>Esc</kbd></div>
+    <button class="ex-hud-btn" onclick="exploreOpenFloorPicker()">🛗 Floor</button>
+    <button class="ex-hud-btn" onclick="exitExplore()">✕ Exit</button>
+  </div>
+  <div class="ex-floor">
+    <div class="ex-world" id="ex-world">
+      <div class="ex-corridor"></div>
+      <div class="ex-nurse-station">
+        <div class="ex-nurse-station-lbl">⚕ NURSE STATION</div>
+        <div class="ex-nurse-station-sub">Charts · Pages · Coffee</div>
+      </div>
+      <div class="ex-elevator" id="ex-elevator" onclick="exploreOpenFloorPicker()">
+        <div class="ex-elev-ico">🛗</div>
+        <div class="ex-elev-lbl">ELEVATOR</div>
+      </div>
+      <div id="ex-rooms"></div>
+      <div id="ex-npcs"></div>
+      <div class="ex-actor player" id="ex-player">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#1dd6c4"/></svg>
+        <div class="ex-actor-name" id="ex-player-name">DR. YOU</div>
+      </div>
+    </div>
+  </div>
+  <div id="ex-joystick"><div id="ex-joystick-knob"></div></div>
+  <button id="ex-action-btn" onclick="exploreInteract()">E</button>
+</div>
+
+<div id="ex-floor-picker">
+  <div class="ex-fp-hd">SELECT FLOOR</div>
+  <div class="ex-fp-list" id="ex-fp-list"></div>
 </div>
 
 <!-- ═══ FX LAYER ═══ -->
@@ -3140,6 +3286,10 @@ function startMode(mode){
     $show('intro','flex'); // existing flow with avatar + specialty selection
     return;
   }
+  if(mode === 'explore'){
+    openExplore();
+    return;
+  }
   // Quick or daily — auto-pick a specialty (em is most varied)
   const specId = 'em';
   const specName = mode === 'daily' ? 'Daily' : 'Quick Play';
@@ -3844,6 +3994,333 @@ function startPATimer(){
   }, 28000); // every ~28s if not blocked
 }
 function stopPATimer(){ clearInterval(_paTimer); _paTimer=null; }
+
+// ══════════════════════════════════════════════════════════
+// EXPLORE MODE — top-down walking hospital sim
+// ══════════════════════════════════════════════════════════
+const EX_ROOMS = [
+  {x:80,  y:80, w:170, h:160, num:'101'},
+  {x:260, y:80, w:170, h:160, num:'102'},
+  {x:440, y:80, w:170, h:160, num:'103'},
+  {x:620, y:80, w:170, h:160, num:'104'},
+  {x:800, y:80, w:170, h:160, num:'105'},
+  {x:980, y:80, w:170, h:160, num:'106'},
+  {x:1160,y:80, w:170, h:160, num:'107'},
+  {x:80,  y:520,w:170, h:160, num:'108'},
+  {x:260, y:520,w:170, h:160, num:'109'},
+  {x:440, y:520,w:170, h:160, num:'110'},
+  {x:620, y:520,w:170, h:160, num:'111'},
+  {x:800, y:520,w:170, h:160, num:'112'},
+  {x:980, y:520,w:170, h:160, num:'113'},
+  {x:1160,y:520,w:170, h:160, num:'114'},
+];
+
+const EX_FLOORS = [
+  {id:'clinic', name:'8F · OUTPATIENT',  sub:'Exam rooms · clinic visits'},
+  {id:'psych',  name:'7F · PSYCHIATRY',  sub:'Locked unit · evaluations'},
+  {id:'obgyn',  name:'6F · OB / GYN',    sub:'Labor & delivery · postpartum'},
+  {id:'peds',   name:'5F · PEDIATRICS',  sub:'Peds ward · NICU'},
+  {id:'surg',   name:'4F · SURGICAL',    sub:'Pre-op · PACU · surgical floor'},
+  {id:'med',    name:'3F · MEDICINE',    sub:'Internal medicine · telemetry'},
+  {id:'icu',    name:'2F · ICU',         sub:'Critical care · isolation'},
+  {id:'ed',     name:'1F · EMERGENCY',   sub:'Trauma · resus · triage'},
+];
+
+let _ex = {
+  active:false, floorId:'ed',
+  player:{x:600,y:400,speed:4},
+  keys:{}, raf:null, nearRoom:null, nearElev:false,
+  scale:1, worldW:1600, worldH:900,
+  npcs:[
+    {x:300, y:380, vx:0.8, vy:0, name:'NURSE', avatar:{gender:'F',skin:1,hair:1,scrub:3,acc:0}},
+    {x:900, y:420, vx:-0.6, vy:0.3, name:'TECH',  avatar:{gender:'M',skin:3,hair:0,scrub:2,acc:0}},
+    {x:1200,y:360, vx:0, vy:-0.7, name:'NURSE',  avatar:{gender:'F',skin:0,hair:2,scrub:0,acc:2}},
+  ],
+  joyVec:null,
+};
+
+function openExplore(){
+  if(!GS || !GS.spec) bootstrapExploreGS();
+  _ex.active = true;
+  _ex.player.x = 600; _ex.player.y = 400;
+  document.getElementById('explore-mode').classList.add('show');
+  exploreSetFloor(_ex.floorId);
+  // Replace player sprite with customized avatar
+  const playerEl = document.getElementById('ex-player');
+  const oldSvg = playerEl.querySelector('svg');
+  if(oldSvg) oldSvg.outerHTML = svgDoctor(AVATAR, {id:'exp', alwaysSteth:true});
+  document.getElementById('ex-player-name').textContent = 'DR. ' + ((GS.doc||'YOU').split(' ').slice(-1)[0].toUpperCase());
+  renderExploreNPCs();
+  exploreFit();
+  window.addEventListener('resize', exploreFit);
+  cancelAnimationFrame(_ex.raf);
+  _ex.raf = requestAnimationFrame(exploreLoop);
+  if(matchMedia('(pointer:coarse)').matches){
+    document.getElementById('ex-joystick').classList.add('show');
+    document.getElementById('ex-action-btn').classList.add('show');
+    setupTouchJoystick();
+  }
+  setTimeout(()=> paAnnounce('Dr. ' + ((GS.doc||'YOU').split(' ').slice(-1)[0]) + ' on the floor.'), 1500);
+}
+
+function exitExplore(){
+  _ex.active = false;
+  cancelAnimationFrame(_ex.raf);
+  document.getElementById('explore-mode').classList.remove('show');
+  document.getElementById('ex-joystick').classList.remove('show');
+  document.getElementById('ex-action-btn').classList.remove('show');
+  window.removeEventListener('resize', exploreFit);
+  if(!GS || !GS.activeId){ showModeSelect(); }
+}
+
+function bootstrapExploreGS(){
+  const hn  = 'Sacred Heart Memorial';
+  const dn  = localStorage.getItem('wardDocName') || 'Doctor';
+  const spec = SPECS.em;
+  let pool = JSON.parse(JSON.stringify(DB));
+  pool.forEach(p => { if(!p.name || p.name==='') p.name = randName(p.sex||'M'); });
+  pool.sort(()=>Math.random()-0.5);
+  GS = {
+    hosp:hn, doc:dn, specId:'em', spec, day:1,
+    metrics:{...spec.start}, legal:0, burnout:0, xp:0, rankIdx:0,
+    ward:[], pool, activeId:null,
+    log:[`[System] ${dn} began walking the hospital.`],
+    casesTotal:0, casesCorrect:0, casesLethal:0,
+    nextCodeBlue: 999
+  };
+  if(typeof initCareer === 'function') initCareer();
+  if(typeof initStory === 'function') initStory();
+  for(let i=0; i<14; i++) admitPt();
+  OV_OPEN = false;
+  $hide('mode-select'); $hide('intro');
+}
+
+function exploreSetFloor(fid){
+  _ex.floorId = fid;
+  const f = EX_FLOORS.find(x=>x.id===fid) || EX_FLOORS[7];
+  document.getElementById('ex-hud-floor').textContent = f.name;
+  document.getElementById('ex-hud-sub').textContent = f.sub;
+  renderExploreRooms();
+}
+
+function renderExploreRooms(){
+  const pts = patientsOnFloor(_ex.floorId);
+  const wrap = document.getElementById('ex-rooms');
+  if(!wrap) return;
+  wrap.innerHTML = EX_ROOMS.map((r, i)=>{
+    const p = pts[i];
+    const empty = !p;
+    const critical = p && p.health < 30;
+    return `<div class="ex-room ${empty?'empty':''} ${critical?'critical':''}" id="ex-room-${i}"
+      style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;"
+      ${p ? `onclick="enterRoomFromExplore('${p.id}')"` : ''}>
+      <div class="ex-room-num">${r.num}</div>
+      ${empty ? `<div class="ex-empty-label">Vacant</div>` : `
+        <div class="ex-bed"><div class="ex-bed-sprite">${renderPatientSprite(p)}</div></div>
+        <div class="ex-pt-name">${p.name}</div>
+        <div class="ex-pt-status ${critical?'crit':''}">${critical?'⚠ CRITICAL':p.acted?'monitored':'admitted'}</div>
+      `}
+    </div>`;
+  }).join('');
+}
+
+function renderExploreNPCs(){
+  const wrap = document.getElementById('ex-npcs');
+  if(!wrap) return;
+  wrap.innerHTML = _ex.npcs.map((n,i)=>
+    `<div class="ex-actor npc" id="ex-npc-${i}">${svgDoctor(n.avatar,{id:'npc'+i,alwaysSteth:false})}<div class="ex-actor-name">${n.name}</div></div>`
+  ).join('');
+}
+
+function exploreFit(){
+  const w = window.innerWidth, h = window.innerHeight - 48;
+  const scale = Math.min(w / _ex.worldW, h / _ex.worldH, 1);
+  const world = document.getElementById('ex-world');
+  if(!world) return;
+  const sw = _ex.worldW * scale, sh = _ex.worldH * scale;
+  const ox = (w - sw)/2, oy = (h - sh)/2 + 48;
+  world.style.transform = `translate(${ox}px, ${oy}px) scale(${scale})`;
+  _ex.scale = scale;
+}
+
+function exploreLoop(){
+  if(!_ex.active) return;
+  const k = _ex.keys;
+  let dx = 0, dy = 0;
+  if(k['w']||k['ArrowUp'])    dy -= 1;
+  if(k['s']||k['ArrowDown'])  dy += 1;
+  if(k['a']||k['ArrowLeft'])  dx -= 1;
+  if(k['d']||k['ArrowRight']) dx += 1;
+  if(_ex.joyVec){ dx += _ex.joyVec.x; dy += _ex.joyVec.y; }
+  if(dx||dy){
+    const mag = Math.hypot(dx,dy)||1;
+    _ex.player.x += (dx/mag) * _ex.player.speed;
+    _ex.player.y += (dy/mag) * _ex.player.speed;
+    _ex.player.x = Math.max(20, Math.min(_ex.worldW-60, _ex.player.x));
+    _ex.player.y = Math.max(60, Math.min(_ex.worldH-60, _ex.player.y));
+  }
+  _ex.npcs.forEach(n=>{
+    n.x += n.vx; n.y += n.vy;
+    if(n.x < 100 || n.x > _ex.worldW-180) n.vx *= -1;
+    if(n.y < 300 || n.y > 500) n.vy *= -1;
+  });
+  let nearest = null, nd = 100;
+  const px = _ex.player.x, py = _ex.player.y;
+  const pts = patientsOnFloor(_ex.floorId);
+  EX_ROOMS.forEach((r,i)=>{
+    if(!pts[i]) return;
+    const cx = r.x + r.w/2, cy = r.y + r.h/2;
+    const d = Math.hypot(px - cx, py - cy);
+    if(d < nd){ nd = d; nearest = {idx:i, patient:pts[i]}; }
+  });
+  const elevDist = Math.hypot(px - (1600 - 100), py - 380);
+  const elev = elevDist < 130;
+  document.querySelectorAll('.ex-prompt').forEach(e=>e.remove());
+  if(nearest){
+    const rm = document.getElementById('ex-room-' + nearest.idx);
+    if(rm){
+      rm.classList.add('active');
+      const tip = document.createElement('div');
+      tip.className = 'ex-prompt';
+      tip.textContent = '[E] Enter ' + nearest.patient.name.split(' ')[0];
+      rm.appendChild(tip);
+    }
+    _ex.nearRoom = nearest;
+  } else {
+    document.querySelectorAll('.ex-room.active').forEach(r=>r.classList.remove('active'));
+    _ex.nearRoom = null;
+  }
+  const elevEl = document.getElementById('ex-elevator');
+  if(elev){
+    elevEl.classList.add('active');
+    const tip = document.createElement('div');
+    tip.className = 'ex-prompt';
+    tip.textContent = '[F] Take elevator';
+    tip.style.bottom = '-26px';
+    elevEl.appendChild(tip);
+    _ex.nearElev = true;
+  } else {
+    elevEl.classList.remove('active');
+    _ex.nearElev = false;
+  }
+  const player = document.getElementById('ex-player');
+  if(player) player.style.transform = `translate(${_ex.player.x-21}px, ${_ex.player.y-21}px)`;
+  _ex.npcs.forEach((n,i)=>{
+    const el = document.getElementById('ex-npc-' + i);
+    if(el) el.style.transform = `translate(${n.x-21}px, ${n.y-21}px)`;
+  });
+  _ex.raf = requestAnimationFrame(exploreLoop);
+}
+
+function exploreInteract(){
+  if(_ex.nearRoom){ enterRoomFromExplore(_ex.nearRoom.patient.id); }
+  else if(_ex.nearElev){ exploreOpenFloorPicker(); }
+}
+
+function enterRoomFromExplore(patientId){
+  _ex.active = false;
+  cancelAnimationFrame(_ex.raf);
+  document.getElementById('explore-mode').classList.remove('show');
+  document.getElementById('ex-joystick').classList.remove('show');
+  document.getElementById('ex-action-btn').classList.remove('show');
+  $show('game','flex');
+  if(GS && GS.hosp){
+    $text('tb-hosp', GS.hosp.toUpperCase());
+    $text('tb-doc', (GS.doc||'Doctor').toUpperCase());
+    updateAvatarPreview && updateAvatarPreview();
+  }
+  openChart(patientId);
+  renderAll();
+  addExploreReturnBtn();
+}
+
+function addExploreReturnBtn(){
+  if(document.getElementById('ex-return-btn')) return;
+  const tb = document.getElementById('topbar');
+  if(!tb) return;
+  const btn = document.createElement('button');
+  btn.id = 'ex-return-btn';
+  btn.className = 'npc-btn';
+  btn.style.background = 'var(--blue2)';
+  btn.style.color = '#fff';
+  btn.innerHTML = '↩ Hospital';
+  btn.onclick = ()=>{ $hide('game'); btn.remove(); openExplore(); };
+  tb.appendChild(btn);
+}
+
+function exploreOpenFloorPicker(){
+  const list = document.getElementById('ex-fp-list');
+  list.innerHTML = EX_FLOORS.map(f => {
+    const ct = patientsOnFloor(f.id).length;
+    return `<button class="ex-fp-btn ${f.id===_ex.floorId?'current':''}" onclick="explorePickFloor('${f.id}')">
+      <span>${f.name}</span><span class="ct">${ct} pts</span>
+    </button>`;
+  }).join('');
+  document.getElementById('ex-floor-picker').classList.add('show');
+}
+function exploreClosePicker(){ document.getElementById('ex-floor-picker').classList.remove('show'); }
+function explorePickFloor(fid){
+  exploreClosePicker();
+  const world = document.getElementById('ex-world');
+  world.style.transition = 'opacity .25s';
+  world.style.opacity = '0';
+  playTone(440, 0.06, 0.06, 'sine');
+  setTimeout(()=> playTone(660, 0.06, 0.06, 'sine'), 90);
+  setTimeout(()=>{
+    exploreSetFloor(fid);
+    world.style.opacity = '1';
+    setTimeout(()=>{ world.style.transition=''; }, 300);
+    paAnnounce(EX_FLOORS.find(f=>f.id===fid).name);
+  }, 280);
+}
+
+function setupTouchJoystick(){
+  const stick = document.getElementById('ex-joystick');
+  const knob = document.getElementById('ex-joystick-knob');
+  let activeTouch = null;
+  function start(e){
+    const t = e.touches ? e.touches[0] : e;
+    activeTouch = {sx:t.clientX, sy:t.clientY};
+    e.preventDefault();
+  }
+  function move(e){
+    if(!activeTouch) return;
+    const t = e.touches ? e.touches[0] : e;
+    const dx = t.clientX - activeTouch.sx;
+    const dy = t.clientY - activeTouch.sy;
+    const mag = Math.hypot(dx,dy);
+    const limit = 40;
+    const lim = Math.min(mag, limit);
+    const ux = mag ? dx/mag : 0, uy = mag ? dy/mag : 0;
+    knob.style.transform = `translate(calc(-50% + ${ux*lim}px), calc(-50% + ${uy*lim}px))`;
+    _ex.joyVec = { x: ux * (lim/limit), y: uy * (lim/limit) };
+    e.preventDefault();
+  }
+  function end(){
+    activeTouch = null;
+    knob.style.transform = 'translate(-50%,-50%)';
+    _ex.joyVec = null;
+  }
+  stick.addEventListener('touchstart', start, {passive:false});
+  stick.addEventListener('touchmove', move, {passive:false});
+  stick.addEventListener('touchend', end);
+  stick.addEventListener('touchcancel', end);
+}
+
+window.addEventListener('keydown', e=>{
+  if(!_ex.active) return;
+  if(e.key === 'Escape'){
+    if(document.getElementById('ex-floor-picker').classList.contains('show')){ exploreClosePicker(); return; }
+    exitExplore(); return;
+  }
+  if(e.key === 'e' || e.key === 'E'){ exploreInteract(); return; }
+  if(e.key === 'f' || e.key === 'F'){ exploreOpenFloorPicker(); return; }
+  _ex.keys[e.key] = true;
+});
+window.addEventListener('keyup', e=>{
+  if(!_ex.active) return;
+  _ex.keys[e.key] = false;
+});
 
 // ══════════════════════════════════════════════════════════
 // SETTINGS / CREDITS

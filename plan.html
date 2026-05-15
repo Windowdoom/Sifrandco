@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BBB Plan Generator. Founder Only.</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0D1B2E; --bg-card:#0A1520; --bg-mid:#0F2030;
+  --border:#1E3A50; --border-bright:#2A5570;
+  --teal:#00E5A0; --teal-soft:rgba(0,229,160,.08);
+  --gold:#F5A623; --gold-soft:rgba(245,166,35,.08);
+  --red:#FF4757; --green:#2ED573;
+  --text:#E8F4F0; --text-muted:#8AAFC0; --text-dim:#3A5570;
+  --mono:'Courier New',Courier,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;
+  background-image:radial-gradient(circle,rgba(26,56,80,.55) 1px,transparent 1px);
+  background-size:24px 24px;
+  padding:2rem;
+}
+.shell{max-width:1080px;margin:0 auto;}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.top a{font-family:var(--mono);font-size:12px;color:var(--text-muted);text-decoration:none;letter-spacing:.5px;}
+.top a:hover{color:var(--teal);}
+.brand{font-family:var(--mono);font-size:14px;font-weight:bold;letter-spacing:.5px;}
+.brand .gold{color:var(--gold);}
+.tag{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
+h1{font-family:var(--mono);font-size:28px;color:var(--text);margin-bottom:.4rem;}
+h1 em{font-style:normal;color:var(--teal);}
+.sub{color:var(--text-muted);font-size:14px;margin-bottom:2rem;max-width:640px;}
+
+/* GATE */
+.gate{max-width:420px;margin:4rem auto;background:var(--bg-card);border:1px solid var(--border-bright);border-radius:8px;padding:2rem;}
+.gate label{display:block;font-family:var(--mono);font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.gate input{width:100%;padding:13px 16px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;}
+.gate input:focus{outline:none;border-color:var(--teal);}
+.gate button{margin-top:1.2rem;width:100%;padding:13px;border:none;border-radius:6px;background:var(--teal);color:var(--bg);font-family:var(--mono);font-size:12px;font-weight:bold;letter-spacing:1px;cursor:pointer;}
+.gate button:hover{transform:translateY(-1px);}
+.gate-msg{margin-top:1rem;font-family:var(--mono);font-size:11px;color:var(--red);min-height:14px;}
+
+/* FORM */
+.app{display:none;}
+.app.on{display:block;}
+.section{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1.8rem;margin-bottom:1.5rem;}
+.section h2{font-family:var(--mono);font-size:13px;color:var(--teal);letter-spacing:1.5px;margin-bottom:.4rem;text-transform:uppercase;}
+.section h2 .num{color:var(--text-dim);margin-right:8px;}
+.section p.help{font-size:12px;color:var(--text-dim);margin-bottom:1.2rem;font-family:var(--mono);}
+
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:.8rem;}
+.row.full{grid-template-columns:1fr;}
+.row.three{grid-template-columns:repeat(3,1fr);}
+.fg{display:flex;flex-direction:column;gap:6px;}
+.fg label{font-family:var(--mono);font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;}
+.fg input, .fg select, .fg textarea{padding:11px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:var(--sans);}
+.fg input:focus, .fg select:focus, .fg textarea:focus{outline:none;border-color:var(--teal);}
+.fg textarea{resize:vertical;min-height:80px;}
+
+.resource-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem;}
+.res-chip{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;color:var(--text-muted);transition:all .2s;}
+.res-chip:hover{border-color:var(--border-bright);}
+.res-chip input{margin:0;}
+.res-chip.on{border-color:var(--teal);background:var(--teal-soft);color:var(--teal);}
+
+.systems-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.sys-row{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;}
+.sys-row label{flex:1;font-size:13px;color:var(--text-muted);font-family:var(--mono);}
+.sys-row select{padding:5px 8px;border-radius:4px;background:var(--bg-mid);border:1px solid var(--border);color:var(--text);font-size:12px;font-family:var(--mono);}
+
+.action-bar{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);padding:1.2rem 0;display:flex;gap:12px;justify-content:flex-end;z-index:50;margin-top:2rem;flex-wrap:wrap;}
+.btn{padding:12px 24px;border-radius:6px;font-family:var(--mono);font-size:12px;font-weight:bold;letter-spacing:1px;border:none;cursor:pointer;transition:all .2s;}
+.btn-p{background:var(--teal);color:var(--bg);}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,229,160,.25);}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-o{background:transparent;color:var(--text-muted);border:1px solid var(--border-bright);}
+.btn-o:hover{color:var(--teal);border-color:var(--teal);}
+.btn-gold{background:var(--gold);color:var(--bg);}
+
+/* OUTPUT */
+.output{background:#fff;color:#1a1a1a;border-radius:8px;padding:2rem;margin-top:1.5rem;line-height:1.65;display:none;}
+.output.on{display:block;}
+.output article{font-family:Georgia, 'Times New Roman', serif;}
+.output article h1, .output article h2, .output article h3{font-family:Arial, sans-serif;color:#0D1B2E;margin-top:1.5rem;margin-bottom:.6rem;}
+.output article h1{font-size:24px;border-bottom:2px solid #00E5A0;padding-bottom:8px;}
+.output article h2{font-size:18px;color:#1A8A6A;}
+.output article h3{font-size:15px;color:#0D1B2E;}
+.output article p{margin-bottom:.8rem;}
+.output article ul{margin-left:1.5rem;margin-bottom:.8rem;}
+.output article li{margin-bottom:.3rem;}
+.output article strong{color:#0D1B2E;}
+.output-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem;}
+.output-controls input[type=email]{flex:1;min-width:200px;padding:11px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;}
+.output-status{font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-top:6px;}
+
+.loading{text-align:center;padding:3rem;color:var(--text-muted);font-family:var(--mono);font-size:13px;}
+.loading-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--teal);margin:0 3px;animation:bounce 1.4s infinite ease-in-out both;}
+.loading-dot:nth-child(1){animation-delay:-.32s;}
+.loading-dot:nth-child(2){animation-delay:-.16s;}
+@keyframes bounce{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}}
+
+@media print{
+  body{background:#fff;padding:0;}
+  .top, .section, .action-bar, .output-controls, .app > h1, .app > p.sub, .app > .tag{display:none !important;}
+  .output{background:#fff;color:#000;padding:0;margin:0;box-shadow:none;border:none;}
+  .output article h1, .output article h2, .output article h3{color:#000;}
+  .output article h2{color:#1A8A6A;}
+}
+@media(max-width:700px){
+  .row, .row.three{grid-template-columns:1fr;}
+  .resource-grid, .systems-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<div class="top">
+  <div class="brand">BIT BY BIT<span class="gold"> PEDAGOGY</span> &nbsp;/ &nbsp;<span style="color:var(--text-muted);">Plan Generator. Founder Only.</span></div>
+  <a href="/">← back to site</a>
+</div>
+
+<!-- PASSWORD GATE -->
+<div class="gate" id="gate">
+  <div class="tag">◈ RESTRICTED ACCESS</div>
+  <h1 style="font-size:22px;margin-bottom:1rem;">Founder login.</h1>
+  <p style="font-size:13px;color:var(--text-muted);margin-bottom:1.5rem;">This tool is for internal use only. Students should not see this page.</p>
+  <form onsubmit="checkPwd(event)">
+    <label>Password</label>
+    <input type="password" id="pwdInput" autocomplete="off" autofocus required>
+    <button type="submit">UNLOCK</button>
+    <div class="gate-msg" id="gateMsg"></div>
+  </form>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="tag">◈ INTAKE TO BLUEPRINT</div>
+  <h1>Generate a <em>personalised</em> study plan.</h1>
+  <p class="sub">Fill the intake fields. The more specific, the more specific the output. Empty fields produce generic plans. The generator follows the Bit by Bit master prompt and template you already use.</p>
+
+  <form id="planForm" onsubmit="generatePlan(event)">
+
+    <div class="section">
+      <h2><span class="num">2A</span>Basic Information</h2>
+      <div class="row">
+        <div class="fg"><label>Student full name</label><input name="studentName" required></div>
+        <div class="fg"><label>Preferred name</label><input name="nickname"></div>
+      </div>
+      <div class="row">
+        <div class="fg"><label>Medical school / program</label><input name="school" placeholder="AUA, Ross, SGU, US MD..." required></div>
+        <div class="fg"><label>Year / stage</label><input name="year" placeholder="Year 2 preclinical, post-Step 1..."></div>
+      </div>
+      <div class="row three">
+        <div class="fg">
+          <label>Primary exam</label>
+          <select name="exam" required>
+            <option>USMLE Step 1</option>
+            <option>USMLE Step 2 CK</option>
+            <option>COMP</option>
+            <option>CBSE</option>
+            <option>COMLEX Level 1</option>
+            <option>COMLEX Level 2 CE</option>
+          </select>
+        </div>
+        <div class="fg"><label>Target test date</label><input name="examDate" placeholder="Late July 2026" required></div>
+        <div class="fg"><label>Weeks of prep available</label><input name="weeksOut" type="number" min="1" max="52" placeholder="12" required></div>
+      </div>
+      <div class="row">
+        <div class="fg">
+          <label>Previous attempt?</label>
+          <select name="priorAttempt">
+            <option>First attempt</option>
+            <option>Repeat attempt</option>
+          </select>
+        </div>
+        <div class="fg"><label>Prior score (if repeat)</label><input name="priorScore"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">2B</span>Baseline scores &amp; target</h2>
+      <div class="row three">
+        <div class="fg"><label>Current NBME / practice form</label><input name="nbmeScore" placeholder="Form 30, score 195"></div>
+        <div class="fg"><label>Current UWorld %</label><input name="uworld" placeholder="58%"></div>
+        <div class="fg">
+          <label>UWorld mode</label>
+          <select name="uworldMode">
+            <option>Mixed</option>
+            <option>Tutor</option>
+            <option>Timed</option>
+            <option>Not started</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="fg"><label>Target score</label><input name="targetScore" placeholder="Pass, 220, 240..."></div>
+        <div class="fg"><label>Tutor name</label><input name="tutor" placeholder="Parminder Sifrand"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">2C</span>Resources owned</h2>
+      <p class="help">Only check what the student actually has access to today.</p>
+      <div class="resource-grid" id="resGrid"></div>
+      <div class="row">
+        <div class="fg"><label>Other resources</label><input name="otherResources"></div>
+        <div class="fg"><label>Resource access notes</label><input name="resourceNotes" placeholder="Cannot afford UWorld, using free 120 only..."></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">2D</span>System strengths &amp; weaknesses</h2>
+      <p class="help">S = Strong. M = Medium. W = Weak. U = Untouched.</p>
+      <div class="systems-grid" id="sysGrid"></div>
+      <div class="row full" style="margin-top:1rem;"><div class="fg"><label>Top 3 weakest concepts (specific)</label><textarea name="weakestConcepts" placeholder="Aldosterone vs cortisol regulation. Glycogen storage diseases. PFT interpretation patterns."></textarea></div></div>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">2E</span>Schedule &amp; lifestyle</h2>
+      <div class="row three">
+        <div class="fg"><label>Current wake time</label><input name="wakeNow" placeholder="9:30am"></div>
+        <div class="fg"><label>Target wake time</label><input name="wakeTarget" placeholder="7:00am"></div>
+        <div class="fg"><label>Target bedtime</label><input name="bedtime" placeholder="11:00pm"></div>
+      </div>
+      <div class="row">
+        <div class="fg">
+          <label>Workout preference</label>
+          <select name="workoutPref">
+            <option>Morning</option>
+            <option>Afternoon</option>
+            <option>Evening</option>
+            <option>None</option>
+          </select>
+        </div>
+        <div class="fg"><label>Workout type &amp; duration</label><input name="workoutType" placeholder="Gym 1hr, tennis 45min..."></div>
+      </div>
+      <div class="row">
+        <div class="fg"><label>Coffee habit</label><input name="coffee" placeholder="2 cups, 7am and 1pm"></div>
+        <div class="fg"><label>Daily study hours committed</label><input name="studyHours" placeholder="8-10 hours"></div>
+      </div>
+      <div class="row">
+        <div class="fg"><label>Hard weekly commitments</label><input name="commitments" placeholder="Wednesday clinical, Sunday family dinner"></div>
+        <div class="fg">
+          <label>Study environment</label>
+          <select name="environment">
+            <option>Home</option>
+            <option>Library</option>
+            <option>Coffee shop</option>
+            <option>Mixed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">2F</span>Learning modality</h2>
+      <div class="row">
+        <div class="fg">
+          <label>Primary modality</label>
+          <select name="modality">
+            <option>Visual</option>
+            <option>Auditory</option>
+            <option>Reading / Writing</option>
+            <option>Kinesthetic / Practice-Based</option>
+            <option>Logical / Analytical</option>
+            <option>Social / Collaborative</option>
+          </select>
+        </div>
+        <div class="fg"><label>Evidence from intake</label><input name="modalityEvidence" placeholder="Said they learn best by working through example questions"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">2G</span>Motivation &amp; pressure</h2>
+      <div class="row full"><div class="fg"><label>Why this score matters (their words)</label><textarea name="motivation" placeholder="I need to match into a competitive specialty and my CV has nothing else strong"></textarea></div></div>
+      <div class="row">
+        <div class="fg"><label>Consequences if they miss</label><input name="consequences"></div>
+        <div class="fg"><label>Biggest fear about exam day</label><input name="fear"></div>
+      </div>
+      <div class="row">
+        <div class="fg">
+          <label>Burnout level</label>
+          <select name="burnout">
+            <option>Low</option>
+            <option>Moderate</option>
+            <option>High</option>
+            <option>Critical</option>
+          </select>
+        </div>
+        <div class="fg"><label>External pressures</label><input name="pressures" placeholder="Family expectations, financial stress..."></div>
+      </div>
+      <div class="row full"><div class="fg"><label>Current review habit</label><textarea name="reviewHabit" placeholder="Reads explanation then moves on. Has no error log."></textarea></div></div>
+      <div class="row full"><div class="fg"><label>Anything else the tutor should know</label><textarea name="notes"></textarea></div></div>
+    </div>
+
+    <div class="action-bar">
+      <button type="button" class="btn btn-o" onclick="clearForm()">CLEAR</button>
+      <button type="submit" class="btn btn-p" id="genBtn">GENERATE PLAN →</button>
+    </div>
+  </form>
+
+  <div class="loading" id="loading" style="display:none;">
+    Generating plan<span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span>
+  </div>
+
+  <div class="output" id="output">
+    <div class="output-controls">
+      <button class="btn btn-o" onclick="window.print()">🖨 PRINT / SAVE PDF</button>
+      <input type="email" id="studentEmail" placeholder="student@email.com to send a copy">
+      <button class="btn btn-gold" onclick="emailPlan()">✉ EMAIL PLAN</button>
+    </div>
+    <div class="output-status" id="emailStatus"></div>
+    <div id="planContent"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const RESOURCES = ["First Aid","Pathoma","Sketchy Micro","Sketchy Pharm","Sketchy Path","UWorld","Mehlman Qbank","Mehlman PDFs","NBME Forms","Bootcamp","Dirty Medicine","Amboss","Anki","Boards & Beyond","Goljan Audio","Osmosis","Lecturio","Free 120"];
+const SYSTEMS = ["Cardiology","Pulmonology","Nephrology","Gastroenterology","Endocrinology","Hematology","Neurology","Musculoskeletal","Dermatology","Immunology","Microbiology","Pharmacology","Biochemistry","Reproductive","Psychiatry","Biostatistics","Ethics","General Pathology"];
+
+const resGrid = document.getElementById('resGrid');
+RESOURCES.forEach(r => {
+  const id = 'res_'+r.replace(/\W+/g,'_');
+  const chip = document.createElement('label');
+  chip.className='res-chip';
+  chip.innerHTML = `<input type="checkbox" name="res" value="${r}" id="${id}"><span>${r}</span>`;
+  chip.querySelector('input').addEventListener('change', e => chip.classList.toggle('on', e.target.checked));
+  resGrid.appendChild(chip);
+});
+
+const sysGrid = document.getElementById('sysGrid');
+SYSTEMS.forEach(s => {
+  const row = document.createElement('div');
+  row.className='sys-row';
+  row.innerHTML = `<label>${s}</label><select name="sys_${s}"><option value="U">U</option><option value="W">W</option><option value="M">M</option><option value="S">S</option></select>`;
+  sysGrid.appendChild(row);
+});
+
+let SESSION_PWD = '';
+
+function checkPwd(e){
+  e.preventDefault();
+  const v = document.getElementById('pwdInput').value;
+  if(!v){return;}
+  SESSION_PWD = v;
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').classList.add('on');
+  try{sessionStorage.setItem('bbb_plan_pwd', v);}catch(e){}
+}
+
+(function tryRestore(){
+  try{
+    const v = sessionStorage.getItem('bbb_plan_pwd');
+    if(v){SESSION_PWD = v; document.getElementById('gate').style.display='none'; document.getElementById('app').classList.add('on');}
+  }catch(e){}
+})();
+
+function clearForm(){
+  if(!confirm('Clear all fields?'))return;
+  document.getElementById('planForm').reset();
+  document.querySelectorAll('.res-chip').forEach(c=>c.classList.remove('on'));
+}
+
+let lastPlanHtml = '';
+
+async function generatePlan(e){
+  e.preventDefault();
+  const form = document.getElementById('planForm');
+  const fd = new FormData(form);
+
+  const resources = [];
+  fd.getAll('res').forEach(r => resources.push(r));
+
+  const systemRatings = SYSTEMS.map(s => `${s}: ${fd.get('sys_'+s) || 'U'}`).join(', ');
+
+  const intake = {};
+  for (const [k, v] of fd.entries()){
+    if(k.startsWith('sys_') || k === 'res') continue;
+    intake[k] = v;
+  }
+  intake.resources = resources;
+  intake.systemRatings = systemRatings;
+
+  document.getElementById('loading').style.display='block';
+  document.getElementById('output').classList.remove('on');
+  document.getElementById('genBtn').disabled = true;
+
+  try {
+    const res = await fetch('/api/plan', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({password: SESSION_PWD, intake})
+    });
+    if(!res.ok){
+      const err = await res.text();
+      throw new Error(err || res.statusText);
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let acc = '';
+    document.getElementById('loading').style.display='none';
+    document.getElementById('output').classList.add('on');
+    const target = document.getElementById('planContent');
+    target.innerHTML = '';
+    while(true){
+      const {value, done} = await reader.read();
+      if(done) break;
+      acc += dec.decode(value, {stream:true});
+      target.innerHTML = acc;
+      window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
+    }
+    lastPlanHtml = acc;
+  } catch(err) {
+    document.getElementById('loading').style.display='none';
+    alert('Generation failed: ' + err.message);
+  } finally {
+    document.getElementById('genBtn').disabled = false;
+  }
+}
+
+async function emailPlan(){
+  const to = document.getElementById('studentEmail').value.trim();
+  if(!to){alert('Enter student email.'); return;}
+  if(!lastPlanHtml){alert('Generate a plan first.'); return;}
+  const status = document.getElementById('emailStatus');
+  status.textContent = 'Sending...';
+  status.style.color = 'var(--text-muted)';
+
+  const studentName = document.querySelector('[name=studentName]')?.value || 'Student';
+  try {
+    const res = await fetch('/api/email-plan', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({password: SESSION_PWD, to, studentName, planHtml: lastPlanHtml})
+    });
+    const j = await res.json();
+    if(!res.ok) throw new Error(j.error || 'send failed');
+    status.textContent = `Sent to ${to}.`;
+    status.style.color = 'var(--green)';
+  } catch(err){
+    status.textContent = 'Send failed: ' + err.message;
+    status.style.color = 'var(--red)';
+  }
+}
+</script>
+
+</body>
+</html>

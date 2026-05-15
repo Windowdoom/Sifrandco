@@ -994,6 +994,38 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
   width:60px;height:42px;image-rendering:pixelated;image-rendering:crisp-edges;
   filter:drop-shadow(0 2px 0 rgba(0,0,0,.4));z-index:5;}
 .ex-bed-pixel svg{shape-rendering:crispEdges;width:100%;height:100%;display:block;}
+
+/* Idle bob — sprite bobs gently when standing still */
+@keyframes idleBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
+.ex-actor.idling > div:last-child{animation:idleBob 1.4s ease-in-out infinite;}
+
+/* Pixel-art tile floors for explore mode */
+.ex-floor.pixel-floor{
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'><rect width='32' height='32' fill='%23061121'/><rect x='0' y='0' width='32' height='1' fill='%23102035'/><rect x='0' y='0' width='1' height='32' fill='%23102035'/><rect x='4' y='4' width='1' height='1' fill='%231a3050'/><rect x='28' y='28' width='1' height='1' fill='%231a3050'/></svg>");
+  background-size:32px 32px;image-rendering:pixelated;}
+.ex-corridor.pixel-corridor{
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'><rect width='32' height='32' fill='%23172838'/><rect x='0' y='0' width='32' height='1' fill='%23223a52'/><rect x='0' y='15' width='32' height='2' fill='%23d4820a' opacity='0.4'/><rect x='0' y='31' width='32' height='1' fill='%23223a52'/></svg>");
+  background-size:32px 32px;image-rendering:pixelated;border:none;}
+.ex-corridor.pixel-corridor::before,.ex-corridor.pixel-corridor::after{display:none;}
+.ex-room.pixel-room{
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><rect width='16' height='16' fill='%230e2438'/><rect x='0' y='0' width='16' height='1' fill='%231d3a58'/><rect x='0' y='15' width='16' height='1' fill='%231d3a58'/><rect x='4' y='6' width='1' height='1' fill='%231a3050'/><rect x='12' y='10' width='1' height='1' fill='%231a3050'/></svg>");
+  background-size:16px 16px;background-color:#0e2438;image-rendering:pixelated;
+  border:2px solid #1c3858;box-shadow:inset 0 0 0 1px #050d18, 0 2px 0 #050810;}
+.ex-elevator.pixel-elev{
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><rect width='16' height='16' fill='%23241612'/><rect x='0' y='0' width='16' height='1' fill='%23d4820a'/><rect x='0' y='15' width='16' height='1' fill='%23d4820a'/><rect x='7' y='0' width='2' height='16' fill='%23d4820a' opacity='0.3'/></svg>");
+  background-size:16px 16px;image-rendering:pixelated;}
+.ex-nurse-station.pixel-ns{
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'><rect width='16' height='16' fill='%23162d36'/><rect x='0' y='0' width='16' height='1' fill='%231dd6c4' opacity='0.5'/><rect x='4' y='6' width='1' height='1' fill='%231dd6c4' opacity='0.3'/><rect x='11' y='10' width='1' height='1' fill='%231dd6c4' opacity='0.3'/></svg>");
+  background-size:16px 16px;image-rendering:pixelated;}
+
+/* Music toggle hint */
+.ex-music-btn{font-family:var(--font-m);font-size:10px;letter-spacing:.15em;}
+
 .ex-actor-name{position:absolute;top:-14px;left:50%;transform:translateX(-50%);
   font-family:var(--font-m);font-size:9px;color:var(--gold3);font-weight:900;
   white-space:nowrap;letter-spacing:.05em;text-transform:uppercase;
@@ -1486,14 +1518,14 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
     <button class="ex-hud-btn" onclick="exploreOpenFloorPicker()">🛗 Floor</button>
     <button class="ex-hud-btn" onclick="exitExplore()">✕ Exit</button>
   </div>
-  <div class="ex-floor">
+  <div class="ex-floor pixel-floor">
     <div class="ex-world" id="ex-world">
-      <div class="ex-corridor"></div>
-      <div class="ex-nurse-station">
+      <div class="ex-corridor pixel-corridor"></div>
+      <div class="ex-nurse-station pixel-ns">
         <div class="ex-nurse-station-lbl">⚕ NURSE STATION</div>
         <div class="ex-nurse-station-sub">Charts · Pages · Coffee</div>
       </div>
-      <div class="ex-elevator" id="ex-elevator" onclick="exploreOpenFloorPicker()">
+      <div class="ex-elevator pixel-elev" id="ex-elevator" onclick="exploreOpenFloorPicker()">
         <div class="ex-elev-ico">🛗</div>
         <div class="ex-elev-lbl">ELEVATOR</div>
       </div>
@@ -1529,6 +1561,10 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
           Sound FX <span id="vol-label" style="color:var(--teal3);font-family:var(--font-m);font-weight:700;">80%</span>
         </label>
         <input type="range" id="vol-slider" min="0" max="100" value="80" style="width:100%;accent-color:var(--teal2);">
+      </div>
+      <div>
+        <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--t1);display:block;margin-bottom:8px;">Chiptune Music</label>
+        <button class="pause-btn" style="min-width:0;padding:9px 20px;font-size:11px;" id="music-toggle-btn" onclick="toggleMusic()">🎵 ON</button>
       </div>
       <div>
         <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--t1);display:block;margin-bottom:8px;">Difficulty Default</label>
@@ -4262,6 +4298,8 @@ function openExplore(){
   window.addEventListener('resize', exploreFit);
   cancelAnimationFrame(_ex.raf);
   _ex.raf = requestAnimationFrame(exploreLoop);
+  // Start chiptune
+  if(_musicOn) chiptuneStart();
   if(matchMedia('(pointer:coarse)').matches){
     document.getElementById('ex-joystick').classList.add('show');
     document.getElementById('ex-action-btn').classList.add('show');
@@ -4273,6 +4311,7 @@ function openExplore(){
 function exitExplore(){
   _ex.active = false;
   cancelAnimationFrame(_ex.raf);
+  chiptuneStop();
   document.getElementById('explore-mode').classList.remove('show');
   document.getElementById('ex-joystick').classList.remove('show');
   document.getElementById('ex-action-btn').classList.remove('show');
@@ -4318,7 +4357,7 @@ function renderExploreRooms(){
     const p = pts[i];
     const empty = !p;
     const critical = p && p.health < 30;
-    return `<div class="ex-room ${empty?'empty':''} ${critical?'critical':''}" id="ex-room-${i}"
+    return `<div class="ex-room pixel-room ${empty?'empty':''} ${critical?'critical':''}" id="ex-room-${i}"
       style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;"
       ${p ? `onclick="enterRoomFromExplore('${p.id}')"` : ''}>
       <div class="ex-room-num">${r.num}</div>
@@ -4360,6 +4399,7 @@ function exploreLoop(){
   if(k['a']||k['ArrowLeft'])  dx -= 1;
   if(k['d']||k['ArrowRight']) dx += 1;
   if(_ex.joyVec){ dx += _ex.joyVec.x; dy += _ex.joyVec.y; }
+  const playerEl = document.getElementById('ex-player');
   if(dx||dy){
     const mag = Math.hypot(dx,dy)||1;
     _ex.player.x += (dx/mag) * _ex.player.speed;
@@ -4375,10 +4415,14 @@ function exploreLoop(){
       const psp = document.getElementById('ex-player-sprite');
       if(psp) psp.innerHTML = pixelSpriteSVG(AVATAR, _ex.player.dir, _ex.player.frame);
     }
-  } else if(_ex.player.frame !== 0){
-    _ex.player.frame = 0; _ex.player.animT = 0;
-    const psp = document.getElementById('ex-player-sprite');
-    if(psp) psp.innerHTML = pixelSpriteSVG(AVATAR, _ex.player.dir||'down', 0);
+    if(playerEl) playerEl.classList.remove('idling');
+  } else {
+    if(_ex.player.frame !== 0){
+      _ex.player.frame = 0; _ex.player.animT = 0;
+      const psp = document.getElementById('ex-player-sprite');
+      if(psp) psp.innerHTML = pixelSpriteSVG(AVATAR, _ex.player.dir||'down', 0);
+    }
+    if(playerEl) playerEl.classList.add('idling');
   }
   _ex.npcs.forEach((n,i)=>{
     n.x += n.vx; n.y += n.vy;
@@ -4573,9 +4617,20 @@ function openSettings(){
   document.querySelectorAll('#ov-settings .diff-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.diff === _diffSetting);
   });
+  const mbtn = document.getElementById('music-toggle-btn');
+  if(mbtn) mbtn.innerHTML = _musicOn ? '🎵 ON' : '🔇 OFF';
   document.getElementById('ov-settings').style.display = 'flex';
 }
 function closeSettings(){ document.getElementById('ov-settings').style.display='none'; OV_OPEN=false; }
+function toggleMusic(){
+  _musicOn = !_musicOn;
+  localStorage.setItem('wardMusic', _musicOn ? '1' : '0');
+  const btn = document.getElementById('music-toggle-btn');
+  if(btn) btn.innerHTML = _musicOn ? '🎵 ON' : '🔇 OFF';
+  if(_musicOn){
+    if(_ex && _ex.active) chiptuneStart();
+  } else chiptuneStop();
+}
 function setDiffSetting(d){
   _diffSetting = d;
   if(typeof setDiff === 'function') setDiff(d);
@@ -5657,6 +5712,88 @@ function getAC() {
 }
 
 let _volScale = (parseFloat(localStorage.getItem('wardVol'))||0.8);
+
+// ── 8-BIT CHIPTUNE ──
+const _NOTE = {
+  C3:130.81, D3:146.83, Eb3:155.56, F3:174.61, G3:196, Ab3:207.65, Bb3:233.08,
+  C4:261.63, D4:293.66, Eb4:311.13, F4:349.23, G4:392, Ab4:415.30, Bb4:466.16,
+  C5:523.25, D5:587.33, Eb5:622.25, F5:698.46, G5:783.99, Ab5:830.61, Bb5:932.33,
+};
+// Each entry: [note, beats] (1 beat = 0.18s at ~140 BPM)
+const CHIP_LEAD = [
+  ['G4',1],['Bb4',1],['C5',1],['Eb5',1],
+  ['D5',2],['C5',1],['Bb4',1],
+  ['G4',1],['F4',1],['Eb4',1],['F4',1],
+  ['G4',3],['',1],
+  ['Bb4',1],['C5',1],['D5',1],['Eb5',1],
+  ['F5',2],['Eb5',1],['D5',1],
+  ['C5',1],['Bb4',1],['Ab4',1],['Bb4',1],
+  ['C5',4],
+];
+const CHIP_BASS = [
+  ['C3',4],['C3',4],
+  ['Ab2'in _NOTE?'Ab2':'Ab3',4],['Eb3',4],
+  ['F3',4],['F3',4],
+  ['G3',4],['C3',4],
+];
+let _chip = { on:false, scheduled:0, beat:0.18 };
+
+function chiptuneStart(){
+  if(_chip.on) return;
+  if(!_soundOn) return;
+  _chip.on = true;
+  try {
+    const ac = getAC();
+    if(ac.state === 'suspended') ac.resume();
+    _chip.scheduled = ac.currentTime + 0.1;
+    chiptuneScheduleLoop();
+  } catch(e){ _chip.on = false; }
+}
+function chiptuneScheduleLoop(){
+  if(!_chip.on) return;
+  const ac = getAC();
+  const beat = _chip.beat;
+  let t = _chip.scheduled;
+  // Lead voice (square)
+  let cursor = t;
+  CHIP_LEAD.forEach(([note, beats])=>{
+    const dur = beats * beat;
+    if(note && _NOTE[note]) chipNote(_NOTE[note], dur*0.9, cursor, 'square', 0.04);
+    cursor += dur;
+  });
+  // Bass voice (triangle)
+  let cursor2 = t;
+  CHIP_BASS.forEach(([note, beats])=>{
+    const dur = beats * beat;
+    if(note && _NOTE[note]) chipNote(_NOTE[note], dur*0.95, cursor2, 'triangle', 0.06);
+    cursor2 += dur;
+  });
+  const loopEnd = Math.max(cursor, cursor2);
+  _chip.scheduled = loopEnd;
+  // Schedule next loop iteration ahead of time
+  const msUntilEnd = (loopEnd - ac.currentTime - 0.3) * 1000;
+  _chip.timer = setTimeout(chiptuneScheduleLoop, Math.max(50, msUntilEnd));
+}
+function chipNote(freq, dur, when, type, vol){
+  try {
+    const ac = getAC();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, when);
+    gain.gain.setValueAtTime(0, when);
+    gain.gain.linearRampToValueAtTime(vol * _volScale * 0.6, when + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.start(when); osc.stop(when + dur + 0.05);
+  } catch(e){}
+}
+function chiptuneStop(){
+  _chip.on = false;
+  if(_chip.timer) clearTimeout(_chip.timer);
+}
+let _musicOn = localStorage.getItem('wardMusic') !== '0';
+
 function playTone(freq, duration, vol=0.08, type='sine') {
   if (!_soundOn) return;
   try {

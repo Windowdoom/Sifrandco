@@ -724,6 +724,135 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 .cc-trans-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;}
 .cc-trans-val{font-family:var(--font-hero);font-size:22px;font-weight:900;color:var(--t1);}
 
+/* ── MODE SELECT (new title screen) ── */
+#mode-select{position:fixed;inset:0;z-index:5500;display:none;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(ellipse at 50% 30%,#0e2540 0%,#01070d 70%);overflow-y:auto;}
+#mode-select::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px);}
+.ms-logo{font-family:var(--font-hero);font-size:84px;font-weight:900;letter-spacing:-.02em;
+  text-align:center;line-height:.9;margin-bottom:6px;position:relative;z-index:2;
+  background:linear-gradient(180deg,#fff 0%,#1dd6c4 100%);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;
+  text-shadow:0 0 60px rgba(29,214,196,.4);animation:introGlow 4s ease-in-out infinite;}
+.ms-tag{font-family:var(--font-m);font-size:11px;letter-spacing:.5em;text-transform:uppercase;
+  color:var(--gold2);margin-bottom:6px;text-align:center;position:relative;z-index:2;}
+.ms-bywd{font-family:var(--font-m);font-size:9px;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--teal2);margin-bottom:36px;opacity:.6;text-align:center;position:relative;z-index:2;}
+.ms-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;
+  width:100%;max-width:880px;position:relative;z-index:2;}
+.ms-tile{background:linear-gradient(160deg,var(--s2),var(--s1));border:1px solid var(--b1);
+  border-radius:var(--r3);padding:28px 22px;cursor:pointer;text-align:left;position:relative;overflow:hidden;
+  transition:all .25s cubic-bezier(.4,0,.2,1);}
+.ms-tile::before{content:'';position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 30% 20%,var(--tile-c),transparent 70%);transition:opacity .3s;}
+.ms-tile:hover{transform:translateY(-6px) scale(1.02);border-color:var(--tile-c);
+  box-shadow:0 14px 40px rgba(0,0,0,.7),0 0 30px var(--tile-c);}
+.ms-tile:hover::before{opacity:.15;}
+.ms-tile-ico{font-size:46px;margin-bottom:10px;position:relative;z-index:1;display:block;}
+.ms-tile-name{font-family:var(--font-hero);font-size:22px;font-weight:900;color:var(--t1);
+  margin-bottom:6px;position:relative;z-index:1;}
+.ms-tile-desc{font-size:12px;color:var(--t2);line-height:1.5;position:relative;z-index:1;margin-bottom:14px;}
+.ms-tile-cta{font-family:var(--font-m);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--tile-c);font-weight:900;position:relative;z-index:1;display:flex;align-items:center;gap:5px;}
+.ms-tile-badge{position:absolute;top:14px;right:14px;font-family:var(--font-m);font-size:8px;
+  background:var(--tile-c);color:#000;padding:3px 7px;border-radius:3px;font-weight:900;letter-spacing:.1em;z-index:2;}
+.ms-foot{margin-top:32px;display:flex;gap:16px;font-family:var(--font-m);font-size:9px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--t3);position:relative;z-index:2;flex-wrap:wrap;justify-content:center;}
+.ms-foot a{color:var(--teal3);text-decoration:none;cursor:pointer;}
+.ms-foot a:hover{color:var(--gold2);}
+.ms-streak-banner{margin-top:18px;background:rgba(212,130,10,.1);border:1px solid var(--gold2);
+  border-radius:var(--r);padding:10px 18px;font-family:var(--font-m);font-size:11px;
+  color:var(--gold3);letter-spacing:.1em;text-align:center;position:relative;z-index:2;display:none;}
+.ms-streak-banner.show{display:block;}
+
+/* Mode pills inside topbar */
+.tb-mode{font-family:var(--font-m);font-size:9px;background:var(--blue2);color:#fff;
+  padding:2px 8px;border-radius:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:900;}
+.tb-mode.daily{background:var(--gold2);color:#000;}
+.tb-mode.quick{background:var(--teal2);color:#000;}
+
+/* ── PARTICLES & JUICE ── */
+#fx-layer{position:fixed;inset:0;pointer-events:none;z-index:8000;overflow:hidden;}
+.fx-particle{position:absolute;width:8px;height:8px;border-radius:2px;will-change:transform,opacity;}
+@keyframes fxPop{0%{transform:translate(0,0) scale(1) rotate(0);opacity:1}
+  100%{transform:translate(var(--tx),var(--ty)) scale(0) rotate(var(--rot));opacity:0}}
+@keyframes shake{0%,100%{transform:translate(0,0)}10%{transform:translate(-6px,3px)}
+  20%{transform:translate(5px,-4px)}30%{transform:translate(-4px,2px)}
+  40%{transform:translate(3px,-3px)}50%{transform:translate(-3px,2px)}
+  60%{transform:translate(2px,-2px)}70%{transform:translate(-2px,1px)}80%{transform:translate(1px,-1px)}}
+.shaking{animation:shake .5s cubic-bezier(.36,.07,.19,.97);}
+@keyframes screenFlash{0%{background:rgba(255,40,40,.4)}100%{background:rgba(255,40,40,0)}}
+#fx-flash{position:fixed;inset:0;pointer-events:none;z-index:7999;}
+#fx-flash.flash{animation:screenFlash .6s ease-out;}
+
+/* Streak super-display */
+@keyframes streakPop{0%{transform:scale(.5);opacity:0}50%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:1}}
+.streak-mega{position:fixed;top:84px;left:50%;transform:translateX(-50%);z-index:6000;
+  font-family:var(--font-hero);font-weight:900;color:#fff;
+  text-shadow:0 0 30px var(--gold3),0 0 60px var(--gold2);pointer-events:none;
+  animation:streakPop .4s cubic-bezier(.4,1.5,.3,1);font-size:46px;letter-spacing:.05em;}
+.streak-mega .num{color:var(--gold3);}
+.streak-mega .lbl{font-size:14px;letter-spacing:.4em;display:block;text-align:center;
+  color:var(--teal3);text-shadow:0 0 14px var(--teal2);font-weight:700;margin-top:-4px;}
+
+/* ── SHARE CARD ── */
+.share-overlay{position:fixed;inset:0;z-index:7000;background:rgba(0,0,0,.92);
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);padding:20px;}
+.share-overlay.show{display:flex;animation:popIn .35s ease;}
+.share-box{max-width:520px;width:100%;background:var(--s1);border:1px solid var(--b2);
+  border-radius:var(--r3);padding:24px;}
+.share-card-canvas{width:100%;border-radius:var(--r2);box-shadow:0 14px 40px rgba(0,0,0,.7);
+  background:#000;display:block;}
+.share-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.share-btn{flex:1;min-width:140px;background:var(--teal2);color:#000;border:none;
+  padding:13px;border-radius:var(--r);font-family:var(--font-h);font-weight:900;
+  font-size:12px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.share-btn:hover{background:var(--teal3);transform:translateY(-2px);}
+.share-btn.sec{background:var(--s3);color:var(--t1);border:1px solid var(--b2);}
+.share-btn.sec:hover{background:var(--b1);}
+.share-hint{font-family:var(--font-m);font-size:9px;color:var(--t3);text-align:center;
+  letter-spacing:.15em;text-transform:uppercase;margin-top:12px;}
+
+/* ── TUTORIAL ── */
+.tut-overlay{position:fixed;inset:0;z-index:6800;display:none;pointer-events:none;}
+.tut-overlay.show{display:block;}
+.tut-mask{position:absolute;background:rgba(0,0,0,.78);transition:all .4s ease;pointer-events:auto;}
+.tut-bubble{position:absolute;background:var(--s1);border:2px solid var(--teal2);
+  border-radius:var(--r2);padding:16px 20px;max-width:320px;
+  box-shadow:0 8px 30px rgba(0,0,0,.6),0 0 30px rgba(29,214,196,.3);
+  font-size:13px;line-height:1.5;color:var(--t1);pointer-events:auto;animation:popIn .35s ease;}
+.tut-bubble-hd{font-family:var(--font-h);font-size:11px;font-weight:900;
+  color:var(--teal3);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;}
+.tut-bubble-actions{display:flex;justify-content:space-between;margin-top:14px;align-items:center;}
+.tut-skip{background:transparent;border:none;color:var(--t3);font-family:var(--font-m);
+  font-size:9px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;}
+.tut-skip:hover{color:var(--t1);}
+.tut-next{background:var(--teal2);color:#000;border:none;padding:7px 16px;
+  border-radius:var(--r);font-family:var(--font-h);font-weight:900;font-size:11px;
+  letter-spacing:.15em;text-transform:uppercase;cursor:pointer;}
+.tut-step-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--b2);margin-right:3px;}
+.tut-step-dot.active{background:var(--teal3);}
+.tut-arrow{position:absolute;width:0;height:0;}
+
+/* ── PAUSE ── */
+#pause-overlay{position:fixed;inset:0;z-index:6900;background:rgba(0,0,0,.88);
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px);}
+#pause-overlay.show{display:flex;animation:popIn .25s ease;}
+.pause-box{text-align:center;}
+.pause-title{font-family:var(--font-hero);font-size:60px;font-weight:900;
+  color:var(--t1);letter-spacing:.1em;margin-bottom:8px;
+  text-shadow:0 0 30px rgba(29,214,196,.4);}
+.pause-sub{font-family:var(--font-m);font-size:11px;letter-spacing:.4em;
+  color:var(--gold2);text-transform:uppercase;margin-bottom:30px;}
+.pause-actions{display:flex;flex-direction:column;gap:8px;align-items:center;}
+.pause-btn{background:var(--s2);border:1px solid var(--b2);color:var(--t1);
+  padding:11px 36px;border-radius:var(--r);font-family:var(--font-h);
+  font-weight:900;font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;min-width:200px;}
+.pause-btn:hover{background:var(--s3);border-color:var(--teal2);transform:translateY(-2px);}
+.pause-btn.primary{background:var(--teal2);color:#000;border-color:var(--teal3);}
+.pause-btn.primary:hover{background:var(--teal3);}
+
 /* Splash boot polish */
 .boot-skip{position:fixed;top:14px;right:14px;background:rgba(0,0,0,.4);border:1px solid var(--b2);
   color:var(--t2);padding:6px 14px;border-radius:20px;font-family:var(--font-m);font-size:10px;
@@ -1049,6 +1178,91 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
     <button class="btn-ack" style="margin-top:18px;" onclick="closeCareerChart()">Close</button>
   </div>
 </div>
+
+<!-- ═══ MODE SELECT ═══ -->
+<div id="mode-select">
+  <div class="ms-tag">— Sacred Heart Memorial —</div>
+  <div class="ms-logo">THE WARD</div>
+  <div class="ms-bywd">A Clinical Decision Simulator · by WindowDoom</div>
+  <div class="ms-tiles">
+    <div class="ms-tile" style="--tile-c:var(--teal3);" onclick="startMode('quick')">
+      <span class="ms-tile-badge">FASTEST</span>
+      <span class="ms-tile-ico">⚡</span>
+      <div class="ms-tile-name">Quick Play</div>
+      <div class="ms-tile-desc">Five random patients. Ten minutes. Score and share.</div>
+      <div class="ms-tile-cta">PLAY NOW ›</div>
+    </div>
+    <div class="ms-tile" style="--tile-c:var(--gold3);" onclick="startMode('daily')">
+      <span class="ms-tile-badge">DAILY</span>
+      <span class="ms-tile-ico">📅</span>
+      <div class="ms-tile-name">Daily Challenge</div>
+      <div class="ms-tile-desc">Three cases. The same for everyone today. Shareable score.</div>
+      <div class="ms-tile-cta" id="daily-cta-text">PLAY TODAY ›</div>
+    </div>
+    <div class="ms-tile" style="--tile-c:var(--purple3);" onclick="startMode('campaign')">
+      <span class="ms-tile-badge">RPG</span>
+      <span class="ms-tile-ico">📖</span>
+      <div class="ms-tile-name">Campaign</div>
+      <div class="ms-tile-desc">Story mode. MS-4 to attending. Mentors, rivals, relationships.</div>
+      <div class="ms-tile-cta">BEGIN ›</div>
+    </div>
+  </div>
+  <div class="ms-streak-banner" id="ms-streak-banner"></div>
+  <div class="ms-foot">
+    <a onclick="document.getElementById('tips-overlay').style.display='flex'">? How to Play</a>
+    <a onclick="openCareerProfileFromMenu()">📊 My Stats</a>
+    <a onclick="openCustomizerFromMenu()">🧑‍⚕️ Avatar</a>
+    <a href="https://gofund.me/92acc1b19" target="_blank">❤ Support</a>
+  </div>
+</div>
+
+<!-- ═══ AVATAR-ONLY OVERLAY ═══ -->
+<div class="overlay" id="ov-avatar-only">
+  <div class="ov-box" style="max-width:600px">
+    <div class="ov-score-banner" style="background:var(--teal2);color:#000;">CUSTOMIZE</div>
+    <div class="ov-title">Your Doctor</div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:20px;">This appearance follows you across all modes.</div>
+    <div class="av-row" style="margin-bottom:0;">
+      <div class="av-preview" id="av-preview-2"></div>
+      <div class="av-controls" id="av-controls-2"></div>
+    </div>
+    <button class="btn-ack" style="margin-top:20px;" onclick="closeAvatarOnly()">Done</button>
+  </div>
+</div>
+
+<!-- ═══ PAUSE ═══ -->
+<div id="pause-overlay">
+  <div class="pause-box">
+    <div class="pause-title">PAUSED</div>
+    <div class="pause-sub">— take a breath —</div>
+    <div class="pause-actions">
+      <button class="pause-btn primary" onclick="togglePause()">Resume [Esc]</button>
+      <button class="pause-btn" onclick="document.getElementById('tips-overlay').style.display='flex'">How to Play</button>
+      <button class="pause-btn" onclick="confirmQuitToMenu()">Quit to Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SHARE CARD ═══ -->
+<div class="share-overlay" id="share-overlay">
+  <div class="share-box">
+    <canvas id="share-card-canvas" class="share-card-canvas" width="1080" height="1080"></canvas>
+    <div class="share-actions">
+      <button class="share-btn" onclick="shareCardDownload()">⬇ Download</button>
+      <button class="share-btn" onclick="shareCardCopy()">📋 Copy Text</button>
+      <button class="share-btn" onclick="shareCardShare()" id="share-native-btn" style="display:none;">📤 Share</button>
+      <button class="share-btn sec" onclick="closeShareCard()">Close</button>
+    </div>
+    <div class="share-hint">Post your run on Reddit, Twitter, Discord — challenge friends</div>
+  </div>
+</div>
+
+<!-- ═══ TUTORIAL ═══ -->
+<div class="tut-overlay" id="tut-overlay"></div>
+
+<!-- ═══ FX LAYER ═══ -->
+<div id="fx-flash"></div>
+<div id="fx-layer"></div>
 
 <!-- ═══ GoFundMe Toast ═══ -->
 <div id="gfm-toast">
@@ -2729,6 +2943,535 @@ recordCase = function(caseId, patientName, chose, best, score, category){
   }
 };
 
+// ══════════════════════════════════════════════════════════
+// MODE SELECT / RUN MODES
+// ══════════════════════════════════════════════════════════
+let _mode = 'campaign'; // campaign | quick | daily
+let _modeRun = null; // for quick/daily: {target:5, completed:0, scores:[], startedAt}
+
+function showModeSelect(){
+  $hide('intro');
+  $hide('game');
+  document.getElementById('mode-select').style.display = 'flex';
+  // Show daily status
+  const status = getDailyStatus();
+  const cta = document.getElementById('daily-cta-text');
+  if(cta){
+    if(status.completed){ cta.textContent = `✓ COMPLETED — ${status.score}/12 ›`; }
+    else { cta.textContent = 'PLAY TODAY ›'; }
+  }
+  // Streak banner
+  const streak = getDailyStreak();
+  const banner = document.getElementById('ms-streak-banner');
+  if(banner){
+    if(streak >= 2){ banner.textContent = `🔥 ${streak}-day Daily Challenge streak — keep it alive`; banner.classList.add('show'); }
+    else banner.classList.remove('show');
+  }
+}
+function hideModeSelect(){
+  document.getElementById('mode-select').style.display = 'none';
+}
+
+function startMode(mode){
+  _mode = mode;
+  hideModeSelect();
+  if(mode === 'campaign'){
+    $show('intro','flex'); // existing flow with avatar + specialty selection
+    return;
+  }
+  // Quick or daily — auto-pick a specialty (em is most varied)
+  const specId = 'em';
+  const specName = mode === 'daily' ? 'Daily' : 'Quick Play';
+  // Get hospital/doc names from avatar data or defaults
+  const dn = (localStorage.getItem('wardDocName') || 'Doctor');
+  // Pre-fill the inputs (used by startGame)
+  const hnEl = document.getElementById('hosp-name');
+  const dnEl = document.getElementById('doc-name');
+  if(hnEl) hnEl.value = 'Sacred Heart Memorial';
+  if(dnEl) dnEl.value = dn;
+  startGameForMode(specId, mode);
+}
+
+function startGameForMode(specId, mode){
+  _mode = mode;
+  startGame(specId);
+  // After startGame creates GS, override pool for quick/daily
+  if(mode === 'quick'){
+    _modeRun = { target:5, completed:0, scores:[], startedAt: Date.now(), label:'Quick Play' };
+    // Limit pool to 5 random
+    GS.pool = pickRandomCases(5);
+    GS.ward = []; admitPt(); admitPt(); admitPt();
+    renderAll();
+    addModePill('quick','⚡ QUICK 5');
+  } else if(mode === 'daily'){
+    _modeRun = { target:3, completed:0, scores:[], startedAt: Date.now(), label:'Daily', seed:dailySeed() };
+    GS.pool = pickDailyCases(3);
+    GS.ward = []; admitPt(); admitPt(); admitPt();
+    renderAll();
+    addModePill('daily','📅 DAILY ' + dailyDateStr());
+  } else {
+    addModePill('','📖 CAMPAIGN');
+  }
+}
+
+function addModePill(cls, txt){
+  const tb = document.getElementById('topbar');
+  if(!tb) return;
+  const old = document.getElementById('tb-mode-pill');
+  if(old) old.remove();
+  const pill = document.createElement('span');
+  pill.id = 'tb-mode-pill';
+  pill.className = 'tb-mode ' + cls;
+  pill.textContent = txt;
+  // Insert after brand
+  const brand = tb.querySelector('.tb-brand');
+  if(brand && brand.nextSibling) tb.insertBefore(pill, brand.nextSibling);
+  else tb.appendChild(pill);
+}
+
+function pickRandomCases(n){
+  const pool = JSON.parse(JSON.stringify(DB)).sort(()=>Math.random()-0.5);
+  pool.forEach(p => { if(!p.name || p.name==='') p.name = randName(p.sex||'M'); });
+  return pool.slice(0, n);
+}
+
+// Daily seeded RNG — same case for everyone on a given date
+function dailyDateStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function dailySeed(){
+  const s = dailyDateStr();
+  let h = 0;
+  for(let i=0; i<s.length; i++) h = ((h<<5)-h + s.charCodeAt(i))|0;
+  return Math.abs(h);
+}
+function seededRandom(seed){
+  let s = seed;
+  return () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+function pickDailyCases(n){
+  const rng = seededRandom(dailySeed());
+  const pool = JSON.parse(JSON.stringify(DB));
+  // Stable shuffle by seeded rng
+  for(let i = pool.length-1; i > 0; i--){
+    const j = Math.floor(rng() * (i+1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  // Use seeded names too for fairness across players
+  pool.forEach(p => { if(!p.name || p.name==='') p.name = randName(p.sex||'M'); });
+  return pool.slice(0, n);
+}
+
+function getDailyStatus(){
+  try{
+    const raw = localStorage.getItem('wardDailyStatus');
+    if(!raw) return {completed:false};
+    const data = JSON.parse(raw);
+    if(data.date === dailyDateStr()) return data;
+    return {completed:false};
+  }catch(e){ return {completed:false}; }
+}
+function setDailyStatus(score, total){
+  try{
+    const prev = JSON.parse(localStorage.getItem('wardDailyStatus')||'{}');
+    const yesterday = (()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+    let streak = 1;
+    if(prev.date === yesterday){ streak = (prev.streak||0)+1; }
+    else if(prev.date === dailyDateStr()){ streak = prev.streak||1; }
+    const data = { date: dailyDateStr(), completed:true, score, total, streak };
+    localStorage.setItem('wardDailyStatus', JSON.stringify(data));
+  }catch(e){}
+}
+function getDailyStreak(){
+  try{
+    const data = JSON.parse(localStorage.getItem('wardDailyStatus')||'{}');
+    if(!data.streak) return 0;
+    // Streak only counts if today or yesterday
+    const today = dailyDateStr();
+    const yesterday = (()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+    if(data.date === today || data.date === yesterday) return data.streak;
+    return 0;
+  }catch(e){ return 0; }
+}
+
+// Hook: after each case in quick/daily mode, check if run complete
+function checkModeComplete(score){
+  if(!_modeRun) return false;
+  _modeRun.scores.push(score||0);
+  _modeRun.completed++;
+  if(_modeRun.completed >= _modeRun.target){
+    setTimeout(()=> finishModeRun(), 1500);
+    return true;
+  }
+  // Maybe admit a new patient
+  if(GS.ward.length < _modeRun.target - _modeRun.completed) admitPt();
+  return false;
+}
+
+function finishModeRun(){
+  if(!_modeRun) return;
+  const totalScore = _modeRun.scores.reduce((a,b)=>a+b,0);
+  const maxScore = _modeRun.target * 4;
+  const pct = Math.round(totalScore/maxScore*100);
+  if(_mode === 'daily') setDailyStatus(totalScore, maxScore);
+  showShareCard({
+    mode: _modeRun.label,
+    seedDate: _modeRun.seed ? dailyDateStr() : null,
+    totalScore, maxScore, pct,
+    casesPlayed: _modeRun.target,
+    perfect: _modeRun.scores.filter(s=>s===4).length,
+    lethal: _modeRun.scores.filter(s=>s===0).length,
+    durationSec: Math.round((Date.now()-_modeRun.startedAt)/1000),
+    streak: _maxStreak||0
+  });
+  _modeRun = null;
+}
+
+function quitToMenu(){
+  _modeRun = null;
+  _mode = 'campaign';
+  GS = {};
+  $hide('game');
+  // Remove mode pill
+  const old = document.getElementById('tb-mode-pill');
+  if(old) old.remove();
+  showModeSelect();
+}
+function confirmQuitToMenu(){
+  if(!confirm('Quit current run to main menu? Progress in this run will be lost.')) return;
+  document.getElementById('pause-overlay').classList.remove('show');
+  _paused = false;
+  quitToMenu();
+}
+
+// ══════════════════════════════════════════════════════════
+// PAUSE
+// ══════════════════════════════════════════════════════════
+let _paused = false;
+function togglePause(){
+  if(OV_OPEN && !_paused) return;
+  _paused = !_paused;
+  document.getElementById('pause-overlay').classList.toggle('show', _paused);
+}
+
+// ══════════════════════════════════════════════════════════
+// JUICE — particles, screen shake, streak mega
+// ══════════════════════════════════════════════════════════
+function spawnConfetti(x, y, count, colors){
+  const layer = document.getElementById('fx-layer');
+  if(!layer) return;
+  const cs = colors || ['#1dd6c4','#f5a623','#66bb6a','#42a5f5','#ef5350','#9575cd'];
+  for(let i=0; i<count; i++){
+    const p = document.createElement('div');
+    p.className = 'fx-particle';
+    p.style.left = x+'px';
+    p.style.top = y+'px';
+    p.style.background = cs[i % cs.length];
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 80 + Math.random() * 220;
+    p.style.setProperty('--tx', Math.cos(ang)*dist+'px');
+    p.style.setProperty('--ty', Math.sin(ang)*dist + Math.random()*120+'px');
+    p.style.setProperty('--rot', (Math.random()*720-360)+'deg');
+    p.style.animation = `fxPop ${0.9 + Math.random()*0.6}s cubic-bezier(.2,.7,.4,1) forwards`;
+    layer.appendChild(p);
+    setTimeout(()=> p.remove(), 1700);
+  }
+}
+function screenShake(){
+  const game = document.getElementById('game');
+  if(!game) return;
+  game.classList.remove('shaking');
+  void game.offsetWidth;
+  game.classList.add('shaking');
+  setTimeout(()=> game.classList.remove('shaking'), 600);
+}
+function screenFlashRed(){
+  const f = document.getElementById('fx-flash');
+  if(!f) return;
+  f.classList.remove('flash');
+  void f.offsetWidth;
+  f.classList.add('flash');
+}
+function showStreakMega(streak){
+  if(streak < 3) return;
+  const old = document.querySelector('.streak-mega');
+  if(old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'streak-mega';
+  let lbl = 'STREAK';
+  if(streak >= 10) lbl = 'GODLIKE';
+  else if(streak >= 7) lbl = 'UNSTOPPABLE';
+  else if(streak >= 5) lbl = 'ON FIRE';
+  else if(streak >= 3) lbl = 'IN THE ZONE';
+  el.innerHTML = `<span class="num">${streak}×</span><span class="lbl">${lbl}</span>`;
+  document.body.appendChild(el);
+  setTimeout(()=>{ el.style.transition='opacity .4s'; el.style.opacity='0'; setTimeout(()=>el.remove(),400); }, 1400);
+}
+
+// ══════════════════════════════════════════════════════════
+// SHARE CARD — canvas-rendered PNG of run results
+// ══════════════════════════════════════════════════════════
+let _shareData = null;
+function showShareCard(data){
+  _shareData = data;
+  drawShareCard(data);
+  document.getElementById('share-overlay').classList.add('show');
+  OV_OPEN = true;
+  // Native share if available
+  if(navigator.share){
+    document.getElementById('share-native-btn').style.display = '';
+  }
+}
+function closeShareCard(){
+  document.getElementById('share-overlay').classList.remove('show');
+  OV_OPEN = false;
+  // Return to menu
+  setTimeout(()=> quitToMenu(), 200);
+}
+
+function drawShareCard(d){
+  const cv = document.getElementById('share-card-canvas');
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  // Background gradient
+  const bg = ctx.createRadialGradient(W/2, H*0.3, 50, W/2, H/2, W);
+  bg.addColorStop(0, '#0e2540');
+  bg.addColorStop(1, '#01070d');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+  // Scan lines
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  for(let y=0; y<H; y+=4){ ctx.fillRect(0,y,W,2); }
+  // Top tag
+  ctx.fillStyle = '#d4820a';
+  ctx.font = '700 24px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('— SACRED HEART MEMORIAL —', W/2, 80);
+  // Title
+  ctx.fillStyle = '#fff';
+  ctx.font = '900 130px serif';
+  ctx.fillText('THE WARD', W/2, 220);
+  ctx.fillStyle = '#1dd6c4';
+  ctx.font = '600 22px monospace';
+  ctx.fillText(d.mode.toUpperCase() + (d.seedDate ? ' · ' + d.seedDate : ''), W/2, 260);
+  // Big score
+  const grade = d.pct>=90?'S':d.pct>=80?'A':d.pct>=70?'B':d.pct>=55?'C':d.pct>=40?'D':'F';
+  const gradeColor = d.pct>=80?'#66bb6a':d.pct>=55?'#f5a623':'#ef5350';
+  // Score circle
+  const cx = W/2, cy = 480, r = 170;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.lineWidth = 14; ctx.strokeStyle = '#0e2540'; ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2 + (d.pct/100)*Math.PI*2);
+  ctx.strokeStyle = gradeColor; ctx.lineWidth = 14; ctx.lineCap='round'; ctx.stroke();
+  // Grade letter inside
+  ctx.fillStyle = gradeColor;
+  ctx.font = '900 180px serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(grade, cx, cy-12);
+  ctx.fillStyle = '#8099b8';
+  ctx.font = '600 30px monospace';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(d.pct + '%', cx, cy + 100);
+  // Stats grid
+  const stats = [
+    ['CASES', d.casesPlayed],
+    ['PERFECT', d.perfect],
+    ['LETHAL', d.lethal],
+    ['STREAK', (d.streak||0) + '×']
+  ];
+  const sx = 80, sy = 760, sw = (W-160)/4;
+  stats.forEach((s,i)=>{
+    const x = sx + sw*i + sw/2;
+    ctx.fillStyle = '#1dd6c4';
+    ctx.font = '700 22px monospace';
+    ctx.fillText(s[0], x, sy);
+    ctx.fillStyle = '#fff';
+    ctx.font = '900 64px serif';
+    ctx.fillText(String(s[1]), x, sy+72);
+  });
+  // Footer
+  ctx.fillStyle = '#374e68';
+  ctx.font = '600 22px monospace';
+  ctx.fillText('PLAY AT BITBYBITMD.COM', W/2, H-90);
+  ctx.fillStyle = '#d4820a';
+  ctx.font = '700 18px monospace';
+  ctx.fillText('CHALLENGE A FRIEND ›', W/2, H-50);
+}
+
+function shareCardDownload(){
+  const cv = document.getElementById('share-card-canvas');
+  cv.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `the-ward-${_shareData.mode.toLowerCase().replace(/\s/g,'-')}-${dailyDateStr()}.png`;
+    a.click();
+    setTimeout(()=> URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
+}
+function shareCardCopy(){
+  const d = _shareData;
+  const grade = d.pct>=90?'S':d.pct>=80?'A':d.pct>=70?'B':d.pct>=55?'C':d.pct>=40?'D':'F';
+  const txt = `🩺 The Ward · ${d.mode}${d.seedDate?' · '+d.seedDate:''}\n` +
+    `Grade: ${grade} (${d.pct}%)\n` +
+    `${d.casesPlayed} cases · ${d.perfect} perfect · ${d.lethal} lethal · ${d.streak}× streak\n\n` +
+    `Play: bitbybitmd.com — can you beat it?`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '✓ COPIED';
+    setTimeout(()=> btn.textContent = orig, 2000);
+  });
+}
+function shareCardShare(){
+  const cv = document.getElementById('share-card-canvas');
+  cv.toBlob(async blob => {
+    const file = new File([blob], 'the-ward.png', {type:'image/png'});
+    try{
+      await navigator.share({
+        title: 'The Ward',
+        text: `I scored ${_shareData.pct}% on The Ward${_shareData.seedDate?' Daily Challenge ('+_shareData.seedDate+')':''}. Can you beat me?`,
+        files: [file]
+      });
+    }catch(e){}
+  }, 'image/png');
+}
+
+// ══════════════════════════════════════════════════════════
+// FIRST-CASE TUTORIAL
+// ══════════════════════════════════════════════════════════
+const TUT_KEY = 'wardTutorialDone';
+let _tutStep = 0;
+const TUT_STEPS = [
+  { sel:'#ward-panel', side:'right',
+    title:'1. The Ward Board',
+    text:'These are your patients. Critical ones pulse red. Click one to open their chart.' },
+  { sel:'#monitor-bar', side:'bottom',
+    title:'2. Vitals Monitor',
+    text:'Live ECG, heart rate, BP, oxygen. Abnormal values blink red. The numbers change with what you do.' },
+  { sel:'#pane-hpi', side:'bottom',
+    title:'3. History & Physical',
+    text:'Read the case. Then click Diagnostics for labs and Orders to act. Use 1–4 to pick fast.' },
+  { sel:'.tb-metrics', side:'bottom',
+    title:'4. Your Metrics',
+    text:'Six skill axes. Different choices reward different ones. Specialty also weights them.' },
+  { sel:'#streak-display', side:'bottom',
+    title:'5. Streaks Multiply XP',
+    text:'Three correct in a row = bonus XP. Keep the streak alive.' },
+];
+
+function maybeStartTutorial(){
+  if(localStorage.getItem(TUT_KEY)) return;
+  if(_mode !== 'campaign') return; // tutorial only for campaign
+  setTimeout(()=> { _tutStep = 0; tutShow(); }, 400);
+}
+function tutShow(){
+  const step = TUT_STEPS[_tutStep];
+  if(!step){ tutDone(); return; }
+  const target = document.querySelector(step.sel);
+  if(!target){ _tutStep++; tutShow(); return; }
+  const r = target.getBoundingClientRect();
+  const ov = document.getElementById('tut-overlay');
+  ov.classList.add('show');
+  ov.innerHTML = '';
+  // Cutout: 4 dark rectangles around target
+  const pad = 6;
+  const tx = r.left - pad, ty = r.top - pad, tw = r.width + pad*2, th = r.height + pad*2;
+  const W = window.innerWidth, H = window.innerHeight;
+  const m1 = document.createElement('div'); m1.className='tut-mask';
+  m1.style.cssText = `left:0;top:0;width:100%;height:${ty}px;`;
+  const m2 = document.createElement('div'); m2.className='tut-mask';
+  m2.style.cssText = `left:0;top:${ty+th}px;width:100%;height:${H-ty-th}px;`;
+  const m3 = document.createElement('div'); m3.className='tut-mask';
+  m3.style.cssText = `left:0;top:${ty}px;width:${tx}px;height:${th}px;`;
+  const m4 = document.createElement('div'); m4.className='tut-mask';
+  m4.style.cssText = `left:${tx+tw}px;top:${ty}px;width:${W-tx-tw}px;height:${th}px;`;
+  // Highlight border
+  const border = document.createElement('div');
+  border.style.cssText = `position:absolute;left:${tx}px;top:${ty}px;width:${tw}px;height:${th}px;
+    border:2px solid var(--teal3);border-radius:8px;box-shadow:0 0 0 4px rgba(29,214,196,.25);
+    pointer-events:none;animation:popIn .35s ease;`;
+  ov.appendChild(m1); ov.appendChild(m2); ov.appendChild(m3); ov.appendChild(m4); ov.appendChild(border);
+  // Bubble
+  const bubble = document.createElement('div');
+  bubble.className = 'tut-bubble';
+  const dots = TUT_STEPS.map((_,i)=>`<span class="tut-step-dot ${i===_tutStep?'active':''}"></span>`).join('');
+  bubble.innerHTML = `<div class="tut-bubble-hd">${step.title}</div>
+    <div>${step.text}</div>
+    <div class="tut-bubble-actions">
+      <button class="tut-skip" onclick="tutSkip()">Skip tour</button>
+      <div>${dots}</div>
+      <button class="tut-next" onclick="tutNext()">${_tutStep===TUT_STEPS.length-1?'Done':'Next'} ›</button>
+    </div>`;
+  ov.appendChild(bubble);
+  // Position bubble: prefer below, fallback above
+  let bx = Math.min(W-340, Math.max(20, tx + tw/2 - 160));
+  let by = ty + th + 16;
+  if(by + 200 > H) by = ty - 200;
+  if(by < 16) by = 16;
+  bubble.style.left = bx + 'px';
+  bubble.style.top = by + 'px';
+}
+function tutNext(){ _tutStep++; tutShow(); }
+function tutSkip(){ tutDone(); }
+function tutDone(){
+  document.getElementById('tut-overlay').classList.remove('show');
+  document.getElementById('tut-overlay').innerHTML = '';
+  localStorage.setItem(TUT_KEY, '1');
+}
+
+// Menu helpers from mode select
+function openCustomizerFromMenu(){
+  // Render avatar UI inside the modal
+  buildAvatarUIInto('av-controls-2');
+  document.getElementById('av-preview-2').innerHTML = svgDoctor(AVATAR,{id:'p2',alwaysSteth:true});
+  document.getElementById('ov-avatar-only').style.display = 'flex';
+  OV_OPEN = true;
+}
+function closeAvatarOnly(){ document.getElementById('ov-avatar-only').style.display='none'; OV_OPEN=false; }
+
+function buildAvatarUIInto(targetId){
+  const el = document.getElementById(targetId);
+  if(!el) return;
+  el.innerHTML = `
+    <div class="av-group"><span class="av-glbl">Gender</span><div class="av-opts" id="av-gender-2"></div></div>
+    <div class="av-group"><span class="av-glbl">Skin</span><div class="av-opts" id="av-skin-2"></div></div>
+    <div class="av-group"><span class="av-glbl">Hair</span><div class="av-opts" id="av-hair-2"></div></div>
+    <div class="av-group"><span class="av-glbl">Scrubs</span><div class="av-opts" id="av-scrub-2"></div></div>
+    <div class="av-group"><span class="av-glbl">Accessory</span><div class="av-opts" id="av-acc-2"></div></div>`;
+  const refresh = () => {
+    document.getElementById('av-preview-2').innerHTML = svgDoctor(AVATAR,{id:'p2',alwaysSteth:true});
+    updateAvatarPreview();
+  };
+  const populate = (id, items, key, render) => {
+    const c = document.getElementById(id);
+    if(!c) return;
+    c.innerHTML = items.map((v,i)=>render(v,i)).join('');
+    c.querySelectorAll('.av-opt').forEach(o=>{
+      o.onclick = ()=>{ AVATAR[key] = o.dataset.gender || +o.dataset.i; saveAvatar(); buildAvatarUIInto(targetId); refresh(); playTone(700,0.04,0.05); };
+    });
+  };
+  populate('av-gender-2', ['F','M'], 'gender', g=>`<div class="av-opt txt ${AVATAR.gender===g?'active':''}" data-gender="${g}">${g==='F'?'♀':'♂'}</div>`);
+  populate('av-skin-2', SKIN_TONES, 'skin', (c,i)=>`<div class="av-opt ${AVATAR.skin===i?'active':''}" style="background:${c}" data-i="${i}"></div>`);
+  populate('av-hair-2', HAIR_COLORS, 'hair', (c,i)=>`<div class="av-opt ${AVATAR.hair===i?'active':''}" style="background:${c}" data-i="${i}"></div>`);
+  populate('av-scrub-2', SCRUB_COLORS, 'scrub', (c,i)=>`<div class="av-opt ${AVATAR.scrub===i?'active':''}" style="background:${c.c}" data-i="${i}" title="${c.name}"></div>`);
+  const labels = ['—','👓','😷','🩺'];
+  populate('av-acc-2', labels, 'acc', (l,i)=>`<div class="av-opt txt ${AVATAR.acc===i?'active':''}" data-i="${i}">${l}</div>`);
+}
+
+function openCareerProfileFromMenu(){
+  // Reuse existing career profile screen
+  if(typeof showCareerProfile === 'function'){
+    // Need a stub GS for it to render
+    if(!GS || !GS.spec){ GS = { spec: SPECS.im, day:1, metrics:{...SPECS.im.start}, log:[], ward:[], xp:0 }; }
+    showCareerProfile();
+  }
+}
+
 function initApp() {
   // Load previous career data if exists
   loadCareerData();
@@ -2986,6 +3729,8 @@ function renderAll(){
 function openChart(id){
   const prev = GS.activeId;
   GS.activeId=id;
+  // First-time tutorial after first chart open
+  if(!prev) maybeStartTutorial();
   const p=getPt(id);
   if(p) renderSpecMonitor(p);
   // Auto-jump to Orders tab so actions are immediately visible; reset to H&P for new patient
@@ -3071,11 +3816,19 @@ function takeAction(pId, actIdx){
   if((act.score||0)===0) GS.casesLethal=(GS.casesLethal||0)+1;
   updateStreak(act.score||0);
   updateProgress();
-  // Sound feedback
-  if((act.score||0)===4) playSuccess();
-  else if((act.score||0)===0) playFatal();
-  else playSuboptimal();
-  showReaction(act.score||0);
+  // Sound + juice feedback
+  const _sc = act.score||0;
+  if(_sc===4){
+    playSuccess();
+    const r = (document.querySelector('.action-btn[data-action-idx="'+actIdx+'"]')||document.body).getBoundingClientRect();
+    spawnConfetti(r.left + r.width/2, r.top + r.height/2, 28);
+    setTimeout(()=> showStreakMega(_streak), 200);
+  } else if(_sc===0){
+    playFatal();
+    screenShake();
+    screenFlashRed();
+  } else playSuboptimal();
+  showReaction(_sc);
   if(act.fx){
     if(act.fx.health!=null) p.health=Math.max(0,Math.min(100,p.health+act.fx.health));
     if(act.fx.legal!=null) GS.legal=Math.min(100,GS.legal+act.fx.legal*(p.consulted?0.25:1.0)*GS.spec.liabMod);
@@ -3167,6 +3920,16 @@ function closeOutcomeOv(){
     }
   }
   checkPromotions(); checkGameOver(); renderAll();
+  // Mode completion check
+  if(_modeRun && _lastCaseData){
+    const sc = _lastCaseData.score;
+    // Only count terminal outcomes (death/discharge), not intermediate steps
+    const wasTerminal = !GS.ward.find(w=>w.id===_lastCaseData.patient.id);
+    if(wasTerminal && !_lastCaseData._modeCounted){
+      _lastCaseData._modeCounted = true;
+      checkModeComplete(sc);
+    }
+  }
 }
 
 function endShift(){
@@ -3280,7 +4043,13 @@ document.addEventListener('keydown',e=>{
     }
   }
   if(e.key.toLowerCase()==='e'){e.preventDefault();endShift();}
-  if(e.key==='Escape'){e.preventDefault();GS.activeId=null;stopECG();renderAll();}
+  if(e.key==='Escape'){
+    e.preventDefault();
+    if(_paused){ togglePause(); return; }
+    if(GS.activeId){ GS.activeId=null; stopECG(); renderAll(); }
+    else if(_mode==='campaign' || _modeRun){ togglePause(); }
+  }
+  if(e.key.toLowerCase()==='p'){ e.preventDefault(); togglePause(); }
 });
 
 
@@ -3646,7 +4415,8 @@ function runBoot() {
 }
 
 function showIntro() {
-  $show('intro','flex');
+  // Now goes to mode select instead of straight to intro
+  showModeSelect();
 }
 
 let _bootSkipped = false;

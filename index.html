@@ -598,6 +598,79 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
   .av-opt.txt{width:auto;height:38px;}
 }
 
+/* ── STORY MODE ── */
+.story-overlay{position:fixed;inset:0;z-index:6500;background:rgba(0,0,0,.92);
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:20px;}
+.story-overlay.show{display:flex;animation:popIn .35s ease;}
+.story-box{max-width:680px;width:100%;background:linear-gradient(180deg,var(--s2),var(--s1));
+  border:1px solid var(--b2);border-radius:var(--r3);padding:34px 32px;
+  box-shadow:0 30px 80px rgba(0,0,0,.8),0 0 60px rgba(29,214,196,.1);position:relative;}
+.story-chapter{font-family:var(--font-m);font-size:10px;letter-spacing:.5em;color:var(--gold2);
+  text-transform:uppercase;margin-bottom:8px;}
+.story-title{font-family:var(--font-hero);font-size:34px;font-weight:900;color:var(--t1);margin-bottom:18px;
+  line-height:1.1;letter-spacing:-.01em;}
+.story-scene{display:flex;gap:18px;align-items:flex-start;margin-bottom:20px;
+  background:rgba(0,0,0,.3);padding:18px;border-radius:var(--r2);border-left:3px solid var(--teal2);}
+.story-portrait{width:80px;height:80px;border-radius:50%;background:var(--s3);
+  border:2px solid var(--teal2);overflow:hidden;flex-shrink:0;}
+.story-portrait svg{width:100%;height:100%;}
+.story-speech{flex:1;}
+.story-name{font-family:var(--font-h);font-size:14px;font-weight:900;color:var(--teal3);
+  margin-bottom:4px;letter-spacing:.05em;text-transform:uppercase;}
+.story-role{font-family:var(--font-m);font-size:9px;color:var(--t3);letter-spacing:.15em;
+  text-transform:uppercase;margin-bottom:10px;}
+.story-line{font-size:14px;line-height:1.6;color:var(--t1);font-style:italic;min-height:60px;}
+.story-line::before{content:'"';color:var(--teal3);font-size:24px;margin-right:4px;font-style:normal;opacity:.6;}
+.story-line::after{content:'"';color:var(--teal3);font-size:24px;margin-left:4px;font-style:normal;opacity:.6;}
+.story-choices{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.story-choice{background:var(--s2);border:1px solid var(--b2);color:var(--t1);
+  padding:13px 18px;text-align:left;border-radius:var(--r);font-family:var(--font-b);font-size:13px;
+  cursor:pointer;transition:all .2s;}
+.story-choice:hover{background:var(--s3);border-color:var(--teal3);transform:translateX(4px);}
+.story-effects{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.story-eff{font-family:var(--font-m);font-size:9px;padding:2px 6px;border-radius:3px;
+  background:rgba(0,0,0,.4);color:var(--t2);}
+.story-eff.pos{color:var(--green3);}
+.story-eff.neg{color:var(--crimson3);}
+.story-continue{margin-top:18px;width:100%;background:var(--teal2);color:#000;border:none;
+  padding:13px;border-radius:var(--r);font-family:var(--font-h);font-weight:900;
+  font-size:13px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;}
+.story-continue:hover{background:var(--teal3);}
+
+/* Chapter banner during play */
+.chapter-banner{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:500;
+  background:rgba(0,0,0,.85);border:1px solid var(--gold2);border-radius:30px;
+  padding:8px 22px;font-family:var(--font-m);font-size:10px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--gold2);animation:fadeDown .4s ease;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);pointer-events:none;}
+.chapter-banner.fade{opacity:0;transition:opacity .8s;}
+
+/* ── NPC ROSTER ── */
+.npc-btn{background:var(--b1);color:var(--t2);border:1px solid var(--b2);
+  padding:5px 12px;border-radius:var(--r);font-family:var(--font-m);font-size:9px;
+  letter-spacing:.1em;text-transform:uppercase;cursor:pointer;}
+.npc-btn:hover{color:var(--teal3);border-color:var(--teal2);}
+.npc-btn .badge{display:inline-block;background:var(--crimson2);color:#fff;
+  border-radius:9px;padding:0 5px;font-size:8px;margin-left:5px;font-weight:900;}
+.npc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
+.npc-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);
+  padding:18px;display:flex;gap:14px;align-items:flex-start;position:relative;}
+.npc-card.locked{opacity:.4;}
+.npc-card.locked::after{content:'🔒 LOCKED';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);font-family:var(--font-m);font-size:11px;color:var(--t3);
+  letter-spacing:.2em;background:rgba(0,0,0,.7);padding:5px 12px;border-radius:4px;}
+.npc-port{width:64px;height:64px;border-radius:50%;background:var(--s3);
+  border:2px solid var(--b2);overflow:hidden;flex-shrink:0;}
+.npc-port svg{width:100%;height:100%;}
+.npc-info{flex:1;min-width:0;}
+.npc-name{font-family:var(--font-h);font-size:14px;font-weight:900;color:var(--t1);margin-bottom:2px;}
+.npc-role{font-family:var(--font-m);font-size:9px;color:var(--teal3);text-transform:uppercase;
+  letter-spacing:.15em;margin-bottom:8px;}
+.npc-rel-bar{height:6px;background:var(--b1);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.npc-rel-fill{height:100%;transition:width .8s,background .4s;}
+.npc-rel-lbl{font-family:var(--font-m);font-size:9px;color:var(--t2);display:flex;justify-content:space-between;}
+.npc-bio{font-size:10px;color:var(--t3);line-height:1.5;margin-top:8px;font-style:italic;}
+
 /* Splash boot polish */
 .boot-skip{position:fixed;top:14px;right:14px;background:rgba(0,0,0,.4);border:1px solid var(--b2);
   color:var(--t2);padding:6px 14px;border-radius:20px;font-family:var(--font-m);font-size:10px;
@@ -696,6 +769,7 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
     <div id="streak-display" class="cold">— streak</div>
     <div id="case-progress">0 / 70 cases</div>
     <button id="sound-toggle" class="on" onclick="toggleSound()">🔊 SFX</button>
+    <button class="npc-btn" onclick="openNPCRoster()">👥 Team <span id="npc-badge" class="badge" style="display:none">!</span></button>
     <button class="tb-help-btn" onclick="document.getElementById('tips-overlay').style.display='flex'">? Help</button>
   </div>
   <div id="maingrid">
@@ -867,6 +941,35 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
     <div class="ov-title" id="cr-title">Patient Case</div>
     <div id="cr-content"></div>
     <button class="btn-ack" onclick="document.getElementById('ov-case-review').style.display='none';OV_OPEN=false;">Close</button>
+  </div>
+</div>
+
+<!-- ═══ STORY OVERLAY ═══ -->
+<div class="story-overlay" id="story-overlay">
+  <div class="story-box">
+    <div class="story-chapter" id="story-chapter">CHAPTER 1</div>
+    <div class="story-title" id="story-title">The First Rotation</div>
+    <div class="story-scene" id="story-scene">
+      <div class="story-portrait" id="story-portrait"></div>
+      <div class="story-speech">
+        <div class="story-name" id="story-name">—</div>
+        <div class="story-role" id="story-role">—</div>
+        <div class="story-line" id="story-line">…</div>
+      </div>
+    </div>
+    <div class="story-choices" id="story-choices"></div>
+    <button class="story-continue" id="story-continue" onclick="storyContinue()">Continue ›</button>
+  </div>
+</div>
+
+<!-- ═══ NPC ROSTER ═══ -->
+<div class="overlay" id="ov-npc-roster">
+  <div class="ov-box" style="max-width:780px">
+    <div class="ov-score-banner" style="background:var(--teal2);color:#000;">YOUR TEAM</div>
+    <div class="ov-title">Hospital Roster</div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:16px;">Build relationships through your clinical decisions. Some colleagues respect competence; others value ethics and rapport.</div>
+    <div class="npc-grid" id="npc-grid"></div>
+    <button class="btn-ack" style="margin-top:18px;" onclick="closeNPCRoster()">Close</button>
   </div>
 </div>
 
@@ -1955,6 +2058,345 @@ function buildAvatarUI(){
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// STORY MODE — chapters, NPCs, relationships
+// ══════════════════════════════════════════════════════════
+const NPCS = {
+  patel: {
+    name:'Dr. Anita Patel', role:'Mentor · Attending',
+    bio:'Twenty years of internal medicine. Patient and incisive. Believes the chart never lies, but the patient sometimes does.',
+    sex:'F', skin:2, hair:0, scrub:0, acc:1,
+    unlockChapter:1,
+    likes:['acumen','beneficence','nonmalef'],
+    dislikes:['legal'],
+    color:'#1dd6c4'
+  },
+  rivera: {
+    name:'Nurse Elena Rivera', role:'Charge Nurse',
+    bio:'Sees everything. Knows every chart by heart. Will protect her patients from a doctor with the wrong instinct — quietly, then loudly.',
+    sex:'F', skin:3, hair:1, scrub:3, acc:0,
+    unlockChapter:1,
+    likes:['rapport','beneficence','autonomy'],
+    dislikes:['legal'],
+    color:'#66bb6a'
+  },
+  vance: {
+    name:'Dr. Marcus Vance', role:'Rival · Trauma Surgeon',
+    bio:'Decisive. Arrogant. Statistically the best surgeon in the building, and never lets anyone forget it. Respects results, despises hesitation.',
+    sex:'M', skin:1, hair:2, scrub:2, acc:0,
+    unlockChapter:2,
+    likes:['acumen'],
+    dislikes:['burnout'],
+    color:'#ef5350'
+  },
+  okafor: {
+    name:'Dr. Adaeze Okafor', role:'Pediatrics',
+    bio:'The kindest hands in the hospital. Will stop you in the hall to talk about a parent she met in 1998 and how their kid is doing now.',
+    sex:'F', skin:5, hair:0, scrub:4, acc:0,
+    unlockChapter:3,
+    likes:['rapport','beneficence','autonomy'],
+    dislikes:['legal','burnout'],
+    color:'#9575cd'
+  },
+  kim: {
+    name:'Sarah Kim, MS-3', role:'Your Student',
+    bio:'Looks at you the way you used to look at Dr. Patel. Takes notes when you explain things. Will become one of the best — if you teach her well.',
+    sex:'F', skin:0, hair:0, scrub:1, acc:1,
+    unlockChapter:4,
+    likes:['acumen','justice','rapport'],
+    dislikes:['legal'],
+    color:'#f5a623'
+  },
+};
+
+const CHAPTERS = [
+  { id:1, name:'The First Rotation', sub:'MS-4 · Sub-Internship', threshold:0,
+    rank:'MS-4', desc:'You are a fourth-year medical student. Today you take your first real call.' },
+  { id:2, name:'Internship',        sub:'PGY-1',                    threshold:8,
+    rank:'Intern', desc:'You are an intern. The decisions are yours now. The hospital does not slow down for you.' },
+  { id:3, name:'The Long Year',     sub:'PGY-2',                    threshold:20,
+    rank:'Resident', desc:'You are a junior resident. Other people look to you. Some of them are sicker than they look.' },
+  { id:4, name:'Senior Year',       sub:'PGY-3 · Chief Resident',   threshold:35,
+    rank:'Senior Resident', desc:'You teach now. The students copy your habits — including the bad ones.' },
+  { id:5, name:'Attending',         sub:'Board-Certified',          threshold:55,
+    rank:'Attending', desc:'You are the attending. The buck stops here. Nobody is coming to save you, or them.' },
+];
+
+// Story / NPC state lives on GS and persists
+function initStory(){
+  GS.story = {
+    chapter:1,
+    relationships:{},
+    queuedScenes:[],
+    seenScenes:{},
+    introsShown:{}
+  };
+  Object.keys(NPCS).forEach(k => GS.story.relationships[k] = 50);
+}
+
+function getRel(npc){ return GS.story?.relationships?.[npc] ?? 50; }
+function adjustRel(npc, delta, reason){
+  if(!GS.story) return;
+  const before = GS.story.relationships[npc] ?? 50;
+  const after = Math.max(0, Math.min(100, before + delta));
+  GS.story.relationships[npc] = after;
+  if(Math.abs(delta) >= 3){
+    GS.log.push(`[${NPCS[npc].name.split(' ').slice(-1)}] ${delta>0?'+':''}${delta} respect${reason?' — '+reason:''}`);
+  }
+}
+
+function npcUnlocked(npc){
+  return (GS.story?.chapter || 1) >= NPCS[npc].unlockChapter;
+}
+
+// Apply relationship changes based on case outcome
+function updateNPCsFromCase(p, act, score){
+  if(!GS.story) return;
+  const cat = p.cat || 'clinical';
+  const isBest = score === 4;
+  const isHarm = score === 0;
+  // Patel: rewards clinical acumen + safe practice
+  if(npcUnlocked('patel')){
+    if(isBest) adjustRel('patel', +3);
+    if(isHarm) adjustRel('patel', -5, 'patient harm');
+    if(act.fx?.beneficence) adjustRel('patel', +1);
+  }
+  // Rivera: rewards rapport, hates legal mess
+  if(npcUnlocked('rivera')){
+    if(act.fx?.rapport > 0) adjustRel('rivera', +2);
+    if(act.fx?.legal > 0) adjustRel('rivera', -3);
+    if(cat === 'ethics' && isBest) adjustRel('rivera', +3);
+  }
+  // Vance: respects competence, dislikes consults
+  if(npcUnlocked('vance')){
+    if(isBest && (p.tags||[]).includes('surg')) adjustRel('vance', +4);
+    if(isHarm) adjustRel('vance', -6, 'incompetence');
+    if(p.consulted) adjustRel('vance', -2, 'asked for help');
+    if(cat === 'ethics' && isBest) adjustRel('vance', -1);
+  }
+  // Okafor: peds and gentle care
+  if(npcUnlocked('okafor')){
+    if((p.tags||[]).includes('peds') && isBest) adjustRel('okafor', +5);
+    if(act.fx?.rapport > 0) adjustRel('okafor', +1);
+    if(isHarm) adjustRel('okafor', -4);
+  }
+  // Kim: copies you. Best choices teach her well
+  if(npcUnlocked('kim')){
+    if(isBest) adjustRel('kim', +3);
+    if(isHarm) adjustRel('kim', -3, 'she is watching');
+    if(score === 2 || score === 3) adjustRel('kim', +1);
+  }
+}
+
+// Chapter advancement
+function checkChapter(){
+  if(!GS.story) return;
+  const cases = GS.casesTotal || 0;
+  for(let i = CHAPTERS.length-1; i >= 0; i--){
+    if(cases >= CHAPTERS[i].threshold && GS.story.chapter < CHAPTERS[i].id){
+      GS.story.chapter = CHAPTERS[i].id;
+      showChapterIntro(CHAPTERS[i]);
+      return;
+    }
+  }
+}
+
+function showChapterBanner(text){
+  const old = document.getElementById('chapter-banner');
+  if(old) old.remove();
+  const b = document.createElement('div');
+  b.className = 'chapter-banner';
+  b.id = 'chapter-banner';
+  b.textContent = text;
+  document.body.appendChild(b);
+  setTimeout(()=>{ b.classList.add('fade'); setTimeout(()=>b.remove(), 900); }, 3200);
+}
+
+// ── Story scene playback ──
+let _currentScene = null;
+let _sceneQueue = [];
+
+function queueScene(scene){ _sceneQueue.push(scene); maybePlayNext(); }
+function maybePlayNext(){
+  if(_currentScene || OV_OPEN) return;
+  const sc = _sceneQueue.shift();
+  if(!sc) return;
+  playScene(sc);
+}
+
+function playScene(scene){
+  _currentScene = scene;
+  OV_OPEN = true;
+  const npc = NPCS[scene.npc];
+  const ov = document.getElementById('story-overlay');
+  document.getElementById('story-chapter').textContent = scene.chapterLabel || `Chapter ${GS.story.chapter}`;
+  document.getElementById('story-title').textContent = scene.title || '';
+  document.getElementById('story-name').textContent = npc.name;
+  document.getElementById('story-role').textContent = npc.role;
+  document.getElementById('story-portrait').innerHTML = svgDoctor(npc, {id:'sc'+Date.now(), alwaysSteth: scene.npc!=='kim'});
+  document.getElementById('story-line').textContent = scene.line;
+  const choicesEl = document.getElementById('story-choices');
+  const contBtn = document.getElementById('story-continue');
+  if(scene.choices && scene.choices.length){
+    contBtn.style.display = 'none';
+    choicesEl.innerHTML = scene.choices.map((c,i)=>{
+      const effs = (c.effects||[]).map(e=>`<span class="story-eff ${e.delta>0?'pos':e.delta<0?'neg':''}">${e.label}${e.delta?' '+(e.delta>0?'+':'')+e.delta:''}</span>`).join('');
+      return `<button class="story-choice" onclick="storyChoose(${i})">${c.text}${effs?'<div class="story-effects">'+effs+'</div>':''}</button>`;
+    }).join('');
+  } else {
+    choicesEl.innerHTML = '';
+    contBtn.style.display = 'block';
+  }
+  ov.classList.add('show');
+  playTone(440, 0.08, 0.04, 'sine');
+}
+
+function storyChoose(i){
+  if(!_currentScene) return;
+  const ch = _currentScene.choices[i];
+  if(ch.effects){
+    ch.effects.forEach(e => {
+      if(e.npc) adjustRel(e.npc, e.delta||0);
+      if(e.metric && GS.metrics[e.metric]!=null){
+        GS.metrics[e.metric] = Math.max(0, Math.min(100, GS.metrics[e.metric] + (e.delta||0)));
+      }
+      if(e.xp) GS.xp += e.xp;
+    });
+  }
+  storyContinue();
+}
+
+function storyContinue(){
+  document.getElementById('story-overlay').classList.remove('show');
+  _currentScene = null;
+  OV_OPEN = false;
+  renderAll();
+  setTimeout(maybePlayNext, 250);
+}
+
+// Chapter intros
+function showChapterIntro(ch){
+  const cinematicNpcs = ['patel','patel','patel','okafor','patel'];
+  const npc = cinematicNpcs[ch.id-1] || 'patel';
+  const lines = {
+    1: 'Welcome to Sacred Heart. The chart over there is your first patient. Trust the data. Trust the patient more. And when both lie, trust your own eyes.',
+    2: 'You have an MD now. Congratulations. That means when something goes wrong tonight, it goes wrong on your watch. Don\'t freeze.',
+    3: 'You are not a student anymore. The intern below you is going to make a mistake today. Catch it. Teach without humiliating. That\'s the job.',
+    4: 'Sarah Kim is shadowing you this rotation. She will copy your habits. Pick which ones you want her to keep.',
+    5: 'You are the attending. There is no one above you on the ladder anymore. Your judgement is the final word. Wear it well.'
+  };
+  queueScene({
+    npc,
+    title: ch.name,
+    chapterLabel: `CHAPTER ${ch.id} — ${ch.sub}`,
+    line: lines[ch.id]
+  });
+  showChapterBanner(`Chapter ${ch.id} · ${ch.name}`);
+  if(typeof CAREER === 'object'){
+    // store career chapter
+    CAREER.maxChapter = Math.max(CAREER.maxChapter||1, ch.id);
+    if(typeof saveCareerData === 'function') saveCareerData();
+  }
+}
+
+// Interludes between cases — milestone NPC reactions
+const NPC_LINES = {
+  patel: {
+    streak3: ['Nice work back there. Keep your head down and keep moving.', 'Three in a row. You\'re finding your rhythm.'],
+    badStreak: ['Take a breath. The next chart is not the last one. Reset.', 'You\'re rushing. Slow down. The patient hasn\'t moved.'],
+    chapter2: ['You don\'t hesitate anymore. Good.'],
+    highRel: ['I trust your judgement now. That used to take ten years.'],
+    lowRel: ['I think you and I need to have a conversation about what we owe these patients.']
+  },
+  rivera: {
+    streak3: ['Doc. Family in 4 wants to know who you are. They\'ve been asking.', 'I told 2B you\'d come back. Don\'t make a liar of me.'],
+    badStreak: ['Doc. Hey. Look at me. Eyes off the screen. Reset.', 'You\'re not on tonight. Take five.'],
+    chapter2: ['Look at you. An actual doctor now. Took you long enough.'],
+    highRel: ['Page me first when something\'s wrong. Always. We\'re a team.'],
+    lowRel: ['I\'m noting this in the chart, Doctor. You should know that.']
+  },
+  vance: {
+    streak3: ['Hmf. Not bad. Don\'t get comfortable.', 'You\'re getting somewhere. Keep cutting.'],
+    badStreak: ['This is why I don\'t take consults from medicine.', 'You should be embarrassed.'],
+    chapter3: ['You\'ve stopped flinching. That\'s the first thing.'],
+    highRel: ['If you ever want to scrub in, I\'ll consider it.'],
+    lowRel: ['Stay out of my OR.']
+  },
+  okafor: {
+    streak3: ['The little one in room 8 drew you a picture. Take it home.'],
+    badStreak: ['Be gentle with yourself today. The work doesn\'t care, but I do.'],
+    highRel: ['You handle the families beautifully. That\'s a gift you can\'t teach.'],
+    lowRel: ['Children remember how a doctor made them feel. Even the ones who don\'t survive.']
+  },
+  kim: {
+    streak3: ['Doc — that was incredible. I\'m putting it in my notes.', 'How did you know to do that? Walk me through it.'],
+    badStreak: ['Should I be writing this one down too, doctor?', 'Doctor — are you okay?'],
+    highRel: ['I want to be the kind of doctor you are.'],
+    lowRel: ['I don\'t think I want to do internal medicine anymore.']
+  }
+};
+
+function pickLine(npc, key){
+  const arr = (NPC_LINES[npc]||{})[key];
+  if(!arr || !arr.length) return null;
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+let _interludeCooldown = 0;
+function tryInterlude(score){
+  if(!GS.story) return;
+  _interludeCooldown--;
+  if(_interludeCooldown > 0) return;
+  // Decide which NPC speaks
+  const candidates = Object.keys(NPCS).filter(npcUnlocked);
+  if(!candidates.length) return;
+  let lineKey = null;
+  if(_streak >= 3) lineKey = 'streak3';
+  else if(_streak <= -2 || score === 0) lineKey = 'badStreak';
+  if(!lineKey) return;
+  // Pick npc with strongest interest
+  candidates.sort(()=>Math.random()-0.5);
+  for(const k of candidates){
+    const line = pickLine(k, lineKey);
+    if(line){
+      queueScene({ npc:k, title:'', chapterLabel:`CHAPTER ${GS.story.chapter}`, line });
+      _interludeCooldown = 4;
+      return;
+    }
+  }
+}
+
+// NPC Roster modal
+function openNPCRoster(){
+  if(!GS || !GS.story){ return; }
+  OV_OPEN = true;
+  const grid = document.getElementById('npc-grid');
+  grid.innerHTML = Object.keys(NPCS).map(k=>{
+    const n = NPCS[k];
+    const unlocked = npcUnlocked(k);
+    const rel = getRel(k);
+    const status = rel>=80?'Devoted':rel>=60?'Friendly':rel>=40?'Neutral':rel>=20?'Distant':'Hostile';
+    const col = rel>=60?'var(--green2)':rel>=40?'var(--gold2)':'var(--crimson2)';
+    return `<div class="npc-card ${unlocked?'':'locked'}">
+      <div class="npc-port">${unlocked?svgDoctor(n,{id:'np'+k,alwaysSteth:k!=='rivera'&&k!=='kim'}):''}</div>
+      <div class="npc-info">
+        <div class="npc-name">${unlocked?n.name:'???'}</div>
+        <div class="npc-role">${unlocked?n.role:'Locked'}</div>
+        ${unlocked?`<div class="npc-rel-bar"><div class="npc-rel-fill" style="width:${rel}%;background:${col};"></div></div>
+        <div class="npc-rel-lbl"><span>${status}</span><span>${rel}/100</span></div>
+        <div class="npc-bio">${n.bio}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('ov-npc-roster').style.display = 'flex';
+  const badge = document.getElementById('npc-badge');
+  if(badge) badge.style.display = 'none';
+}
+function closeNPCRoster(){
+  document.getElementById('ov-npc-roster').style.display = 'none';
+  OV_OPEN = false;
+}
+
 function initApp() {
   // Load previous career data if exists
   loadCareerData();
@@ -2000,8 +2442,11 @@ function startGame(specId) {
   };
   // Initialize career tracking
   initCareer();
+  initStory();
   OV_OPEN = false;
   _streak = 0; _maxStreak = 0;
+  // Show opening chapter intro after a beat
+  setTimeout(()=>{ showChapterIntro(CHAPTERS[0]); }, 800);
   document.title = `The Ward · ${dn} @ ${hn}`;
   $hide('intro');
   $show('game','flex');
@@ -2376,6 +2821,19 @@ function showOutcomeOv(act,best,xp,patient){
 function closeOutcomeOv(){
   $hide('ov-outcome');
   OV_OPEN=false;
+  // Story hooks based on last case
+  if(_lastCaseData && _lastCaseData.patient && !_lastCaseData._storyConsumed && GS.story){
+    _lastCaseData._storyConsumed = true;
+    updateNPCsFromCase(_lastCaseData.patient, _lastCaseData.chosenAction, _lastCaseData.score);
+    tryInterlude(_lastCaseData.score);
+    checkChapter();
+    // Show notification badge on NPC button when relationship hits milestones
+    const badge = document.getElementById('npc-badge');
+    if(badge){
+      const someBig = Object.keys(NPCS).filter(npcUnlocked).some(k=>getRel(k)>=80||getRel(k)<=20);
+      badge.style.display = someBig ? 'inline-block' : 'none';
+    }
+  }
   checkPromotions(); checkGameOver(); renderAll();
 }
 

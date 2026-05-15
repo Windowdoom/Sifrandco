@@ -671,6 +671,59 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 .npc-rel-lbl{font-family:var(--font-m);font-size:9px;color:var(--t2);display:flex;justify-content:space-between;}
 .npc-bio{font-size:10px;color:var(--t3);line-height:1.5;margin-top:8px;font-style:italic;}
 
+/* ── FLOOR MAP ── */
+.floor-map{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.floor-tab{background:var(--s2);border:1px solid var(--b2);color:var(--t2);padding:10px 8px;
+  border-radius:var(--r);cursor:pointer;text-align:center;font-family:var(--font-m);font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;transition:all .2s;}
+.floor-tab:hover{background:var(--s3);color:var(--t1);}
+.floor-tab.active{background:var(--teal2);color:#000;border-color:var(--teal3);font-weight:900;}
+.floor-tab .ico{font-size:20px;display:block;margin-bottom:4px;}
+.floor-rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+.floor-room{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:14px;
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.floor-room:hover{background:var(--s3);border-color:var(--teal2);transform:translateY(-2px);}
+.floor-room.empty{opacity:.4;cursor:default;}
+.floor-room.empty:hover{transform:none;border-color:var(--b1);}
+.fr-hd{font-family:var(--font-h);font-size:13px;font-weight:900;color:var(--t1);margin-bottom:4px;display:flex;justify-content:space-between;}
+.fr-cap{font-family:var(--font-m);font-size:9px;color:var(--teal3);letter-spacing:.15em;text-transform:uppercase;}
+.fr-bed{font-family:var(--font-m);font-size:10px;color:var(--t3);margin-top:6px;}
+.fr-pulse{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--crimson3);animation:pulseRed 1.2s infinite;}
+
+/* ── CAREER CHART ── */
+.career-chart-wrap{padding:6px 0;}
+.cc-section{margin-bottom:22px;}
+.cc-section-hd{font-family:var(--font-h);font-size:13px;font-weight:900;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--gold2);margin-bottom:10px;border-bottom:1px solid var(--b1);padding-bottom:6px;}
+.cc-clerkships{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;}
+.cc-clerk{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:11px;text-align:center;position:relative;}
+.cc-clerk.passed{border-color:var(--green2);background:rgba(26,74,34,.18);}
+.cc-clerk.honors{border-color:var(--gold2);background:rgba(122,76,0,.2);}
+.cc-clerk.failed{border-color:var(--crimson2);opacity:.7;}
+.cc-clerk-name{font-family:var(--font-h);font-size:11px;font-weight:900;color:var(--t1);}
+.cc-clerk-status{font-family:var(--font-m);font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);margin-top:3px;}
+.cc-clerk.honors .cc-clerk-status{color:var(--gold3);}
+.cc-clerk.passed .cc-clerk-status{color:var(--green3);}
+.cc-clerk-bar{height:4px;background:var(--b1);border-radius:2px;margin-top:6px;overflow:hidden;}
+.cc-clerk-fill{height:100%;background:linear-gradient(90deg,var(--teal2),var(--teal3));transition:width .8s;}
+.cc-research{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;}
+.cc-paper{background:var(--s2);border-left:3px solid var(--purple2);border-radius:var(--r);padding:10px 12px;}
+.cc-paper-title{font-family:var(--font-b);font-size:11px;color:var(--t1);margin-bottom:2px;line-height:1.3;}
+.cc-paper-jrnl{font-family:var(--font-m);font-size:8px;letter-spacing:.1em;color:var(--purple3);text-transform:uppercase;}
+.cc-paper.locked{opacity:.4;border-left-color:var(--b2);}
+.cc-prof{display:flex;gap:10px;align-items:center;padding:10px;background:var(--s2);border-radius:var(--r);margin-bottom:6px;}
+.cc-prof-port{width:42px;height:42px;border-radius:50%;background:var(--s3);border:1px solid var(--b2);overflow:hidden;flex-shrink:0;}
+.cc-prof-port svg{width:100%;height:100%;}
+.cc-prof-info{flex:1;}
+.cc-prof-name{font-family:var(--font-h);font-size:12px;font-weight:900;}
+.cc-prof-blurb{font-size:10px;color:var(--t3);font-style:italic;}
+.cc-prof-meter{font-family:var(--font-m);font-size:10px;color:var(--gold2);font-weight:700;}
+
+.cc-trans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.cc-trans-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:10px;}
+.cc-trans-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;}
+.cc-trans-val{font-family:var(--font-hero);font-size:22px;font-weight:900;color:var(--t1);}
+
 /* Splash boot polish */
 .boot-skip{position:fixed;top:14px;right:14px;background:rgba(0,0,0,.4);border:1px solid var(--b2);
   color:var(--t2);padding:6px 14px;border-radius:20px;font-family:var(--font-m);font-size:10px;
@@ -767,9 +820,11 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
     <div class="tb-shift" id="tb-shift">Day 1</div>
     <div class="tb-metrics" id="tb-metrics"></div>
     <div id="streak-display" class="cold">— streak</div>
-    <div id="case-progress">0 / 70 cases</div>
+    <div id="case-progress">0 cases</div>
     <button id="sound-toggle" class="on" onclick="toggleSound()">🔊 SFX</button>
     <button class="npc-btn" onclick="openNPCRoster()">👥 Team <span id="npc-badge" class="badge" style="display:none">!</span></button>
+    <button class="npc-btn" onclick="openFloorMap()">🏥 Floor</button>
+    <button class="npc-btn" onclick="openCareerChart()">📜 Career</button>
     <button class="tb-help-btn" onclick="document.getElementById('tips-overlay').style.display='flex'">? Help</button>
   </div>
   <div id="maingrid">
@@ -970,6 +1025,28 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
     <div style="font-size:12px;color:var(--t2);margin-bottom:16px;">Build relationships through your clinical decisions. Some colleagues respect competence; others value ethics and rapport.</div>
     <div class="npc-grid" id="npc-grid"></div>
     <button class="btn-ack" style="margin-top:18px;" onclick="closeNPCRoster()">Close</button>
+  </div>
+</div>
+
+<!-- ═══ FLOOR MAP ═══ -->
+<div class="overlay" id="ov-floor">
+  <div class="ov-box" style="max-width:780px">
+    <div class="ov-score-banner" style="background:var(--blue2);color:#fff;">HOSPITAL DIRECTORY</div>
+    <div class="ov-title">Floor Navigation</div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:16px;">Move between floors to bias which patients you triage next. Each floor draws cases from its specialty pool.</div>
+    <div class="floor-map" id="floor-map"></div>
+    <div class="floor-rooms" id="floor-rooms"></div>
+    <button class="btn-ack" style="margin-top:18px;" onclick="closeFloorMap()">Close</button>
+  </div>
+</div>
+
+<!-- ═══ CAREER CHART ═══ -->
+<div class="overlay" id="ov-careerchart">
+  <div class="ov-box" style="max-width:820px">
+    <div class="ov-score-banner" style="background:var(--gold2);color:#000;">ACADEMIC RECORD</div>
+    <div class="ov-title">Career Transcript</div>
+    <div class="career-chart-wrap" id="career-chart-wrap"></div>
+    <button class="btn-ack" style="margin-top:18px;" onclick="closeCareerChart()">Close</button>
   </div>
 </div>
 
@@ -1603,6 +1680,61 @@ const DB = [
 ,{id:"surrogate",tags:["psych","im","ethics"],name:"",age:85,sex:"M",initHealth:30,diff:2,cat:"ethics",loc:"Ward",steps:[{hpi:"85-year-old with advanced dementia and no documented advance directive. Currently in septic shock. Surrogate (his daughter) is requesting 'everything be done.' The palliative care team assesses his baseline function as complete dependence, no communication.",actions:[{text:"Engage surrogate in values-based conversation. Goals of care discussion. Ethics committee if impasse.",score:4,fx:{justice:+25,rapport:+20},nxt:"discharge",log:"Surrogate consulted. Goals-of-care discussion performed.",outTitle:"Goals Clarified",outDesc:"A family meeting revealed that the patient had previously stated 'I never want to be kept alive by machines' to his daughter multiple times. She withdrew the escalation request and elected comfort-focused care.",pearl:"Surrogate decision-making: Surrogates should apply 'substituted judgment' (what would the patient want?), not their own preferences. Goals-of-care conversations that explore prior patient values are essential. Ethics committee for unresolvable conflicts."},{text:"Honor the surrogate's request for full escalation — she has authority.",score:1,fx:{justice:+5,autonomy:-10},nxt:"discharge",log:"Surrogate authority respected but without exploring patient values.",ifNotBest:"While surrogates have legal authority, good practice requires exploring patient values through them, not just deferring to surrogate preferences.",pearl:"Surrogate authority doesn't mean doing whatever the surrogate wants — they must apply the patient's values, not their own."}]}]}
 ,{id:"resource_allocation",tags:["icu","ethics","im"],name:"",age:45,sex:"M",initHealth:50,diff:3,cat:"ethics",loc:"Ward",steps:[{hpi:"Mass casualty event. You have one ICU ventilator available. Two patients need it: (A) 45-year-old previously healthy with treatable respiratory failure from trauma — high survival probability. (B) 75-year-old with metastatic cancer, sepsis — poor prognosis.",actions:[{text:"Allocate the ventilator to Patient A using established crisis standards of care principles (best expected outcome, age-neutral scoring).",score:4,fx:{justice:+30,beneficence:+15},nxt:"discharge",log:"Crisis standards applied. Ventilator allocated to patient with best prognosis.",outTitle:"Crisis Standards Applied",outDesc:"Following crisis standards of care protocols, the scoring system prioritized Patient A based on predicted survival benefit. Patient B was provided maximal comfort care. Decisions were documented thoroughly.",pearl:"Crisis standards of care (CSC) activate when demand exceeds supply. Triage principles: maximize overall survival (not first-come, first-served). Systematic scoring tools guide allocation. Document everything. Ethics oversight essential."},{text:"First-come, first-served — Patient B arrived first.",score:0,fx:{justice:-20,nonmalef:-15},nxt:"discharge",log:"First-come-first-served in a mass casualty event is not crisis standard of care.",outTitle:"Suboptimal Allocation",outDesc:"First-come, first-served does not optimize societal benefit in a resource-scarce emergency.",ifNotBest:"First-come, first-served violates crisis standards of care principles, which require allocation based on expected outcome.",pearl:"In resource scarcity, utilitarian principles (greatest good for greatest number) replace individual-centered care."}]}]}
 ,{id:"research_ethics",tags:["im","ethics","psych"],name:"",age:65,sex:"M",initHealth:80,diff:2,cat:"ethics",loc:"Ward",steps:[{hpi:"A pharmaceutical company rep approaches you about enrolling your patient (who has Alzheimer's with moderate cognitive impairment) in a clinical trial for a new drug. The patient nods when you explain the trial. His daughter (healthcare proxy) says 'whatever you think is best.'",actions:[{text:"Assess decision-making capacity formally. If impaired, require proxy consent with additional IRB safeguards for vulnerable population.",score:4,fx:{autonomy:+25,justice:+20},nxt:"discharge",log:"Capacity assessed. Proxy consent with safeguards required for research enrollment.",outTitle:"Research Safeguards Applied",outDesc:"Formal capacity assessment confirmed that the patient lacked the ability to understand, appreciate, reason, and communicate a research decision. The daughter provided proxy consent with IRB oversight.",pearl:"Research with cognitively impaired subjects requires: (1) Formal capacity assessment, (2) Proxy consent from legally authorized representative, (3) IRB safeguards for vulnerable populations, (4) Assent from the patient if possible, (5) Minimal risk unless direct benefit."},{text:"His nod constitutes consent — proceed with enrollment.",score:0,fx:{autonomy:-30,justice:-25,legal:+50},nxt:"discharge",log:"Nodding is not valid informed consent in a cognitively impaired patient.",outTitle:"Invalid Consent",outDesc:"Informed consent requires capacity to understand, appreciate, reason, and communicate. A nod from an Alzheimer's patient does not constitute valid consent.",pearl:"Research consent requires genuine capacity. Moderate-severe Alzheimer's typically precludes autonomous research consent. Proxy consent + IRB oversight is required."}]}]}
+
+// ══════════════════════════════════════════════════════════
+// HIGH-YIELD CASES — neuro / immuno / endo (Step 1/2/3 style)
+// ══════════════════════════════════════════════════════════
+,{id:"hy_xla",tags:["peds","im","immuno"],name:"",age:1,sex:"M",initHealth:55,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"10-month-old boy. Fourth episode of sinopulmonary infection (otitis media, then pneumonia x2, now sinusitis) since maternal antibodies waned at 6 months. Mother's brother died in infancy of 'an infection.' Exam: tonsils and lymph nodes are strikingly small/absent.",vitals:{HR:"128",BP:"96/56",O2:"96"},labs:"CBC: WBC 8.4 (normal differential)\nQuantitative immunoglobulins: IgG 110 (low), IgA <5 (very low), IgM <10 (very low)\nFlow cytometry: B cells <1% (absent), T cells normal\nBTK gene sequencing: pathogenic variant",actions:[{text:"Bruton agammaglobulinemia (XLA). Start lifelong IVIG replacement; avoid live vaccines; counsel family on X-linked inheritance.",score:4,fx:{health:+35,acumen:+22,rapport:+12},nxt:"discharge",log:"XLA: IVIG started. Live vaccines deferred.",outTitle:"XLA Diagnosed",outDesc:"Quantitative immunoglobulins were profoundly low and B cells were absent on flow cytometry. BTK sequencing confirmed Bruton tyrosine kinase deficiency. Monthly IVIG was started.",pearl:"X-Linked Agammaglobulinemia (XLA / Bruton): boys after 6 months of age with recurrent ENCAPSULATED bacterial sinopulmonary infections. Absent B cells, scanty tonsils/nodes. BTK gene defect. Treat with IVIG. Avoid live vaccines."},{text:"Start prophylactic TMP-SMX and reassure that this is normal childhood infection frequency.",score:0,fx:{health:-25,legal:+35},nxt:"discharge",log:"Missed primary immunodeficiency in a male infant with absent B cells.",outTitle:"Diagnosis Missed",outDesc:"Without immunoglobulin replacement, he developed Pseudomonas sepsis at 14 months and required ICU admission.",pearl:"Recurrent sinopulmonary infections + absent lymphoid tissue in a boy after 6 months = humoral immunodeficiency until proven otherwise. Don't accept 'just daycare germs.'"}]}]}
+
+,{id:"hy_hyperigm",tags:["peds","immuno","im"],name:"",age:2,sex:"M",initHealth:55,diff:3,cat:"clinical",loc:"Ward",steps:[{hpi:"2-year-old boy with two episodes of Pneumocystis jirovecii pneumonia and recurrent Cryptosporidium diarrhea. Labs show very low IgG/IgA but markedly elevated IgM (480).",vitals:{HR:"118",BP:"94/58",O2:"94"},labs:"IgG: 80 (low), IgA: <5 (low), IgM: 480 (very high)\nFlow cytometry: T and B cells present but CD40L expression absent on activated CD4 cells",actions:[{text:"Hyper-IgM syndrome (CD40L deficiency). Start TMP-SMX prophylaxis, IVIG replacement, refer for hematopoietic stem cell transplant.",score:4,fx:{health:+35,acumen:+25},nxt:"discharge",log:"Hyper-IgM: prophylaxis + IVIG + HSCT referral.",outTitle:"Hyper-IgM Recognized",outDesc:"Absent CD40L expression on activated CD4 cells confirmed X-linked hyper-IgM. He started PCP prophylaxis, IVIG, and was referred for transplant evaluation.",pearl:"Hyper-IgM syndrome: B cells can't class-switch because CD40L on T cells is defective (X-linked) or CD40 on B cells fails. Resulting in HIGH IgM, LOW IgG/IgA/IgE. Susceptible to PCP, Cryptosporidium, CMV. Treat with prophylaxis, IVIG, and definitively HSCT."},{text:"This looks like XLA — start IVIG and stop investigation.",score:1,fx:{health:+10},nxt:"discharge",log:"Treatment helps but mechanism missed; PCP risk not addressed.",ifNotBest:"IVIG alone won't prevent PCP. The HIGH IgM and OPPORTUNISTIC infections (PCP, Crypto) distinguish hyper-IgM from XLA — and require PCP prophylaxis.",pearl:"Hyper-IgM has HIGH IgM (the only Ig the B cells can still make) plus OPPORTUNISTIC infections (PCP, Crypto, CMV) because CD40L is needed for macrophage activation too. XLA has all immunoglobulins low and bacterial infections only."}]}]}
+
+,{id:"hy_cgd",tags:["peds","immuno","surg"],name:"",age:4,sex:"M",initHealth:50,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"4-year-old boy with recurrent abscesses (skin, liver, lymph nodes). Cultures have grown Staphylococcus aureus, Burkholderia cepacia, and Aspergillus over the past two years. Maternal uncle had similar issues.",vitals:{HR:"110",BP:"92/56",O2:"97",Temp:"100.8"},labs:"DHR (dihydrorhodamine) flow cytometry: ABNORMAL — neutrophils fail to oxidize DHR after stimulation\nNitroblue tetrazolium test: negative (does not turn blue)",actions:[{text:"Chronic granulomatous disease (NADPH oxidase deficiency). Start TMP-SMX + itraconazole prophylaxis and IFN-γ; refer for HSCT.",score:4,fx:{health:+35,acumen:+25},nxt:"discharge",log:"CGD: prophylaxis + IFN-γ.",outTitle:"CGD Confirmed",outDesc:"Abnormal DHR confirmed defective neutrophil oxidative burst. TMP-SMX, itraconazole, and IFN-γ were started. He was referred for transplant.",pearl:"CGD: NADPH oxidase defect → neutrophils can phagocytose but can't kill catalase-POSITIVE organisms (Staph aureus, Serratia, Burkholderia, Nocardia, Aspergillus). Diagnose with DHR/NBT. Treat with TMP-SMX + itraconazole prophylaxis + IFN-γ."},{text:"Recurrent abscesses — try a longer course of IV vancomycin.",score:0,fx:{health:-20,legal:+30},nxt:"discharge",log:"Antibiotics treat the infection but the underlying killing defect remains.",outTitle:"Recurrence Within Weeks",outDesc:"He returned with a hepatic Aspergillus abscess. Failure to recognize the underlying immunodeficiency.",pearl:"Recurrent catalase-positive infections in a boy = CGD until proven otherwise. Diagnose with DHR or NBT."}]}]}
+
+,{id:"hy_digeorge",tags:["peds","immuno"],name:"",age:0,sex:"F",initHealth:45,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"Newborn with hypocalcemic tetany on day 2 of life, conotruncal cardiac defect (truncus arteriosus) on echo, dysmorphic facies (low-set ears, hypertelorism), and absent thymic shadow on chest X-ray.",vitals:{HR:"168",BP:"68/40",O2:"92"},labs:"Calcium: 6.4 (low)\nPTH: undetectable\nAbsolute T cell count: very low\nFISH for 22q11.2 deletion: POSITIVE",actions:[{text:"DiGeorge syndrome (22q11.2 deletion). Correct calcium, repair cardiac defect, irradiate any blood products, avoid live vaccines, consider thymus transplant.",score:4,fx:{health:+35,acumen:+25,rapport:+10},nxt:"discharge",log:"DiGeorge: 22q11.2 deletion confirmed. Multi-system management.",outTitle:"DiGeorge Recognized",outDesc:"Calcium was corrected, cardiac repair was planned, all blood products are now irradiated to prevent graft-vs-host disease, and live vaccines were deferred.",pearl:"DiGeorge (22q11.2 deletion): CATCH-22 — Cardiac defects (truncus, tetralogy), Abnormal facies, Thymic aplasia (T cell deficiency), Cleft palate, Hypocalcemia (parathyroid aplasia). Pharyngeal pouches 3 and 4 fail to form."},{text:"Just correct the calcium and discharge after cardiac repair.",score:0,fx:{health:-20,legal:+25},nxt:"discharge",log:"Missed T cell immunodeficiency. Live vaccines given. GvHD occurred from un-irradiated transfusion.",outTitle:"Fatal Transfusion GvHD",outDesc:"She received un-irradiated pRBCs during cardiac surgery and developed transfusion-associated GvHD.",pearl:"Hypocalcemia + conotruncal cardiac defect + absent thymic shadow = DiGeorge. ALL blood products must be irradiated; NO live vaccines."}]}]}
+
+,{id:"hy_c1inh",tags:["im","immuno","em"],name:"",age:28,sex:"F",initHealth:55,diff:2,cat:"clinical",loc:"Triage",steps:[{hpi:"28-year-old with recurrent episodes of non-pruritic facial and laryngeal swelling, often after dental procedures. Father had similar episodes. Currently has lip and tongue swelling progressing; no urticaria, no wheeze.",vitals:{HR:"108",BP:"122/76",O2:"94"},labs:"C4: critically low\nC1 esterase inhibitor: low quantity AND function\nTryptase: normal",actions:[{text:"Hereditary angioedema. Give C1 esterase inhibitor concentrate (or icatibant / ecallantide). Epinephrine and antihistamines will NOT work.",score:4,fx:{health:+40,acumen:+25},nxt:"discharge",log:"HAE: bradykinin-mediated. C1-INH concentrate given.",outTitle:"Hereditary Angioedema Treated",outDesc:"C1 inhibitor concentrate reversed the angioedema within 30 minutes. Long-term prophylaxis with C1-INH or lanadelumab was arranged.",pearl:"Hereditary angioedema (C1 esterase INHIBITOR deficiency): bradykinin-mediated swelling. NO urticaria (vs anaphylaxis). LOW C4. Treatment: C1-INH concentrate, icatibant (bradykinin receptor antagonist), or ecallantide. Epinephrine/antihistamines do NOT work — wrong mediator."},{text:"This is anaphylaxis — give IM epinephrine, diphenhydramine, and methylprednisolone.",score:0,fx:{health:-25,legal:+30},nxt:"discharge",log:"Anaphylaxis treatment fails — wrong pathway.",outTitle:"Airway Compromise",outDesc:"Anaphylaxis protocol didn't stop the bradykinin-mediated swelling. She required emergent cricothyroidotomy.",pearl:"Angioedema without urticaria + family history = HAE. Bradykinin, not histamine. Histamine drugs (epi/Benadryl/steroids) don't reverse it."}]}]}
+
+,{id:"hy_sle_lupus",tags:["im","immuno"],name:"",age:24,sex:"F",initHealth:60,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"24-year-old Black woman with 3 months of malar rash sparing nasolabial folds, oral ulcers, photosensitivity, fatigue, and bilateral wrist arthritis. No renal involvement yet.",labs:"ANA: 1:640 (homogeneous)\nAnti-dsDNA: positive (highly specific for SLE)\nAnti-Smith: positive (highly specific)\nC3/C4: low\nUrinalysis: bland",actions:[{text:"Diagnose SLE. Start hydroxychloroquine, sunscreen, NSAIDs for arthralgias. Counsel re: pregnancy planning and lupus nephritis surveillance.",score:4,fx:{health:+30,acumen:+20,rapport:+15},nxt:"discharge",log:"SLE diagnosed. Hydroxychloroquine started.",outTitle:"SLE Treated",outDesc:"Hydroxychloroquine reduced flare frequency. She was counseled on photoprotection, pregnancy planning (anti-Ro/La cross placenta), and quarterly UA for early lupus nephritis.",pearl:"SLE diagnosis: anti-dsDNA and anti-Smith are highly SPECIFIC (ANA is sensitive but not specific). Hydroxychloroquine is FOUNDATIONAL therapy in every SLE patient — reduces flares, mortality, organ damage. Drug-induced lupus = anti-histone (procainamide, hydralazine, isoniazid)."},{text:"Order anti-histone antibodies first to confirm drug-induced lupus.",score:1,fx:{health:+5},nxt:"discharge",log:"Wrong subtype workup but no harm done.",ifNotBest:"Anti-histone is for DRUG-INDUCED lupus (older adults on procainamide/hydralazine/INH). A young woman with full SLE picture warrants anti-dsDNA + anti-Smith.",pearl:"Drug-induced lupus: anti-histone (+), usually spares kidneys/CNS, resolves on stopping the drug. Triggers: procainamide, hydralazine, isoniazid, minocycline."}]}]}
+
+,{id:"hy_goodvgpa",tags:["im","immuno","icu"],name:"",age:55,sex:"M",initHealth:35,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"55-year-old man with 2 weeks of nasal crusting, saddle nose deformity, sinusitis, hemoptysis, and hematuria. Creatinine 3.2. CXR: cavitary lung nodules.",vitals:{HR:"104",BP:"160/96",O2:"93"},labs:"c-ANCA (PR3-ANCA): positive\nUrinalysis: RBC casts\nKidney biopsy: pauci-immune crescentic glomerulonephritis",actions:[{text:"Granulomatosis with polyangiitis. Pulse methylprednisolone + rituximab (or cyclophosphamide) for induction. Plasmapheresis for severe renal/pulmonary disease.",score:4,fx:{health:+40,acumen:+28},nxt:"discharge",log:"GPA: induction with steroids + rituximab.",outTitle:"GPA Treated",outDesc:"Induction with steroids and rituximab achieved remission. Creatinine improved to 1.8. Maintenance with rituximab was planned.",pearl:"GPA (formerly Wegener's): UPPER airway (sinuses, saddle nose) + LOWER airway (cavities, hemoptysis) + KIDNEY (pauci-immune RPGN) + c-ANCA/PR3. Goodpasture has NO upper airway involvement and is anti-GBM. EGPA (Churg-Strauss) has ASTHMA + EOSINOPHILIA + p-ANCA."},{text:"Treat as Goodpasture — plasmapheresis only.",score:0,fx:{health:-20,legal:+30},nxt:"discharge",log:"Wrong vasculitis — induction immunosuppression delayed.",outTitle:"Disease Progressed",outDesc:"Without rituximab/cyclophosphamide, the necrotizing granulomatous inflammation continued; he progressed to dialysis.",pearl:"Sinus and nasal involvement DIFFERENTIATES GPA from Goodpasture. Pauci-immune (no Ig deposition) on biopsy vs linear IgG in Goodpasture."}]}]}
+
+,{id:"hy_mcad",tags:["im","immuno"],name:"",age:42,sex:"F",initHealth:65,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"42-year-old woman with 6 months of dry eyes (using artificial tears), dry mouth (taking sips of water during conversation), parotid enlargement, and bilateral arthralgias. Recent finding of mildly elevated alkaline phosphatase and AMA — concerned for overlap.",labs:"Anti-Ro (SSA): positive\nAnti-La (SSB): positive\nSchirmer test: <5mm wetting in 5 min\nLip biopsy: focal lymphocytic sialadenitis (focus score >1)\nAnti-mitochondrial antibody: positive",actions:[{text:"Primary Sjögren syndrome with overlap PBC. Pilocarpine/cevimeline for sicca, hydroxychloroquine for systemic features, ursodeoxycholic acid for PBC. Surveillance for lymphoma (40x risk).",score:4,fx:{health:+25,acumen:+25,rapport:+15},nxt:"discharge",log:"Sjögren + PBC overlap. Symptom control + lymphoma surveillance.",outTitle:"Sjögren Treated",outDesc:"Sicca symptoms improved on pilocarpine. Ursodiol slowed PBC progression. She was counseled about MALT lymphoma risk and to report persistent parotid swelling.",pearl:"Sjögren: anti-Ro (SSA) and anti-La (SSB), focal lymphocytic sialadenitis on lip biopsy. Major complication: 40-fold increased risk of MALT lymphoma in parotid. Anti-Ro also crosses placenta → neonatal lupus and congenital heart block."},{text:"Symptom control only — artificial tears and saline rinses.",score:1,fx:{health:+5},nxt:"discharge",log:"Comfort care but missed long-term risks.",ifNotBest:"Sjögren requires lymphoma surveillance and hydroxychloroquine for systemic features. Symptom-only management misses 40-fold lymphoma risk.",pearl:"Persistent unilateral parotid enlargement in Sjögren → biopsy for MALT lymphoma."}]}]}
+
+,{id:"hy_lateral_medullary",tags:["neuro","em","icu"],name:"",age:62,sex:"M",initHealth:45,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"62-year-old smoker with sudden onset vertigo, nausea, hoarseness, dysphagia, and ipsilateral facial numbness with contralateral body numbness. Exam: right Horner syndrome (ptosis, miosis), right palatal droop, left-sided body pain/temp loss.",vitals:{HR:"92",BP:"168/96",O2:"96"},labs:"MRI: acute infarct of right lateral medulla\nCT angiography: occlusion of right vertebral artery (PICA territory)",actions:[{text:"Lateral medullary (Wallenberg) syndrome from PICA / vertebral occlusion. NPO until swallow eval, antiplatelet, statin, BP titration, neuro ICU monitoring.",score:4,fx:{health:+30,acumen:+28},nxt:"discharge",log:"Wallenberg: NPO, dual antiplatelet, statin, BP management.",outTitle:"Wallenberg Managed",outDesc:"Aspiration was prevented by NPO status until formal swallow study. Antiplatelet and statin reduced recurrence risk. He participated in dysphagia rehab.",pearl:"Lateral medullary (Wallenberg) — PICA: 'don't pick a horse that can eat' → ipsilateral Horner + ipsilateral facial sensory loss + ipsilateral CN IX/X/XI (dysphagia, hoarseness) + contralateral body pain/temp loss. The big aspiration risk is dysphagia — NPO until swallow eval."},{text:"Give tPA — this is an MCA stroke.",score:0,fx:{health:-25,legal:+35},nxt:"discharge",log:"Wrong anatomy and missed eligibility window.",outTitle:"Outside Window, Wrong Vessel",outDesc:"Crossed signs are NOT MCA territory; the vertebrobasilar system was involved. tPA criteria/timing were misjudged.",pearl:"'Crossed findings' (ipsilateral cranial nerve + contralateral body) localize to brainstem, not cortex. Vertebrobasilar = posterior circulation."}]}]}
+
+,{id:"hy_weber",tags:["neuro","em"],name:"",age:70,sex:"M",initHealth:50,diff:2,cat:"clinical",loc:"Triage",steps:[{hpi:"70-year-old with sudden right eye 'down and out' position, ptosis, and dilated pupil + LEFT-sided hemiparesis. No aphasia.",vitals:{HR:"88",BP:"176/100",O2:"97"},labs:"MRI: acute infarct of right midbrain (PCA branch territory)",actions:[{text:"Weber syndrome: midbrain stroke (PCA branch). Ipsilateral CN III palsy + contralateral hemiparesis (corticospinal tract). Acute stroke care + neurology consult.",score:4,fx:{health:+30,acumen:+22},nxt:"discharge",log:"Weber syndrome localized to midbrain.",outTitle:"Weber Identified",outDesc:"MRI confirmed the midbrain lesion. Standard stroke workup ruled out cardioembolic source; antiplatelet/statin/BP optimization were started.",pearl:"Weber = midbrain. Damages CN III nucleus/fascicle (ipsilateral 'down and out' eye + dilated pupil) and the corticospinal tract before decussation (contralateral hemiparesis)."},{text:"Diagnose as CN III compression from posterior communicating artery aneurysm.",score:1,fx:{health:+5,legal:+5},nxt:"discharge",log:"PCom aneurysm is a CRITICAL ALTERNATIVE but the contralateral hemiparesis localizes inside the brainstem.",ifNotBest:"PCom aneurysm gives ISOLATED CN III palsy with pupil involvement; it does NOT give contralateral hemiparesis. Brainstem signs require imaging the brainstem.",pearl:"Pupil-involving CN III palsy in isolation → suspect PCom aneurysm (surgical emergency). Add contralateral hemiparesis → midbrain (Weber)."}]}]}
+
+,{id:"hy_huntington",tags:["neuro","psych","im"],name:"",age:38,sex:"M",initHealth:55,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"38-year-old man with 1 year of personality change (apathy, impulsivity), worsening choreiform movements (fidgety, dance-like), and family history: father died at 50 with dementia and abnormal movements. Mother and siblings well.",labs:"HD gene testing: CAG repeat expansion 46 (>40 = expanded)\nMRI: caudate atrophy with enlarged frontal horns of lateral ventricles",actions:[{text:"Huntington disease. Counsel re: autosomal dominant inheritance (50% to children), refer to multidisciplinary HD clinic, consider tetrabenazine/deutetrabenazine for chorea, treat psychiatric symptoms, genetic counseling for relatives.",score:4,fx:{health:+20,acumen:+25,rapport:+20,autonomy:+15},nxt:"discharge",log:"HD: multidisciplinary care + genetic counseling for at-risk relatives.",outTitle:"HD Disclosed Compassionately",outDesc:"He was connected to the HD center. Genetic counseling was offered to his three children. Tetrabenazine reduced chorea, and SSRI helped depression.",pearl:"Huntington disease: AD, CAG repeats on chromosome 4 (HTT gene), ANTICIPATION (paternal transmission worsens). Caudate atrophy. Triad: chorea + psychiatric (depression, suicidality) + dementia. Tetrabenazine for chorea (depletes dopamine). 50% of children inherit; predictive testing only after extensive counseling."},{text:"Start haloperidol for chorea and discharge with primary care follow-up.",score:1,fx:{health:+5},nxt:"discharge",log:"Symptomatic but missed comprehensive HD care.",ifNotBest:"Haloperidol can help chorea but worsens parkinsonism/depression. Tetrabenazine/deutetrabenazine are preferred. More importantly, this is a hereditary terminal illness — counseling and family planning are essential.",pearl:"HD has a 10% suicide rate. Always screen for depression and suicidality. Predictive testing for at-risk children should not be performed before age 18 or without psychiatric assessment."}]}]}
+
+,{id:"hy_pituitary_apoplexy",tags:["neuro","em","icu","im"],name:"",age:52,sex:"M",initHealth:35,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"52-year-old with sudden severe headache, bitemporal vision loss, diplopia (CN III palsy), nausea, and hypotension refractory to fluids. He's been treated for a known macroadenoma. Sodium 128.",vitals:{HR:"118",BP:"82/48",O2:"96"},labs:"Cortisol: undetectable\nTSH: low\nFT4: low\nProlactin: low (stalk severed — opposite of normal stalk effect)\nMRI: hemorrhagic infarction of pituitary macroadenoma",actions:[{text:"Pituitary apoplexy with adrenal crisis. IMMEDIATE hydrocortisone 100mg IV, then fluids, then thyroid hormone after cortisol. Urgent neurosurgical consult for decompression if vision worsening.",score:4,fx:{health:+45,acumen:+30},nxt:"discharge",log:"Apoplexy: stress-dose steroids FIRST, then T4. Decompression considered.",outTitle:"Apoplexy Managed",outDesc:"Hydrocortisone restored hemodynamics within an hour. Levothyroxine was started AFTER cortisol. Vision improved with steroid-induced edema reduction; surgical decompression was deferred.",pearl:"Pituitary apoplexy: sudden hemorrhage/infarction of pituitary adenoma. Acute panhypopituitarism — the lethal deficiency is CORTISOL (adrenal crisis). Give hydrocortisone IMMEDIATELY before thyroid hormone (giving T4 first increases cortisol clearance and precipitates crisis). MRI > CT for sella."},{text:"Start levothyroxine immediately and order MRI.",score:0,fx:{health:-30,legal:+40},nxt:"discharge",log:"T4 before cortisol precipitated adrenal crisis.",outTitle:"Iatrogenic Adrenal Crisis",outDesc:"Levothyroxine increased cortisol metabolism in an already cortisol-deplete patient. He coded with refractory hypotension before steroids were given.",pearl:"In panhypopituitarism: cortisol BEFORE thyroid. Always. Thyroid replacement without cortisol replacement precipitates adrenal crisis."}]}]}
+
+,{id:"hy_sheehan",tags:["obgyn","im","neuro"],name:"",age:34,sex:"F",initHealth:55,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"34-year-old woman 8 weeks postpartum after a delivery complicated by massive postpartum hemorrhage and hypotension requiring transfusion. She has been unable to breastfeed (no milk letdown), has not resumed menses, and reports fatigue, cold intolerance, and dizziness.",labs:"Prolactin: low\nTSH: low\nFT4: low\nFSH/LH: low\nMorning cortisol: 2 (low)\nMRI: empty sella",actions:[{text:"Sheehan syndrome (postpartum pituitary necrosis). Replace cortisol first, then levothyroxine, then estrogen/progesterone. Counsel re: future fertility (gonadotropins) and lifelong hormone replacement.",score:4,fx:{health:+30,acumen:+25,rapport:+20},nxt:"discharge",log:"Sheehan diagnosed. Multi-axis hormone replacement initiated.",outTitle:"Sheehan Treated",outDesc:"Hydrocortisone was started first, then levothyroxine 1 week later, then cyclic estrogen-progesterone. She was counseled on lifelong replacement and that future pregnancy will require gonadotropin stimulation.",pearl:"Sheehan: postpartum pituitary infarction (pregnancy enlarges pituitary > makes it vulnerable to hypovolemia from PPH). FIRST sign: failure to lactate (loss of prolactin). Then amenorrhea, fatigue, cold intolerance. Treat with cortisol BEFORE thyroid."},{text:"Treat the fatigue with levothyroxine alone.",score:0,fx:{health:-30,legal:+30},nxt:"discharge",log:"T4 without cortisol → adrenal crisis.",outTitle:"Adrenal Crisis Triggered",outDesc:"Untreated cortisol deficiency + new T4 → adrenal crisis on day 4 of treatment.",pearl:"Failure to lactate after a PPH = Sheehan until proven otherwise. Always replace cortisol before thyroid in panhypopituitarism."}]}]}
+
+,{id:"hy_prolactinoma",tags:["obgyn","im","neuro"],name:"",age:27,sex:"F",initHealth:75,diff:1,cat:"clinical",loc:"Ward",steps:[{hpi:"27-year-old with 9 months of amenorrhea (not pregnant), bilateral milky nipple discharge, and recent bitemporal hemianopsia. Negative pregnancy test. Not on antipsychotics.",labs:"Prolactin: 280 ng/mL (very high)\nTSH: normal\nMRI: 1.6 cm sellar mass abutting optic chiasm",actions:[{text:"Macroprolactinoma. Start cabergoline (or bromocriptine) — dopamine agonist shrinks tumor and normalizes prolactin. Surgery only if medical therapy fails or visual deterioration.",score:4,fx:{health:+30,acumen:+22},nxt:"discharge",log:"Prolactinoma: medical therapy with cabergoline.",outTitle:"Prolactinoma Treated",outDesc:"Cabergoline reduced prolactin to normal within 3 months. Repeat MRI showed substantial tumor shrinkage. Menses returned. Vision recovered.",pearl:"Prolactinoma: cabergoline (preferred) or bromocriptine — DOPAMINE AGONISTS — shrink the tumor and restore fertility. Surgery is for failure of medical therapy or rapidly progressive visual loss. Macroadenoma = >1 cm."},{text:"Transsphenoidal surgical resection as first-line therapy.",score:1,fx:{health:+5,legal:+10},nxt:"discharge",log:"Surgery is second-line for prolactinoma.",ifNotBest:"Unlike other pituitary tumors (acromegaly, Cushing), prolactinomas respond to dopamine agonists. Surgery is reserved for failure or emergency visual loss.",pearl:"Prolactinoma is the ONE pituitary tumor where medical therapy is first-line. Cabergoline > bromocriptine (better tolerated)."}]}]}
+
+,{id:"hy_acromegaly",tags:["im","obgyn"],name:"",age:48,sex:"M",initHealth:65,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"48-year-old man with progressive enlargement of hands (ring size up 3), feet (shoe size 9→13), jaw, and tongue. New OSA, carpal tunnel symptoms bilaterally, diabetes, hypertension, and skin tags. Wife says his face has 'changed' over years.",labs:"IGF-1: 850 (markedly elevated)\nOGTT with GH measurement: failure to suppress GH\nMRI: 1.2 cm pituitary macroadenoma",actions:[{text:"Acromegaly. Transsphenoidal surgical resection is first-line. Medical therapy (octreotide, pegvisomant, cabergoline) for residual disease. Screen for colonoscopy (colon cancer risk), echo, sleep study.",score:4,fx:{health:+30,acumen:+25},nxt:"discharge",log:"Acromegaly: surgery first, medical therapy for residual.",outTitle:"Acromegaly Resected",outDesc:"Transsphenoidal resection normalized IGF-1. Residual mild GH elevation was treated with octreotide. Colonoscopy screening was scheduled.",pearl:"Acromegaly: GH-secreting adenoma in adults. Best screening test: IGF-1 (GH is pulsatile). Confirm with OGTT (GH should suppress; doesn't in acromegaly). Surgery FIRST (unlike prolactinoma). Medical: somatostatin analogs (octreotide), GH-receptor antagonist (pegvisomant). Increased colon cancer + cardiomyopathy."},{text:"Start cabergoline as first-line, as you would for prolactinoma.",score:1,fx:{health:+5,legal:+5},nxt:"discharge",log:"Cabergoline alone has limited efficacy in acromegaly.",ifNotBest:"For GH-secreting tumors, surgery is first-line. Cabergoline is adjunctive (~10-15% response). Octreotide/pegvisomant are the preferred medical therapies.",pearl:"Memorize: prolactinoma → medical first. Every other functional pituitary tumor (GH, ACTH, TSH) → surgery first."}]}]}
+
+,{id:"hy_pheo",tags:["im","em","surg"],name:"",age:40,sex:"F",initHealth:50,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"40-year-old with episodic severe headaches, palpitations, diaphoresis, and BP 220/120 during episodes. History of MEN2A (RET mutation). Family screening pending.",vitals:{HR:"126",BP:"220/120",O2:"98"},labs:"Plasma metanephrines: markedly elevated\n24-hour urinary metanephrines and VMA: elevated\nCT abdomen: 4 cm right adrenal mass",actions:[{text:"Pheochromocytoma. Start ALPHA blockade (phenoxybenzamine) FIRST for 10-14 days, then beta blockade, then surgical resection. Screen for medullary thyroid cancer (calcitonin) given MEN2A.",score:4,fx:{health:+45,acumen:+30},nxt:"discharge",log:"Pheo: α first, then β, then surgery. MTC screen ordered.",outTitle:"Pheo Resected Safely",outDesc:"Phenoxybenzamine for 14 days normalized BP and expanded volume. Beta blocker added day 10. Laparoscopic adrenalectomy was uneventful. Calcitonin was elevated → prophylactic thyroidectomy planned.",pearl:"Pheochromocytoma: 'rule of 10s' (10% bilateral, 10% extra-adrenal, 10% malignant, 10% familial). ALPHA blockade FIRST (phenoxybenzamine) for 10-14 days. Beta blockade ALONE causes unopposed alpha → hypertensive crisis. MEN2A: pheo + MTC + parathyroid. MEN2B: pheo + MTC + mucosal neuromas + marfanoid."},{text:"Start metoprolol for the tachycardia and hypertension; arrange surgery this week.",score:0,fx:{health:-40,legal:+45},nxt:"death",log:"Beta blockade alone caused unopposed alpha; hypertensive crisis intraoperatively.",outTitle:"Intraoperative Crisis",outDesc:"Unopposed alpha stimulation during tumor manipulation produced BP 280/150 and pulmonary edema. She did not survive surgery.",pearl:"Never give beta blocker before alpha blocker in pheochromocytoma. Unopposed alpha → catastrophic hypertensive crisis."}]}]}
+
+,{id:"hy_conns",tags:["im"],name:"",age:46,sex:"M",initHealth:65,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"46-year-old man with refractory hypertension on three drugs, hypokalemia (K 2.8) without diuretics, metabolic alkalosis, and muscle cramping. No edema.",labs:"Aldosterone: high\nRenin: suppressed\nAldosterone:renin ratio: >30 (highly suggestive)\nSalt-loading test: aldosterone fails to suppress\nAdrenal CT: 2 cm left adrenal adenoma\nAdrenal vein sampling: lateralizes to left",actions:[{text:"Primary hyperaldosteronism (Conn syndrome) — unilateral adenoma. Laparoscopic adrenalectomy. If bilateral hyperplasia, use spironolactone or eplerenone.",score:4,fx:{health:+35,acumen:+25},nxt:"discharge",log:"Conn syndrome: unilateral → surgery; bilateral → MR antagonist.",outTitle:"Adenoma Resected",outDesc:"Laparoscopic adrenalectomy normalized BP and potassium within weeks. He came off most antihypertensives.",pearl:"Primary hyperaldosteronism: HIGH aldosterone + LOW (suppressed) renin. ARR > 20-30 is screening positive. Adrenal vein sampling distinguishes unilateral adenoma (surgery) from bilateral hyperplasia (spironolactone/eplerenone). Causes HTN + HYPOKALEMIA + metabolic ALKALOSIS without edema."},{text:"Increase antihypertensive doses and add chlorthalidone.",score:0,fx:{health:-15,legal:+15},nxt:"discharge",log:"Missed treatable secondary cause of HTN.",ifNotBest:"Adding a diuretic to hypokalemic Conn syndrome worsens hypokalemia. Always investigate resistant HTN + hypokalemia + alkalosis.",pearl:"Hypokalemia without diuretics + resistant HTN = check ARR. Don't just escalate empiric therapy."}]}]}
+
+,{id:"hy_addison",tags:["im","em","icu"],name:"",age:35,sex:"F",initHealth:30,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"35-year-old woman with 6 months of fatigue, weight loss, hyperpigmentation (gums, palmar creases), salt craving, and now acute hypotension, confusion, vomiting after a UTI. Personal history of type 1 diabetes and Hashimoto thyroiditis.",vitals:{HR:"122",BP:"78/44",O2:"98"},labs:"Sodium: 126 (low)\nPotassium: 5.8 (high)\nGlucose: 56 (low)\nCortisol: 1.2 (undetectable during stress)\nACTH: 1200 (very high — primary adrenal failure)\n21-hydroxylase antibodies: positive",actions:[{text:"Addisonian crisis (autoimmune polyglandular syndrome type 2). Hydrocortisone 100mg IV bolus + IV fluids + dextrose. Then chronic prednisone + fludrocortisone replacement. Screen family.",score:4,fx:{health:+50,acumen:+30},nxt:"discharge",log:"Addisonian crisis: stress steroids + fluids + glucose.",outTitle:"Crisis Reversed",outDesc:"Hydrocortisone and aggressive fluids stabilized her within 90 minutes. Discharged on prednisone + fludrocortisone with sick-day rules.",pearl:"Primary adrenal insufficiency (Addison): HIGH ACTH (so hyperpigmentation, melanocyte stimulation by ACTH/MSH precursor POMC), LOW cortisol AND LOW aldosterone (hyponatremia, hyperkalemia, acidosis). Secondary AI: low ACTH, no hyperpigmentation, aldosterone PRESERVED. APS-2: Addison + T1DM + Hashimoto. APS-1: chronic mucocutaneous candidiasis + hypoparathyroidism + Addison (AIRE gene)."},{text:"Treat the UTI with IV antibiotics, replete potassium-restricted fluids, and admit for sepsis workup.",score:0,fx:{health:-35,legal:+40},nxt:"death",log:"Missed adrenal crisis. Did not give steroids.",outTitle:"Refractory Shock",outDesc:"She remained hypotensive despite fluids and antibiotics; pressors failed without cortisol. She died of refractory shock.",pearl:"Hyperpigmentation + hyponatremia + hyperkalemia + refractory hypotension = Addisonian crisis. Hydrocortisone is the cure. Don't wait for cortisol level."}]}]}
+
+,{id:"hy_men1",tags:["im","surg"],name:"",age:42,sex:"M",initHealth:60,diff:3,cat:"clinical",loc:"Ward",steps:[{hpi:"42-year-old man with recurrent peptic ulcers refractory to PPI, hypercalcemia, and a pituitary mass found on workup for chronic headaches. Father had similar issues. Considering ZES.",labs:"Fasting gastrin: very elevated\nSecretin stimulation: paradoxical INCREASE in gastrin (confirms ZES)\nCalcium: 11.8 (high)\nPTH: high (primary hyperparathyroidism)\nPituitary MRI: 8 mm adenoma; prolactin slightly elevated\nMEN1 gene testing: pathogenic variant",actions:[{text:"MEN1 (3 P's: Pituitary, Parathyroid, Pancreatic). Parathyroidectomy first (calcium drives gastrin too), then address pituitary (cabergoline) and gastrinoma (PPI + localization scan for resection). Genetic counseling for family.",score:4,fx:{health:+30,acumen:+30,rapport:+15},nxt:"discharge",log:"MEN1: parathyroid first, then pituitary + gastrinoma.",outTitle:"MEN1 Sequenced",outDesc:"Parathyroidectomy normalized calcium and reduced gastrin secretion. Cabergoline managed the prolactinoma. Octreoscan localized a duodenal gastrinoma; resection planned. Three relatives were tested.",pearl:"MEN1 (Wermer): 3 P's — Pituitary, Parathyroid (most common, first), Pancreas (gastrinoma most common). Treat parathyroid first (lowers gastrin secretion). MEN2A: MTC + Pheo + Parathyroid (RET). MEN2B: MTC + Pheo + Mucosal neuromas + Marfanoid (RET, prophylactic thyroidectomy by age 1)."},{text:"Treat each tumor in isolation; high-dose PPI for ulcers.",score:1,fx:{health:+5},nxt:"discharge",log:"Missed the syndromic context and family screening.",ifNotBest:"Recognizing MEN1 unlocks family screening, prioritizing parathyroidectomy first, and screening for less symptomatic tumors. Sequence matters.",pearl:"Recurrent ulcers + hypercalcemia + pituitary findings = MEN1 until proven otherwise. Genetic counseling for relatives is the most important downstream intervention."}]}]}
+
+,{id:"hy_ms_first_episode",tags:["neuro","im"],name:"",age:32,sex:"F",initHealth:65,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"32-year-old woman with painful monocular vision loss + dyschromatopsia (red colors faded) over 5 days, resolving partially. She had an episode of left leg numbness lasting 3 weeks last year. MRI: multiple periventricular T2 hyperintense lesions, including one enhancing with gadolinium.",labs:"MRI brain: ovoid periventricular and juxtacortical T2 lesions, one Gd-enhancing; Dawson fingers present\nLumbar puncture: oligoclonal bands present in CSF, not serum\nAquaporin-4 antibody: negative (rules out NMO)\nMOG antibody: negative",actions:[{text:"Relapsing-remitting multiple sclerosis (McDonald criteria met by dissemination in space and time). High-dose IV methylprednisolone for the acute optic neuritis; start disease-modifying therapy (e.g., ocrelizumab or natalizumab).",score:4,fx:{health:+30,acumen:+28,rapport:+15},nxt:"discharge",log:"RRMS diagnosed. Steroids for acute attack + DMT.",outTitle:"MS Diagnosed",outDesc:"IV methylprednisolone accelerated optic neuritis recovery. Ocrelizumab was started for long-term disease modification. She was counseled on heat sensitivity (Uhthoff), pregnancy planning, and vitamin D.",pearl:"MS: dissemination in SPACE (>1 typical CNS location) and TIME (clinical or new MRI lesion). Oligoclonal bands in CSF (not serum) support the diagnosis. NMO (Devic): aquaporin-4 antibodies, longitudinally extensive transverse myelitis — different treatment (rituximab, eculizumab). Acute treatment: high-dose steroids. DMTs change long-term course."},{text:"Diagnose isolated optic neuritis, treat with steroids, and follow without DMT.",score:1,fx:{health:+5},nxt:"discharge",log:"Missed clinically isolated syndrome → MS conversion.",ifNotBest:"Optic neuritis in a young woman + prior episode + MRI dissemination = MS, not CIS. Early DMT delays disability accumulation.",pearl:"Early DMT in MS reduces lifetime disability. McDonald criteria can diagnose MS from a single attack if MRI shows dissemination in space AND time."}]}]}
+
+,{id:"hy_myasthenia_crisis",tags:["neuro","im","icu","em"],name:"",age:62,sex:"F",initHealth:30,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"62-year-old woman with known myasthenia gravis. Recent URI. Now in respiratory distress, can't lift her head, slurred speech, FVC 0.8 L, NIF -15. Recently started ciprofloxacin.",vitals:{HR:"118",BP:"148/92",O2:"90",RR:"32"},labs:"ABG: pH 7.28, PCO2 58, PO2 68 (hypercapnic respiratory failure)\nFVC: 0.8 L (<15 mL/kg)\nNIF: -15 (worse than -20)\nAcetylcholine receptor antibody: positive\nCT chest: thymic hyperplasia",actions:[{text:"Myasthenic crisis. INTUBATE for respiratory failure (do not wait). Stop fluoroquinolone. Start IVIG or plasmapheresis. Hold pyridostigmine in ICU. Steroids after stabilization. Thymectomy when stable.",score:4,fx:{health:+45,acumen:+30},nxt:"discharge",log:"MG crisis: intubation + IVIG + remove trigger.",outTitle:"Crisis Reversed",outDesc:"Intubation prevented respiratory arrest. Five days of IVIG produced dramatic improvement. The fluoroquinolone was identified as a precipitant. Thymectomy was planned.",pearl:"Myasthenic CRISIS — FVC <15 mL/kg or NIF worse than -20 cmH2O → intubate. Triggers: aminoglycosides, fluoroquinolones, beta blockers, magnesium, surgery, infection. Treatment: IVIG or PLEX. Hold cholinesterase inhibitors in ICU (secretions). Eaton-Lambert: anti-voltage-gated calcium channel, IMPROVES with repeated stimulation, paraneoplastic from SCLC."},{text:"Increase pyridostigmine dose and continue ciprofloxacin.",score:0,fx:{health:-35,legal:+40},nxt:"death",log:"Continued the offending drug; missed crisis criteria.",outTitle:"Respiratory Arrest",outDesc:"FVC continued to drop. She arrested before intubation was attempted.",pearl:"Many common drugs precipitate MG crisis. Fluoroquinolones, aminoglycosides, beta blockers, magnesium. Identify and remove."}]}]}
+
+,{id:"hy_nph_step3",tags:["neuro","im"],name:"",age:78,sex:"F",initHealth:60,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"78-year-old with a 14-month progressive shuffling/magnetic gait, urinary urgency progressing to incontinence, and slowing cognition. Family insists she's not depressed. CT: ventricles enlarged out of proportion to atrophy.",labs:"Large-volume LP (40 mL): opening pressure 175 mmH2O; gait video before and after shows visible improvement",actions:[{text:"Normal pressure hydrocephalus. Referral for ventriculoperitoneal shunt — LP responsive gait is the best predictor of shunt response. Set expectations: gait > urinary > cognition recovery.",score:4,fx:{health:+30,acumen:+25,rapport:+15},nxt:"discharge",log:"NPH: VP shunt referral; LP-responsive gait predicts response.",outTitle:"NPH Shunted",outDesc:"VP shunt was placed. Gait improved within 2 weeks; urinary symptoms improved within a month; cognition partially.",pearl:"NPH = WACKY (cognition) + WOBBLY (gait, classic 'magnetic') + WET (incontinence). LP-responsive gait predicts shunt benefit. Gait improves most, cognition least."},{text:"Diagnose Alzheimer dementia; start donepezil.",score:1,fx:{health:+5},nxt:"discharge",log:"Treatable NPH missed.",ifNotBest:"Alzheimer's begins with memory and progresses to gait late. NPH begins with gait. Out-of-proportion ventricles + magnetic gait + LP response = NPH.",pearl:"NPH is one of the few REVERSIBLE causes of dementia. The wrong diagnosis costs a treatable disease."}]}]}
+
+,{id:"hy_creutzfeldt",tags:["neuro","im"],name:"",age:60,sex:"F",initHealth:30,diff:3,cat:"clinical",loc:"Ward",steps:[{hpi:"60-year-old with 3 months of rapidly progressive dementia, myoclonus on startle, ataxia, and a startle response to loud sounds. No family history. EEG: periodic sharp wave complexes. CSF: 14-3-3 protein positive.",labs:"MRI: cortical ribbon sign + caudate/putamen hyperintensity on DWI\nEEG: periodic sharp wave complexes\nCSF 14-3-3: positive\nRT-QuIC: positive",actions:[{text:"Creutzfeldt-Jakob disease (sporadic prion disease). Supportive care only; counsel family compassionately about uniformly fatal course (median 6 months); report to public health for surveillance. Standard precautions; sterilize instruments per prion protocol if any neurosurgical contact.",score:4,fx:{rapport:+25,beneficence:+20,nonmalef:+20,acumen:+22},nxt:"discharge",log:"CJD: supportive care; family counseling; prion precautions.",outTitle:"CJD Disclosed Compassionately",outDesc:"The family was met with a multidisciplinary team and offered hospice. Standard prion-handling protocols were followed for any instruments. Brain donation was discussed.",pearl:"CJD: rapidly progressive dementia + MYOCLONUS + ataxia. EEG sharp waves, MRI cortical ribbon, RT-QuIC + 14-3-3. No treatment exists. Median survival ~6 months. Prions: misfolded PrPc → PrPsc (β-pleated, resistant to standard sterilization). vCJD: from BSE-contaminated beef, younger patients, pulvinar sign on MRI."},{text:"Start memantine, schedule outpatient cognitive testing, and follow up in 3 months.",score:0,fx:{rapport:-15,beneficence:-20,legal:+10},nxt:"discharge",log:"Missed prion disease; family caught off guard by rapid death.",outTitle:"Rapid Decline",outDesc:"She progressed to mutism and death within 8 weeks. The family was unprepared.",pearl:"Any rapidly progressive dementia + myoclonus + EEG sharp waves = consider CJD. The diagnosis matters for family preparation and infection control, even though it cannot be treated."}]}]}
+
+,{id:"hy_pseudotumor",tags:["neuro","obgyn","im"],name:"",age:28,sex:"F",initHealth:65,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"28-year-old obese woman (BMI 36) on doxycycline for acne, with 6 weeks of daily headaches worse with Valsalva, transient visual obscurations, pulsatile tinnitus, and now diplopia (CN VI palsy). Papilledema bilaterally on fundoscopy.",labs:"MRI/MRV brain: empty sella, posterior globe flattening, transverse sinus stenosis; no mass, no thrombosis\nLP (after imaging): opening pressure 38 cmH2O (very high); CSF composition normal\nFormal visual fields: enlarged blind spots, early constriction",actions:[{text:"Idiopathic intracranial hypertension. STOP doxycycline + tetracyclines, vitamin A retinoids. Acetazolamide. Weight loss. Refer to ophthalmology — visual field threat may require optic nerve sheath fenestration or shunt.",score:4,fx:{health:+30,acumen:+25,rapport:+15},nxt:"discharge",log:"IIH: stop offending drug, acetazolamide, weight loss, ophtho follow.",outTitle:"IIH Managed",outDesc:"Doxycycline was stopped. Acetazolamide reduced opening pressure on repeat LP to 22. She enrolled in a weight management program. Visual fields improved.",pearl:"Idiopathic intracranial hypertension (pseudotumor cerebri): young obese women, headaches, papilledema, CN VI palsy (false localizing). Imaging FIRST to rule out mass/thrombosis, then LP. Triggers: tetracyclines, vitamin A, retinoids, OCPs, weight gain. Treat with acetazolamide + weight loss; threat to vision → surgery."},{text:"Start sumatriptan and reassure that this is migraine.",score:0,fx:{health:-20,legal:+25},nxt:"discharge",log:"Missed elevated ICP — vision can be permanently lost.",outTitle:"Visual Field Loss",outDesc:"Without acetazolamide and removing the trigger, papilledema worsened. She suffered permanent inferior nasal field loss.",pearl:"Headache + papilledema + CN VI palsy + transient visual obscurations = elevated ICP. Image, then LP, then treat. The pearl: papilledema does NOT belong to migraine."}]}]}
+
+,{id:"hy_lambert_eaton",tags:["neuro","im"],name:"",age:67,sex:"M",initHealth:55,diff:3,cat:"clinical",loc:"Ward",steps:[{hpi:"67-year-old heavy smoker with proximal leg weakness that improves with sustained activity, dry mouth, erectile dysfunction, and absent reflexes. EMG: incremental response at high-frequency repetitive nerve stimulation.",labs:"Voltage-gated calcium channel antibodies: positive\nCT chest: spiculated right upper lobe mass + hilar adenopathy → biopsy: small cell lung cancer\nEMG: incremental response to high-frequency RNS",actions:[{text:"Lambert-Eaton myasthenic syndrome — paraneoplastic from SCLC. Treat the underlying SCLC; symptomatic 3,4-diaminopyridine. Often improves with cancer treatment.",score:4,fx:{health:+30,acumen:+30},nxt:"discharge",log:"LEMS: SCLC found and treated; 3,4-DAP for symptoms.",outTitle:"LEMS Identified",outDesc:"SCLC was found and chemo-radiation began. LEMS symptoms improved with 3,4-DAP and oncologic treatment.",pearl:"Lambert-Eaton (LEMS): autoantibodies to PRESYNAPTIC voltage-gated calcium channels. Weakness IMPROVES with use (vs MG, worsens). AUTONOMIC symptoms (dry mouth, ED) — not present in MG. Paraneoplastic from SCLC in 60%. CT chest is mandatory."},{text:"Start pyridostigmine and refer to neuromuscular clinic in 6 weeks.",score:1,fx:{health:+5},nxt:"discharge",log:"Treats wrong condition; misses the lung cancer.",ifNotBest:"LEMS pearls: improves with use + autonomic features + INCREMENTAL response on RNS. Hunt for SCLC.",pearl:"Any new neuromuscular syndrome in a smoker over 50 with autonomic features → image the chest for SCLC."}]}]}
+
+,{id:"hy_t1dm_dka_peds",tags:["peds","em","im","icu"],name:"",age:9,sex:"F",initHealth:30,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"9-year-old with 2 weeks of polyuria, polydipsia, weight loss, now lethargic, vomiting, deep rapid breathing (Kussmaul), and fruity breath. Glucose 612, anion gap 26, pH 7.10. No prior diagnosis.",vitals:{HR:"148",BP:"96/58",O2:"99",RR:"36"},labs:"Glucose: 612\npH: 7.10\nBicarbonate: 8\nAnion gap: 26\nKetones: large\nSodium: 128 (corrected to 138)\nPotassium: 5.4 → expect drop with insulin",actions:[{text:"Pediatric DKA. Cautious isotonic fluid resuscitation (avoid cerebral edema), insulin INFUSION after K+ check, replete K when <5.0, never bolus insulin in kids, monitor neurological status (cerebral edema risk).",score:4,fx:{health:+45,acumen:+30,rapport:+15},nxt:"discharge",log:"Peds DKA: cautious fluids, K-monitored insulin drip, watch for cerebral edema.",outTitle:"DKA Resolved",outDesc:"Cautious fluid resuscitation and a weight-based insulin drip closed the anion gap over 14 hours. She was transitioned to subcutaneous basal-bolus insulin. New T1DM education was initiated.",pearl:"Pediatric DKA: 1% develop CEREBRAL EDEMA (high mortality). Avoid: rapid fluid replacement, IV insulin bolus, bicarbonate. Use: isotonic crystalloid at 1.5-2x maintenance, K+-loaded fluid when K <5.0, insulin infusion 0.05-0.1 U/kg/hr WITHOUT bolus. Watch for headache + lethargy → cerebral edema → mannitol."},{text:"Bolus IV insulin 0.1 U/kg and rapidly correct hyperglycemia with aggressive NS boluses.",score:0,fx:{health:-40,legal:+45},nxt:"death",log:"Peds DKA managed like adult → cerebral edema.",outTitle:"Cerebral Edema",outDesc:"Rapid osmolar shift led to cerebral edema, herniation, and death.",pearl:"Children with DKA are NOT little adults. Cerebral edema is the catastrophic complication. Slow, careful, and never bolus insulin."}]}]}
 
 ];
 
@@ -2396,6 +2528,206 @@ function closeNPCRoster(){
   document.getElementById('ov-npc-roster').style.display = 'none';
   OV_OPEN = false;
 }
+
+// ══════════════════════════════════════════════════════════
+// FLOOR / WARD NAVIGATION
+// ══════════════════════════════════════════════════════════
+const FLOORS = {
+  ed:    { name:'Emergency',   ico:'🚑', tags:['em','icu'],     color:'#ef5350',
+           rooms:['Trauma 1','Trauma 2','Resus','Triage Bay','Fast Track'] },
+  icu:   { name:'ICU',         ico:'💊', tags:['icu','em'],     color:'#1dd6c4',
+           rooms:['ICU-1','ICU-2','ICU-3','Isolation','Step-down'] },
+  med:   { name:'Med Floor',   ico:'🛏️', tags:['im'],            color:'#42a5f5',
+           rooms:['Ward 3A','Ward 3B','Ward 3C','Telemetry','Geriatrics'] },
+  surg:  { name:'Surgical',    ico:'🩺', tags:['surg'],          color:'#9575cd',
+           rooms:['Pre-op','OR-2','PACU','Surg Floor','Trauma Bay'] },
+  peds:  { name:'Pediatrics',  ico:'🧸', tags:['peds'],          color:'#ff9800',
+           rooms:['Peds Ward','Peds ICU','NICU','Nursery','Adolescent'] },
+  obgyn: { name:'OB/GYN',      ico:'👶', tags:['obgyn'],         color:'#f48fb1',
+           rooms:['L&D 1','L&D 2','Triage OB','Post-partum','Antenatal'] },
+  psych: { name:'Psychiatry',  ico:'🧠', tags:['psych','ethics'],color:'#66bb6a',
+           rooms:['Crisis','Locked Unit','Eval','Group Room','Quiet Room'] },
+  clinic:{ name:'Outpatient',  ico:'🏥', tags:['im','ethics'],   color:'#d4820a',
+           rooms:['Exam 1','Exam 2','Exam 3','Consult','Conference'] },
+};
+
+let _activeFloor = 'ed';
+
+function patientsOnFloor(fid){
+  if(!GS || !GS.ward) return [];
+  const f = FLOORS[fid]; if(!f) return [];
+  return GS.ward.filter(p => (p.tags||[]).some(t => f.tags.includes(t)) || (p.cat==='ethics' && fid==='psych'));
+}
+
+function openFloorMap(){
+  if(!GS || !GS.ward){ return; }
+  OV_OPEN = true;
+  const map = document.getElementById('floor-map');
+  map.innerHTML = Object.keys(FLOORS).map(k=>{
+    const f = FLOORS[k];
+    const ct = patientsOnFloor(k).length;
+    return `<div class="floor-tab ${_activeFloor===k?'active':''}" onclick="switchFloor('${k}')">
+      <span class="ico">${f.ico}</span>${f.name}<br><span style="font-size:8px;opacity:.7;">${ct} pt${ct!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  renderFloorRooms();
+  document.getElementById('ov-floor').style.display = 'flex';
+}
+function closeFloorMap(){ document.getElementById('ov-floor').style.display='none'; OV_OPEN=false; }
+function switchFloor(k){
+  _activeFloor = k;
+  playTone(660, 0.05, 0.05, 'square');
+  openFloorMap();
+}
+function renderFloorRooms(){
+  const f = FLOORS[_activeFloor];
+  const pts = patientsOnFloor(_activeFloor);
+  const wrap = document.getElementById('floor-rooms');
+  if(!wrap) return;
+  const cells = f.rooms.map((room,i)=>{
+    const p = pts[i];
+    if(!p){
+      return `<div class="floor-room empty"><div class="fr-hd">${room}<span class="fr-cap">EMPTY</span></div><div class="fr-bed">Available</div></div>`;
+    }
+    const critical = p.health < 30;
+    return `<div class="floor-room" onclick="enterRoomFromMap('${p.id}')">
+      ${critical?'<div class="fr-pulse"></div>':''}
+      <div class="fr-hd">${room}<span class="fr-cap" style="color:${f.color}">${p.cat||'clinical'}</span></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+        <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:var(--s3);border:1px solid var(--b2);">${renderPatientSprite(p)}</div>
+        <div><div style="font-family:var(--font-h);font-weight:700;font-size:12px;">${p.name}</div>
+        <div class="fr-bed">${p.age} y/o ${p.sex} · ${critical?'⚠ CRITICAL':p.acted?'monitored':'pending'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = cells;
+}
+function enterRoomFromMap(id){
+  closeFloorMap();
+  setTimeout(()=> openChart(id), 200);
+}
+
+// ══════════════════════════════════════════════════════════
+// CAREER CHART / CLERKSHIPS / RESEARCH / PROFESSORS
+// ══════════════════════════════════════════════════════════
+const CLERKSHIPS = [
+  { id:'im',     name:'Internal Medicine', cat:'clinical', tagAlias:['im'] },
+  { id:'surg',   name:'Surgery',           cat:'clinical', tagAlias:['surg'] },
+  { id:'peds',   name:'Pediatrics',        cat:'clinical', tagAlias:['peds'] },
+  { id:'obgyn',  name:'OB/GYN',            cat:'clinical', tagAlias:['obgyn'] },
+  { id:'em',     name:'Emergency',         cat:'clinical', tagAlias:['em'] },
+  { id:'psych',  name:'Psychiatry',        cat:'clinical', tagAlias:['psych'] },
+  { id:'neuro',  name:'Neurology',         cat:'clinical', tagAlias:['neuro'] },
+  { id:'icu',    name:'Critical Care',     cat:'elective', tagAlias:['icu'] },
+  { id:'immuno', name:'Immunology',        cat:'elective', tagAlias:['immuno'] },
+  { id:'ethics', name:'Med Ethics',        cat:'elective', tagAlias:['ethics'] },
+];
+
+const RESEARCH_PAPERS = [
+  { thresh:3,  title:'A Retrospective Review of Triage Decisions on Night Shift', jrnl:'House Officer J.' },
+  { thresh:8,  title:'Diagnostic Accuracy of Early-Career Physicians: A Pilot Cohort', jrnl:'Resident Review' },
+  { thresh:15, title:'Streak Performance and Cognitive Load Under Pressure',         jrnl:'Acad Emerg Med' },
+  { thresh:25, title:'Patterns of Empathy in Multi-System Disease Disclosure',       jrnl:'JAMA Intern Med' },
+  { thresh:40, title:'Mortality Reduction Following Structured Sign-Out Protocols',   jrnl:'NEJM' },
+  { thresh:60, title:'Lifetime Practice Outcomes in Specialty-Selected Trainees',     jrnl:'The Lancet' },
+];
+
+const PROFESSORS = {
+  patel:  { npc:'patel',  title:'Program Director · Internal Medicine' },
+  okafor: { npc:'okafor', title:'Chair · Pediatrics' },
+  vance:  { npc:'vance',  title:'Chief · Trauma Surgery' },
+};
+
+function clerkshipGrade(clerk){
+  if(!GS || !GS.careerCases) return null;
+  const entries = (GS.careerCases||[]).filter(c =>
+    (c.tags||[]).some(t => clerk.tagAlias.includes(t)) ||
+    (clerk.id==='ethics' && c.category==='ethics') ||
+    (clerk.id==='neuro' && (c.tags||[]).includes('neuro'))
+  );
+  if(!entries.length) return null;
+  const avgScore = entries.reduce((a,c)=>a+(c.score||0),0)/entries.length;
+  const harm = entries.some(c => (c.score||0)===0);
+  if(harm && entries.length<3) return {status:'Failed', cls:'failed', pct:Math.round(avgScore*25)};
+  if(avgScore >= 3.5) return {status:'Honors',     cls:'honors', pct:Math.round(avgScore*25), n:entries.length};
+  if(avgScore >= 2.5) return {status:'High Pass',  cls:'passed', pct:Math.round(avgScore*25), n:entries.length};
+  if(avgScore >= 1.5) return {status:'Pass',       cls:'passed', pct:Math.round(avgScore*25), n:entries.length};
+  return {status:'Marginal', cls:'failed', pct:Math.round(avgScore*25), n:entries.length};
+}
+
+function openCareerChart(){
+  OV_OPEN = true;
+  const wrap = document.getElementById('career-chart-wrap');
+  const chapter = GS?.story?.chapter || 1;
+  const ch = CHAPTERS.find(c=>c.id===chapter) || CHAPTERS[0];
+  const cases = GS?.casesTotal || 0;
+  const correct = GS?.casesCorrect || 0;
+  const lethal = GS?.casesLethal || 0;
+  const accuracy = cases ? Math.round(correct/cases*100) : 0;
+
+  // Track careerCases on GS if not already
+  if(GS && !GS.careerCases) GS.careerCases = [];
+
+  const clerkHTML = CLERKSHIPS.map(c=>{
+    const g = clerkshipGrade(c);
+    if(!g) return `<div class="cc-clerk"><div class="cc-clerk-name">${c.name}</div><div class="cc-clerk-status">Not Started</div><div class="cc-clerk-bar"><div class="cc-clerk-fill" style="width:0%"></div></div></div>`;
+    return `<div class="cc-clerk ${g.cls}"><div class="cc-clerk-name">${c.name}</div><div class="cc-clerk-status">${g.status}${g.n?' · '+g.n:''}</div><div class="cc-clerk-bar"><div class="cc-clerk-fill" style="width:${g.pct}%;${g.cls==='honors'?'background:linear-gradient(90deg,var(--gold2),var(--gold3));':g.cls==='failed'?'background:var(--crimson2);':''}"></div></div></div>`;
+  }).join('');
+
+  const paperHTML = RESEARCH_PAPERS.map(p=>{
+    const unlocked = cases >= p.thresh;
+    return `<div class="cc-paper ${unlocked?'':'locked'}"><div class="cc-paper-title">${unlocked?p.title:'Locked — '+p.thresh+' cases required'}</div><div class="cc-paper-jrnl">${unlocked?p.jrnl:'—'}</div></div>`;
+  }).join('');
+
+  const profHTML = Object.values(PROFESSORS).map(pr=>{
+    const npc = NPCS[pr.npc];
+    const rel = getRel(pr.npc);
+    const unlocked = npcUnlocked(pr.npc);
+    if(!unlocked) return '';
+    const letter = rel>=80?'Strong endorsement':rel>=60?'Positive letter':rel>=40?'Neutral letter':rel>=20?'Reserved letter':'Unwilling to write';
+    return `<div class="cc-prof">
+      <div class="cc-prof-port">${svgDoctor(npc,{id:'pf'+pr.npc,alwaysSteth:true})}</div>
+      <div class="cc-prof-info"><div class="cc-prof-name">${npc.name}</div><div class="cc-prof-blurb">${pr.title}</div></div>
+      <div class="cc-prof-meter">${rel}/100<br><span style="font-size:9px;color:var(--t3);font-weight:400;">${letter}</span></div>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="cc-trans">
+      <div class="cc-trans-card"><div class="cc-trans-lbl">Current Rank</div><div class="cc-trans-val">${ch.rank}</div></div>
+      <div class="cc-trans-card"><div class="cc-trans-lbl">Chapter</div><div class="cc-trans-val">${ch.id} / ${CHAPTERS.length}</div></div>
+      <div class="cc-trans-card"><div class="cc-trans-lbl">Cases Seen</div><div class="cc-trans-val">${cases}</div></div>
+      <div class="cc-trans-card"><div class="cc-trans-lbl">Accuracy</div><div class="cc-trans-val" style="color:${accuracy>=70?'var(--green3)':accuracy>=50?'var(--gold3)':'var(--crimson3)'};">${accuracy}%</div></div>
+    </div>
+    ${lethal>0?`<div style="background:rgba(198,40,40,.12);border:1px solid var(--crimson2);padding:8px 14px;border-radius:var(--r);margin-bottom:14px;font-size:11px;color:var(--crimson3);font-family:var(--font-m);">⚠ ${lethal} fatal outcome${lethal!==1?'s':''} on record</div>`:''}
+
+    <div class="cc-section"><div class="cc-section-hd">Clerkships</div>
+      <div class="cc-clerkships">${clerkHTML}</div>
+    </div>
+
+    <div class="cc-section"><div class="cc-section-hd">Letters from Faculty</div>
+      ${profHTML || '<div style="color:var(--t3);font-size:12px;font-style:italic;">No faculty mentors yet. Earn their respect through your case work.</div>'}
+    </div>
+
+    <div class="cc-section"><div class="cc-section-hd">Publications</div>
+      <div class="cc-research">${paperHTML}</div>
+    </div>
+  `;
+  document.getElementById('ov-careerchart').style.display = 'flex';
+}
+function closeCareerChart(){ document.getElementById('ov-careerchart').style.display='none'; OV_OPEN=false; }
+
+// Hook to record case info onto GS for the career chart
+const _origRecordCase = recordCase;
+recordCase = function(caseId, patientName, chose, best, score, category){
+  _origRecordCase.apply(this, arguments);
+  if(GS){
+    if(!GS.careerCases) GS.careerCases=[];
+    const pt = (GS.ward||[]).find(w=>w.id===caseId);
+    const tags = pt ? (pt.tags||[]) : [];
+    GS.careerCases.push({ id:caseId, name:patientName, score, category, tags });
+  }
+};
 
 function initApp() {
   // Load previous career data if exists
@@ -3555,7 +3887,7 @@ function updateProgress() {
   const el = document.getElementById('case-progress');
   if (!el || !GS) return;
   const seen = (GS.casesTotal || 0);
-  el.textContent = `${seen} / 70 cases`;
+  el.textContent = `${seen} / ${DB.length} cases`;
 }
 
 // OV_OPEN flag

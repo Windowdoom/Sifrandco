@@ -55,7 +55,7 @@ export default async (req) => {
   const client = new Anthropic({ apiKey });
 
   const stream = await client.messages.stream({
-    model: "claude-opus-4-7",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 8000,
     system: [
       {

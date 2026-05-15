@@ -985,15 +985,20 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
   display:flex;align-items:center;justify-content:center;flex-direction:column;}
 .ex-nurse-station-lbl{font-family:var(--font-h);font-size:11px;font-weight:900;color:var(--teal3);letter-spacing:.2em;}
 .ex-nurse-station-sub{font-family:var(--font-m);font-size:8px;color:var(--t3);letter-spacing:.15em;text-transform:uppercase;margin-top:3px;}
-.ex-actor{position:absolute;width:42px;height:42px;will-change:transform;
-  transition:transform .08s linear;pointer-events:none;z-index:50;}
-.ex-actor svg{width:100%;height:100%;border-radius:50%;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));border:2px solid var(--gold2);background:var(--s3);}
-.ex-actor.player svg{border-color:var(--teal3);box-shadow:0 0 14px rgba(29,214,196,.5);}
-.ex-actor.npc svg{border-color:var(--blue3);opacity:.75;}
-.ex-actor-name{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);
-  font-family:var(--font-m);font-size:8px;color:var(--teal3);text-shadow:0 1px 2px rgba(0,0,0,.9);
-  white-space:nowrap;letter-spacing:.1em;text-transform:uppercase;}
+.ex-actor{position:absolute;width:44px;height:64px;will-change:transform;
+  pointer-events:none;z-index:50;image-rendering:pixelated;image-rendering:crisp-edges;}
+.ex-actor svg{width:100%;height:100%;shape-rendering:crispEdges;display:block;
+  filter:drop-shadow(0 3px 0 rgba(0,0,0,.5));}
+.ex-actor.player{z-index:55;}
+.ex-bed-pixel{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  width:60px;height:42px;image-rendering:pixelated;image-rendering:crisp-edges;
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.4));z-index:5;}
+.ex-bed-pixel svg{shape-rendering:crispEdges;width:100%;height:100%;display:block;}
+.ex-actor-name{position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+  font-family:var(--font-m);font-size:9px;color:var(--gold3);font-weight:900;
+  white-space:nowrap;letter-spacing:.05em;text-transform:uppercase;
+  text-shadow:-1px 0 #000,1px 0 #000,0 -1px #000,0 1px #000,0 1px 2px rgba(0,0,0,.8);}
+.ex-actor.npc .ex-actor-name{color:var(--teal3);}
 .ex-hud{position:fixed;top:0;left:0;right:0;height:48px;
   background:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.5));
   display:flex;align-items:center;padding:0 16px;gap:14px;z-index:100;border-bottom:1px solid var(--b1);}
@@ -1495,8 +1500,8 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
       <div id="ex-rooms"></div>
       <div id="ex-npcs"></div>
       <div class="ex-actor player" id="ex-player">
-        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#1dd6c4"/></svg>
         <div class="ex-actor-name" id="ex-player-name">DR. YOU</div>
+        <div id="ex-player-sprite"></div>
       </div>
     </div>
   </div>
@@ -4039,16 +4044,218 @@ let _ex = {
   joyVec:null,
 };
 
+// ── 8-BIT PIXEL SPRITES ──
+const SPRITE_FRAMES = {
+  down: [
+    [
+      '...HHHHH...',
+      '..HHHHHHH..',
+      '.HHHHHHHHH.',
+      '.HSSSSSSSH.',
+      '.HSESSSESH.',
+      '.HSSSSSSSH.',
+      '..SSSMSSS..',
+      '...SSSSS...',
+      '..CCCKCCC..',
+      '.CCCCKCCCC.',
+      '.CCCCKCCCC.',
+      '.CCCCCCCCC.',
+      '..CCCCCCC..',
+      '..PPP.PPP..',
+      '..PP...PP..',
+      '..BB...BB..',
+    ],
+    [
+      '...HHHHH...',
+      '..HHHHHHH..',
+      '.HHHHHHHHH.',
+      '.HSSSSSSSH.',
+      '.HSESSSESH.',
+      '.HSSSSSSSH.',
+      '..SSSMSSS..',
+      '...SSSSS...',
+      '..CCCKCCC..',
+      '.CCCCKCCCC.',
+      '.CCCCKCCCC.',
+      '.CCCCCCCCC.',
+      '..CCCCCCC..',
+      '..PP.PPP...',
+      '..PP...PP..',
+      '..BB...BB..',
+    ],
+  ],
+  up: [
+    [
+      '...XXXXX...',
+      '..XXXXXXX..',
+      '.XXXXXXXXX.',
+      '.XXXXXXXXX.',
+      '.XXSSSSSXX.',
+      '..SSSSSSS..',
+      '...SSSSS...',
+      '...SSSSS...',
+      '..CCCCCCC..',
+      '.CCCCCCCCC.',
+      '.CCCCCCCCC.',
+      '.CCCCCCCCC.',
+      '..CCCCCCC..',
+      '..PPP.PPP..',
+      '..PP...PP..',
+      '..BB...BB..',
+    ],
+    [
+      '...XXXXX...',
+      '..XXXXXXX..',
+      '.XXXXXXXXX.',
+      '.XXXXXXXXX.',
+      '.XXSSSSSXX.',
+      '..SSSSSSS..',
+      '...SSSSS...',
+      '...SSSSS...',
+      '..CCCCCCC..',
+      '.CCCCCCCCC.',
+      '.CCCCCCCCC.',
+      '.CCCCCCCCC.',
+      '..CCCCCCC..',
+      '..PP.PPP...',
+      '..PP...PP..',
+      '..BB...BB..',
+    ],
+  ],
+  right: [
+    [
+      '....HHHHH..',
+      '...HHHHHHH.',
+      '..HHHHHHHHX',
+      '..HSSSSSSHX',
+      '..HSSSESSHX',
+      '..HSSSSSSSH',
+      '..HSSMMSSS.',
+      '...SSSSSS..',
+      '..CCCCKCCC.',
+      '.CCCCCKCCCC',
+      '.CCCCCCCCCC',
+      '.CCCCCCCCCC',
+      '..CCCCCCCC.',
+      '..PPP.PPP..',
+      '..PP...PP..',
+      '..BB...BB..',
+    ],
+    [
+      '....HHHHH..',
+      '...HHHHHHH.',
+      '..HHHHHHHHX',
+      '..HSSSSSSHX',
+      '..HSSSESSHX',
+      '..HSSSSSSSH',
+      '..HSSMMSSS.',
+      '...SSSSSS..',
+      '..CCCCKCCC.',
+      '.CCCCCKCCCC',
+      '.CCCCCCCCCC',
+      '.CCCCCCCCCC',
+      '..CCCCCCCC.',
+      '..PPPPPP...',
+      '..PP...PP..',
+      '..BB...BB..',
+    ],
+  ],
+};
+
+const _spriteCache = new Map();
+function shade(hex, pct){
+  const c = hex.replace('#','');
+  let r = parseInt(c.slice(0,2),16), g = parseInt(c.slice(2,4),16), b = parseInt(c.slice(4,6),16);
+  if(pct < 0){ r = Math.round(r * (1+pct)); g = Math.round(g * (1+pct)); b = Math.round(b * (1+pct)); }
+  else { r = Math.round(r + (255-r)*pct); g = Math.round(g + (255-g)*pct); b = Math.round(b + (255-b)*pct); }
+  return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function pixelSpriteSVG(av, dir, frame){
+  const mirror = (dir === 'left');
+  const useDir = mirror ? 'right' : dir;
+  const skin = SKIN_TONES[av.skin]||SKIN_TONES[0];
+  const hair = HAIR_COLORS[av.hair]||HAIR_COLORS[0];
+  const sc   = SCRUB_COLORS[av.scrub]||SCRUB_COLORS[0];
+  const cacheKey = `${useDir}|${frame}|${mirror?'m':'n'}|${av.skin}|${av.hair}|${av.scrub}`;
+  if(_spriteCache.has(cacheKey)) return _spriteCache.get(cacheKey);
+  const palette = {
+    H: hair, X: shade(hair, -0.3),
+    S: skin, E: '#1a1a1a', M: '#6a2828',
+    C: sc.c, K: '#0a0a0a',
+    P: '#2a3848', B: '#1a1a1a',
+  };
+  const frames = SPRITE_FRAMES[useDir] || SPRITE_FRAMES.down;
+  const rows = frames[frame % frames.length];
+  let rects = '';
+  rows.forEach((row, y)=>{
+    for(let x=0; x<row.length; x++){
+      const ch = row[x];
+      if(ch === '.' || ch === ' ') continue;
+      const color = palette[ch];
+      if(!color) continue;
+      const xx = mirror ? (row.length - 1 - x) : x;
+      rects += `<rect x="${xx}" y="${y}" width="1" height="1" fill="${color}"/>`;
+    }
+  });
+  const svg = `<svg viewBox="0 0 11 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">${rects}</svg>`;
+  _spriteCache.set(cacheKey, svg);
+  return svg;
+}
+
+function pixelPatientInBed(p){
+  const hash = (p.id+(p.name||'')).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  const skin = SKIN_TONES[hash%SKIN_TONES.length];
+  const hair = HAIR_COLORS[(hash>>3)%HAIR_COLORS.length];
+  const critical = p.health < 30;
+  const sick = p.health < 60;
+  const eyesOpen = !critical;
+  const blanket = critical ? '#5a2530' : sick ? '#5a4a30' : '#3a5070';
+  const blanketLight = critical ? '#7a3a40' : sick ? '#7a6a40' : '#5a708a';
+  const pillow = '#e8e8e8';
+  const pillowSh = '#b0b0b0';
+  const palette = { H:hair, S:skin, E:'#1a1a1a', M:'#6a2828', P:pillow, Q:pillowSh, B:blanket, L:blanketLight };
+  const rows = [
+    '..QQQQQQQQQQQQ..',
+    '..QPPPPPPPPPPPQ.',
+    '..QPPHHHHHHPPPQ.',
+    '..QPHHSSSSSHHPQ.',
+    '..QPHS' + (eyesOpen?'ESSE':'____') + 'SHPQ.',
+    '..QPHSSSMMSSHPQ.',
+    '..QPPHSSSSSHPPQ.',
+    '..QPPPPHHHPPPPQ.',
+    '.BLLLLLLLLLLLLB.',
+    'BBLLLLLLLLLLLLBB',
+    'BBBBBBBBBBBBBBBB',
+  ];
+  let rects = '';
+  rows.forEach((row, y)=>{
+    for(let x=0; x<row.length; x++){
+      const ch = row[x];
+      if(ch === '.' || ch === ' ' || ch === '_') continue;
+      const color = palette[ch];
+      if(!color) continue;
+      rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${color}"/>`;
+    }
+  });
+  return `<svg viewBox="0 0 16 11" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">${rects}</svg>`;
+}
+
 function openExplore(){
   if(!GS || !GS.spec) bootstrapExploreGS();
   _ex.active = true;
   _ex.player.x = 600; _ex.player.y = 400;
   document.getElementById('explore-mode').classList.add('show');
   exploreSetFloor(_ex.floorId);
-  // Replace player sprite with customized avatar
-  const playerEl = document.getElementById('ex-player');
-  const oldSvg = playerEl.querySelector('svg');
-  if(oldSvg) oldSvg.outerHTML = svgDoctor(AVATAR, {id:'exp', alwaysSteth:true});
+  // Init pixel sprite state
+  _ex.player.dir = 'down';
+  _ex.player.frame = 0;
+  _ex.player.animT = 0;
+  _ex.npcs.forEach(n=>{
+    n.dir = Math.abs(n.vx) > Math.abs(n.vy) ? (n.vx>0?'right':'left') : (n.vy>0?'down':'up');
+    n.frame = 0; n.animT = 0;
+  });
+  const psp = document.getElementById('ex-player-sprite');
+  if(psp) psp.innerHTML = pixelSpriteSVG(AVATAR, 'down', 0);
   document.getElementById('ex-player-name').textContent = 'DR. ' + ((GS.doc||'YOU').split(' ').slice(-1)[0].toUpperCase());
   renderExploreNPCs();
   exploreFit();
@@ -4116,7 +4323,8 @@ function renderExploreRooms(){
       ${p ? `onclick="enterRoomFromExplore('${p.id}')"` : ''}>
       <div class="ex-room-num">${r.num}</div>
       ${empty ? `<div class="ex-empty-label">Vacant</div>` : `
-        <div class="ex-bed"><div class="ex-bed-sprite">${renderPatientSprite(p)}</div></div>
+        <div class="ex-bed-pixel">${pixelPatientInBed(p)}</div>
+        <div style="height:34px"></div>
         <div class="ex-pt-name">${p.name}</div>
         <div class="ex-pt-status ${critical?'crit':''}">${critical?'⚠ CRITICAL':p.acted?'monitored':'admitted'}</div>
       `}
@@ -4128,7 +4336,7 @@ function renderExploreNPCs(){
   const wrap = document.getElementById('ex-npcs');
   if(!wrap) return;
   wrap.innerHTML = _ex.npcs.map((n,i)=>
-    `<div class="ex-actor npc" id="ex-npc-${i}">${svgDoctor(n.avatar,{id:'npc'+i,alwaysSteth:false})}<div class="ex-actor-name">${n.name}</div></div>`
+    `<div class="ex-actor npc" id="ex-npc-${i}"><div class="ex-actor-name">${n.name}</div><div id="ex-npc-sprite-${i}">${pixelSpriteSVG(n.avatar, n.dir||'down', 0)}</div></div>`
   ).join('');
 }
 
@@ -4158,11 +4366,32 @@ function exploreLoop(){
     _ex.player.y += (dy/mag) * _ex.player.speed;
     _ex.player.x = Math.max(20, Math.min(_ex.worldW-60, _ex.player.x));
     _ex.player.y = Math.max(60, Math.min(_ex.worldH-60, _ex.player.y));
+    const newDir = Math.abs(dx) > Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
+    if(newDir !== _ex.player.dir){ _ex.player.dir = newDir; _ex.player.animT = 0; }
+    _ex.player.animT = (_ex.player.animT||0) + 1;
+    const newFrame = Math.floor(_ex.player.animT / 8) % 2;
+    if(newFrame !== _ex.player.frame){
+      _ex.player.frame = newFrame;
+      const psp = document.getElementById('ex-player-sprite');
+      if(psp) psp.innerHTML = pixelSpriteSVG(AVATAR, _ex.player.dir, _ex.player.frame);
+    }
+  } else if(_ex.player.frame !== 0){
+    _ex.player.frame = 0; _ex.player.animT = 0;
+    const psp = document.getElementById('ex-player-sprite');
+    if(psp) psp.innerHTML = pixelSpriteSVG(AVATAR, _ex.player.dir||'down', 0);
   }
-  _ex.npcs.forEach(n=>{
+  _ex.npcs.forEach((n,i)=>{
     n.x += n.vx; n.y += n.vy;
     if(n.x < 100 || n.x > _ex.worldW-180) n.vx *= -1;
     if(n.y < 300 || n.y > 500) n.vy *= -1;
+    const ndir = Math.abs(n.vx) > Math.abs(n.vy) ? (n.vx>0?'right':'left') : (n.vy>0?'down':'up');
+    n.animT = (n.animT||0)+1;
+    const nframe = Math.floor(n.animT / 10) % 2;
+    if(ndir !== n.dir || nframe !== n.frame){
+      n.dir = ndir; n.frame = nframe;
+      const sp = document.getElementById('ex-npc-sprite-' + i);
+      if(sp) sp.innerHTML = pixelSpriteSVG(n.avatar, ndir, nframe);
+    }
   });
   let nearest = null, nd = 100;
   const px = _ex.player.x, py = _ex.player.y;
@@ -4204,10 +4433,10 @@ function exploreLoop(){
     _ex.nearElev = false;
   }
   const player = document.getElementById('ex-player');
-  if(player) player.style.transform = `translate(${_ex.player.x-21}px, ${_ex.player.y-21}px)`;
+  if(player) player.style.transform = `translate(${_ex.player.x-22}px, ${_ex.player.y-44}px)`;
   _ex.npcs.forEach((n,i)=>{
     const el = document.getElementById('ex-npc-' + i);
-    if(el) el.style.transform = `translate(${n.x-21}px, ${n.y-21}px)`;
+    if(el) el.style.transform = `translate(${n.x-22}px, ${n.y-44}px)`;
   });
   _ex.raf = requestAnimationFrame(exploreLoop);
 }

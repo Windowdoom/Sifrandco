@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bit by Bit Pedagogy — Step 1 & CBSE/COMP Mastery for IMGs and US MDs</title>
+<meta name="description" content="Mechanism-first USMLE Step 1, CBSE, and COMLEX prep. Master Pivots, trap-block logic, and a 160-question NBME-style exam. Built by a US-IMG, for the students competitors ignore."/>
+<link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0D1B2E; --bg-card:#0A1520; --bg-mid:#0F2030;
+  --border:#1E3A50; --border-bright:#2A5570;
+  --teal:#00E5A0; --teal-dim:#1A8A6A; --teal-glow:rgba(0,229,160,.12);
+  --gold:#F5A623; --gold-glow:rgba(245,166,35,.12);
+  --red:#FF4757; --green:#2ED573; --blue:#4D9FFF; --purple:#A855F7;
+  --text:#E8F4F0; --text-muted:#8AAFC0; --text-dim:#3A5570;
+  --mono:'Courier New',Courier,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --r:8px;
+}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--sans); line-height:1.7;
+  background-image:radial-gradient(circle,rgba(26,56,80,.6) 1px,transparent 1px);
+  background-size:22px 22px;
+}
+a{text-decoration:none;color:inherit;}
+button{cursor:pointer;font-family:inherit;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--teal-dim);}
+
+.rev{opacity:0;transform:translateY(24px);transition:opacity .6s ease-out,transform .6s ease-out;}
+.rev.on{opacity:1;transform:none;}
+.rev2{opacity:0;transform:translateY(24px);transition:opacity .6s ease-out .15s,transform .6s ease-out .15s;}
+.rev2.on{opacity:1;transform:none;}
+
+nav{
+  position:sticky;top:0;z-index:200;height:64px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;
+  background:rgba(13,27,46,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);
+}
+.n-logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:14px;font-weight:bold;color:var(--text);letter-spacing:.5px;}
+.n-logo .gold{color:var(--gold);}
+.n-links{display:flex;gap:1.8rem;align-items:center;}
+.n-links a{font-family:var(--mono);font-size:12px;color:var(--text-muted);letter-spacing:.8px;transition:color .2s;}
+.n-links a:hover,.n-links a.active{color:var(--teal);}
+.nav-right{display:flex;gap:10px;align-items:center;}
+.n-cta{background:transparent;color:var(--teal);border:1px solid var(--teal);padding:8px 16px;border-radius:var(--r);font-family:var(--mono);font-size:11px;font-weight:bold;letter-spacing:.8px;transition:all .2s;}
+.n-cta:hover{background:rgba(0,229,160,.1);}
+.n-buy{background:var(--gold);color:var(--bg);border:none;padding:8px 16px;border-radius:var(--r);font-family:var(--mono);font-size:11px;font-weight:bold;letter-spacing:.8px;transition:all .2s;}
+.n-buy:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 15px rgba(245,166,35,.3);}
+.n-ham{display:none;background:none;border:none;color:var(--text-muted);font-size:22px;line-height:1;}
+
+.ticker{background:var(--bg-card);border-bottom:1px solid var(--border);padding:8px 2.5rem;display:flex;gap:10px;align-items:center;font-family:var(--mono);font-size:11px;color:var(--text-muted);overflow:hidden;white-space:nowrap;}
+.ticker-badge{background:var(--teal);color:var(--bg);font-size:9px;padding:3px 8px;border-radius:99px;font-weight:bold;letter-spacing:.5px;flex-shrink:0;}
+
+.hero-wrap{max-width:1100px;margin:0 auto;padding:5rem 2rem 3rem;display:grid;grid-template-columns:1fr auto;gap:4rem;align-items:center;}
+.h-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.3);color:var(--teal);font-family:var(--mono);font-size:12px;font-weight:bold;letter-spacing:1.5px;padding:7px 16px;border-radius:99px;margin-bottom:1.5rem;}
+.h-badge::before{content:'●';font-size:9px;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.hero-title{font-family:var(--mono);font-size:clamp(30px,4vw,50px);font-weight:bold;line-height:1.15;color:var(--text);margin-bottom:1.25rem;}
+.hero-title em{font-style:normal;color:var(--teal);}
+.hero-sub{font-size:16px;color:var(--text-muted);max-width:520px;margin-bottom:1.8rem;line-height:1.8;}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1.5rem;}
+.btn-p{background:var(--teal);color:var(--bg);border:none;padding:14px 28px;border-radius:var(--r);font-family:var(--mono);font-size:12px;font-weight:bold;letter-spacing:1px;transition:all .2s;}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,229,160,.25);}
+.btn-o{background:transparent;color:var(--text-muted);border:1px solid var(--border-bright);padding:14px 28px;border-radius:var(--r);font-family:var(--mono);font-size:12px;font-weight:bold;letter-spacing:1px;transition:all .2s;}
+.btn-o:hover{color:var(--teal);border-color:var(--teal);background:rgba(0,229,160,.05);}
+.btn-gold{background:var(--gold);color:var(--bg);border:none;padding:14px 28px;border-radius:var(--r);font-family:var(--mono);font-size:12px;font-weight:bold;letter-spacing:1px;transition:all .2s;}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(245,166,35,.3);}
+.hero-trust{display:flex;gap:1.2rem;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-top:.4rem;}
+.hero-trust span{display:flex;align-items:center;gap:6px;}
+.hero-trust span::before{content:'✓';color:var(--teal);}
+
+.mascot-wrap{position:relative;width:170px;flex-shrink:0;text-align:center;}
+.mascot-svg{position:relative;z-index:1;height:210px;margin:0 auto;}
+.mascot-glow{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,160,.15) 0%,transparent 70%);animation:gpulse 4s infinite ease-in-out;}
+@keyframes gpulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.5}50%{transform:translate(-50%,-50%) scale(1.1);opacity:1}}
+.mascot-lore{font-family:var(--mono);font-size:10px;color:var(--teal);letter-spacing:1px;margin-top:1.2rem;opacity:0.85;border-top:1px solid rgba(0,229,160,.2);padding-top:8px;}
+.mascot-lore strong{color:var(--text);display:block;font-size:11px;margin-bottom:2px;}
+
+/* PROOF STRIP — directly under hero */
+.proof-strip{background:var(--bg-card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.proof-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:auto 1fr 1fr;gap:2.5rem;padding:1.75rem 2rem;align-items:center;}
+.proof-label{font-family:var(--mono);font-size:10px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;}
+.proof-quote{font-size:13px;color:var(--text);line-height:1.6;font-style:italic;}
+.proof-quote-attr{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:6px;letter-spacing:.5px;}
+
+/* LEAD MAGNET BANNER */
+.magnet{background:linear-gradient(135deg,rgba(0,229,160,.06),rgba(245,166,35,.04));border-bottom:1px solid rgba(0,229,160,.2);padding:2rem;}
+.magnet-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;}
+.magnet-text h3{font-family:var(--mono);font-size:18px;font-weight:bold;color:var(--teal);margin-bottom:4px;}
+.magnet-text p{font-size:13px;color:var(--text-muted);max-width:580px;}
+.magnet-text p strong{color:var(--text);}
+
+.pause-sec{text-align:center;padding:4rem 2rem 5rem;max-width:800px;margin:0 auto;}
+.pause-sec h2{font-family:var(--sans);font-size:clamp(22px,3vw,32px);font-weight:600;color:var(--text);margin-bottom:0.75rem;line-height:1.3;}
+.pause-sec p{font-family:var(--mono);font-size:clamp(13px,1.5vw,16px);color:var(--teal);letter-spacing:0.5px;}
+
+.stats-row{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg-card);display:grid;grid-template-columns:repeat(4,1fr);}
+.stat{padding:1.5rem 1rem;text-align:center;border-right:1px solid var(--border);}
+.stat:last-child{border-right:none;}
+.stat-n{font-family:var(--mono);font-size:28px;font-weight:bold;color:var(--teal);}
+.stat-l{font-size:11px;color:var(--text-muted);margin-top:4px;letter-spacing:.3px;}
+
+.buy-banner{background:linear-gradient(135deg,rgba(245,166,35,.12),rgba(245,166,35,.05));border-bottom:1px solid rgba(245,166,35,.25);padding:2.5rem 2rem;}
+.buy-banner-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;}
+.buy-banner-text h3{font-family:var(--mono);font-size:20px;font-weight:bold;color:var(--gold);margin-bottom:6px;}
+.buy-banner-text p{font-size:14px;color:var(--text-muted);max-width:580px;line-height:1.7;}
+.buy-trust{display:flex;gap:1.2rem;flex-wrap:wrap;margin-top:.8rem;}
+.btrust{font-family:var(--mono);font-size:11px;color:var(--text-dim);}
+.btrust::before{content:'✓ ';color:var(--teal);}
+.buy-banner-cta{display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;}
+.btn-buy-lg{background:var(--gold);color:var(--bg);border:none;padding:16px 40px;border-radius:var(--r);font-family:var(--mono);font-size:13px;font-weight:bold;letter-spacing:1px;transition:all .2s;white-space:nowrap;}
+.btn-buy-lg:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(245,166,35,.3);}
+
+.sec{max-width:1100px;margin:0 auto;padding:5.5rem 2rem;}
+.sec-alt{background:rgba(10,21,32,.6);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.sec-hdr{margin-bottom:3rem;max-width:700px;}
+.sec-tag{font-family:var(--mono);font-size:10px;color:var(--teal);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+.sec-title{font-family:var(--mono);font-size:clamp(24px,3vw,36px);font-weight:bold;color:var(--text);line-height:1.2;margin-bottom:1rem;}
+.sec-sub{font-size:15px;color:var(--text-muted);line-height:1.8;}
+
+.diag-grid{display:grid;grid-template-columns:1fr;gap:1.25rem;max-width:800px;}
+.diag-item{display:flex;gap:1.5rem;align-items:flex-start;background:var(--bg-card);border:1px solid var(--border);padding:1.8rem;border-radius:var(--r);transition:border-color .3s;}
+.diag-item:hover{border-color:var(--border-bright);}
+.diag-num{font-family:var(--mono);font-size:24px;font-weight:bold;color:var(--border-bright);line-height:1;}
+.diag-text h4{font-family:var(--mono);font-size:15px;color:var(--text);margin-bottom:8px;}
+.diag-text p{font-size:14px;color:var(--text-muted);line-height:1.7;}
+
+.proof-box{background:var(--bg-card);border:1px solid var(--border-bright);border-radius:var(--r);padding:2.5rem;position:relative;background-image:radial-gradient(circle at top right, rgba(0,229,160,0.05) 0%, transparent 40%);}
+.proof-tag{font-family:var(--mono);font-size:11px;color:var(--teal);margin-bottom:1.5rem;letter-spacing:1px;}
+.proof-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;}
+.proof-col h4{font-size:16px;font-weight:600;margin-bottom:10px;}
+.proof-col p{font-size:14px;color:var(--text-muted);line-height:1.7;}
+.proof-highlight{color:var(--gold);font-family:var(--mono);font-weight:bold;padding:2px 6px;background:rgba(245,166,35,.1);border-radius:4px;}
+
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;}
+.ncard{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:1.6rem;transition:all .3s ease;position:relative;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;}
+.ncard::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ca,var(--teal));opacity:0.7;}
+.ncard:hover{border-color:var(--ca,var(--border-bright));transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,.25);}
+.ncard-icon{width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:1rem;border:1px solid rgba(255,255,255,.05);}
+.ncard-name{font-family:var(--mono);font-size:14px;font-weight:bold;color:var(--text);margin-bottom:8px;line-height:1.3;}
+.ncard-desc{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:1.3rem;flex-grow:1;}
+.ncard-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.3rem;}
+.ntag{font-size:10px;padding:3px 10px;border-radius:99px;font-family:var(--mono);letter-spacing:.5px;}
+.nt-t{background:rgba(0,229,160,.08);color:var(--teal);border:1px solid rgba(0,229,160,.2);}
+.nt-g{background:rgba(245,166,35,.08);color:var(--gold);border:1px solid rgba(245,166,35,.2);}
+.nt-b{background:rgba(77,159,255,.08);color:var(--blue);border:1px solid rgba(77,159,255,.2);}
+.nt-p{background:rgba(168,85,247,.08);color:var(--purple);border:1px solid rgba(168,85,247,.2);}
+.nt-r{background:rgba(255,71,87,.08);color:var(--red);border:1px solid rgba(255,71,87,.2);}
+.ncard-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:.9rem;}
+.navail{font-size:11px;color:var(--text-dim);font-family:var(--mono);}
+.btn-soft{background:transparent;color:var(--text-muted);border:1px solid var(--border-bright);padding:6px 14px;border-radius:4px;font-family:var(--mono);font-size:10px;font-weight:bold;letter-spacing:.5px;transition:all .2s;}
+.btn-soft:hover{color:var(--text);border-color:var(--text);background:rgba(255,255,255,.03);}
+
+/* PDF preview pane */
+.pdf-preview{background:var(--bg);border:1px dashed var(--border-bright);border-radius:6px;padding:.7rem;margin-bottom:1rem;font-family:var(--mono);font-size:10.5px;color:var(--text-muted);line-height:1.55;}
+.pdf-preview-tag{color:var(--gold);font-size:9px;letter-spacing:1px;margin-bottom:4px;}
+.pdf-preview b{color:var(--teal);}
+
+.bundle-card{grid-column:1/-1;background:linear-gradient(135deg,rgba(245,166,35,.05),rgba(0,229,160,.02));border:1px solid rgba(245,166,35,.25);border-radius:var(--r);padding:2.5rem;display:flex;gap:3rem;align-items:center;flex-wrap:wrap;}
+.bundle-card-text{flex:1;min-width:260px;}
+.bundle-card-text h3{font-family:var(--mono);font-size:22px;font-weight:bold;color:var(--gold);margin-bottom:12px;}
+.bundle-card-text p{font-size:15px;color:var(--text-muted);line-height:1.8;margin-bottom:1.5rem;}
+.bundle-includes{display:flex;gap:8px;flex-wrap:wrap;}
+.bi{font-size:11px;padding:4px 12px;border-radius:99px;background:var(--bg-card);color:var(--text-muted);border:1px solid var(--border);font-family:var(--mono);}
+.bundle-cta{display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0;}
+
+.exam-block{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:4rem 2rem;text-align:center;}
+.exam-title{font-family:var(--mono);font-size:clamp(36px,5vw,60px);font-weight:bold;color:var(--text);margin-bottom:1rem;}
+.exam-title .tc{color:var(--teal);}
+.exam-meta{display:flex;gap:3rem;justify-content:center;margin:2.5rem 0;flex-wrap:wrap;}
+.em-n{font-family:var(--mono);font-size:32px;font-weight:bold;color:var(--gold);}
+.em-l{font-size:12px;color:var(--text-muted);letter-spacing:.5px;margin-top:4px;}
+
+.price-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;}
+.pcard{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:2rem;display:flex;flex-direction:column;}
+.pcard:hover{border-color:var(--border-bright);}
+.ptag-row{display:flex;gap:6px;margin-bottom:1.2rem;}
+.pcard h3{font-family:var(--mono);font-size:17px;color:var(--text);margin-bottom:10px;}
+.pcard p{font-size:14px;color:var(--text-muted);line-height:1.7;margin-bottom:1.2rem;flex-grow:1;}
+.pamt{font-family:var(--mono);font-size:34px;font-weight:bold;color:var(--text);}
+.pamt-strike{font-family:var(--mono);font-size:15px;color:var(--text-dim);text-decoration:line-through;margin-right:8px;font-weight:normal;}
+.pfeats{list-style:none;margin:1.3rem 0;border-top:1px solid var(--border);padding-top:1.3rem;}
+.pfeats li{font-size:13px;color:var(--text-muted);padding:5px 0 5px 22px;position:relative;}
+.pfeats li::before{content:'✓';position:absolute;left:0;color:var(--teal);font-size:13px;}
+.pcta{width:100%;padding:14px;border-radius:var(--r);background:transparent;color:var(--text-muted);border:1px solid var(--border-bright);font-family:var(--mono);font-size:12px;font-weight:bold;letter-spacing:1px;transition:all .2s;text-align:center;}
+.pcta:hover{color:var(--text);border-color:var(--text);background:rgba(255,255,255,.05);}
+
+/* FAQ */
+.faq-list{display:flex;flex-direction:column;gap:10px;max-width:820px;}
+.faq{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.faq summary{cursor:pointer;padding:1.2rem 1.5rem;font-family:var(--mono);font-size:14px;font-weight:bold;color:var(--text);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:1rem;}
+.faq summary::-webkit-details-marker{display:none;}
+.faq summary::after{content:'+';color:var(--teal);font-size:20px;font-weight:bold;transition:transform .2s;}
+.faq[open] summary::after{transform:rotate(45deg);}
+.faq-body{padding:0 1.5rem 1.3rem;font-size:14px;color:var(--text-muted);line-height:1.75;}
+.faq-body strong{color:var(--text);}
+
+.cal-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.cal-head{padding:2rem;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--bg-card),rgba(0,229,160,.02));}
+.cal-head h3{font-family:var(--mono);font-size:16px;font-weight:bold;color:var(--text);margin-bottom:4px;}
+.cal-head p{font-size:13px;color:var(--text-muted);}
+
+.contact-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:4rem;align-items:start;}
+.cbox{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:1rem;}
+.cbox strong{font-family:var(--mono);color:var(--text);display:block;margin-bottom:6px;font-size:13px;}
+.cform-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:2.5rem;}
+.fg{display:flex;flex-direction:column;gap:8px;margin-bottom:1.2rem;}
+.fg label{font-family:var(--mono);font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;}
+.fg input,.fg select,.fg textarea{padding:12px 16px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:var(--sans);transition:border-color .2s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--teal);}
+.fg textarea{resize:vertical;min-height:120px;}
+.sbtn{width:100%;padding:14px;margin-top:10px;border:none;border-radius:var(--r);background:var(--border-bright);color:var(--text);font-family:var(--mono);font-size:12px;font-weight:bold;letter-spacing:1px;transition:all .2s;}
+.sbtn:hover{background:var(--teal);color:var(--bg);}
+.form-ok{display:none;text-align:center;padding:2.5rem 1rem;background:rgba(46,213,115,.05);border:1px solid rgba(46,213,115,.2);border-radius:var(--r);color:var(--green);font-family:var(--mono);}
+.form-ok .ck{font-size:40px;margin-bottom:12px;}
+
+.disclaimer-sec{background:#060C16;border-top:1px solid var(--border);padding:3rem 2rem;}
+.disclaimer-inner{max-width:1100px;margin:0 auto;font-size:11px;color:var(--text-dim);line-height:2;}
+footer{background:var(--bg-card);border-top:1px solid var(--border);padding:3rem 2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:2rem;}
+.f-links{display:flex;gap:2rem;}
+.f-links a{font-family:var(--mono);font-size:12px;color:var(--text-muted);}
+.f-links a:hover{color:var(--teal);}
+
+@media(max-width:820px){
+  nav{padding:0 1.25rem;}
+  .hero-wrap{grid-template-columns:1fr auto;gap:1.5rem;padding:3rem 1.5rem;}
+  .mascot-wrap{width:90px;}
+  .mascot-svg{height:120px;}
+  .mascot-lore{display:none;}
+  .proof-inner{grid-template-columns:1fr;gap:1rem;padding:1.25rem 1.5rem;}
+  .proof-grid{grid-template-columns:1fr;gap:2rem;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .contact-grid{grid-template-columns:1fr;}
+  footer{flex-direction:column;text-align:center;}
+  .n-links{display:none;position:absolute;top:64px;left:0;right:0;background:var(--bg-card);border-bottom:1px solid var(--border);flex-direction:column;padding:1rem 0;}
+  .n-links a{padding:1rem 2rem;width:100%;border-bottom:1px solid var(--border);}
+  .n-links.open{display:flex;}
+  .n-ham{display:block;}
+  .n-buy{display:none;}
+  .bundle-card{flex-direction:column;align-items:flex-start;gap:2rem;}
+}
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr;}
+  .stat{border-right:none;border-bottom:1px solid var(--border);}
+  .stat:last-child{border-bottom:none;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="n-logo">
+    <svg width="30" height="36" viewBox="0 0 30 36" style="image-rendering:pixelated;" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4"  y="4"  width="22" height="16" fill="#00E5A0"/>
+      <rect x="2"  y="6"  width="26" height="12" fill="#00E5A0"/>
+      <rect x="6"  y="7"  width="8"  height="7"  fill="#0D1B2E"/>
+      <rect x="16" y="7"  width="8"  height="7"  fill="#0D1B2E"/>
+      <rect x="8"  y="9"  width="4"  height="4"  fill="#F5A623"/>
+      <rect x="18" y="9"  width="4"  height="4"  fill="#F5A623"/>
+      <rect x="9"  y="17" width="12" height="2"  fill="#0D1B2E"/>
+      <rect x="3"  y="23" width="24" height="12" fill="#00E5A0"/>
+      <rect x="1"  y="25" width="28" height="8"  fill="#00E5A0"/>
+      <rect x="5"  y="34" width="8"  height="2"  fill="#1A8A6A"/>
+      <rect x="17" y="34" width="8"  height="2"  fill="#1A8A6A"/>
+    </svg>
+    B<sup style="color:var(--gold);font-size:.7em;">3</sup>&nbsp;BIT BY BIT <span class="gold">&nbsp;PEDAGOGY</span>
+  </div>
+  <div class="n-links" id="nlinks">
+    <a href="#home">HOME</a>
+    <a href="#method">METHOD</a>
+    <a href="#library">LIBRARY</a>
+    <a href="#exam">BIT 160</a>
+    <a href="#coaching">COACHING</a>
+    <a href="/chat.html">ASK BIT</a>
+  </div>
+  <div class="nav-right">
+    <a href="/sampler.html"><button class="n-cta">FREE BIT 20</button></a>
+    <button class="n-buy" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">GET BUNDLE</button>
+    <button class="n-ham" id="hamBtn" onclick="toggleNav()">☰</button>
+  </div>
+</nav>
+
+<div class="ticker">
+  <span class="ticker-badge">FOUNDING</span>
+  <span>First 50 students: $30 System Blueprint locked in. Free 20-question sampler now available.</span>
+</div>
+
+<div id="home" class="hero-wrap rev">
+  <div>
+    <div class="h-badge">FOR US-IMG, FMG &amp; US MD STUDENTS</div>
+    <h1 class="hero-title">
+      Stop memorizing.<br/>
+      Start <em>seeing the matrix.</em>
+    </h1>
+    <p class="hero-sub">Mechanism-first Step 1, CBSE, and COMLEX prep — built by a US-IMG who lived the gauntlet. Master Pivots over buzzwords. Discriminators over disconnected facts. <strong style="color:var(--text);">The framework UWorld doesn't teach you.</strong></p>
+    <div class="hero-btns">
+      <a href="/sampler.html"><button class="btn-gold">TRY THE FREE BIT 20 →</button></a>
+      <a href="/chat.html"><button class="btn-o">ASK BIT (AI TUTOR)</button></a>
+    </div>
+    <div class="hero-trust">
+      <span>IMG-built</span>
+      <span>No subscription</span>
+      <span>Instant PDF download</span>
+      <span>$30 flat coaching</span>
+    </div>
+  </div>
+  <div class="mascot-wrap">
+    <div class="mascot-glow"></div>
+    <svg class="mascot-svg" viewBox="0 0 120 170" style="image-rendering:pixelated;" xmlns="http://www.w3.org/2000/svg">
+      <rect x="50" y="0"  width="4"  height="10" fill="#00E5A0"/>
+      <rect x="66" y="0"  width="4"  height="10" fill="#00E5A0"/>
+      <rect x="46" y="0"  width="8"  height="4"  fill="#F5A623"/>
+      <rect x="66" y="0"  width="8"  height="4"  fill="#F5A623"/>
+      <rect x="10" y="10" width="100" height="60" fill="#00E5A0"/>
+      <rect x="2"  y="20" width="116" height="42" fill="#00E5A0"/>
+      <rect x="2"  y="20" width="4"   height="42" fill="#1A8A6A"/>
+      <rect x="114" y="20" width="4"  height="42" fill="#1A8A6A"/>
+      <rect x="16" y="22" width="36" height="30" fill="#0D1B2E"/>
+      <rect x="20" y="26" width="28" height="22" fill="#F5A623"/>
+      <rect x="28" y="30" width="14" height="14" fill="#0D1B2E"/>
+      <rect x="28" y="30" width="6"  height="6"  fill="#fff" opacity=".9"/>
+      <rect x="68" y="22" width="36" height="30" fill="#0D1B2E"/>
+      <rect x="72" y="26" width="28" height="22" fill="#F5A623"/>
+      <rect x="78" y="30" width="14" height="14" fill="#0D1B2E"/>
+      <rect x="78" y="30" width="6"  height="6"  fill="#fff" opacity=".9"/>
+      <rect x="24" y="58" width="72" height="6"  fill="#0D1B2E"/>
+      <rect x="32" y="58" width="10" height="5"  fill="#fff"/>
+      <rect x="44" y="58" width="10" height="5"  fill="#fff"/>
+      <rect x="56" y="58" width="10" height="5"  fill="#fff"/>
+      <rect x="68" y="58" width="10" height="5"  fill="#fff"/>
+      <rect x="42" y="70" width="36" height="10" fill="#1A8A6A"/>
+      <rect x="8"  y="80" width="104" height="58" fill="#00E5A0"/>
+      <rect x="4"  y="84" width="112" height="50" fill="#00E5A0"/>
+      <rect x="20" y="90" width="80" height="40" fill="#0D1B2E"/>
+      <rect x="26" y="112" width="6"  height="12" fill="#00E5A0"/>
+      <rect x="36" y="108" width="6"  height="16" fill="#F5A623"/>
+      <rect x="46" y="104" width="6"  height="20" fill="#00E5A0"/>
+      <rect x="56" y="110" width="6"  height="14" fill="#2ED573"/>
+      <rect x="66" y="100" width="6"  height="24" fill="#F5A623"/>
+      <rect x="76" y="114" width="6"  height="10" fill="#A855F7"/>
+      <rect x="20" y="138" width="30" height="18" fill="#0A1520"/>
+      <rect x="70" y="138" width="30" height="18" fill="#0A1520"/>
+      <rect x="14" y="154" width="42" height="6"  fill="#1A8A6A"/>
+      <rect x="64" y="154" width="42" height="6"  fill="#1A8A6A"/>
+    </svg>
+    <div class="mascot-lore">
+      <strong>MEET BIT</strong>
+      Your reasoning engine.
+    </div>
+  </div>
+</div>
+
+<!-- PROOF STRIP -->
+<div class="proof-strip">
+  <div class="proof-inner">
+    <div>
+      <div class="proof-label">◈ The Wedge</div>
+      <div style="font-family:var(--mono);font-size:13px;color:var(--teal);margin-top:6px;">MECHANISM<br/>OVER MEMORIZATION</div>
+    </div>
+    <div>
+      <div class="proof-label">Why students switch</div>
+      <p class="proof-quote">"I had 4 weeks left and was stuck at 50%. Bit by Bit showed me how to read what the NBME is actually asking. Master Pivots changed how I take questions."</p>
+      <div class="proof-quote-attr">— STARTER QUOTE · REPLACE WITH REAL TESTIMONIAL</div>
+    </div>
+    <div>
+      <div class="proof-label">What you get free</div>
+      <p class="proof-quote" style="font-style:normal;">20-question NBME-style sampler with full Master Pivot explanations. No credit card. <a href="/sampler.html" style="color:var(--teal);">Start now →</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- LEAD MAGNET BANNER -->
+<div class="magnet">
+  <div class="magnet-inner rev">
+    <div class="magnet-text">
+      <h3>🧪 The Bit 20 Sampler — Free</h3>
+      <p>20 NBME-style questions. Every explanation leads with the Master Pivot. <strong>No credit card. No signup wall — just your email.</strong></p>
+    </div>
+    <a href="/sampler.html"><button class="btn-p">START THE BIT 20 →</button></a>
+  </div>
+</div>
+
+<div class="pause-sec rev2">
+  <h2>Most students do not fail Step 1 because they are lazy.</h2>
+  <p>They fail because they cannot distinguish signal from noise under pressure.</p>
+</div>
+
+<div class="stats-row">
+  <div class="stat rev"><div class="stat-n">12</div><div class="stat-l">Subject Guides</div></div>
+  <div class="stat rev"><div class="stat-n">160+</div><div class="stat-l">NBME-Style Questions</div></div>
+  <div class="stat rev"><div class="stat-n">240+</div><div class="stat-l">Rapid-Review Pearls</div></div>
+  <div class="stat rev"><div class="stat-n">$30</div><div class="stat-l">Founding-Student Coaching</div></div>
+</div>
+
+<div class="buy-banner">
+  <div class="buy-banner-inner rev">
+    <div class="buy-banner-text">
+      <h3>📦 The Complete 12-PDF Subject Bundle</h3>
+      <p>Every BBB Basic Science guide in one instant download. Learn how NBME questions actually separate similar diagnoses — then apply Master Pivots, trap-block logic, and discriminator frameworks to never miss them again.</p>
+      <div class="buy-trust">
+        <span class="btrust">Secure Payhip checkout</span>
+        <span class="btrust">Instant PDF download</span>
+        <span class="btrust">No account required</span>
+        <span class="btrust">Yours forever</span>
+      </div>
+    </div>
+    <div class="buy-banner-cta">
+      <button class="btn-buy-lg" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">BUY THE 12-PDF SET ↗</button>
+    </div>
+  </div>
+</div>
+
+<div class="sec-alt" id="diagnostic">
+  <div class="sec rev">
+    <div class="sec-hdr">
+      <div class="sec-tag">THE PROBLEM</div>
+      <h2 class="sec-title">Why you feel stuck<br/>(and why it's not your fault)</h2>
+      <p class="sec-sub">Most students don't fail Step 1 or CBSE because they didn't study hard enough. They fail because the exam tests reasoning, but medical school only taught them how to memorize. Here is why your scores plateau:</p>
+    </div>
+    <div class="diag-grid">
+      <div class="diag-item">
+        <div class="diag-num">01</div>
+        <div class="diag-text">
+          <h4>You recognize buzzwords instead of mechanisms.</h4>
+          <p>You associate "stones, bones, groans" with a disease, but you don't know the exact receptor pathway. When the NBME removes the buzzword, you guess.</p>
+        </div>
+      </div>
+      <div class="diag-item">
+        <div class="diag-num">02</div>
+        <div class="diag-text">
+          <h4>You memorize without discriminating.</h4>
+          <p>When two diseases share 6 of 7 symptoms, lists don't help. You need the single lab value or timeline that splits them apart.</p>
+        </div>
+      </div>
+      <div class="diag-item">
+        <div class="diag-num">03</div>
+        <div class="diag-text">
+          <h4>Your knowledge lives in fragments.</h4>
+          <p>You study Cardiology Monday, Renal Tuesday. The exam asks how a heart failure medication affects kidney electrolytes. Fragmented facts shatter under pressure.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec rev" id="method">
+  <div class="sec-hdr">
+    <div class="sec-tag">THE BIT BY BIT METHOD</div>
+    <h2 class="sec-title">The Operating System for Step 1</h2>
+    <p class="sec-sub">We don't just give you more facts to memorize. We teach you specific habits that turn the facts you already know into a question-answering machine.</p>
+  </div>
+  <div class="lib-grid">
+    <div class="ncard" style="--ca:#00E5A0;">
+      <div class="ncard-icon" style="background:rgba(0,229,160,.1);">🦴</div>
+      <div class="ncard-name">The Vignette Skeleton</div>
+      <div class="ncard-desc">Every question hides a 7-line skeleton. Timeline, setting, demographics — each is a deliberate signal. We teach you how to read it.</div>
+      <div class="ncard-tags"><span class="ntag nt-t">Foundation</span></div>
+    </div>
+    <div class="ncard" style="--ca:#4D9FFF;">
+      <div class="ncard-icon" style="background:rgba(77,159,255,.1);">⚖️</div>
+      <div class="ncard-name">The Master Pivot</div>
+      <div class="ncard-desc">The single clue that separates two identical-looking diseases. Once you know the pivot, the differential collapses to one obvious answer.</div>
+      <div class="ncard-tags"><span class="ntag nt-b">Clinical Logic</span></div>
+    </div>
+    <div class="ncard" style="--ca:#A855F7;">
+      <div class="ncard-icon" style="background:rgba(168,85,247,.1);">🔎</div>
+      <div class="ncard-name">Distractor Logic</div>
+      <div class="ncard-desc">Why do the wrong answers look so tempting? We show you how the NBME writes "trap blocks" so you never fall for a half-truth again.</div>
+      <div class="ncard-tags"><span class="ntag nt-p">Reasoning</span></div>
+    </div>
+    <div class="ncard" style="--ca:#F5A623;">
+      <div class="ncard-icon" style="background:rgba(245,166,35,.1);">🎯</div>
+      <div class="ncard-name">Read the Lead-In First</div>
+      <div class="ncard-desc">Knowing the question before you read the vignette prevents wasting energy on irrelevant data.</div>
+      <div class="ncard-tags"><span class="ntag nt-g">Efficiency</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-alt" id="proof">
+  <div class="sec rev">
+    <div class="sec-hdr" style="margin-bottom:2rem;">
+      <div class="sec-tag">INSIDE THE SYSTEM</div>
+      <h2 class="sec-title">Stop memorizing. See the matrix.</h2>
+      <p class="sec-sub">When you rely on symptoms, you get trapped. When you rely on the discriminator, you pass.</p>
+    </div>
+    <div class="proof-box rev2">
+      <div class="proof-tag">◈ EXAMPLE: THE MASTER PIVOT</div>
+      <div class="proof-grid">
+        <div class="proof-col">
+          <h4 style="color:var(--text);border-bottom:1px solid var(--border);padding-bottom:8px;">The Trap (Noise)</h4>
+          <p>The NBME presents a patient with wheezing, chronic shortness of breath, and decreased FEV1/FVC ratio. If you memorize symptoms, <span style="color:var(--text);">Asthma</span> and <span style="color:var(--text);">COPD</span> look identical.</p>
+        </div>
+        <div class="proof-col" style="border-left:2px solid rgba(0,229,160,.2);padding-left:2rem;">
+          <h4 style="color:var(--gold);border-bottom:1px solid rgba(245,166,35,.2);padding-bottom:8px;">The Discriminator (Signal)</h4>
+          <p>Ignore the overlap. Hunt for the <span class="proof-highlight">DLCO</span>. Normal or increased in Asthma. Decreased in COPD (emphysema) — alveolar destruction. <br/><br/><em style="color:var(--teal);">One lab value collapses the differential.</em></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec rev" id="library">
+  <div class="sec-hdr">
+    <div class="sec-tag">THE LIBRARY</div>
+    <h2 class="sec-title">Clinical Mastery Guides</h2>
+    <p class="sec-sub">Every PDF is built mechanism-first. Stop memorizing buzzwords and learn to draw the disease. Includes trap blocks, Master Pivots, and rapid-review pearls.</p>
+  </div>
+  <div class="lib-grid">
+    <div class="bundle-card">
+      <div class="bundle-card-text">
+        <h3>⭐ Complete 12-Subject Bundle</h3>
+        <p>Every BBB guide in one purchase. Learn the reasoning framework once, then apply it across all 12 systems. Instant Payhip download. No account, no wait.</p>
+        <div class="bundle-includes">
+          <span class="bi">📋 Critical Thinking Guide</span>
+          <span class="bi">🫀 Cardiology</span>
+          <span class="bi">🫁 Pulmonology</span>
+          <span class="bi">🧠 Neuro/Psych</span>
+          <span class="bi">🫙 GI/Hepatobiliary</span>
+          <span class="bi">🧬 Biochem/Genetics</span>
+          <span class="bi">💊 Pharm/Biostats</span>
+          <span class="bi">🩸 Heme/Onc/Immuno</span>
+          <span class="bi">🦠 Micro/ID</span>
+          <span class="bi">⚗️ Endo/Renal</span>
+          <span class="bi">🦴 MSK/Derm</span>
+          <span class="bi">🔬 OB-GYN/Repro</span>
+        </div>
+      </div>
+      <div class="bundle-cta">
+        <button class="btn-buy-lg" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">GET THE BUNDLE ↗</button>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">Processed via Payhip</div>
+      </div>
+    </div>
+
+    <div class="ncard" style="--ca:#00E5A0;" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">
+      <div class="ncard-icon" style="background:rgba(0,229,160,.1);">📋</div>
+      <div class="ncard-name">BBB Critical Thinking Guide</div>
+      <div class="pdf-preview"><div class="pdf-preview-tag">◈ INSIDE</div>→ <b>Vignette Skeleton</b><br/>→ <b>Master Pivot</b> framework<br/>→ Trap block decoder</div>
+      <div class="ncard-desc">The foundation. How to read USMLE stems and isolate the discriminator under pressure.</div>
+      <div class="ncard-foot"><span class="navail">PDF Included</span><button class="btn-soft">View Bundle</button></div>
+    </div>
+
+    <div class="ncard" style="--ca:#FF4757;" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">
+      <div class="ncard-icon" style="background:rgba(255,71,87,.1);">🫀</div>
+      <div class="ncard-name">BBB Cardiology</div>
+      <div class="pdf-preview"><div class="pdf-preview-tag">◈ INSIDE</div>→ MI <b>timeline pivot</b><br/>→ HFrEF vs HFpEF: <b>EF</b><br/>→ Valve lesions decision tree</div>
+      <div class="ncard-desc">MI timeline, ACS pharmacology, HFrEF vs HFpEF, valve lesions, arrhythmias, and shock types.</div>
+      <div class="ncard-foot"><span class="navail">PDF Included</span><button class="btn-soft">View Bundle</button></div>
+    </div>
+
+    <div class="ncard" style="--ca:#A855F7;" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">
+      <div class="ncard-icon" style="background:rgba(168,85,247,.1);">🧠</div>
+      <div class="ncard-name">BBB Neuro / Psych</div>
+      <div class="pdf-preview"><div class="pdf-preview-tag">◈ INSIDE</div>→ Stroke <b>localization</b> matrix<br/>→ MS vs GBS: <b>CSF</b> pivot<br/>→ Psych meds receptor map</div>
+      <div class="ncard-desc">Stroke localization, neurodegenerative diseases, seizures, MS vs GBS, psychiatric pharmacology.</div>
+      <div class="ncard-foot"><span class="navail">PDF Included</span><button class="btn-soft">View Bundle</button></div>
+    </div>
+
+    <div class="ncard" style="--ca:#4D9FFF;" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">
+      <div class="ncard-icon" style="background:rgba(77,159,255,.1);">🫁</div>
+      <div class="ncard-name">BBB Pulmonology</div>
+      <div class="pdf-preview"><div class="pdf-preview-tag">◈ INSIDE</div>→ <b>DLCO</b>: asthma vs COPD<br/>→ PFT interpretation chart<br/>→ PE diagnostic algorithm</div>
+      <div class="ncard-desc">PFTs, asthma vs COPD, pneumonia organisms, PE diagnosis, ARDS, and lung cancer types.</div>
+      <div class="ncard-foot"><span class="navail">PDF Included</span><button class="btn-soft">View Bundle</button></div>
+    </div>
+
+    <div class="ncard" style="--ca:#2ED573;" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">
+      <div class="ncard-icon" style="background:rgba(46,213,115,.1);">🧬</div>
+      <div class="ncard-name">BBB Biochem / Genetics</div>
+      <div class="pdf-preview"><div class="pdf-preview-tag">◈ INSIDE</div>→ Storage disease <b>enzyme map</b><br/>→ Vitamin deficiency pivots<br/>→ Inheritance pattern flowchart</div>
+      <div class="ncard-desc">Enzyme kinetics, vitamins, metabolic pathways, glycogen/lysosomal storage diseases.</div>
+      <div class="ncard-foot"><span class="navail">PDF Included</span><button class="btn-soft">View Bundle</button></div>
+    </div>
+
+    <div class="ncard" style="--ca:#F5A623;" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">
+      <div class="ncard-icon" style="background:rgba(245,166,35,.1);">⚗️</div>
+      <div class="ncard-name">BBB Endo / Renal</div>
+      <div class="pdf-preview"><div class="pdf-preview-tag">◈ INSIDE</div>→ SIADH vs DI: <b>urine osm</b><br/>→ Nephrotic syndrome matrix<br/>→ Acid-base 4-step pivot</div>
+      <div class="ncard-desc">Renal physiology, nephrotic syndromes, AKI vs CKD, acid-base interpretation, electrolytes.</div>
+      <div class="ncard-foot"><span class="navail">PDF Included</span><button class="btn-soft">View Bundle</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-alt" id="exam">
+  <div class="sec rev">
+    <div class="sec-hdr">
+      <div class="sec-tag">BIT 160 PRACTICE EXAM</div>
+      <h2 class="sec-title">The Internal Proving Ground</h2>
+      <p class="sec-sub">Test the system under true exam pressure. 160 NBME-style questions built from high-yield clinical reasoning. No memorization tests. All mechanism.</p>
+    </div>
+    <div class="exam-block rev2">
+      <h2 class="exam-title"><span class="tc">BIT</span> 160</h2>
+      <p style="color:var(--text-muted); max-width: 500px; margin: 0 auto;">Simulates the real NBME environment: clinical vignettes, timed blocks, and full explanations featuring Master Pivots for every question.</p>
+      <div class="exam-meta">
+        <div><div class="em-n">160</div><div class="em-l">Questions</div></div>
+        <div><div class="em-n">8</div><div class="em-l">Blocks</div></div>
+        <div><div class="em-n">16</div><div class="em-l">Systems</div></div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
+        <a href="/sampler.html"><button class="btn-o">TRY THE FREE BIT 20 FIRST</button></a>
+        <button class="btn-p" onclick="window.location.href='bbb_exam.html'">LAUNCH BIT 160 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-alt" id="coaching">
+  <div class="sec rev">
+    <div class="sec-hdr">
+      <div class="sec-tag">COGNITIVE RESTRUCTURING</div>
+      <h2 class="sec-title">Beyond Just Questions</h2>
+      <p class="sec-sub">We don't just teach the mechanism; we build the system around it. Resource sequencing, cognitive performance, and reasoning repair tailored to how you actually learn.</p>
+    </div>
+    <div class="lib-grid rev2">
+      <div class="ncard" style="--ca:#F5A623;" onclick="openCal()">
+        <div class="ncard-icon" style="background:rgba(245,166,35,.1);">🗺️</div>
+        <div class="ncard-name">System Stabilization Blueprint</div>
+        <div class="ncard-desc">A fully customized 12-week prep roadmap built around your modality, baseline, and lifestyle.</div>
+        <div class="ncard-tags"><span class="ntag nt-g">Scheduling</span></div>
+      </div>
+      <div class="ncard" style="--ca:#00E5A0;" onclick="openCal()">
+        <div class="ncard-icon" style="background:rgba(0,229,160,.1);">⚖️</div>
+        <div class="ncard-name">Performance &amp; Anxiety Protocols</div>
+        <div class="ncard-desc">Movement, sleep timing, and mid-block anxiety management techniques you can actually use.</div>
+        <div class="ncard-tags"><span class="ntag nt-t">Wellness</span></div>
+      </div>
+      <div class="ncard" style="--ca:#A855F7;" onclick="openCal()">
+        <div class="ncard-icon" style="background:rgba(168,85,247,.1);">🎯</div>
+        <div class="ncard-name">ADHD &amp; Neurodivergent Support</div>
+        <div class="ncard-desc">Specialized workflows: shorter Q-blocks, strict body doubling, pacing adjustments. The plan most prep companies refuse to write.</div>
+        <div class="ncard-tags"><span class="ntag nt-p">Underserved</span></div>
+      </div>
+      <div class="ncard" style="--ca:#FF4757;" onclick="openCal()">
+        <div class="ncard-icon" style="background:rgba(255,71,87,.1);">🔄</div>
+        <div class="ncard-name">Re-Taker Diagnostics</div>
+        <div class="ncard-desc">Diagnostic post-mortem, unlearning passive review, deploying the Master Pivot for round two.</div>
+        <div class="ncard-tags"><span class="ntag nt-r">Specialty</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec rev" id="pricing">
+  <div class="sec-hdr">
+    <div class="sec-tag">SERVICES &amp; PRICING — FOUNDING-STUDENT RATES</div>
+    <h2 class="sec-title">Structure you can trust.<br/>No subscriptions. No hype.</h2>
+    <p class="sec-sub">Founding-student pricing for the first 50. Once those slots are filled, rates move to standard market. Lock in now if you're prepping in the next 6 months.</p>
+  </div>
+  <div class="price-grid">
+    <div class="pcard">
+      <div class="ptag-row"><span class="ntag nt-t">Hourly</span></div>
+      <h3>Reasoning Repair Session</h3>
+      <p>1-on-1 diagnostic review targeting your weakest systems. We find the cognitive leaks and fix them.</p>
+      <div class="pamt"><span class="pamt-strike">$75</span>$25<span style="font-size:14px;color:var(--text-muted);font-weight:normal;"> / hr</span></div>
+      <ul class="pfeats">
+        <li>NBME question deep dives</li>
+        <li>Error log management</li>
+        <li>No minimum commitment</li>
+      </ul>
+      <button class="pcta" onclick="openCal()">BOOK SESSION</button>
+    </div>
+    <div class="pcard" style="border-color:var(--teal); background:linear-gradient(150deg,var(--bg-card),rgba(0,229,160,.03));">
+      <div class="ptag-row"><span class="ntag nt-g">Most Popular</span></div>
+      <h3>System Stabilization Blueprint</h3>
+      <p>A full 12-week pacing calendar, resource sequencing map, and daily systemic blocks.</p>
+      <div class="pamt"><span class="pamt-strike">$150</span>$30<span style="font-size:14px;color:var(--text-muted);font-weight:normal;"> flat</span></div>
+      <ul class="pfeats">
+        <li>Custom System A &amp; B schedules</li>
+        <li>Milestone &amp; score tracking</li>
+        <li>Performance &amp; wellness integration</li>
+      </ul>
+      <button class="pcta" style="background:var(--teal);color:var(--bg);border:none;" onclick="openCal()">GET BLUEPRINT</button>
+    </div>
+    <div class="pcard">
+      <div class="ptag-row"><span class="ntag nt-p">Specialized</span></div>
+      <h3>Re-Taker Diagnostic</h3>
+      <p>Specialized debrief for failed COMP or Step 1 re-takers. Identify root causes, unlearn passive habits, rebuild foundation.</p>
+      <div class="pamt" style="font-size:24px;">Contact</div>
+      <ul class="pfeats" style="margin-top:2.2rem;">
+        <li>Root-cause debrief session</li>
+        <li>1-week diagnostic NBME phase</li>
+        <li>Master Pivot retraining</li>
+      </ul>
+      <button class="pcta" onclick="openCal()">BOOK DIAGNOSTIC</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="sec-alt" id="faq">
+  <div class="sec rev">
+    <div class="sec-hdr">
+      <div class="sec-tag">FAQ</div>
+      <h2 class="sec-title">Real questions, straight answers.</h2>
+    </div>
+    <div class="faq-list">
+      <details class="faq">
+        <summary>Will this replace UWorld or Amboss?</summary>
+        <div class="faq-body">No. BBB is the <strong>reasoning layer</strong> that sits on top of your Qbank. UWorld gives you 4000 questions; we give you the framework to answer all of them faster and more accurately. Use both.</div>
+      </details>
+      <details class="faq">
+        <summary>I'm a US-IMG / FMG. Is this for me?</summary>
+        <div class="faq-body">It was built FOR you. The founder is a 3rd-year US-IMG who designed this system after grinding through CBSE/COMP and Step 1 prep with no institutional safety net. IMG-specific scheduling and re-taker workflows are baked in.</div>
+      </details>
+      <details class="faq">
+        <summary>Does this work for COMLEX as well as USMLE?</summary>
+        <div class="faq-body">The mechanism-first method maps directly to both. COMLEX Level 1 tests the same physiology and pharmacology — only the OMM section is unique, which BBB doesn't cover yet.</div>
+      </details>
+      <details class="faq">
+        <summary>How is this different from First Aid or Pathoma?</summary>
+        <div class="faq-body">First Aid is a <strong>reference</strong>. Pathoma is a <strong>lecture series</strong>. BBB is a <strong>reasoning protocol</strong>. We don't compete with them — we teach you how to use them under exam pressure.</div>
+      </details>
+      <details class="faq">
+        <summary>Why so cheap? What's the catch?</summary>
+        <div class="faq-body">No catch. Founding-student pricing — first 50 lock in the rates above. The founder is solo, just out of his own gauntlet, and wants the framework in students' hands before the next NBME cycle. Prices rise after slot 50.</div>
+      </details>
+      <details class="faq">
+        <summary>Can I see the PDFs before buying?</summary>
+        <div class="faq-body">Yes. The <a href="/sampler.html" style="color:var(--teal);">free Bit 20 sampler</a> shows you exactly how a BBB explanation reads. If the Master Pivots in those 20 questions teach you something new, the full bundle will too.</div>
+      </details>
+      <details class="faq">
+        <summary>I have ADHD / I'm neurodivergent. Will this work?</summary>
+        <div class="faq-body">Yes — and it's explicitly designed with you in mind. The coaching tier includes neurodivergent-specific workflows (shorter Q-blocks, body doubling, dopamine-aware pacing). Most prep companies pretend you don't exist; we built around you.</div>
+      </details>
+      <details class="faq">
+        <summary>What if it doesn't work for me?</summary>
+        <div class="faq-body">Email within 7 days of bundle purchase and you get a full refund. No questions, no forms. The founder would rather have your honest review than your unhappy $50.</div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<div class="sec-alt" id="about">
+  <div class="sec rev">
+    <div class="sec-hdr">
+      <div class="sec-tag">ABOUT THE FOUNDER</div>
+      <h2 class="sec-title">Built from the trenches.</h2>
+    </div>
+    <div class="bundle-card rev2" style="background:var(--bg-card); border-color:var(--border-bright); padding: 3rem;">
+      <div class="bundle-card-text">
+        <h3 style="font-size: 18px; color: var(--text); margin-bottom: 1.5rem; font-family: var(--sans); font-weight: 600;">I'm a 3rd-year US-IMG, and Bit by Bit was built in the trenches of my own CBSE/COMP and Step 1 prep.</h3>
+        <p style="font-size: 15px; color: var(--text-muted); line-height: 1.8; margin-bottom: 1.5rem;">I know what it means to be held back by a school-mandated COMP. I designed this system after missing thousands of NBME questions because I was stuck between memorization and actual understanding. Flashcards don't work when the NBME tests clinical reasoning under pressure.</p>
+        <p style="font-size: 15px; color: var(--text-muted); line-height: 1.8; margin-bottom: 0;">Every PDF, Master Pivot, and trap block is a tool I created to pass my CBSE and survive the same gauntlet you're facing. This isn't a faceless test-prep corporation. It's me, sharing the framework I wish I'd had from day one. Calm the chaos. You've got this.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec rev" id="schedule">
+  <div class="sec-hdr">
+    <div class="sec-tag">BOOK A SESSION</div>
+    <h2 class="sec-title">Schedule Your Free Consult</h2>
+    <p class="sec-sub">Pick a time that works. The first session is always a free intake consult: no pressure, just a baseline check.</p>
+  </div>
+  <div class="cal-wrap rev2">
+    <div class="cal-head">
+      <h3>Bit by Bit Pedagogy</h3>
+      <p>Free 20-min consult · Online · No commitment required</p>
+    </div>
+    <div class="calendly-inline-widget" data-url="https://calendly.com/sifrandcompany" style="min-width:320px;height:680px;"></div>
+  </div>
+</div>
+
+<div class="sec-alt" id="contact">
+  <div class="sec rev">
+    <div class="sec-hdr">
+      <div class="sec-tag">GET IN TOUCH</div>
+      <h2 class="sec-title">Questions, Tutoring &amp; Custom Help</h2>
+      <p class="sec-sub">Ask about tutoring, request a custom study plan, or get help with anything BBB. For the PDF bundle, use the Payhip link — instant download. All messages answered within 24 hours.</p>
+    </div>
+    <div class="contact-grid">
+      <div class="cbox rev" style="background:transparent;border:none;padding:0;">
+        <h3 style="font-family:var(--mono);font-size:18px;font-weight:bold;color:var(--text);margin-bottom:1rem;">What happens next</h3>
+        <p style="font-size:14px;color:var(--text-muted);line-height:1.8;margin-bottom:1.5rem;">Response within 24 hours. For tutoring or blueprints, include your exam date and current prep stage.</p>
+        <div class="cbox" style="border-color:rgba(245,166,35,.3);background:rgba(245,166,35,.04);">
+          <strong style="color:var(--gold);">📦 Want the PDF Bundle Now?</strong>
+          You don't need to contact us. Buy via Payhip — instant download. No wait.
+          <br/><br/>
+          <button class="n-buy" style="font-size:11px;padding:8px 16px;" onclick="window.open('https://payhip.com/b/pbKvH','_blank')">💳 BUY ON PAYHIP ↗</button>
+        </div>
+      </div>
+      <div class="cform-box rev2">
+        <h3 style="font-family:var(--mono);font-size:13px;font-weight:bold;color:var(--text);margin-bottom:1.5rem;letter-spacing:.5px;">SEND A MESSAGE</h3>
+        <form id="cform" name="contact" method="POST" data-netlify="true" onsubmit="sendMsg(event)">
+          <input type="hidden" name="form-name" value="contact"/>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="fg"><label>First Name</label><input type="text" name="first" placeholder="Jamie" required/></div>
+            <div class="fg"><label>Last Name</label><input type="text" name="last" placeholder="Rodriguez" required/></div>
+          </div>
+          <div class="fg"><label>Email Address</label><input type="email" name="email" placeholder="you@med.edu" required/></div>
+          <div class="fg">
+            <label>What do you need?</label>
+            <select name="topic">
+              <option>Question about the PDF Bundle</option>
+              <option>Diagnostic Review / Tutoring (hourly)</option>
+              <option>System Stabilization Blueprint ($30)</option>
+              <option>Re-Taker Diagnostic Session</option>
+              <option>CBSE/COMP Preparation</option>
+              <option>Question about the Bit 160 Exam</option>
+              <option>General Question</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Tell me about your situation</label>
+            <textarea name="message" placeholder="Where are you in your prep? When is your exam? Which subjects? Target score?"></textarea>
+          </div>
+          <button type="submit" class="sbtn">SEND MESSAGE →</button>
+        </form>
+        <div class="form-ok" id="formOk">
+          <div class="ck">✓</div>
+          <h4 style="font-size:15px;margin-bottom:6px;">Message received!</h4>
+          <p style="font-size:12px;color:var(--text-muted);">You'll hear back within 24 hours. In the meantime, browse the library or launch the Bit 160 exam.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="disclaimer-sec">
+  <div class="disclaimer-inner">
+    <strong>No Affiliation Notice:</strong> Bit by Bit Pedagogy is an independent educational platform. We are not affiliated with, endorsed by, or connected to the National Board of Medical Examiners (NBME), the United States Medical Licensing Examination (USMLE), or the Federation of State Medical Boards (FSMB). "USMLE" and "NBME" are registered trademarks of their respective owners. Materials are for educational use only and do not guarantee score outcomes.
+  </div>
+</div>
+
+<footer>
+  <div>
+    <div style="font-family:var(--mono);font-size:14px;font-weight:bold;color:var(--text);margin-bottom:8px;">BIT BY BIT <span style="color:var(--teal);">PEDAGOGY</span></div>
+    <div style="font-size:11px;color:var(--text-dim);">© 2026 Bit by Bit Pedagogy · Built for medical students, by educators who care.</div>
+  </div>
+  <div class="f-links">
+    <a href="#home">Home</a>
+    <a href="/sampler.html">Free Bit 20</a>
+    <a href="/chat.html">Ask Bit</a>
+    <a href="#library">Library</a>
+    <a href="#faq">FAQ</a>
+  </div>
+</footer>
+
+<!-- Hidden Netlify Forms detection -->
+<form name="contact" netlify hidden>
+  <input type="text" name="first"/>
+  <input type="text" name="last"/>
+  <input type="email" name="email"/>
+  <select name="topic"></select>
+  <textarea name="message"></textarea>
+</form>
+
+<script src="https://assets.calendly.com/assets/external/widget.js" type="text/javascript" async></script>
+<script>
+function toggleNav(){
+  const l=document.getElementById('nlinks');
+  const b=document.getElementById('hamBtn');
+  l.classList.toggle('open');
+  if(b) b.textContent = l.classList.contains('open') ? '✕' : '☰';
+}
+function openCal(){
+  if(window.Calendly){
+    Calendly.initPopupWidget({url:'https://calendly.com/sifrandcompany'});
+  } else {
+    window.open('https://calendly.com/sifrandcompany','_blank');
+  }
+}
+function sendMsg(e){
+  e.preventDefault();
+  const form = document.getElementById('cform');
+  const data = new FormData(form);
+  fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(data).toString() }).catch(()=>{});
+  form.style.display='none';
+  document.getElementById('formOk').style.display='block';
+}
+const revEls=document.querySelectorAll('.rev,.rev2');
+const ro=new IntersectionObserver((entries)=>{
+  entries.forEach(el=>{if(el.isIntersecting)el.target.classList.add('on');});
+},{threshold:0.1});
+revEls.forEach(el=>ro.observe(el));
+</script>
+</body>
+</html>

@@ -1028,7 +1028,6 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
       </div>
       <div class="panel-hd" style="border-top:1px solid var(--b1);">Incident Log</div>
       <div class="log-area" id="ui-log"></div>
-      <a href="https://gofund.me/92acc1b19" target="_blank" id="gfm-tiny">❤ Support on GoFundMe</a>
       <button class="end-btn" onclick="endShift()">End Shift ›› <kbd style="font-size:9px;background:rgba(0,0,0,.3);padding:2px 5px;border-radius:3px;">E</kbd></button>
     </div>
   </div>
@@ -1212,8 +1211,10 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
     <a onclick="document.getElementById('tips-overlay').style.display='flex'">? How to Play</a>
     <a onclick="openCareerProfileFromMenu()">📊 My Stats</a>
     <a onclick="openCustomizerFromMenu()">🧑‍⚕️ Avatar</a>
-    <a href="https://gofund.me/92acc1b19" target="_blank">❤ Support</a>
+    <a onclick="openSettings()">⚙ Settings</a>
+    <a onclick="openCredits()">© Credits</a>
   </div>
+  <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-family:var(--font-m);font-size:8px;letter-spacing:.3em;color:var(--t3);text-transform:uppercase;z-index:2;">v1.0 · A WindowDoom Production</div>
 </div>
 
 <!-- ═══ AVATAR-ONLY OVERLAY ═══ -->
@@ -1264,12 +1265,70 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 <div id="fx-flash"></div>
 <div id="fx-layer"></div>
 
-<!-- ═══ GoFundMe Toast ═══ -->
-<div id="gfm-toast">
-  <button class="toast-x" onclick="dismissToast()">✕</button>
-  <div class="toast-lbl">Support The Ward</div>
-  <div class="toast-body">Enjoying the simulation? Help <strong>WindowDoom</strong> build this into a real clinical training tool.</div>
-  <a href="https://gofund.me/92acc1b19" target="_blank" class="toast-link">❤ GoFundMe</a>
+<!-- ═══ SETTINGS ═══ -->
+<div class="overlay" id="ov-settings">
+  <div class="ov-box" style="max-width:520px">
+    <div class="ov-score-banner" style="background:var(--teal2);color:#000;">SETTINGS</div>
+    <div class="ov-title">Game Options</div>
+    <div style="display:flex;flex-direction:column;gap:18px;margin-top:8px;">
+      <div>
+        <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--t1);display:flex;justify-content:space-between;margin-bottom:8px;">
+          Sound FX <span id="vol-label" style="color:var(--teal3);font-family:var(--font-m);font-weight:700;">80%</span>
+        </label>
+        <input type="range" id="vol-slider" min="0" max="100" value="80" style="width:100%;accent-color:var(--teal2);">
+      </div>
+      <div>
+        <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--t1);display:block;margin-bottom:8px;">Difficulty Default</label>
+        <div style="display:flex;gap:6px;">
+          <button class="diff-btn" data-diff="student" onclick="setDiffSetting('student')">🎓 Student</button>
+          <button class="diff-btn" data-diff="resident" onclick="setDiffSetting('resident')">🩺 Resident</button>
+          <button class="diff-btn" data-diff="attending" onclick="setDiffSetting('attending')">⚕ Attending</button>
+        </div>
+      </div>
+      <div>
+        <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--t1);display:block;margin-bottom:8px;">Tutorial</label>
+        <button class="pause-btn" style="min-width:0;padding:9px 16px;font-size:11px;" onclick="resetTutorial()">↺ Replay First-Time Tutorial</button>
+      </div>
+      <div>
+        <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--crimson3);display:block;margin-bottom:8px;">Save Data</label>
+        <button class="pause-btn" style="min-width:0;padding:9px 16px;font-size:11px;border-color:var(--crimson2);color:var(--crimson3);" onclick="resetSave()">⚠ Erase All Progress</button>
+      </div>
+    </div>
+    <button class="btn-ack" style="margin-top:20px;" onclick="closeSettings()">Done</button>
+  </div>
+</div>
+
+<!-- ═══ CREDITS ═══ -->
+<div class="overlay" id="ov-credits">
+  <div class="ov-box" style="max-width:560px;text-align:center;">
+    <div class="ov-score-banner" style="background:var(--gold2);color:#000;">CREDITS</div>
+    <div class="ov-title" style="text-align:center;font-size:42px;letter-spacing:.05em;">THE WARD</div>
+    <div style="font-family:var(--font-m);font-size:10px;letter-spacing:.4em;color:var(--teal3);text-transform:uppercase;margin-bottom:32px;">A Clinical Decision Simulator</div>
+
+    <div style="text-align:left;display:flex;flex-direction:column;gap:18px;font-size:12px;color:var(--t2);line-height:1.7;">
+      <div>
+        <div style="font-family:var(--font-h);font-size:11px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:var(--gold2);margin-bottom:4px;">Design & Code</div>
+        WindowDoom
+      </div>
+      <div>
+        <div style="font-family:var(--font-h);font-size:11px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:var(--gold2);margin-bottom:4px;">Clinical Content</div>
+        149 cases authored across emergency medicine, internal medicine, surgery, OB/GYN, pediatrics, neurology, psychiatry, immunology, endocrinology, and medical ethics.
+      </div>
+      <div>
+        <div style="font-family:var(--font-h);font-size:11px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:var(--gold2);margin-bottom:4px;">Audio</div>
+        Web Audio API — synthesised in browser
+      </div>
+      <div>
+        <div style="font-family:var(--font-h);font-size:11px;font-weight:900;letter-spacing:.2em;text-transform:uppercase;color:var(--gold2);margin-bottom:4px;">Tech</div>
+        Vanilla HTML / CSS / JavaScript · No dependencies · Single file · Runs offline
+      </div>
+      <div style="background:rgba(198,40,40,.08);border:1px solid var(--crimson2);padding:12px 14px;border-radius:var(--r);font-size:11px;color:var(--crimson3);">
+        <strong>Educational use only.</strong> The clinical scenarios are dramatised for entertainment and learning. Nothing in this simulation constitutes medical advice. Always consult licensed practitioners for actual care.
+      </div>
+    </div>
+    <div style="font-family:var(--font-m);font-size:9px;letter-spacing:.3em;color:var(--t3);text-transform:uppercase;margin-top:24px;">© WindowDoom · v1.0</div>
+    <button class="btn-ack" style="margin-top:20px;" onclick="closeCredits()">Close</button>
+  </div>
 </div>
 
 <script>
@@ -3297,10 +3356,10 @@ function drawShareCard(d){
   // Footer
   ctx.fillStyle = '#374e68';
   ctx.font = '600 22px monospace';
-  ctx.fillText('PLAY AT BITBYBITMD.COM', W/2, H-90);
+  ctx.fillText('THE WARD · CLINICAL SIMULATOR', W/2, H-90);
   ctx.fillStyle = '#d4820a';
   ctx.font = '700 18px monospace';
-  ctx.fillText('CHALLENGE A FRIEND ›', W/2, H-50);
+  ctx.fillText('CHALLENGE A FRIEND · A WINDOWDOOM PRODUCTION', W/2, H-50);
 }
 
 function shareCardDownload(){
@@ -3319,7 +3378,7 @@ function shareCardCopy(){
   const txt = `🩺 The Ward · ${d.mode}${d.seedDate?' · '+d.seedDate:''}\n` +
     `Grade: ${grade} (${d.pct}%)\n` +
     `${d.casesPlayed} cases · ${d.perfect} perfect · ${d.lethal} lethal · ${d.streak}× streak\n\n` +
-    `Play: bitbybitmd.com — can you beat it?`;
+    `Play THE WARD — can you beat it?`;
   navigator.clipboard.writeText(txt).then(()=>{
     const btn = event.target;
     const orig = btn.textContent;
@@ -3472,7 +3531,57 @@ function openCareerProfileFromMenu(){
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// SETTINGS / CREDITS
+// ══════════════════════════════════════════════════════════
+let _diffSetting = localStorage.getItem('wardDiff') || 'resident';
+
+function openSettings(){
+  OV_OPEN = true;
+  // Initialize controls
+  const slider = document.getElementById('vol-slider');
+  if(slider){
+    slider.value = Math.round(_volScale * 100);
+    document.getElementById('vol-label').textContent = slider.value + '%';
+    slider.oninput = ()=>{
+      _volScale = slider.value/100;
+      document.getElementById('vol-label').textContent = slider.value + '%';
+      localStorage.setItem('wardVol', _volScale);
+    };
+    slider.onchange = ()=> playTone(800, 0.06, 0.08);
+  }
+  document.querySelectorAll('#ov-settings .diff-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.diff === _diffSetting);
+  });
+  document.getElementById('ov-settings').style.display = 'flex';
+}
+function closeSettings(){ document.getElementById('ov-settings').style.display='none'; OV_OPEN=false; }
+function setDiffSetting(d){
+  _diffSetting = d;
+  if(typeof setDiff === 'function') setDiff(d);
+  localStorage.setItem('wardDiff', d);
+  document.querySelectorAll('#ov-settings .diff-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.diff === d);
+  });
+  playTone(660, 0.05, 0.05);
+}
+function resetTutorial(){
+  localStorage.removeItem(TUT_KEY);
+  alert('Tutorial reset. Will replay on next campaign run.');
+}
+function resetSave(){
+  if(!confirm('Erase all save data? Achievements, daily streak, avatar, settings will all be cleared. This cannot be undone.')) return;
+  ['wardCareer','wardAvatar','wardDailyStatus','wardVol','wardDiff','wardDocName',TUT_KEY].forEach(k => localStorage.removeItem(k));
+  alert('Save erased. Reloading.');
+  location.reload();
+}
+
+function openCredits(){ OV_OPEN=true; document.getElementById('ov-credits').style.display='flex'; }
+function closeCredits(){ document.getElementById('ov-credits').style.display='none'; OV_OPEN=false; }
+
 function initApp() {
+  // Apply default difficulty
+  if(typeof setDiff === 'function' && _diffSetting) setDiff(_diffSetting);
   // Load previous career data if exists
   loadCareerData();
   loadAvatar();
@@ -3531,8 +3640,7 @@ function startGame(specId) {
   admitPt(); admitPt(); admitPt();
   if(specId==='em') admitPt();
   renderAll();
-  // GoFundMe toast after 25 seconds
-  setTimeout(()=>{ if(!_toastShown){_toastShown=true; showToast();} }, 25000);
+  // (No promotional toast in standalone build)
 }
 
 function admitPt() {
@@ -3957,7 +4065,7 @@ function endShift(){
   $text('ss-next-day',GS.day+1);
   $show('ov-shift','flex');
   // GFM toast once per session, around shift 4
-  if(GS.day%4===0 && !_toastShown){ _toastShown=true; setTimeout(showToast,2000); }
+  // (no promo toast)
 }
 
 function confirmEndShift(){
@@ -4309,6 +4417,7 @@ function getAC() {
   return _AC;
 }
 
+let _volScale = (parseFloat(localStorage.getItem('wardVol'))||0.8);
 function playTone(freq, duration, vol=0.08, type='sine') {
   if (!_soundOn) return;
   try {
@@ -4319,7 +4428,7 @@ function playTone(freq, duration, vol=0.08, type='sine') {
     osc.connect(gain); gain.connect(ac.destination);
     osc.type = type;
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(vol, ac.currentTime);
+    gain.gain.setValueAtTime(vol * _volScale, ac.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
     osc.start(); osc.stop(ac.currentTime + duration);
   } catch(e) {}

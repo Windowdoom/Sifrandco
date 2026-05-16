@@ -12,6 +12,8 @@
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8;base64,ewogICJuYW1lIjogIlRoZSBXYXJkIC0tIENsaW5pY2FsIFNpbXVsYXRvciIsCiAgInNob3J0X25hbWUiOiAiVGhlIFdhcmQiLAogICJzdGFydF91cmwiOiAiLi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJvcmllbnRhdGlvbiI6ICJhbnkiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwMTBkMTYiLAogICJ0aGVtZV9jb2xvciI6ICIjMDEwZDE2IiwKICAiZGVzY3JpcHRpb24iOiAiQ2xpbmljYWwgZGVjaXNpb24tbWFraW5nIHNpbXVsYXRpb24gd2l0aCA3MCBjYXNlcy4iLAogICJjYXRlZ29yaWVzIjogWyJnYW1lcyIsICJlZHVjYXRpb24iLCAibWVkaWNhbCJdCn0=">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23010d16'/%3E%3Cpath d='M28 14h8v14h14v8H36v14h-8V36H14v-8h14z' fill='%231dd6c4'/%3E%3C/svg%3E">
 <title>The Ward — Clinical Simulator</title>
+<!-- CrazyGames SDK v3 — optional, gracefully no-ops if blocked or absent -->
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js" async defer onerror="window._cgFailed=true"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@400;500;600;700;900&family=IBM+Plex+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -3548,6 +3550,7 @@ function finishModeRun(){
 }
 
 function quitToMenu(){
+  sdkGameStop();
   _modeRun = null;
   _mode = 'campaign';
   GS = {};
@@ -3577,6 +3580,7 @@ function togglePause(){
   if(OV_OPEN && !_paused) return;
   _paused = !_paused;
   document.getElementById('pause-overlay').classList.toggle('show', _paused);
+  if(_paused) sdkGameStop(); else sdkGameStart();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -4970,11 +4974,18 @@ function updateHardcoreButton(){
 }
 
 // Called from takeAction when a patient dies — if hardcore, end run
-function hardcoreOnDeath(){
+// (with optional rewarded-ad revive if SDK is available)
+async function hardcoreOnDeath(){
   if(!_hardcore || !GS) return;
-  setTimeout(() => {
-    showGameOver(true, '☠ HARDCORE FAILED', 'A patient died on your shift. Hardcore Mode ends the run on first fatality. Your record stands.');
-  }, 1600);
+  await new Promise(r => setTimeout(r, 1400));
+  if(_sdk() && _cg.ready){
+    const revived = await offerHardcoreRevive();
+    if(revived){
+      paAnnounce('Revived. Run continues. Don\'t waste it.');
+      return;
+    }
+  }
+  showGameOver(true, '☠ HARDCORE FAILED', 'A patient died on your shift. Hardcore Mode ends the run on first fatality. Your record stands.');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -5139,6 +5150,134 @@ function endgameToMenu(){
   quitToMenu();
 }
 
+// ══════════════════════════════════════════════════════════
+// CRAZYGAMES SDK — optional, no-ops if not present
+// ══════════════════════════════════════════════════════════
+// All calls are wrapped. If the SDK script fails to load (we're on
+// itch.io, our own site, an iframe blocker, offline, etc.) the game
+// runs identically and these are silent no-ops.
+const _cg = {
+  ready: false,
+  inPlay: false,
+  lastAd: 0,
+  caseSinceAd: 0,
+  cooldownMs: 90 * 1000, // min 90s between midgame ads
+};
+
+function _sdk(){
+  try { return (window.CrazyGames && window.CrazyGames.SDK) || null; }
+  catch(e){ return null; }
+}
+
+async function sdkInit(){
+  // Wait briefly for SDK to load; if it doesn't, we just continue.
+  for(let i = 0; i < 30 && !_sdk(); i++){
+    await new Promise(r => setTimeout(r, 100));
+    if(window._cgFailed) return;
+  }
+  const sdk = _sdk();
+  if(!sdk) return;
+  try {
+    if(sdk.init) await sdk.init();
+    _cg.ready = true;
+    // Done loading game shell — tell SDK
+    try { sdk.game && sdk.game.sdkGameLoadingStop && sdk.game.sdkGameLoadingStop(); } catch(e){}
+  } catch(e){ /* silent */ }
+}
+
+function sdkGameStart(){
+  const sdk = _sdk(); if(!sdk || !_cg.ready) return;
+  if(_cg.inPlay) return;
+  try { sdk.game && sdk.game.gameplayStart && sdk.game.gameplayStart(); } catch(e){}
+  _cg.inPlay = true;
+}
+function sdkGameStop(){
+  const sdk = _sdk(); if(!sdk || !_cg.ready) return;
+  if(!_cg.inPlay) return;
+  try { sdk.game && sdk.game.gameplayStop && sdk.game.gameplayStop(); } catch(e){}
+  _cg.inPlay = false;
+}
+function sdkHappy(){
+  const sdk = _sdk(); if(!sdk || !_cg.ready) return;
+  try { sdk.game && sdk.game.happytime && sdk.game.happytime(); } catch(e){}
+}
+
+// Midgame ad — only between cases, with cooldown + minimum cases first.
+// Returns true if an ad was requested.
+function sdkMaybeMidgame(){
+  const sdk = _sdk(); if(!sdk || !_cg.ready) return false;
+  // Never on the first 2 cases of a run (let player ramp in)
+  if((GS && (GS.casesTotal||0) < 2)) return false;
+  // Never during overlays / mini-games / story scenes
+  if(OV_OPEN) return false;
+  // Cooldown
+  if(Date.now() - _cg.lastAd < _cg.cooldownMs) return false;
+  _cg.caseSinceAd++;
+  // Every 4-6 cases past cooldown
+  if(_cg.caseSinceAd < 4) return false;
+  _cg.caseSinceAd = 0;
+  _cg.lastAd = Date.now();
+  try {
+    // Briefly pause our audio so we don't fight the ad
+    const wasOnMusic = _musicOn;
+    const wasAmbient = _ambient.allowed;
+    chiptuneStop();
+    ambientStop();
+    sdk.ad && sdk.ad.requestAd && sdk.ad.requestAd('midgame', {
+      adStarted: () => {},
+      adFinished: () => {
+        if(wasOnMusic && _ex && _ex.active) chiptuneStart();
+        if(wasAmbient && GS && GS.spec) ambientStart();
+      },
+      adError: () => {
+        if(wasOnMusic && _ex && _ex.active) chiptuneStart();
+        if(wasAmbient && GS && GS.spec) ambientStart();
+      },
+    });
+  } catch(e){
+    if(_musicOn && _ex && _ex.active) chiptuneStart();
+    if(_ambient.allowed && GS && GS.spec) ambientStart();
+  }
+  return true;
+}
+
+// Rewarded ad — opt-in by player. Resolves true if ad completed.
+function sdkRewardedAd(){
+  return new Promise(resolve => {
+    const sdk = _sdk();
+    if(!sdk || !_cg.ready){ resolve(false); return; }
+    const wasOnMusic = _musicOn;
+    const wasAmbient = _ambient.allowed;
+    chiptuneStop();
+    ambientStop();
+    const restore = () => {
+      if(wasOnMusic && _ex && _ex.active) chiptuneStart();
+      if(wasAmbient && GS && GS.spec) ambientStart();
+    };
+    try {
+      sdk.ad && sdk.ad.requestAd && sdk.ad.requestAd('rewarded', {
+        adStarted: () => {},
+        adFinished: () => { restore(); resolve(true); },
+        adError: () => { restore(); resolve(false); },
+      });
+    } catch(e){ restore(); resolve(false); }
+  });
+}
+
+// Helper: offer a rewarded ad to revive a hardcore death.
+async function offerHardcoreRevive(){
+  if(!_hardcore) return false;
+  if(!_sdk() || !_cg.ready) return false;
+  const ok = confirm('☠ HARDCORE FAILED\n\nWatch a short ad to revive and continue this run? (Hardcore-win streak preserved.)');
+  if(!ok) return false;
+  const reward = await sdkRewardedAd();
+  if(reward){
+    GS.casesLethal = Math.max(0, (GS.casesLethal||0) - 1);
+    return true;
+  }
+  return false;
+}
+
 function initApp() {
   // Apply default difficulty
   if(typeof setDiff === 'function' && _diffSetting) setDiff(_diffSetting);
@@ -5211,6 +5350,7 @@ function startGame(specId) {
   ambientStart();
   _endgameShown = false;
   updateHardcoreButton();
+  sdkGameStart();
   setTimeout(()=> paAnnounce('Welcome to ' + (GS.hosp||'the hospital') + '. Dr. ' + (GS.doc||'on call').split(' ').slice(-1)[0] + ' please report to triage.'), 3500);
 }
 
@@ -5859,6 +5999,9 @@ function closeOutcomeOv(){
   maybeTriggerLawsuit();
   // Chapter-5 endgame
   maybeTriggerEndgame();
+  // CrazyGames: a case just ended, this is a calm moment.
+  sdkHappy();
+  sdkMaybeMidgame();
   // Mode completion check
   if(_modeRun && _lastCaseData){
     const sc = _lastCaseData.score;
@@ -6679,6 +6822,7 @@ function updateProgress() {
 let OV_OPEN = false;
 
 initApp();
+sdkInit();
 </script>
 </body>
 </html>

@@ -1024,6 +1024,89 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 .ex-fp-btn.current{background:rgba(245,166,35,.15);border-color:var(--gold2);color:var(--gold3);}
 .ex-fp-btn .ct{font-family:var(--font-m);font-size:10px;background:var(--b2);padding:2px 7px;border-radius:10px;color:var(--t2);}
 
+/* ── ACCESSIBILITY ── */
+body.colorblind .pt-card.critical,
+body.colorblind .ex-room.critical { animation: none; }
+body.colorblind .mon-v-val.abn { color: #ffb74d !important; }
+body.colorblind .pt-mv.bp,
+body.colorblind .pt-status { color: #ffb74d !important; }
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+body.reduce-motion #fx-flash,
+body.reduce-motion .fx-particle,
+body.reduce-motion .streak-mega { display: none !important; }
+body.text-large { font-size: 16px; }
+body.text-small { font-size: 12px; }
+
+/* ── DEFIBRILLATOR MINI-GAME ── */
+.defib-overlay{position:fixed;inset:0;z-index:6800;background:rgba(0,0,0,.94);
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px);padding:20px;}
+.defib-overlay.show{display:flex;animation:popIn .35s ease;}
+.defib-box{max-width:560px;width:100%;background:linear-gradient(180deg,#1a0d10,var(--s1));
+  border:2px solid var(--gold2);border-radius:var(--r3);padding:28px;
+  box-shadow:0 0 60px rgba(245,166,35,.3),0 30px 80px rgba(0,0,0,.85);}
+.defib-hdr{font-family:var(--font-m);font-size:11px;letter-spacing:.4em;
+  color:var(--gold3);text-transform:uppercase;margin-bottom:6px;text-align:center;}
+.defib-title{font-family:var(--font-hero);font-size:28px;font-weight:900;color:#fff;
+  text-align:center;margin-bottom:6px;}
+.defib-sub{font-size:12px;color:var(--t2);text-align:center;margin-bottom:18px;font-style:italic;}
+.defib-rhythm-strip{background:#000;height:80px;border-radius:6px;border:1px solid var(--crimson2);
+  margin-bottom:18px;position:relative;overflow:hidden;}
+.defib-rhythm-strip canvas{width:100%;height:100%;display:block;}
+.defib-meter{position:relative;height:38px;background:rgba(0,0,0,.5);border:1px solid var(--b2);
+  border-radius:6px;overflow:hidden;margin-bottom:8px;}
+.defib-meter-fill{position:absolute;top:0;left:0;height:100%;width:0%;
+  background:linear-gradient(90deg,var(--green2),var(--gold2),var(--crimson2));}
+.defib-meter-target{position:absolute;top:0;height:100%;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.18) 0,rgba(255,255,255,.18) 4px,transparent 4px,transparent 8px);
+  border-left:2px solid var(--green3);border-right:2px solid var(--green3);}
+.defib-meter-label{display:flex;justify-content:space-between;font-family:var(--font-m);font-size:9px;
+  letter-spacing:.15em;color:var(--t3);margin-bottom:18px;text-transform:uppercase;}
+.defib-charge{font-family:var(--font-hero);font-size:48px;font-weight:900;color:var(--gold3);
+  text-align:center;line-height:1;text-shadow:0 0 16px rgba(245,166,35,.5);margin-bottom:6px;}
+.defib-charge-unit{font-family:var(--font-m);font-size:11px;letter-spacing:.3em;color:var(--t3);
+  text-transform:uppercase;text-align:center;margin-bottom:18px;}
+.defib-actions{display:flex;gap:10px;}
+.defib-btn{flex:1;padding:18px;border-radius:var(--r);border:2px solid var(--b2);
+  background:var(--s2);color:var(--t1);cursor:pointer;font-family:var(--font-h);font-weight:900;
+  font-size:13px;letter-spacing:.2em;text-transform:uppercase;transition:all .15s;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;}
+.defib-btn.charge{border-color:var(--gold2);color:var(--gold3);}
+.defib-btn.charge.active{background:var(--gold2);color:#000;box-shadow:0 0 24px rgba(245,166,35,.6);}
+.defib-btn.shock{border-color:var(--crimson2);color:var(--crimson3);}
+.defib-btn.shock:not(:disabled):hover{background:var(--crimson2);color:#fff;box-shadow:0 0 24px rgba(198,40,40,.6);}
+.defib-btn:disabled{opacity:.35;cursor:not-allowed;}
+.defib-timer{font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:var(--crimson3);
+  text-align:center;margin-bottom:14px;text-transform:uppercase;}
+.defib-result{margin-top:12px;padding:12px;border-radius:var(--r);
+  font-family:var(--font-m);font-size:12px;text-align:center;display:none;}
+.defib-result.win{background:rgba(26,74,34,.3);border:1px solid var(--green2);color:var(--green3);display:block;}
+.defib-result.lose{background:rgba(122,16,24,.3);border:1px solid var(--crimson2);color:var(--crimson3);display:block;}
+
+/* ── STATS / LIFETIME PROFILE ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0;}
+.stat-card{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);
+  padding:14px;text-align:center;}
+.stat-card-val{font-family:var(--font-hero);font-size:26px;font-weight:900;color:var(--t1);line-height:1;margin-bottom:4px;}
+.stat-card-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.2em;color:var(--t3);text-transform:uppercase;}
+
+/* ── ENDGAME ── */
+.endgame-box{max-width:680px;background:radial-gradient(ellipse at top,rgba(245,166,35,.12),var(--s1));
+  border:2px solid var(--gold2);}
+.endgame-title{font-family:var(--font-hero);font-size:46px;font-weight:900;color:#fff;
+  text-align:center;letter-spacing:.05em;margin-bottom:8px;
+  text-shadow:0 0 30px rgba(245,166,35,.4);animation:introGlow 4s ease-in-out infinite;}
+.endgame-sub{font-family:var(--font-m);font-size:11px;letter-spacing:.5em;color:var(--gold3);
+  text-transform:uppercase;text-align:center;margin-bottom:22px;}
+.endgame-epigraph{font-style:italic;color:var(--t2);margin:16px 24px;
+  font-size:14px;line-height:1.6;border-left:2px solid var(--gold2);padding-left:14px;}
+
+/* Hardcore badge */
+.hc-badge{display:inline-block;background:var(--crimson2);color:#fff;font-family:var(--font-m);
+  font-size:8px;font-weight:900;padding:2px 7px;border-radius:3px;letter-spacing:.15em;
+  text-transform:uppercase;margin-left:8px;vertical-align:middle;animation:alertBlink 2s infinite;}
+
 /* Splash boot polish */
 .boot-skip{position:fixed;top:14px;right:14px;background:rgba(0,0,0,.4);border:1px solid var(--b2);
   color:var(--t2);padding:6px 14px;border-radius:20px;font-family:var(--font-m);font-size:10px;
@@ -1126,6 +1209,7 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
     <button class="npc-btn" onclick="openExploreFromGame()">🚪 Walk</button>
     <button class="npc-btn" onclick="openFloorMap()">🏥 Floor</button>
     <button class="npc-btn" onclick="openCareerChart()">📜 Career</button>
+    <button class="npc-btn" onclick="openStats()">📊 Stats</button>
     <button class="tb-help-btn" onclick="document.getElementById('tips-overlay').style.display='flex'">? Help</button>
   </div>
   <div id="maingrid">
@@ -1495,6 +1579,38 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
   <div class="ex-fp-list" id="ex-fp-list"></div>
 </div>
 
+<!-- ═══ DEFIBRILLATOR MINI-GAME ═══ -->
+<div class="defib-overlay" id="defib-overlay">
+  <div class="defib-box">
+    <div class="defib-hdr">— Lifepak Defibrillator —</div>
+    <div class="defib-title" id="defib-title">Shockable Rhythm</div>
+    <div class="defib-sub" id="defib-sub">Hold CHARGE until the bar fills the green zone. Release. Then SHOCK.</div>
+    <div class="defib-rhythm-strip"><canvas id="defib-rhythm" width="480" height="80"></canvas></div>
+    <div class="defib-charge" id="defib-charge">0</div>
+    <div class="defib-charge-unit">Joules</div>
+    <div class="defib-meter"><div class="defib-meter-target" id="defib-target"></div><div class="defib-meter-fill" id="defib-meter-fill"></div></div>
+    <div class="defib-meter-label"><span>0</span><span>TARGET <span id="defib-target-text">200J</span></span><span>360</span></div>
+    <div class="defib-timer" id="defib-timer">CHARGE WITHIN — SECONDS</div>
+    <div class="defib-actions">
+      <button class="defib-btn charge" id="defib-charge-btn"
+        onmousedown="defibChargeStart()" onmouseup="defibChargeStop()" onmouseleave="defibChargeStop()"
+        ontouchstart="defibChargeStart();event.preventDefault();" ontouchend="defibChargeStop();event.preventDefault();">⚡ CHARGE</button>
+      <button class="defib-btn shock" id="defib-shock-btn" disabled onclick="defibShock()">🔋 SHOCK</button>
+    </div>
+    <div class="defib-result" id="defib-result"></div>
+  </div>
+</div>
+
+<!-- ═══ STATS / LIFETIME PROFILE ═══ -->
+<div class="overlay" id="ov-stats">
+  <div class="ov-box" style="max-width:620px">
+    <div class="ov-score-banner" style="background:var(--teal2);color:#000;">LIFETIME RECORD</div>
+    <div class="ov-title">Career Statistics</div>
+    <div id="stats-grid-wrap"></div>
+    <button class="btn-ack" style="margin-top:14px;" onclick="closeStats()">Close</button>
+  </div>
+</div>
+
 <!-- ═══ FX LAYER ═══ -->
 <div id="fx-flash"></div>
 <div id="fx-layer"></div>
@@ -1514,6 +1630,23 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
       <div>
         <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--t1);display:block;margin-bottom:8px;">Chiptune Music</label>
         <button class="pause-btn" style="min-width:0;padding:9px 20px;font-size:11px;" id="music-toggle-btn" onclick="toggleMusic()">🎵 ON</button>
+      </div>
+      <div>
+        <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--t1);display:block;margin-bottom:8px;">Hospital Ambience</label>
+        <button class="pause-btn" style="min-width:0;padding:9px 20px;font-size:11px;" id="ambient-toggle-btn" onclick="toggleAmbient()">🔊 ON</button>
+      </div>
+      <div>
+        <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--crimson3);display:block;margin-bottom:8px;">Hardcore Mode</label>
+        <button class="pause-btn" style="min-width:0;padding:9px 20px;font-size:11px;border-color:var(--crimson2);color:var(--crimson3);" id="hardcore-toggle-btn" onclick="toggleHardcore()">☠ OFF</button>
+        <div style="font-size:10px;color:var(--t3);margin-top:6px;font-style:italic;">A single patient death ends the run.</div>
+      </div>
+      <div>
+        <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--t1);display:block;margin-bottom:8px;">Accessibility</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="pause-btn" style="min-width:0;padding:8px 14px;font-size:10px;" id="a11y-cb-btn" onclick="toggleA11y('colorblind')">🎨 Colorblind</button>
+          <button class="pause-btn" style="min-width:0;padding:8px 14px;font-size:10px;" id="a11y-rm-btn" onclick="toggleA11y('reduce-motion')">🚫 Reduce Motion</button>
+          <button class="pause-btn" style="min-width:0;padding:8px 14px;font-size:10px;" id="a11y-tx-btn" onclick="cycleTextSize()">🅰 Text Size</button>
+        </div>
       </div>
       <div>
         <label style="font-family:var(--font-h);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--t1);display:block;margin-bottom:8px;">Difficulty Default</label>
@@ -3419,6 +3552,9 @@ function quitToMenu(){
   _mode = 'campaign';
   GS = {};
   stopPATimer();
+  ambientStop();
+  const hcb = document.getElementById('hc-badge');
+  if(hcb) hcb.remove();
   document.getElementById('pa-ticker').classList.remove('show');
   $hide('game');
   // Remove mode pill
@@ -4591,9 +4727,427 @@ function resetSave(){
 function openCredits(){ OV_OPEN=true; document.getElementById('ov-credits').style.display='flex'; }
 function closeCredits(){ document.getElementById('ov-credits').style.display='none'; OV_OPEN=false; }
 
+// ══════════════════════════════════════════════════════════
+// DEFIBRILLATOR MINI-GAME
+// ══════════════════════════════════════════════════════════
+// Held-button charging mini-game with a target zone, a time limit,
+// and a live rhythm strip in the background. Result feeds back into
+// the caller via a callback.
+let _defib = { open:false, charging:false, joules:0, target:200, rhythm:'vf',
+  timer:null, deadline:0, callback:null, raf:null };
+
+function showDefib(opts){
+  // opts: { rhythm:'vf'|'vt'|'torsades', target:200, callback:fn(success, joules) }
+  _defib.open = true;
+  _defib.joules = 0;
+  _defib.target = opts.target || 200;
+  _defib.rhythm = opts.rhythm || 'vf';
+  _defib.callback = opts.callback || (()=>{});
+  _defib.deadline = Date.now() + 9000;
+  _defib.charging = false;
+  document.getElementById('defib-result').style.display = 'none';
+  document.getElementById('defib-charge-btn').disabled = false;
+  document.getElementById('defib-shock-btn').disabled = true;
+  document.getElementById('defib-target-text').textContent = _defib.target + 'J';
+  // Position the target zone on the meter
+  const tgt = document.getElementById('defib-target');
+  const startPct = ((_defib.target - 30) / 360) * 100;
+  const widthPct = 60 / 360 * 100;
+  tgt.style.left = startPct + '%';
+  tgt.style.width = widthPct + '%';
+  document.getElementById('defib-title').textContent = 'Shockable Rhythm — ' + (_defib.rhythm.toUpperCase());
+  document.getElementById('defib-charge').textContent = '0';
+  document.getElementById('defib-meter-fill').style.width = '0%';
+  document.getElementById('defib-overlay').classList.add('show');
+  OV_OPEN = true;
+  defibLoop();
+  // Render rhythm strip
+  defibDrawRhythm();
+}
+
+function defibChargeStart(){
+  if(!_defib.open) return;
+  _defib.charging = true;
+  document.getElementById('defib-charge-btn').classList.add('active');
+  playTone(220, 0.1, 0.06, 'square');
+}
+function defibChargeStop(){
+  if(!_defib.open || !_defib.charging) return;
+  _defib.charging = false;
+  document.getElementById('defib-charge-btn').classList.remove('active');
+  // Enable shock if we're in range
+  const j = _defib.joules;
+  const lo = _defib.target - 30, hi = _defib.target + 30;
+  if(j >= 30 && j <= 360){
+    document.getElementById('defib-shock-btn').disabled = false;
+    // Quick "charge complete" tone
+    playTone(880, 0.15, 0.06, 'sine');
+  }
+}
+
+function defibShock(){
+  if(!_defib.open) return;
+  const j = _defib.joules;
+  const lo = _defib.target - 30, hi = _defib.target + 30;
+  const success = j >= lo && j <= hi;
+  // Play shock sound
+  if(success){
+    playTone(440, 0.05, 0.12, 'square');
+    setTimeout(() => playTone(880, 0.25, 0.10, 'sine'), 60);
+    setTimeout(() => playTone(1320, 0.4, 0.08, 'sine'), 220);
+  } else {
+    playTone(180, 0.6, 0.1, 'sawtooth');
+  }
+  const result = document.getElementById('defib-result');
+  if(success){
+    result.className = 'defib-result win';
+    result.textContent = '✓ ROSC achieved. Sinus rhythm restored.';
+  } else if(j < lo){
+    result.className = 'defib-result lose';
+    result.textContent = `✗ Undercharge (${j}J). Insufficient energy to defibrillate.`;
+  } else {
+    result.className = 'defib-result lose';
+    result.textContent = `✗ Overcharge (${j}J). Myocardial injury from excessive energy.`;
+  }
+  document.getElementById('defib-charge-btn').disabled = true;
+  document.getElementById('defib-shock-btn').disabled = true;
+  setTimeout(() => defibClose(success, j), 1400);
+}
+
+function defibClose(success, joules){
+  document.getElementById('defib-overlay').classList.remove('show');
+  cancelAnimationFrame(_defib.raf);
+  _defib.open = false;
+  _defib.charging = false;
+  OV_OPEN = false;
+  if(_defib.callback) _defib.callback(success, joules);
+}
+
+function defibLoop(){
+  if(!_defib.open) return;
+  // Time pressure
+  const remaining = Math.max(0, Math.ceil((_defib.deadline - Date.now()) / 1000));
+  document.getElementById('defib-timer').textContent = `CHARGE WITHIN ${remaining}S`;
+  if(remaining <= 0){
+    document.getElementById('defib-result').className = 'defib-result lose';
+    document.getElementById('defib-result').textContent = '✗ Too slow. Patient asystoled. Compressions resumed.';
+    setTimeout(() => defibClose(false, _defib.joules), 1200);
+    return;
+  }
+  if(_defib.charging){
+    _defib.joules = Math.min(360, _defib.joules + 4);
+  }
+  document.getElementById('defib-charge').textContent = _defib.joules;
+  document.getElementById('defib-meter-fill').style.width = (_defib.joules / 360 * 100) + '%';
+  _defib.raf = requestAnimationFrame(defibLoop);
+}
+
+function defibDrawRhythm(){
+  const canvas = document.getElementById('defib-rhythm');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  let x = 0, data = [], lastT = 0;
+  function frame(t){
+    if(!_defib.open) return;
+    if(t - lastT < 16){ requestAnimationFrame(frame); return; }
+    lastT = t;
+    const rhythm = _defib.rhythm;
+    let y;
+    if(rhythm === 'vf'){
+      y = H/2 + (Math.sin(t/30) * 14 + Math.sin(t/13 + 1.7) * 10 + (Math.random()-0.5) * 20) * 0.8;
+    } else if(rhythm === 'vt'){
+      const p = (t/220) % 1;
+      let v = 0;
+      if(p<.15) v = 0;
+      else if(p<.25) v = Math.sin((p-.15)/.10*Math.PI) * 0.9;
+      else if(p<.40) v = -Math.sin((p-.25)/.15*Math.PI) * 0.55;
+      else if(p<.65) v = Math.sin((p-.40)/.25*Math.PI) * 0.20;
+      y = H/2 - v * (H * 0.42);
+    } else {
+      // torsades
+      const phase = t / 400;
+      const amp = 0.3 + 0.6 * Math.sin(phase);
+      y = H/2 - Math.sin(t/40) * amp * 30 * (Math.sin(phase) > 0 ? 1 : -1);
+    }
+    data.push({ x, y });
+    if(data.length > W) data.shift();
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#ef5350';
+    ctx.lineWidth = 1.6;
+    ctx.shadowColor = '#ef5350';
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    data.forEach((pt, i) => { if(i===0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y); });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    x = (x + 2) % W;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// Hook: trigger defib mini-game on appropriate action text (Code Blue VF/VT)
+// When an action mentions "defibrillation", "shock", or "200J", offer the mini-game
+function actionTriggersDefib(actText){
+  const t = (actText || '').toLowerCase();
+  return /defibrillat|shock|200j|biphasic|vf|v-fib|ventricular fibrillation|vt|v-tach/i.test(t);
+}
+
+// ══════════════════════════════════════════════════════════
+// ACCESSIBILITY
+// ══════════════════════════════════════════════════════════
+const A11Y_KEYS = ['colorblind', 'reduce-motion'];
+function loadAccessibility(){
+  A11Y_KEYS.forEach(k => {
+    if(localStorage.getItem('wardA11y_' + k) === '1') document.body.classList.add(k);
+  });
+  const sz = localStorage.getItem('wardTextSize');
+  if(sz === 'large' || sz === 'small') document.body.classList.add('text-' + sz);
+  updateA11yButtons();
+}
+function toggleA11y(k){
+  const has = document.body.classList.toggle(k);
+  localStorage.setItem('wardA11y_' + k, has ? '1' : '0');
+  updateA11yButtons();
+  playTone(660, 0.05, 0.05);
+}
+function cycleTextSize(){
+  const cur = (localStorage.getItem('wardTextSize') || 'normal');
+  const next = cur === 'normal' ? 'large' : cur === 'large' ? 'small' : 'normal';
+  document.body.classList.remove('text-large', 'text-small');
+  if(next !== 'normal') document.body.classList.add('text-' + next);
+  localStorage.setItem('wardTextSize', next);
+  updateA11yButtons();
+  playTone(700, 0.05, 0.05);
+}
+function updateA11yButtons(){
+  const cb = document.getElementById('a11y-cb-btn');
+  const rm = document.getElementById('a11y-rm-btn');
+  const tx = document.getElementById('a11y-tx-btn');
+  if(cb) cb.style.opacity = document.body.classList.contains('colorblind') ? '1' : '0.55';
+  if(rm) rm.style.opacity = document.body.classList.contains('reduce-motion') ? '1' : '0.55';
+  if(tx){
+    const cur = localStorage.getItem('wardTextSize') || 'normal';
+    tx.textContent = '🅰 ' + cur[0].toUpperCase() + cur.slice(1);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// HARDCORE MODE
+// ══════════════════════════════════════════════════════════
+let _hardcore = localStorage.getItem('wardHardcore') === '1';
+function toggleHardcore(){
+  _hardcore = !_hardcore;
+  localStorage.setItem('wardHardcore', _hardcore ? '1' : '0');
+  updateHardcoreButton();
+  playTone(_hardcore ? 220 : 660, 0.1, 0.06, _hardcore ? 'sawtooth' : 'sine');
+}
+function updateHardcoreButton(){
+  const b = document.getElementById('hardcore-toggle-btn');
+  if(b){
+    b.innerHTML = _hardcore ? '☠ ON' : '☠ OFF';
+    b.style.background = _hardcore ? 'var(--crimson2)' : '';
+    b.style.color = _hardcore ? '#fff' : '';
+  }
+  // Show badge in topbar if active mid-run
+  let badge = document.getElementById('hc-badge');
+  if(_hardcore && GS && GS.spec){
+    if(!badge){
+      const tb = document.getElementById('topbar');
+      if(tb){
+        badge = document.createElement('span');
+        badge.id = 'hc-badge';
+        badge.className = 'hc-badge';
+        badge.textContent = '☠ HARDCORE';
+        const brand = tb.querySelector('.tb-brand');
+        if(brand && brand.nextSibling) tb.insertBefore(badge, brand.nextSibling);
+        else tb.appendChild(badge);
+      }
+    }
+  } else if(badge) badge.remove();
+}
+
+// Called from takeAction when a patient dies — if hardcore, end run
+function hardcoreOnDeath(){
+  if(!_hardcore || !GS) return;
+  setTimeout(() => {
+    showGameOver(true, '☠ HARDCORE FAILED', 'A patient died on your shift. Hardcore Mode ends the run on first fatality. Your record stands.');
+  }, 1600);
+}
+
+// ══════════════════════════════════════════════════════════
+// AMBIENT HOSPITAL SOUND
+// ══════════════════════════════════════════════════════════
+let _ambient = { on: false, timer: null, allowed: localStorage.getItem('wardAmbient') !== '0' };
+function ambientStart(){
+  if(_ambient.on) return;
+  if(!_ambient.allowed) return;
+  if(!_soundOn) return;
+  _ambient.on = true;
+  ambientTick();
+}
+function ambientTick(){
+  if(!_ambient.on) return;
+  // Random faint event: distant monitor beep / soft chatter blip
+  const r = Math.random();
+  if(r < 0.55){
+    // Distant monitor beep
+    playTone(880 + Math.floor(Math.random()*120-60), 0.04, 0.012, 'sine');
+  } else if(r < 0.78){
+    // Soft "footstep" or door click
+    playTone(180 + Math.random()*40, 0.05, 0.015, 'triangle');
+  } else if(r < 0.92){
+    // Distant chime / page
+    playTone(660, 0.08, 0.018, 'sine');
+    setTimeout(() => playTone(523, 0.08, 0.014, 'sine'), 110);
+  }
+  // Next event in 1.5-5 seconds
+  _ambient.timer = setTimeout(ambientTick, 1500 + Math.random()*3500);
+}
+function ambientStop(){
+  _ambient.on = false;
+  if(_ambient.timer) clearTimeout(_ambient.timer);
+}
+function toggleAmbient(){
+  _ambient.allowed = !_ambient.allowed;
+  localStorage.setItem('wardAmbient', _ambient.allowed ? '1' : '0');
+  const b = document.getElementById('ambient-toggle-btn');
+  if(b) b.innerHTML = _ambient.allowed ? '🔊 ON' : '🔇 OFF';
+  if(_ambient.allowed){ if(GS && GS.spec) ambientStart(); }
+  else ambientStop();
+}
+
+// ══════════════════════════════════════════════════════════
+// LIFETIME STATS
+// ══════════════════════════════════════════════════════════
+function openStats(){
+  OV_OPEN = true;
+  const c = (CAREER || {});
+  const total = c.casesTotal || 0;
+  const perfect = c.perfectCases || 0;
+  const lethal = c.lethalCases || 0;
+  const acc = total ? Math.round((c.casesCorrect || 0) / total * 100) : 0;
+  const longestStreak = c.longestStreak || 0;
+  const runs = c.runs || 0;
+  const hcWins = c.hardcoreWins || 0;
+  const dailyStreak = getDailyStreak();
+  const maxedNpcs = c.maxedNpcs || 0;
+  const bestChapter = c.maxChapter || 1;
+  const unlockedCount = (c.unlocked || []).length;
+  const cards = [
+    [total, 'Cases Seen'],
+    [acc + '%', 'Accuracy'],
+    [perfect, 'Perfect Choices'],
+    [lethal, 'Fatal Calls'],
+    [longestStreak + '×', 'Longest Streak'],
+    [runs, 'Runs Completed'],
+    [bestChapter + '/5', 'Best Chapter'],
+    [unlockedCount, 'Achievements'],
+    [dailyStreak, 'Daily Streak'],
+    [hcWins, 'Hardcore Wins'],
+  ];
+  const wrap = document.getElementById('stats-grid-wrap');
+  wrap.innerHTML = '<div class="stats-grid">' + cards.map(([v,l]) =>
+    `<div class="stat-card"><div class="stat-card-val">${v}</div><div class="stat-card-lbl">${l}</div></div>`
+  ).join('') + '</div>';
+  if(total === 0){
+    wrap.innerHTML += '<div style="text-align:center;color:var(--t3);font-style:italic;padding:18px;">No cases logged yet. Start a run to populate your record.</div>';
+  }
+  document.getElementById('ov-stats').style.display = 'flex';
+}
+function closeStats(){
+  document.getElementById('ov-stats').style.display = 'none';
+  OV_OPEN = false;
+}
+
+// ══════════════════════════════════════════════════════════
+// ENDGAME — triggered at end of Chapter 5
+// ══════════════════════════════════════════════════════════
+let _endgameShown = false;
+function maybeTriggerEndgame(){
+  if(_endgameShown) return;
+  if(!GS || !GS.story) return;
+  if(GS.story.chapter < 5) return;
+  // After 12 cases at attending level, the run "ends"
+  const ch5Cases = (GS.casesTotal || 0) - (CHAPTERS[4]?.threshold || 55);
+  if(ch5Cases < 12) return;
+  _endgameShown = true;
+  showEndgame();
+}
+
+function showEndgame(){
+  if(CAREER){
+    CAREER.runs = (CAREER.runs || 0) + 1;
+    if(_hardcore && (GS.casesLethal || 0) === 0){
+      CAREER.hardcoreWins = (CAREER.hardcoreWins || 0) + 1;
+    }
+    saveCareerData();
+  }
+  // Build endgame content reusing the gameover overlay
+  const ov = document.getElementById('ov-gameover');
+  if(!ov) return;
+  const total = GS.casesTotal || 0;
+  const acc = total ? Math.round((GS.casesCorrect || 0) / total * 100) : 0;
+  const lethal = GS.casesLethal || 0;
+  const maxStreak = _maxStreak || 0;
+  // Pick a closing line based on accuracy / lethality
+  let epigraph;
+  if(lethal === 0 && acc >= 80) epigraph = '"They will remember you the way you wanted to be remembered — as someone who never stopped looking."';
+  else if(acc >= 70) epigraph = '"You finish your career the way you started: tired, careful, in the room. That is more than most."';
+  else if(acc >= 50) epigraph = '"Medicine is a long argument with yourself. You did not lose it. You did not win it either."';
+  else epigraph = '"Some doctors are remembered. Some are not. The chart endures regardless."';
+  ov.innerHTML = `<div class="ov-box endgame-box">
+    <div class="endgame-sub">— END OF SERVICE —</div>
+    <div class="endgame-title">ATTENDING</div>
+    <div style="text-align:center;font-family:var(--font-m);font-size:11px;color:var(--gold3);letter-spacing:.2em;margin-bottom:18px;">${GS.doc || 'Doctor'} · ${GS.hosp || 'Sacred Heart'}</div>
+    <div class="endgame-epigraph">${epigraph}</div>
+    <div class="stats-grid" style="margin:18px 0;">
+      <div class="stat-card"><div class="stat-card-val">${total}</div><div class="stat-card-lbl">Cases</div></div>
+      <div class="stat-card"><div class="stat-card-val" style="color:${acc>=70?'var(--green3)':acc>=50?'var(--gold3)':'var(--crimson3)'};">${acc}%</div><div class="stat-card-lbl">Accuracy</div></div>
+      <div class="stat-card"><div class="stat-card-val">${lethal}</div><div class="stat-card-lbl">Mortality</div></div>
+      <div class="stat-card"><div class="stat-card-val">${maxStreak}×</div><div class="stat-card-lbl">Streak</div></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-ack" style="flex:1;background:var(--gold2);color:#000;" onclick="startNewGamePlus()">⚔ New Game+</button>
+      <button class="btn-ack" style="flex:1;" onclick="endgameToMenu()">Retire</button>
+    </div>
+  </div>`;
+  ov.style.display = 'flex';
+  OV_OPEN = true;
+  playSuccess();
+  setTimeout(() => playTone(523, 0.4, 0.08, 'sine'), 400);
+  setTimeout(() => playTone(659, 0.6, 0.08, 'sine'), 700);
+  setTimeout(() => playTone(784, 0.9, 0.08, 'sine'), 1100);
+}
+
+function startNewGamePlus(){
+  document.getElementById('ov-gameover').style.display = 'none';
+  OV_OPEN = false;
+  _endgameShown = false;
+  // Bump persistent difficulty (next run starts at attending)
+  _difficulty = 'attending';
+  localStorage.setItem('wardDiff', 'attending');
+  quitToMenu();
+  setTimeout(() => paAnnounce('New Game Plus unlocked. Difficulty: Attending.'), 500);
+}
+function endgameToMenu(){
+  document.getElementById('ov-gameover').style.display = 'none';
+  OV_OPEN = false;
+  _endgameShown = false;
+  quitToMenu();
+}
+
 function initApp() {
   // Apply default difficulty
   if(typeof setDiff === 'function' && _diffSetting) setDiff(_diffSetting);
+  // Apply accessibility prefs
+  loadAccessibility();
+  // Reflect persisted toggles in settings buttons
+  updateHardcoreButton();
+  const ab = document.getElementById('ambient-toggle-btn');
+  if(ab) ab.innerHTML = _ambient.allowed ? '🔊 ON' : '🔇 OFF';
   // Load previous career data if exists
   loadCareerData();
   loadAvatar();
@@ -4654,6 +5208,9 @@ function startGame(specId) {
   renderAll();
   // Start hospital ambience
   startPATimer();
+  ambientStart();
+  _endgameShown = false;
+  updateHardcoreButton();
   setTimeout(()=> paAnnounce('Welcome to ' + (GS.hosp||'the hospital') + '. Dr. ' + (GS.doc||'on call').split(' ').slice(-1)[0] + ' please report to triage.'), 3500);
 }
 
@@ -5140,6 +5697,42 @@ function takeAction(pId, actIdx){
   const step=p.steps[p.currStep];
   const act=step.actions[actIdx];
   const best=step.actions.reduce((b,a)=>((a.score||0)>(b.score||0)?a:b),step.actions[0]);
+  // Defib mini-game: if this is the BEST choice for a shockable rhythm
+  // (VF/VT/torsades), play the mini-game. Failure downgrades score to 2.
+  if(!act._defibChecked && (act.score||0) === 4 && actionTriggersDefib(act.text)){
+    const r = inferRhythm(p);
+    if(r === 'vf' || r === 'vt' || r === 'torsades'){
+      act._defibChecked = true;
+      const target = r === 'torsades' ? 100 : 200;
+      showDefib({
+        rhythm:r, target,
+        callback:(success) => {
+          if(!success){
+            // Downgrade outcome: best choice with wrong energy = suboptimal
+            const fakeAct = Object.assign({}, act, {
+              score:2,
+              outTitle: 'Defibrillated, but Not Cleanly',
+              outDesc: 'You shocked at the wrong joules. ROSC was eventually achieved but the path was rough.',
+              ifNotBest: 'Adult defibrillation: 200J biphasic. Torsades: 100J. Charge to target — not over, not under.',
+              fx: Object.assign({}, act.fx||{}, { health:(act.fx?.health||0) - 15 }),
+            });
+            step.actions[actIdx] = fakeAct;
+          }
+          // Continue normal action flow
+          continueTakeAction(pId, actIdx);
+        }
+      });
+      return;
+    }
+  }
+  continueTakeAction(pId, actIdx, act, best);
+}
+
+function continueTakeAction(pId, actIdx, _act, _best){
+  const p=getPt(pId); if(!p) return;
+  const step=p.steps[p.currStep];
+  const act = _act || step.actions[actIdx];
+  const best = _best || step.actions.reduce((b,a)=>((a.score||0)>(b.score||0)?a:b),step.actions[0]);
   const xpGained=Math.round(XP_BY_SCORE[act.score||0]*(DIFF_MULT[p.diff||1]||1)*getStreakMult());
   GS.xp+=xpGained;
   GS.casesTotal = (GS.casesTotal||0)+1;
@@ -5257,8 +5850,15 @@ function closeOutcomeOv(){
     }
   }
   checkPromotions(); checkGameOver(); renderAll();
+  // Hardcore: any death this case ends the run
+  if(_hardcore && _lastCaseData && _lastCaseData.score === 0){
+    hardcoreOnDeath();
+    return;
+  }
   // Lawsuit chance after each case
   maybeTriggerLawsuit();
+  // Chapter-5 endgame
+  maybeTriggerEndgame();
   // Mode completion check
   if(_modeRun && _lastCaseData){
     const sc = _lastCaseData.score;

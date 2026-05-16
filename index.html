@@ -1123,6 +1123,7 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
     <div id="case-progress">0 cases</div>
     <button id="sound-toggle" class="on" onclick="toggleSound()">🔊 SFX</button>
     <button class="npc-btn" onclick="openNPCRoster()">👥 Team <span id="npc-badge" class="badge" style="display:none">!</span></button>
+    <button class="npc-btn" onclick="openExploreFromGame()">🚪 Walk</button>
     <button class="npc-btn" onclick="openFloorMap()">🏥 Floor</button>
     <button class="npc-btn" onclick="openCareerChart()">📜 Career</button>
     <button class="tb-help-btn" onclick="document.getElementById('tips-overlay').style.display='flex'">? Help</button>
@@ -1376,13 +1377,6 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
       <div class="ms-tile-name">Campaign</div>
       <div class="ms-tile-desc">Story mode. MS-4 to attending. Mentors, rivals, relationships.</div>
       <div class="ms-tile-cta">BEGIN ›</div>
-    </div>
-    <div class="ms-tile" style="--tile-c:var(--blue3);" onclick="startMode('explore')">
-      <span class="ms-tile-badge">NEW</span>
-      <span class="ms-tile-ico">🏥</span>
-      <div class="ms-tile-name">Explore Hospital</div>
-      <div class="ms-tile-desc">Walk the floors. Visit patients in their rooms. Top-down sim.</div>
-      <div class="ms-tile-cta">WALK IN ›</div>
     </div>
   </div>
   <div class="ms-streak-banner" id="ms-streak-banner"></div>
@@ -3269,10 +3263,6 @@ function startMode(mode){
     $show('intro','flex'); // existing flow with avatar + specialty selection
     return;
   }
-  if(mode === 'explore'){
-    openExplore();
-    return;
-  }
   // Quick or daily — auto-pick a specialty (em is most varied)
   const specId = 'em';
   // Get hospital/doc names from avatar data or defaults
@@ -4215,10 +4205,23 @@ function pixelPatientInBed(p){
   return `<svg viewBox="0 0 16 11" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">${rects}</svg>`;
 }
 
+// Called from the topbar Walk button during an active run.
+// Pauses ECG/audio scaffolding, hides the chart UI, opens the walking view.
+// Walking reduces burnout. Reopen the chart by walking up to a patient.
+function openExploreFromGame(){
+  if(OV_OPEN) return;
+  if(!GS || !GS.spec) return;
+  // Tuck the EMR view; return button will bring it back
+  $hide('game');
+  stopECG();
+  openExplore();
+}
+
 function openExplore(){
   if(!GS || !GS.spec) bootstrapExploreGS();
   _ex.active = true;
   _ex.player.x = 600; _ex.player.y = 400;
+  _ex.burnoutTick = 0;
   document.getElementById('explore-mode').classList.add('show');
   exploreSetFloor(_ex.floorId);
   // Init pixel sprite state
@@ -4255,7 +4258,10 @@ function exitExplore(){
   document.getElementById('ex-joystick').classList.remove('show');
   document.getElementById('ex-action-btn').classList.remove('show');
   window.removeEventListener('resize', exploreFit);
-  if(!GS || !GS.activeId){ showModeSelect(); }
+  // If a run is in progress, return to the chart/ward UI.
+  // Otherwise the menu.
+  if(GS && GS.spec && GS.ward){ $show('game','flex'); renderAll(); }
+  else { showModeSelect(); }
 }
 
 function bootstrapExploreGS(){
@@ -4331,6 +4337,13 @@ function exploreFit(){
 
 function exploreLoop(){
   if(!_ex.active) return;
+  // Burnout relief: every ~5s of walking sheds 1 burnout point (capped).
+  // Only applies during an active run with mounting burnout.
+  _ex.burnoutTick = (_ex.burnoutTick||0) + 1;
+  if(_ex.burnoutTick >= 300 && GS && GS.burnout > 0){
+    _ex.burnoutTick = 0;
+    GS.burnout = Math.max(0, GS.burnout - 1);
+  }
   const k = _ex.keys;
   let dx = 0, dy = 0;
   if(k['w']||k['ArrowUp'])    dy -= 1;
@@ -4443,21 +4456,6 @@ function enterRoomFromExplore(patientId){
   }
   openChart(patientId);
   renderAll();
-  addExploreReturnBtn();
-}
-
-function addExploreReturnBtn(){
-  if(document.getElementById('ex-return-btn')) return;
-  const tb = document.getElementById('topbar');
-  if(!tb) return;
-  const btn = document.createElement('button');
-  btn.id = 'ex-return-btn';
-  btn.className = 'npc-btn';
-  btn.style.background = 'var(--blue2)';
-  btn.style.color = '#fff';
-  btn.innerHTML = '↩ Hospital';
-  btn.onclick = ()=>{ $hide('game'); btn.remove(); openExplore(); };
-  tb.appendChild(btn);
 }
 
 function exploreOpenFloorPicker(){
@@ -5035,7 +5033,7 @@ function renderAll(){
     }).join('');
   // Start urgency timers for critical patients
   GS.ward.forEach(p=>{
-    if(p.health<30&&!p.acted&&!_timerIntervals[p.id]) startUrgencyTimer(p.id,45);
+    if(p.health<30&&!p.acted&&!_timerIntervals[p.id]) startUrgencyTimer(p.id, urgencyDuration());
     else if((p.health>=30||p.acted)&&_timerIntervals[p.id]) clearTimer(p.id);
   });
   }
@@ -5910,6 +5908,14 @@ function getStreakMult() {
 // ══════════════════════════════════════════════════════════════
 let _timerIntervals = {};
 
+// Critical-patient countdown duration (seconds) by difficulty.
+// Beeps quiet down at <=5s left. Patient loses health at expiry, not death.
+function urgencyDuration(){
+  if(_difficulty === 'student')   return 120;
+  if(_difficulty === 'attending') return 60;
+  return 85; // resident default
+}
+
 function startUrgencyTimer(pId, seconds) {
   clearInterval(_timerIntervals[pId]);
   let remaining = seconds;
@@ -5921,7 +5927,8 @@ function startUrgencyTimer(pId, seconds) {
       fill.style.width = pct + '%';
       fill.className = 'pt-timer-fill ' + (pct < 30 ? 'urgent' : 'warn');
     }
-    if (remaining <= 10 && remaining > 0) playCriticalAlert();
+    // Beep only at 10s and 5s left (was every second — too noisy)
+    if (remaining === 10 || remaining === 5) playCriticalAlert();
     if (remaining <= 0) {
       clearInterval(_timerIntervals[pId]);
       const p = getPt(pId);

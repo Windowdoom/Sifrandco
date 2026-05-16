@@ -255,12 +255,6 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 .log-item{font-size:11px;color:var(--t2);padding:8px 0;border-bottom:1px solid var(--b1);
   line-height:1.65;font-family:var(--font-m);}
 
-/* ── GoFundMe tiny link ── */
-#gfm-tiny{display:block;text-align:center;font-family:var(--font-m);font-size:9px;
-  color:var(--t3);letter-spacing:.12em;padding:5px 0;text-decoration:none;
-  border-top:1px solid var(--b1);transition:color .15s;flex-shrink:0;}
-#gfm-tiny:hover{color:var(--gold2);}
-
 .end-btn{margin:0 14px 14px;padding:16px;background:linear-gradient(135deg,var(--blue2),var(--teal2));
   color:var(--bg);font-family:var(--font-hero);font-size:13px;font-weight:900;
   border-radius:var(--r2);text-transform:uppercase;letter-spacing:.2em;flex-shrink:0;}
@@ -327,24 +321,6 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 .tips-foot{border-top:1px solid var(--b1);padding-top:14px;font-size:11px;
   color:var(--t3);line-height:1.6;font-family:var(--font-m);}
 .tips-foot span{color:var(--gold2);}
-
-/* ── GoFundMe Toast ── */
-#gfm-toast{position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--s1);
-  border:1px solid rgba(212,130,10,.35);border-radius:var(--r2);padding:16px 18px;
-  max-width:290px;box-shadow:0 8px 30px rgba(0,0,0,.7);
-  transform:translateX(340px);transition:transform .4s cubic-bezier(.34,1.56,.64,1);
-  display:flex;flex-direction:column;gap:8px;}
-#gfm-toast.show{transform:translateX(0);}
-.toast-x{position:absolute;top:8px;right:10px;background:transparent;color:var(--t3);
-  font-size:14px;padding:2px 5px;font-family:var(--font-m);cursor:pointer;border:none;}
-.toast-x:hover{color:var(--t1);}
-.toast-lbl{font-family:var(--font-m);font-size:8px;color:var(--gold2);letter-spacing:.2em;text-transform:uppercase;}
-.toast-body{font-size:11px;color:var(--t2);line-height:1.5;padding-right:18px;}
-.toast-body strong{color:var(--t1);}
-.toast-link{display:inline-block;background:var(--gold2);color:var(--bg);padding:7px 14px;
-  border-radius:var(--r);font-family:var(--font-hero);font-weight:700;font-size:11px;
-  text-decoration:none;transition:opacity .15s;align-self:flex-start;}
-.toast-link:hover{opacity:.85;}
 
 /* ── SPECIALTY MONITOR PANEL ── */
 
@@ -919,20 +895,6 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 #pa-msg{white-space:nowrap;animation:tickerScroll 18s linear infinite;}
 @keyframes tickerScroll{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
 
-/* ── ELEVATOR / FLOOR NAV BUTTONS in floor map ── */
-.elev-controls{display:flex;gap:8px;align-items:center;justify-content:center;
-  margin:0 0 14px;padding:10px;background:rgba(0,0,0,.3);border-radius:var(--r);}
-.elev-num{font-family:var(--font-hero);font-size:32px;font-weight:900;color:var(--gold3);
-  text-shadow:0 0 10px rgba(245,166,35,.4);min-width:80px;text-align:center;line-height:1;
-  padding:6px 16px;background:rgba(0,0,0,.5);border-radius:var(--r);border:1px solid var(--b2);}
-.elev-btn{background:var(--s2);border:1px solid var(--b2);color:var(--t1);font-size:18px;
-  width:44px;height:44px;border-radius:var(--r);cursor:pointer;font-weight:900;
-  transition:all .15s;}
-.elev-btn:hover:not(:disabled){background:var(--teal2);color:#000;transform:scale(1.05);}
-.elev-btn:disabled{opacity:.3;cursor:not-allowed;}
-.elev-floor-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.2em;
-  color:var(--t3);text-transform:uppercase;}
-
 /* ── EXPLORE MODE (2D top-down hospital walk) ── */
 #explore-mode{position:fixed;inset:0;z-index:5400;background:#020a14;display:none;
   overflow:hidden;font-family:var(--font-m);}
@@ -955,13 +917,6 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 .ex-room.active{border-color:var(--gold3);box-shadow:0 0 30px rgba(245,166,35,.6);}
 .ex-room-num{position:absolute;top:4px;left:6px;font-family:var(--font-m);font-size:9px;
   letter-spacing:.15em;color:var(--teal2);opacity:.7;font-weight:700;}
-.ex-bed{width:80px;height:46px;background:linear-gradient(180deg,#fff,#cdd6e2);
-  border-radius:5px;border:1px solid #94a4bc;position:relative;margin-bottom:6px;}
-.ex-bed::before{content:'';position:absolute;top:-3px;left:50%;transform:translateX(-50%);
-  width:35px;height:6px;background:#94a4bc;border-radius:3px;}
-.ex-bed-sprite{position:absolute;top:-26px;left:50%;transform:translateX(-50%);
-  width:34px;height:34px;border-radius:50%;background:var(--s3);border:1.5px solid var(--b2);overflow:hidden;}
-.ex-bed-sprite svg{width:100%;height:100%;}
 .ex-pt-name{font-family:var(--font-h);font-size:11px;font-weight:900;color:var(--t1);
   letter-spacing:.05em;text-align:center;max-width:160px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;}
@@ -2270,7 +2225,6 @@ const DB = [
 // ══════════════════════════════════════════════════════════
 let GS = {};
 let _ecgTimer = null, _ecgPhase = 0, _ecgCtx = null;
-let _toastTimer = null, _toastShown = false;
 let _lastCaseData = null;  // Store case data for case review
 
 // ══════════════════════════════════════════════════════════
@@ -2534,17 +2488,6 @@ function showCareerProfile(){
 
 
 
-function showToast(){
-  const t=document.getElementById('gfm-toast');
-  t.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer=setTimeout(()=>t.classList.remove('show'),14000);
-}
-function dismissToast(){
-  document.getElementById('gfm-toast').classList.remove('show');
-  clearTimeout(_toastTimer);
-}
-
 // ══════════════════════════════════════════════════════════
 // CHARACTER AVATAR SYSTEM
 // ══════════════════════════════════════════════════════════
@@ -2561,7 +2504,6 @@ const SCRUB_COLORS = [
   {name:'Plum',c:'#3d1d88',t:'#9575cd'},
   {name:'Slate',c:'#2a3848',t:'#8099b8'},
 ];
-const ACCESSORIES = ['none','glasses','mask','stethoscope'];
 
 function svgDoctor(av, opts={}){
   const skin = SKIN_TONES[av.skin]||SKIN_TONES[0];
@@ -3297,7 +3239,6 @@ function startMode(mode){
   }
   // Quick or daily — auto-pick a specialty (em is most varied)
   const specId = 'em';
-  const specName = mode === 'daily' ? 'Daily' : 'Quick Play';
   // Get hospital/doc names from avatar data or defaults
   const dn = (localStorage.getItem('wardDocName') || 'Doctor');
   // Pre-fill the inputs (used by startGame)
@@ -3807,8 +3748,6 @@ const PERSONALITIES = {
   exhausted:  { lbl:'EXHAUSTED',  moods:{ arrival:['I haven\'t slept in three days. I just need it to stop.','I\'m so tired. I can\'t do this anymore.','Whatever you say, doc. I just want to sleep.'], good:['Thank you. I really mean it.','I might actually sleep tonight.'], bad:['I\'m too tired to be sad about this.'] }},
   drunk:      { lbl:'INTOXICATED',moods:{ arrival:['Tell me the truth — am I gonna make it?','I love you, doc. I do.','Where\'s the bathroom. WHERE\'S the bathroom.','I drove here. I shouldn\'t have driven here.'], good:['I\'m gonna be your best customer, doc. Best.','Hey — am I gonna remember any of this?'], bad:['Tell my mother I said sorry.'] }},
 };
-
-const PERSONALITY_KEYS = Object.keys(PERSONALITIES);
 
 function patientPersonality(p){
   if(!p) return PERSONALITIES.stoic;
@@ -5673,8 +5612,6 @@ function playTone(freq, duration, vol=0.08, type='sine') {
   } catch(e) {}
 }
 
-function playECGBeep() { playTone(880, 0.04, 0.05, 'sine'); }
-
 function playSuccess() {
   [523,659,784,1047].forEach((f,i) => setTimeout(()=>playTone(f,0.12,0.06),i*70));
 }
@@ -5688,12 +5625,6 @@ function playSuboptimal() { playTone(440, 0.15, 0.06, 'triangle'); }
 
 function playCodeBlue() {
   for(let i=0;i<8;i++) setTimeout(()=>playTone(i%2===0?880:1100, 0.18, 0.12), i*220);
-}
-
-function playPromotion() {
-  const notes=[523,659,784,1047,1319];
-  notes.forEach((f,i)=>setTimeout(()=>playTone(f,0.2,0.07),i*100));
-  setTimeout(()=>playTone(1047,0.5,0.08),600);
 }
 
 function playCriticalAlert() { playTone(660,0.15,0.1,'square'); setTimeout(()=>playTone(660,0.15,0.1,'square'),300); }
@@ -5979,14 +5910,6 @@ function showToast_msg(title, body, color) {
   t.innerHTML = `<div style="color:${color};font-weight:900;margin-bottom:6px;">${title}</div>${body}`;
   document.body.appendChild(t);
   setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),400); }, 5000);
-}
-
-// ══════════════════════════════════════════════════════════════
-// CAREER STATS
-// ══════════════════════════════════════════════════════════════
-function showCareerStats(won) {
-  // Use enhanced career profile with achievements
-  showCareerProfile();
 }
 
 // ══════════════════════════════════════════════════════════════

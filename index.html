@@ -897,6 +897,50 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 #pa-msg{white-space:nowrap;animation:tickerScroll 18s linear infinite;}
 @keyframes tickerScroll{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
 
+/* ── CASE TIMER (live decision window) ── */
+.case-timer{margin:0 0 14px;padding:10px 12px;background:linear-gradient(180deg,#1a0d0d,#0a0404);
+  border:1px solid #4a1a1a;border-radius:6px;font-family:var(--font-m);}
+.case-timer.warning{border-color:#b88030;box-shadow:0 0 10px rgba(255,170,60,.18);}
+.case-timer.critical{border-color:#ff3030;box-shadow:0 0 14px rgba(255,80,80,.4);animation:ct-pulse .55s infinite alternate;}
+@keyframes ct-pulse{from{box-shadow:0 0 8px rgba(255,80,80,.3);}to{box-shadow:0 0 20px rgba(255,80,80,.7);}}
+.ct-label{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.22em;color:#ff8888;margin-bottom:6px;text-transform:uppercase;}
+.ct-icon{font-size:13px;}
+.ct-time{margin-left:auto;font-size:15px;color:#ffd060;font-weight:900;letter-spacing:.05em;}
+.case-timer.critical .ct-time{color:#ff5050;}
+.ct-bar{height:7px;background:#1a0808;border-radius:3px;overflow:hidden;border:1px solid #2a0e0e;}
+.ct-fill{height:100%;width:100%;background:linear-gradient(90deg,#4caf50 0%,#ffd060 60%,#ff5050 100%);
+  transition:width .12s linear;}
+.case-timer.warning .ct-fill{background:linear-gradient(90deg,#ffd060,#ff8030);}
+.case-timer.critical .ct-fill{background:linear-gradient(90deg,#ff5050,#ff2020);}
+.ct-sub{font-size:9px;color:#a07070;letter-spacing:.15em;margin-top:5px;text-transform:uppercase;}
+
+/* ── STORM / INFRASTRUCTURE OVERLAYS (Campaign chapters 2+) ── */
+.storm-overlay{position:fixed;inset:0;pointer-events:none;z-index:300;opacity:0;transition:opacity 1s;}
+.storm-overlay.active{opacity:1;}
+.storm-rain{position:absolute;inset:0;background:
+  repeating-linear-gradient(105deg,transparent 0,transparent 6px,rgba(140,180,220,.045) 6px,rgba(140,180,220,.045) 7px);
+  animation:storm-rain 0.6s linear infinite;}
+@keyframes storm-rain{from{background-position:0 0;}to{background-position:60px 120px;}}
+.storm-flash{position:absolute;inset:0;background:rgba(180,200,240,0);transition:background .08s;}
+.storm-flash.flash{background:rgba(220,230,250,.18);}
+.power-flicker{animation:pwr-flicker 0.18s ease;}
+@keyframes pwr-flicker{0%{filter:none;}30%{filter:brightness(.25);}55%{filter:brightness(1.05);}80%{filter:brightness(.5);}100%{filter:none;}}
+
+/* ── EXPLORE MAP HAZARDS ── */
+.ex-hazard{position:absolute;pointer-events:none;border-radius:4px;box-sizing:border-box;}
+.ex-hazard.flood{background:linear-gradient(180deg,rgba(40,100,160,.35),rgba(20,60,120,.55));
+  border:1px solid rgba(80,160,220,.5);animation:hz-flood 2.6s infinite ease-in-out;box-shadow:inset 0 0 12px rgba(80,160,220,.3);}
+.ex-hazard.dark{background:rgba(0,0,0,.7);border:1px dashed #333;}
+.ex-hazard.fire{background:radial-gradient(circle,rgba(255,80,30,.55),rgba(180,30,10,.35));
+  border:1px solid rgba(255,120,40,.75);animation:hz-fire .35s infinite;box-shadow:inset 0 0 16px rgba(255,100,40,.5);}
+@keyframes hz-flood{0%,100%{opacity:.75;}50%{opacity:1;}}
+@keyframes hz-fire{0%,100%{opacity:.85;filter:hue-rotate(0);}50%{opacity:1;filter:hue-rotate(-12deg);}}
+.ex-hazard-label{position:absolute;top:6px;left:8px;font-family:var(--font-m);font-size:9px;letter-spacing:.18em;
+  color:#fff;background:rgba(0,0,0,.7);padding:3px 7px;border-radius:2px;text-transform:uppercase;
+  border-left:2px solid var(--gold2);}
+.ex-hazard.fire .ex-hazard-label{border-left-color:#ff5050;}
+.ex-hazard.dark .ex-hazard-label{border-left-color:#888;}
+
 /* ── EXPLORE MODE (2D top-down hospital walk) ── */
 #explore-mode{position:fixed;inset:0;z-index:5400;background:#020a14;display:none;
   overflow:hidden;font-family:var(--font-m);}
@@ -1126,6 +1170,12 @@ body.text-small { font-size: 12px; }
   <div class="boot-term" id="boot-term">
     <div class="boot-cursor" id="boot-cursor"></div>
   </div>
+</div>
+
+<!-- ═══ STORM OVERLAY (Campaign Chapter 2+) ═══ -->
+<div id="storm-overlay" class="storm-overlay">
+  <div class="storm-rain"></div>
+  <div class="storm-flash" id="storm-flash"></div>
 </div>
 
 <!-- ═══ TIPS OVERLAY ═══ -->
@@ -1565,6 +1615,7 @@ body.text-small { font-size: 12px; }
         <div class="ex-elev-lbl">ELEVATOR</div>
       </div>
       <div id="ex-rooms"></div>
+      <div id="ex-hazards"></div>
       <div id="ex-npcs"></div>
       <div class="ex-actor player" id="ex-player">
         <div class="ex-actor-name" id="ex-player-name">DR. YOU</div>
@@ -1775,9 +1826,9 @@ const DB = [
 {id:"epiglot",tags:["peds","em"],name:"",age:4,sex:"M",initHealth:22,diff:1,cat:"clinical",loc:"Triage",steps:[{hpi:"Unvaccinated 4yo. Tripod position, drooling, muffled voice, high fever. Looks frightened.",vitals:{HR:"152",RR:"40",Temp:"103.8"},actions:[{text:"Keep calm. Minimize handling. OR for controlled intubation by anesthesia.",score:4,fx:{health:+58},nxt:"discharge",log:"Airway secured.",outTitle:"Epiglottitis Managed",outDesc:"Anesthesia secured the airway under direct laryngoscopy in the OR. Cherry-red epiglottis confirmed. He was extubated on day 3.",pearl:"Epiglottitis: do not agitate, do not examine the throat, do not start an IV in the ED. Get to the OR."},{text:"Use tongue depressor to look in throat.",score:0,fx:{legal:+75},nxt:"death",log:"Triggered fatal laryngospasm.",outTitle:"Airway Lost",outDesc:"The tongue blade touched the back of his throat and his airway slammed shut. He was 4 years old.",pearl:"Examining the oropharynx in epiglottitis triggers complete laryngospasm. Always fatal in this setting."}]}]},
 {id:"tarasoff",tags:["psych"],name:"",age:24,sex:"M",initHealth:80,diff:2,cat:"ethics",loc:"Triage",steps:[{hpi:"Actively hallucinating. States clearly: 'The voices told me to kill my neighbor John Chen tonight at his house.'",actions:[{text:"72-hour hold + Warn John Chen directly + Notify Police.",score:4,fx:{justice:+28},nxt:"discharge",log:"Tarasoff duty fulfilled.",outTitle:"Duty to Protect Fulfilled",outDesc:"You notified the police and warned John Chen personally. The patient was held and started on antipsychotics. John Chen is alive.",pearl:"Tarasoff: A specific, credible threat to an identifiable person requires you to warn that person and notify law enforcement, overriding confidentiality."},{text:"72-hour hold only. Confidentiality maintained.",score:2,fx:{justice:+10},nxt:"discharge",log:"Failed to warn named victim.",outTitle:"Incomplete Duty",outDesc:"You held the patient — good. But you didn't warn the victim or police. John Chen had no idea he was named. This is a partial Tarasoff failure.",ifNotBest:"Holding the patient is not enough. You must explicitly warn the named victim.",pearl:"Tarasoff duty has two components: warn the victim AND notify law enforcement."}]}]},
 {id:"impaired",tags:["ethics","surg"],name:"Dr. Vance",age:52,sex:"M",initHealth:100,diff:3,cat:"ethics",loc:"Ward",steps:[{hpi:"Department Chair found injecting fentanyl in the surgeon's locker room. A child is already in the OR prepped for his case. He threatens your career if you speak.",actions:[{text:"Cancel the surgery. Report to CMO and Medical Board immediately.",score:4,fx:{nonmalef:+35},nxt:"discharge",log:"Protected patient, reported impaired physician.",outTitle:"Patient Protected",outDesc:"You cancelled the case and reported it to the CMO. The child went to a different surgeon the next day. The department chair was enrolled in a physician health program.",pearl:"Patient safety overrides institutional hierarchy. Mandatory reporting of an impaired physician is not optional."},{text:"Tell him privately to sober up before the case.",score:1,fx:{legal:+70},nxt:"death",log:"Child harmed in OR.",outTitle:"Child Harmed",outDesc:"He operated impaired. The child had a preventable intraoperative complication. Both of you faced the medical board.",ifNotBest:"Handling this privately while a child is at immediate risk makes you a co-conspirator.",pearl:"Addressing impairment after the patient is already at risk is too late."}]}]},
-{id:"blackout_vent",tags:["ethics","icu","em"],name:"",age:34,sex:"M",initHealth:60,diff:3,cat:"ethics",loc:"ICU",steps:[{hpi:"BLACKOUT — MCI. Generator running on reserve. ONE working ventilator remains. Bay 2: 34yo construction worker, crush injury, isolated thoracic trauma, SOFA 6, expected to wean in 48h. Bay 7: 81yo with end-stage COPD on home O2, septic, SOFA 14, anoxic during the power flicker. Both need the vent NOW. Family of the 81yo is screaming in the hallway that 'she was here first.'",vitals:{HR:"—",BP:"—"},actions:[{text:"Allocate the vent to Bay 2 per crisis-standards triage. Palliate Bay 7 with morphine + family at bedside.",score:4,fx:{justice:+30,beneficence:+20,nonmalef:+10},nxt:"discharge",log:"Crisis-standards triage applied.",outTitle:"Triage Held",outDesc:"You used the hospital's crisis standards of care protocol — likelihood of short-term survival, not arrival order. Bay 2 weaned in 36 hours. Bay 7 died peacefully with her daughter at the bedside on a morphine drip. The family was furious in the moment. They sent a letter six months later thanking you for being the only one who told them the truth.",pearl:"Crisis Standards of Care: when resources are insufficient, allocation shifts from first-come-first-served to maximizing lives saved. SOFA score and likelihood of short-term survival are the validated triage tools. Document the protocol you used."},{text:"First-come-first-served. Bay 7 gets the vent — she was admitted first.",score:0,fx:{justice:-30,beneficence:-25,legal:+40},nxt:"death",log:"Resource misallocation; both patients harmed.",outTitle:"Two Deaths Where One Would Have Sufficed",outDesc:"Bay 7 was already moribund. The vent did nothing but extend her dying by 14 hours. Bay 2 arrested on BiPAP at 0300 because the only invasive ventilator in the building was tied up. The construction worker had three kids. Risk Management opened a file the following Monday.",ifNotBest:"First-come-first-served is the default ONLY when resources are adequate. In an MCI with one vent, that rule is suspended by crisis-standards protocols.",pearl:"Justice in scarcity is not equality. It is maximizing the lives a finite resource can save."},{text:"Let the families decide between themselves.",score:0,fx:{justice:-40,burnout:+15,legal:+55},nxt:"death",log:"Abdicated triage to families.",outTitle:"Abdication",outDesc:"The two families nearly came to blows in the hallway. Security was called. Both patients deteriorated while the argument played out. You watched it happen because you wanted to avoid being the bad guy. That is not a clinical decision — it is a moral failure.",pearl:"Triage in disaster is the physician's responsibility. Outsourcing the decision to grieving families is not respect for autonomy; it is abandonment."}]}]},
-{id:"blackout_dnr",tags:["ethics","em","icu"],name:"",age:71,sex:"F",initHealth:8,diff:2,cat:"ethics",loc:"Triage",steps:[{hpi:"BLACKOUT — Floodwaters breached the lower level. Patient found pulseless in stairwell B, pulled up by maintenance staff. Estimated downtime 4–6 minutes. A wet, smudged paper tucked in her sweater pocket appears to be an out-of-state advance directive marked DNR/DNI — but the signature is illegible and the witnessing physician's name is unreadable. Family is unreachable: phone lines down, no power for the EHR. Code team is at bedside, paddles charged.",vitals:{HR:"0",BP:"0"},actions:[{text:"Initiate full resuscitation. A questionable, unverified document does not meet the legal standard for withholding care.",score:4,fx:{beneficence:+25,nonmalef:+15,autonomy:-5},nxt:"discharge",log:"Default to resuscitation under ambiguity.",outTitle:"Defaulted to Life",outDesc:"You ran the code. ROSC at 9 minutes. She was extubated 48 hours later, neurologically intact, and confirmed with her son the next morning that the document had been rescinded six months ago after she beat her cancer. She lived another four years. The right call under genuine ambiguity is the reversible one.",pearl:"DNR orders must be verified, legible, and applicable to the current admission. An ambiguous or unverifiable document does not override the default duty to resuscitate. You can always stop a resuscitation. You cannot un-withhold one."},{text:"Honor the document. Pronounce. The paperwork is enough.",score:0,fx:{autonomy:+10,legal:+70,nonmalef:-30},nxt:"death",log:"Honored an unverified DNR.",outTitle:"Wrongful Death",outDesc:"You pronounced her on the strength of a soaked piece of paper. Her son arrived at 0700, asked to see his mother, and produced the rescission letter she had signed in March. The hospital settled the wrongful-death suit out of court. Your name stayed on the complaint.",ifNotBest:"Autonomy requires VERIFIED expression of wishes. An illegible document of unknown provenance is not verified.",pearl:"The bias under ambiguity is toward the reversible action. Resuscitation can be withdrawn. Death cannot be undone."},{text:"Refuse to make the call. Wait for the on-call ethics consultant.",score:0,fx:{nonmalef:-25,burnout:+10,legal:+30},nxt:"death",log:"Delay killed the patient.",outTitle:"Time Was the Patient",outDesc:"Ethics committee phones were not answering. Six minutes of arrest became fifteen. There was never a decision to be made — the decision was made for you by the clock. You were the ethics consultant in the room.",pearl:"In a code, you are the decision-maker. Calling for help is good. Refusing to decide while the patient asystoles is not."}]}]},
-{id:"blackout_staff",tags:["ethics","em"],name:"",age:42,sex:"M",initHealth:25,diff:3,cat:"ethics",loc:"Triage",steps:[{hpi:"BLACKOUT — MCI ongoing. Nurse Rivera grabs your sleeve: her husband, a paramedic, was just brought in with chest pain and ST-elevations in V2–V4. He is hemodynamically stable. The cath lab is offline. The last available tPA dose is in your hand. Bay 4 — a 36yo mother of two, late-presenting STEMI, larger territory, dropping pressures — is also waiting. Only one dose. Rivera is begging you, quietly, in the corner.",vitals:{HR:"94",BP:"118/74"},actions:[{text:"Give the tPA to Bay 4 (larger infarct, hemodynamically unstable). Stabilize Rivera's husband with full medical therapy and transfer when bridges reopen.",score:4,fx:{justice:+35,beneficence:+25,rapport:-10},nxt:"discharge",log:"Allocated by clinical severity, not relationship.",outTitle:"Justice Held",outDesc:"Bay 4 received the lytic. Her ejection fraction recovered to 45%. Rivera\'s husband — stable, smaller anterior MI — was bridged on heparin and nitro until the helicopter could lift at dawn. He got his cath the next afternoon and was home in three days. Rivera did not speak to you for two shifts. On the third, she put a coffee on your charting desk. She knew. She always knew.",pearl:"Justice means the same allocation rule applies regardless of who is asking. Relational pressure is the most insidious form of bias in resource scarcity. The clinical criteria do not change because someone you care about is in the bed."},{text:"Give the tPA to Rivera\'s husband. She has been your lifeline on this ward.",score:0,fx:{justice:-40,rapport:+5,legal:+60,burnout:+15},nxt:"death",log:"Allocated by relationship, not clinical need.",outTitle:"Favoritism Kills",outDesc:"Bay 4 arrested at 0340. Two children lost their mother because you owed Nurse Rivera a favor. Rivera figured out what you had done by the morning report. She never asked you for anything again — and she never forgave you, either. The mortality review committee found the allocation indefensible.",ifNotBest:"Loyalty to a colleague is not a clinical indication. The tPA does not know whose husband it is going into.",pearl:"The most dangerous bias in triage is not malice — it is affection. Sympathy is a feature, not a triage criterion."},{text:"Split the dose between both patients.",score:0,fx:{beneficence:-20,nonmalef:-25,legal:+40},nxt:"death",log:"Subtherapeutic lysis in both.",outTitle:"Half a Dose, Twice the Death",outDesc:"Neither patient achieved therapeutic lysis. Bay 4 died of cardiogenic shock at 0410. Rivera\'s husband extended his infarct and ended up with a 25% EF. There is no Solomonic answer in pharmacology. The drug works at a dose, or it does not work at all.",pearl:"Subtherapeutic dosing of thrombolytics provides the bleeding risk without the clot lysis. There is no compromise dose."}]}]},
+{id:"blackout_vent",tags:["ethics","icu","em"],name:"",age:34,sex:"M",initHealth:60,diff:3,cat:"ethics",loc:"ICU",steps:[{hpi:"BLACKOUT — MCI inbound. Generator on reserve. ONE working ventilator remains in the unit. BAY 2: 34yo construction worker, isolated thoracic crush injury, SOFA 6, expected to wean in 48h. BAY 7: 81yo end-stage COPD on home O2, septic, SOFA 14, anoxic during the power flicker. Both need the vent NOW. Bay 7's daughter is screaming in the hallway that her mother 'was here first.'",vitals:{HR:"—",BP:"—"},timeLimit:60,actions:[{text:"Allocate the vent to BAY 2 per crisis-standards triage. Palliate BAY 7 with morphine; daughter to bedside.",score:4,fx:{justice:+25,beneficence:+15,nonmalef:+10},nxt:"next",advanceNow:true,log:"Crisis-standards triage applied: vent to BAY 2.",outTitle:"Triage Held",outDesc:"You invoked the hospital's crisis standards. SOFA score and likelihood of short-term survival became the criteria — not arrival order. Now the harder part: facing Bay 7's family.",pearl:"Crisis Standards of Care suspend first-come-first-served when resources are insufficient. SOFA-based allocation maximizes lives saved. Document the protocol invoked, the criteria used, and the witnessing staff."},{text:"First-come-first-served. BAY 7 keeps the vent — she was admitted first.",score:0,fx:{justice:-30,beneficence:-25,legal:+40},nxt:"death",log:"Resource misallocated; both patients harmed.",outTitle:"Two Deaths Where One Would Have Sufficed",outDesc:"BAY 7 was moribund. The vent extended her dying by 14 hours. BAY 2 arrested on BiPAP at 0300 because the only invasive ventilator in the building was tied up. The construction worker had three kids. Risk Management opened a file the following Monday. The mortality review found the allocation indefensible.",pearl:"Justice in scarcity is not equality. It is maximizing the lives a finite resource can save."},{text:"Let the two families decide between themselves.",score:0,fx:{justice:-40,burnout:+15,legal:+55},nxt:"death",log:"Abdicated triage to families.",outTitle:"Abdication",outDesc:"The families nearly came to blows in the hallway. Security was called. Both patients deteriorated while the argument played out. Triage in disaster is the physician's responsibility — outsourcing it to grieving families is not respect for autonomy. It is abandonment.",pearl:"The physician owns the triage decision. There is no one else in the room qualified to make it."}]},{hpi:"BAY 7's daughter blocks you in the hallway, sobbing. She is not violent — she is watching her mother die. She has questions. The OR is calling for you in three minutes. Bay 2's vent is stable.",vitals:{HR:"—",BP:"—"},timeLimit:45,actions:[{text:"Sit with her at her mother's bedside. Hold her mother's hand. Tell her the truth about the protocol and why it applied tonight.",score:4,fx:{rapport:+20,beneficence:+15,nonmalef:+10},nxt:"next",advanceNow:true,log:"Family informed compassionately at the bedside.",outTitle:"Truth Held",outDesc:"You gave her four minutes. She held her mother's hand. You explained SOFA scores in plain language and named the criteria. She wept, then thanked you for not lying to her. The OR waited.",pearl:"Compassionate truth-telling in disaster is not a luxury. It is the only thing that keeps the family from suing — and the only thing that keeps you from breaking."},{text:"Call security to escort her out of the unit.",score:1,fx:{rapport:-15,legal:+20,burnout:+5},nxt:"next",advanceNow:true,log:"Family removed by security.",outTitle:"Security Called",outDesc:"Security walked her out. She came back at 0700 with a lawyer. The encounter took twelve minutes of staff time you didn't have. None of it had to happen.",ifNotBest:"She wasn't dangerous. She was the daughter of a dying woman. Security solves a violence problem, not a grief problem.",pearl:"Security is the wrong tool for grief. The right tool is four minutes and the truth."},{text:"Tell her the doctor will be with her shortly. Walk away.",score:0,fx:{rapport:-25,burnout:+15,legal:+35,nonmalef:-10},nxt:"next",advanceNow:true,log:"Avoided the family.",outTitle:"Avoided",outDesc:"She watched you walk past her into the OR. She watched the surgical tech walk past her. She watched her mother die alone. The complaint she filed the following week was three pages long, and every page was correct.",pearl:"You can defer many things in a disaster. The family is not one of them."}]},{hpi:"0530. The storm is breaking. BAY 2 weaned successfully. BAY 7 was pronounced at 0312 — peacefully, with her daughter at the bedside. The mortality review committee meets at 0700. Document the night.",vitals:{HR:"—",BP:"—"},actions:[{text:"Document the CSC protocol invoked, the SOFA scores at allocation, the witnessing nurse, the time of palliation, and the conversation with the family. Sign your name.",score:4,fx:{justice:+15,nonmalef:+15,acumen:+10},nxt:"discharge",log:"Decision and conversation both documented.",outTitle:"Record Preserved",outDesc:"Six months later, the construction worker's family sent a letter thanking you for being the only one who told them the truth. Bay 7's daughter requested a meeting with you and you sat with her for an hour. The hospital used your note as the template for the new crisis standards policy. Patel read it aloud at grand rounds.",pearl:"Documentation under crisis standards is not optional. The decision tree, the criteria, and the witnesses must all be in the chart by morning — or the protocol effectively did not exist."},{text:"Document only that the patient 'died of comorbidities.'",score:1,fx:{legal:+30,acumen:-5},nxt:"discharge",log:"Vague documentation.",outTitle:"Vague Note",outDesc:"The mortality review panel asked for the missing details. You had to reconstruct them from memory three weeks later. Nobody remembered exactly what time the vent was allocated. The hospital settled the family's case for an undisclosed sum.",ifNotBest:"Vague charting is the plaintiff's attorney's favorite document. The decision was defensible. You undefended it.",pearl:"The note that protects you is the one that is specific enough to lose its ambiguity."},{text:"Omit the triage decision entirely. Note arrest and pronouncement only.",score:0,fx:{legal:+60,nonmalef:-15},nxt:"discharge",log:"Documentation falsified by omission.",outTitle:"Omission",outDesc:"Risk Management noticed the gap. Other charts that night referenced 'the night the vent was allocated.' Yours did not. Your credentialing came up for early review. The cover-up was worse than the call.",pearl:"Hiding a defensible decision converts it into an indefensible one. Document or burn."}]}]},
+{id:"blackout_dnr",tags:["ethics","em","icu"],name:"",age:71,sex:"F",initHealth:8,diff:3,cat:"ethics",loc:"Triage",steps:[{hpi:"BLACKOUT — Floodwaters breached the lower level. Patient pulled pulseless from stairwell B by maintenance. Estimated downtime 4–6 minutes. A soaked paper from her sweater pocket appears to be an out-of-state advance directive marked DNR/DNI — signature ILLEGIBLE, witnessing physician's name unreadable. Family unreachable: phone lines down, EHR offline. Code team at bedside, paddles charged. SECONDS COUNT.",vitals:{HR:"0",BP:"0"},timeLimit:20,actions:[{text:"Initiate full resuscitation. An unverified, illegible document does not meet the legal standard for withholding care.",score:4,fx:{beneficence:+25,nonmalef:+15,autonomy:-5},nxt:"next",advanceNow:true,log:"Defaulted to resuscitation under ambiguity.",outTitle:"Code Begins",outDesc:"You called the code. Compressions started at 02:14. The team moved like they had done this a hundred times — because they had. ROSC at the 9-minute mark. Pupils sluggish but reactive. She is alive. Now the harder conversation is coming up the front entrance, soaking wet.",pearl:"Under genuine ambiguity in advance directives, the default is the reversible action. Resuscitation can be withdrawn. Death cannot."},{text:"Honor the document. Pronounce her.",score:0,fx:{autonomy:+10,legal:+70,nonmalef:-30},nxt:"death",log:"Honored an unverified DNR.",outTitle:"Wrongful Death",outDesc:"You pronounced her on the strength of a soaked piece of paper. Her son arrived at 0700, produced the rescission letter she had signed in March, and asked to see his mother. The hospital settled the wrongful-death suit out of court. Your name stayed on the complaint.",pearl:"Autonomy requires VERIFIED expression of wishes. An illegible document of unknown provenance is not verified."},{text:"Refuse to make the call. Wait for the on-call ethics consultant.",score:0,fx:{nonmalef:-25,burnout:+10,legal:+30},nxt:"death",log:"Delay killed the patient.",outTitle:"Time Was the Patient",outDesc:"Ethics committee phones were not answering. Six minutes of arrest became fifteen. There was never a decision to be made — the decision was made for you by the clock. You were the ethics consultant in the room.",pearl:"In a code, you are the decision-maker. Calling for help is good. Refusing to decide while the patient asystoles is not."}]},{hpi:"ROSC achieved. She is intubated, sedated, pupils reactive. 0712: her son walks through the front entrance, soaking wet, hand-shaking. He has paperwork. You have her wet, smudged advance directive in your scrub pocket. Disclose, or omit?",vitals:{HR:"96",BP:"108/68",O2:"96"},timeLimit:60,actions:[{text:"Take him to the family room. Show him the wet paper. Explain why you ran the code anyway. Ask him what she wanted now.",score:4,fx:{rapport:+20,autonomy:+15,beneficence:+10},nxt:"next",advanceNow:true,log:"Full disclosure to family.",outTitle:"Truth First",outDesc:"He stared at the paper for a long time. Then he produced a second document — signed in March, after her cancer remission — that rescinded the DNR. He thanked you for not throwing the first one away. He thanked you for running the code. He said he was going to write a letter.",pearl:"The wet paper is evidence. So is the conversation that follows. Both belong in the record."},{text:"Throw the paper away. Tell him the team 'did everything.'",score:0,fx:{legal:+60,rapport:-20,autonomy:-15,nonmalef:-15},nxt:"next",advanceNow:true,log:"Concealed the advance directive.",outTitle:"Concealment",outDesc:"The paper showed up in housekeeping's wet trash. A maintenance worker mentioned it to a nurse, who mentioned it to Rivera. Rivera mentioned it to the chief. By Tuesday the conversation was no longer about the code — it was about what you did with the paper.",ifNotBest:"The directive is part of the medical record from the moment you read it. Destroying it is evidence tampering.",pearl:"The defensible decision becomes indefensible the moment you hide the evidence of it."},{text:"Withdraw care immediately on the strength of the paper, before he can sit down.",score:0,fx:{legal:+70,nonmalef:-30,autonomy:-10},nxt:"death",log:"Premature withdrawal post-ROSC.",outTitle:"Premature Withdrawal",outDesc:"You extubated her before her son could put his coat down. The directive turned out to be six months out of date. The son's first sentence in the deposition was, 'I never got to say goodbye.'",pearl:"Withdrawal of care is an irrevocable act. It requires verification and family input, not haste."}]},{hpi:"Six months later. Risk Management has scheduled a closed-door meeting. The son's letter of thanks is on the table. So is the hospital attorney, who wants to ask you why you ran a code on a patient with a DNR in her sweater pocket.",vitals:{HR:"—",BP:"—"},actions:[{text:"Cite the legal standard: unverified, illegible, or non-applicable advance directives do not override the default to resuscitate. Read the protocol you followed.",score:4,fx:{justice:+25,acumen:+20,nonmalef:+10},nxt:"discharge",log:"Defended the decision on legal and ethical grounds.",outTitle:"Defended on the Standard",outDesc:"The attorney closed the file in his lap. The son's letter went into your personnel record. The chair of the ethics committee invited you to join. The mother lived another four years. She came to your white coat ceremony, when you finally had one of those.",pearl:"The decision under ambiguity is defensible. The articulation of that decision under cross-examination is what makes it stick."},{text:"Tell them you 'felt bad' for her.",score:1,fx:{burnout:+15,legal:+15,acumen:-10},nxt:"discharge",log:"Emotional defense, not clinical.",outTitle:"Defended on Feeling",outDesc:"The attorney asked a follow-up question. You did not have a good answer. The hospital required you to take a Risk Management seminar. The clinical reasoning had been correct — you just couldn't articulate it under pressure.",ifNotBest:"Compassion is not a legal standard. The reasoning was correct. The defense of it was not.",pearl:"Articulating the protocol is part of following the protocol. Practice the words."},{text:"Blame the paramedics for bringing her in at all.",score:0,fx:{legal:+40,rapport:-25,nonmalef:-15},nxt:"discharge",log:"Deflected to EMS.",outTitle:"Deflection",outDesc:"The paramedics' union filed a complaint. Your reputation on the ED-EMS interface never recovered. The chief stopped sending you the critical traumas.",pearl:"Blaming the team upstream of you is the fastest way to lose the team downstream of you."}]}]},
+{id:"blackout_staff",tags:["ethics","em"],name:"",age:42,sex:"M",initHealth:25,diff:3,cat:"ethics",loc:"Triage",steps:[{hpi:"BLACKOUT — MCI ongoing. Nurse Rivera grabs your sleeve: her husband, a paramedic, was just brought in. Chest pain, ST-elevations in V2–V4. He is hemodynamically stable. The cath lab is offline. The LAST tPA dose in the building is in your hand. BAY 4 — 36yo mother of two, late-presenting STEMI, larger anterior territory, dropping pressures — is also waiting. ONE DOSE. Rivera is begging you, quietly, in the corner of the trauma bay.",vitals:{HR:"94",BP:"118/74"},timeLimit:45,actions:[{text:"Allocate by clinical severity. tPA to BAY 4. Bridge Rivera's husband on heparin + nitro until the helicopter lifts at dawn.",score:4,fx:{justice:+30,beneficence:+25,rapport:-15},nxt:"next",advanceNow:true,log:"Allocated by clinical criteria.",outTitle:"Justice Held",outDesc:"Bay 4 received the lytic. Her ejection fraction recovered to 45%. Rivera's husband — stable, smaller infarct — was bridged on heparin and nitro until the helicopter lifted at dawn. He got his cath the next afternoon and was home in three days. Rivera did not look at you for two shifts.",pearl:"The most dangerous bias in scarcity is not malice. It is affection. The triage criteria do not change because someone you care about is in the bed."},{text:"Give the tPA to Rivera's husband. She has been your lifeline on this ward.",score:0,fx:{justice:-40,rapport:+5,legal:+60,burnout:+15},nxt:"death",log:"Allocated by relationship.",outTitle:"Favoritism Kills",outDesc:"Bay 4 arrested at 0340. Two children lost their mother because you owed Nurse Rivera a favor. Rivera figured out what you had done by the morning report. She never asked you for anything again — and she never forgave you, either.",pearl:"Loyalty to a colleague is not a clinical indication."},{text:"Split the dose between both patients.",score:0,fx:{beneficence:-25,nonmalef:-25,legal:+40},nxt:"death",log:"Subtherapeutic lysis in both.",outTitle:"Half a Dose, Twice the Death",outDesc:"Neither patient achieved therapeutic lysis. Bay 4 died of cardiogenic shock at 0410. Rivera's husband extended his infarct and was left with a 25% EF. There is no Solomonic answer in pharmacology.",pearl:"Subtherapeutic dosing of thrombolytics provides the bleeding risk without the clot lysis. There is no compromise dose."}]},{hpi:"Three nights later. Rivera has not spoken to you since. She finds you charting at 0300 in the back of the nursing station. She sits down across from you and looks you in the eye. Her husband is recovering. Bay 4 is dead. She knows what you did.",vitals:{HR:"—",BP:"—"},actions:[{text:"Tell her you followed the allocation criteria. Tell her you would do it again. Don't apologize for the decision — apologize for what it cost her.",score:4,fx:{rapport:+20,justice:+15,acumen:+10},nxt:"next",advanceNow:true,log:"Honest with Rivera.",outTitle:"Honesty Without Apology",outDesc:"She was quiet for a long time. Then she said: 'I would have hated you if you'd done it differently.' She got up, refilled your coffee, and went back to the floor. She has watched you closer ever since — not less.",pearl:"Apologize for the cost. Never apologize for the right decision. The two are different conversations."},{text:"Tell her you're sorry. Promise her you'd do it differently if you could.",score:1,fx:{rapport:+5,justice:-15,burnout:+10},nxt:"next",advanceNow:true,log:"Apologized for the right call.",outTitle:"Hollow Apology",outDesc:"She accepted the apology. But she also stopped paging you first when something was wrong on the floor. The apology had told her something about your spine that you had not meant to tell her.",ifNotBest:"Apologizing for the correct triage teaches the wrong lesson — to Rivera, to yourself, and to anyone watching.",pearl:"An apology for a defensible decision is not kindness. It is a small lie that compounds."},{text:"Tell her she can file a complaint if she wants.",score:0,fx:{rapport:-30,legal:+10,burnout:+10},nxt:"next",advanceNow:true,log:"Cold response.",outTitle:"Cold",outDesc:"She did not file. She also did not speak to you outside of clinical handoffs for the rest of the year. The ward got harder. Two nurses transferred. You stopped getting the heads-up before the codes.",pearl:"Defending the decision is not the same as defending it coldly. The patient died. Her husband almost died. Acknowledge the weight."}]},{hpi:"M&M Conference, two weeks later. Bay 4's family is in attendance — hospital policy in MCI deaths. The chief asks you to present. You can frame this honestly, or you can soften it. The conflict-of-interest moment with Rivera is in your contemporaneous note.",vitals:{HR:"—",BP:"—"},actions:[{text:"Present truthfully. Name the conflict-of-interest moment. Walk the room through how you applied the criteria despite the pressure.",score:4,fx:{justice:+30,acumen:+20,nonmalef:+15,beneficence:+10},nxt:"discharge",log:"Full M&M presentation including bias check.",outTitle:"Bias Named",outDesc:"The family asked one question — 'Did her age matter in the decision?' You answered 'No, the severity of the infarct did.' They thanked you for the honesty. The hospital adopted a conflict-of-interest disclosure protocol for tPA allocation in MCIs the following quarter. Rivera caught you in the hallway afterward and put her hand on your shoulder. She did not say anything. She did not need to.",pearl:"Name the bias you successfully overcame. The next physician facing the same temptation will need the warning. Silence on bias is the same as endorsing it."},{text:"Present the case but omit the Rivera moment. Frame it as a clinical decision only.",score:1,fx:{justice:-10,legal:+10,rapport:-5},nxt:"discharge",log:"Sanitized M&M.",outTitle:"Sanitized",outDesc:"The presentation was clean. It also taught nothing. A surgeon two years later faced the same conflict — his own brother in the bay — and made the wrong call. He told you afterward he had read your M&M summary and thought 'this guy had it easy.'",ifNotBest:"Hiding the bias you overcame doesn't protect anyone. It just means the next person facing the temptation gets no warning.",pearl:"M&M is a teaching forum. The case is the lesson. The lesson is the bias, not the diagnosis."},{text:"Frame it as a 'no-win situation' with no specifics.",score:0,fx:{justice:-25,legal:+25,nonmalef:-15,acumen:-10},nxt:"discharge",log:"Empty M&M.",outTitle:"Nothing Learned",outDesc:"The family walked out before you finished. The chief asked you privately whether there was something you weren't saying. You said no. He knew you were lying. He stopped putting you on critical case panels.",pearl:"'No-win' is the most expensive lie a physician can tell at M&M. Every case has a decision. Articulate it."}]}]},
 {id:"pericarditis",tags:["im","em"],name:"",age:22,sex:"M",initHealth:60,diff:2,cat:"clinical",loc:"Triage",steps:[{hpi:"Central chest pain worse lying flat, better leaning forward. Friction rub. ECG: diffuse ST elevations, PR depression.",vitals:{HR:"98",BP:"120/80"},actions:[{text:"NSAIDs + Colchicine.",score:4,fx:{health:+30},nxt:"discharge",log:"Pericarditis treated.",outTitle:"Pericarditis Treated",outDesc:"He improved within 48 hours on Ibuprofen and Colchicine. The friction rub resolved by day 3.",pearl:"Positional chest pain + friction rub + diffuse ST elevations = pericarditis. NSAIDs + Colchicine is the treatment."},{text:"Aspirin + Heparin for STEMI.",score:0,fx:{legal:+40},nxt:"death",log:"Anticoagulated a pericarditis patient.",outTitle:"Hemopericardium",outDesc:"Anticoagulating pericarditis can cause hemorrhagic effusion and tamponade. He developed hemopericardium.",pearl:"Pericarditis is a contraindication to anticoagulation."}]}]},
 {id:"cdiff",tags:["im","surg"],name:"",age:68,sex:"F",initHealth:40,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"Profuse watery diarrhea on day 6 of clindamycin for a dental abscess. Fever 102.4°F.",vitals:{HR:"110",Temp:"102.4"},actions:[{text:"Stool C. diff toxin assay + PO Vancomycin.",score:4,fx:{health:+45},nxt:"discharge",log:"C. diff treated.",outTitle:"C. Difficile Treated",outDesc:"Clindamycin was stopped and oral Vancomycin started. Diarrhea resolved over 5 days.",pearl:"Antibiotic use + diarrhea = C. diff until proven otherwise. Stop the offending antibiotic. Treat with PO Vancomycin."},{text:"Loperamide (Imodium) for diarrhea control.",score:0,fx:{legal:+60},nxt:"death",log:"Toxic megacolon from anti-motility agents.",outTitle:"Toxic Megacolon",outDesc:"Anti-motility agents in C. diff prevent the infected stool from being expelled and trigger toxic megacolon.",pearl:"Anti-motility agents are absolutely contraindicated in infectious diarrhea."}]}]},
 {id:"aspirin_tox",tags:["em","peds"],name:"",age:16,sex:"F",initHealth:20,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"Found unconscious. Empty aspirin bottle nearby. Onset 20–30 min ago. Hyperventilating, tinnitus.",vitals:{HR:"120",RR:"28"},actions:[{text:"IV Sodium Bicarbonate + urine alkalinization.",score:4,fx:{health:+50},nxt:"discharge",log:"Aspirin toxicity treated.",outTitle:"Aspirin Toxicity Treated",outDesc:"Sodium bicarb alkalinized the urine, trapping ionized aspirin and promoting excretion. She recovered over 24 hours with close monitoring.",pearl:"Aspirin toxicity: tinnitus + hyperventilation. Treat with sodium bicarbonate for urinary alkalinization."},{text:"N-acetylcysteine (NAC).",score:0,fx:{legal:+50},nxt:"death",log:"Wrong antidote used.",outTitle:"Wrong Antidote",outDesc:"NAC is for acetaminophen toxicity. She continued to deteriorate.",pearl:"NAC is for Tylenol (acetaminophen). Never confuse the two."}]}]},
@@ -4178,6 +4229,221 @@ function startPATimer(){
 function stopPATimer(){ clearInterval(_paTimer); _paTimer=null; }
 
 // ══════════════════════════════════════════════════════════
+// CASE TIMER — live decision-window countdown
+// ══════════════════════════════════════════════════════════
+let _caseTimer = null;
+
+function clearCaseTimer(){
+  if(_caseTimer){
+    clearInterval(_caseTimer.interval);
+    _caseTimer = null;
+  }
+  const el = document.getElementById('case-timer-bar');
+  if(el) el.remove();
+}
+
+function findWorstActionIdx(step){
+  if(!step || !step.actions || !step.actions.length) return 0;
+  let worstIdx = 0, worstScore = Infinity;
+  step.actions.forEach((a,i)=>{
+    const s = (a.score==null) ? 4 : a.score;
+    if(s < worstScore){ worstScore = s; worstIdx = i; }
+  });
+  return worstIdx;
+}
+
+function startCaseTimer(pId, seconds, worstActionIdx){
+  clearCaseTimer();
+  const actDiv = document.getElementById('ch-actions');
+  if(!actDiv || actDiv.querySelector('.act-acted-msg')) return;
+  const bar = document.createElement('div');
+  bar.id = 'case-timer-bar';
+  bar.className = 'case-timer';
+  bar.innerHTML =
+    '<div class="ct-label">'
+    + '<span class="ct-icon">⏱</span>'
+    + '<span>DECISION WINDOW</span>'
+    + '<span class="ct-time" id="ct-time">' + seconds + 's</span>'
+    + '</div>'
+    + '<div class="ct-bar"><div class="ct-fill" id="ct-fill" style="width:100%"></div></div>'
+    + '<div class="ct-sub">Patient deteriorates if you delay.</div>';
+  actDiv.insertBefore(bar, actDiv.firstChild);
+  const start = Date.now();
+  const total = seconds * 1000;
+  _caseTimer = {
+    pId: pId, worstIdx: worstActionIdx, lastTick: -1,
+    interval: setInterval(function(){
+      const elapsed = Date.now() - start;
+      const remain = Math.max(0, total - elapsed);
+      const pct = (remain / total) * 100;
+      const fill = document.getElementById('ct-fill');
+      const txt  = document.getElementById('ct-time');
+      if(fill) fill.style.width = pct + '%';
+      if(txt)  txt.textContent  = Math.ceil(remain/1000) + 's';
+      if(pct < 33){
+        bar.classList.remove('warning');
+        bar.classList.add('critical');
+      } else if(pct < 60){
+        bar.classList.add('warning');
+      }
+      // beep on each new second when in critical phase
+      const secLeft = Math.ceil(remain/1000);
+      if(pct < 33 && secLeft !== _caseTimer.lastTick && secLeft > 0){
+        _caseTimer.lastTick = secLeft;
+        if(typeof playTone === 'function') playTone(660, 0.04, 0.06, 'square');
+      }
+      if(remain <= 0){
+        clearCaseTimer();
+        if(typeof playTone === 'function') playTone(110, 0.5, 0.18, 'sawtooth');
+        const p = getPt(pId);
+        if(p && !p.acted){
+          GS.log.push('[' + (p.name||'Patient') + '] ⏱ Decision window expired — patient deteriorated.');
+          if(typeof screenFlashRed === 'function') screenFlashRed();
+          takeAction(pId, worstActionIdx);
+        }
+      }
+    }, 100)
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+// STORM SYSTEM — Gulf Coast hurricane backdrop (Campaign Ch 2+)
+// ══════════════════════════════════════════════════════════
+let _stormState = { active:false, lightningTimer:null, flickerTimer:null };
+
+function stormChapterIntensity(){
+  const ch = (GS && GS.story && GS.story.chapter) || 1;
+  // 0 = none, 1 = drizzle, 2 = heavy rain, 3 = hurricane (lightning+flicker)
+  if(ch >= 5) return 3;
+  if(ch >= 3) return 3;
+  if(ch >= 2) return 2;
+  return 0;
+}
+
+function activateStorm(){
+  const intensity = stormChapterIntensity();
+  const ov = document.getElementById('storm-overlay');
+  if(!ov) return;
+  if(intensity === 0){ deactivateStorm(); return; }
+  ov.classList.add('active');
+  ov.style.opacity = intensity === 1 ? '0.35' : intensity === 2 ? '0.7' : '1';
+  _stormState.active = true;
+  // Lightning + thunder cadence ramps with intensity
+  if(_stormState.lightningTimer) clearInterval(_stormState.lightningTimer);
+  const lightningEvery = intensity >= 3 ? 9000 : intensity === 2 ? 18000 : 32000;
+  _stormState.lightningTimer = setInterval(()=>{
+    if(Math.random() > 0.55) return;
+    const flash = document.getElementById('storm-flash');
+    if(!flash) return;
+    flash.classList.add('flash');
+    setTimeout(()=> flash.classList.remove('flash'), 90);
+    setTimeout(()=> { flash.classList.add('flash'); setTimeout(()=>flash.classList.remove('flash'), 60); }, 180);
+    if(typeof playTone === 'function'){
+      setTimeout(()=> playTone(70, 0.9, 0.18, 'sawtooth'), 700 + Math.random()*900);
+    }
+  }, lightningEvery);
+  // Power flickers — flash the topbar to suggest generators struggling
+  if(_stormState.flickerTimer) clearInterval(_stormState.flickerTimer);
+  if(intensity >= 3){
+    _stormState.flickerTimer = setInterval(()=>{
+      if(Math.random() > 0.4) return;
+      const game = document.getElementById('game');
+      if(!game) return;
+      game.classList.remove('power-flicker');
+      void game.offsetWidth;
+      game.classList.add('power-flicker');
+      if(typeof playTone === 'function') playTone(90, 0.18, 0.08, 'sawtooth');
+    }, 22000);
+  }
+}
+
+function deactivateStorm(){
+  _stormState.active = false;
+  if(_stormState.lightningTimer){ clearInterval(_stormState.lightningTimer); _stormState.lightningTimer=null; }
+  if(_stormState.flickerTimer){ clearInterval(_stormState.flickerTimer); _stormState.flickerTimer=null; }
+  const ov = document.getElementById('storm-overlay');
+  if(ov){ ov.classList.remove('active'); ov.style.opacity = '0'; }
+}
+
+// Hook into the existing chapter advancement
+const _origCheckChapter = checkChapter;
+checkChapter = function(){
+  _origCheckChapter();
+  activateStorm();
+};
+// Also re-evaluate on each game render so loaded saves restore the storm
+const _origRenderAll_storm = (typeof renderAll === 'function') ? renderAll : null;
+if(_origRenderAll_storm){
+  renderAll = function(){
+    _origRenderAll_storm.apply(this, arguments);
+    if(stormChapterIntensity() > 0 && !_stormState.active) activateStorm();
+    if(stormChapterIntensity() === 0 && _stormState.active) deactivateStorm();
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+// FLOOR HAZARDS — flood / dark / fire tiles, chapter-gated
+// ══════════════════════════════════════════════════════════
+const FLOOR_HAZARDS = {
+  ed: [
+    {chapter:2, type:'flood', x:50,  y:300, w:160, h:90,  label:'Storm Runoff'},
+    {chapter:3, type:'flood', x:1080,y:280, w:170, h:130, label:'Breach — Keep Out'},
+    {chapter:3, type:'dark',  x:430, y:380, w:220, h:110, label:'Power Out'},
+    {chapter:4, type:'flood', x:680, y:730, w:240, h:140, label:'Lower Level Flooded'},
+    {chapter:5, type:'fire',  x:240, y:300, w:90,  h:90,  label:'Bay 4 — Fire'},
+  ],
+  icu: [
+    {chapter:3, type:'dark',  x:600, y:400, w:250, h:140, label:'Generator Bay Down'},
+    {chapter:4, type:'flood', x:120, y:720, w:280, h:130, label:'Basement Backwash'},
+    {chapter:5, type:'fire',  x:900, y:350, w:90,  h:90,  label:'Vent Room — Smoke'},
+  ],
+  surg: [
+    {chapter:3, type:'dark',  x:880, y:300, w:200, h:130, label:'OR-2 No Power'},
+    {chapter:4, type:'flood', x:60,  y:710, w:300, h:150, label:'Sub-Sterile Flood'},
+    {chapter:5, type:'fire',  x:520, y:280, w:100, h:100, label:'Anesthesia Cart — Smoke'},
+  ],
+  peds: [
+    {chapter:3, type:'dark',  x:200, y:330, w:220, h:120, label:'NICU Backup Only'},
+    {chapter:4, type:'flood', x:1000,y:720, w:240, h:140, label:'Playroom Flooded'},
+  ],
+  med: [
+    {chapter:2, type:'dark',  x:780, y:330, w:200, h:120, label:'Telemetry Offline'},
+    {chapter:4, type:'flood', x:60,  y:710, w:300, h:150, label:'Pharmacy Flooded'},
+  ],
+};
+
+function currentHazards(){
+  const ch = (GS && GS.story && GS.story.chapter) || 1;
+  const list = FLOOR_HAZARDS[_ex.floorId] || [];
+  return list.filter(h => h.chapter <= ch);
+}
+
+function renderHazards(){
+  const wrap = document.getElementById('ex-hazards');
+  if(!wrap) return;
+  const hz = currentHazards();
+  wrap.innerHTML = hz.map((h,i)=>(
+    '<div class="ex-hazard ' + h.type + '" id="ex-hazard-' + i + '" '
+    + 'style="left:' + h.x + 'px;top:' + h.y + 'px;width:' + h.w + 'px;height:' + h.h + 'px;">'
+    + '<div class="ex-hazard-label">' + h.label + '</div>'
+    + '</div>'
+  )).join('');
+}
+
+function hazardBlocksAt(x, y){
+  // Flood and fire block movement. Dark zones allow passage.
+  const hz = currentHazards();
+  for(const h of hz){
+    if(h.type === 'dark') continue;
+    if(x >= h.x - 12 && x <= h.x + h.w + 12 &&
+       y >= h.y - 12 && y <= h.y + h.h + 12){
+      return h;
+    }
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════
 // EXPLORE MODE — top-down walking hospital sim
 // ══════════════════════════════════════════════════════════
 const EX_ROOMS = [
@@ -4534,6 +4800,7 @@ function renderExploreNPCs(){
   wrap.innerHTML = _ex.npcs.map((n,i)=>
     `<div class="ex-actor npc" id="ex-npc-${i}"><div class="ex-actor-name">${n.name}</div><div id="ex-npc-sprite-${i}">${pixelSpriteSVG(n.avatar, n.dir||'down', 0)}</div></div>`
   ).join('');
+  renderHazards();
 }
 
 function exploreFit(){
@@ -4566,10 +4833,23 @@ function exploreLoop(){
   const playerEl = document.getElementById('ex-player');
   if(dx||dy){
     const mag = Math.hypot(dx,dy)||1;
+    const prevX = _ex.player.x, prevY = _ex.player.y;
     _ex.player.x += (dx/mag) * _ex.player.speed;
     _ex.player.y += (dy/mag) * _ex.player.speed;
     _ex.player.x = Math.max(20, Math.min(_ex.worldW-60, _ex.player.x));
     _ex.player.y = Math.max(60, Math.min(_ex.worldH-60, _ex.player.y));
+    // Hazard collision — flood and fire push you back
+    const blocker = hazardBlocksAt(_ex.player.x, _ex.player.y);
+    if(blocker){
+      _ex.player.x = prevX; _ex.player.y = prevY;
+      if(!_ex._lastHazardWarn || Date.now() - _ex._lastHazardWarn > 1800){
+        _ex._lastHazardWarn = Date.now();
+        if(typeof paAnnounce === 'function'){
+          paAnnounce(blocker.type === 'fire' ? '🔥 FIRE — AREA SEALED' : '⚠ FLOODED — REROUTE');
+        }
+        if(typeof playTone === 'function') playTone(blocker.type==='fire'?180:240, 0.18, 0.1, 'square');
+      }
+    }
     const newDir = Math.abs(dx) > Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
     if(newDir !== _ex.player.dir){ _ex.player.dir = newDir; _ex.player.animT = 0; }
     _ex.player.animT = (_ex.player.animT||0) + 1;
@@ -5878,6 +6158,7 @@ function renderChart(id){
   const ordSec=document.getElementById('ch-orders-sec');
 
   if(p.acted){
+    clearCaseTimer();
     if(actDiv) actDiv.innerHTML='<div class="act-acted-msg">✓ ORDERS PLACED — MONITORING</div>';
     if(ordSec) ordSec.style.display=p.activeTxt?'block':'none';
     const ordList=document.getElementById('active-orders-list');
@@ -5898,6 +6179,12 @@ function renderChart(id){
           <div class="act-title">${a.text}</div>
         </button>`;
       }).join('');
+      // Start the decision-window countdown if the case step demands it
+      if(step.timeLimit && !p.acted){
+        startCaseTimer(p.id, step.timeLimit, findWorstActionIdx(step));
+      } else {
+        clearCaseTimer();
+      }
     }
   }
 }
@@ -5905,6 +6192,7 @@ function renderChart(id){
 
 // ── TAKE ACTION ──
 function takeAction(pId, actIdx){
+  clearCaseTimer();
   const p=getPt(pId); if(!p) return;
   const step=p.steps[p.currStep];
   const act=step.actions[actIdx];

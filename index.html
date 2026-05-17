@@ -1775,6 +1775,9 @@ const DB = [
 {id:"epiglot",tags:["peds","em"],name:"",age:4,sex:"M",initHealth:22,diff:1,cat:"clinical",loc:"Triage",steps:[{hpi:"Unvaccinated 4yo. Tripod position, drooling, muffled voice, high fever. Looks frightened.",vitals:{HR:"152",RR:"40",Temp:"103.8"},actions:[{text:"Keep calm. Minimize handling. OR for controlled intubation by anesthesia.",score:4,fx:{health:+58},nxt:"discharge",log:"Airway secured.",outTitle:"Epiglottitis Managed",outDesc:"Anesthesia secured the airway under direct laryngoscopy in the OR. Cherry-red epiglottis confirmed. He was extubated on day 3.",pearl:"Epiglottitis: do not agitate, do not examine the throat, do not start an IV in the ED. Get to the OR."},{text:"Use tongue depressor to look in throat.",score:0,fx:{legal:+75},nxt:"death",log:"Triggered fatal laryngospasm.",outTitle:"Airway Lost",outDesc:"The tongue blade touched the back of his throat and his airway slammed shut. He was 4 years old.",pearl:"Examining the oropharynx in epiglottitis triggers complete laryngospasm. Always fatal in this setting."}]}]},
 {id:"tarasoff",tags:["psych"],name:"",age:24,sex:"M",initHealth:80,diff:2,cat:"ethics",loc:"Triage",steps:[{hpi:"Actively hallucinating. States clearly: 'The voices told me to kill my neighbor John Chen tonight at his house.'",actions:[{text:"72-hour hold + Warn John Chen directly + Notify Police.",score:4,fx:{justice:+28},nxt:"discharge",log:"Tarasoff duty fulfilled.",outTitle:"Duty to Protect Fulfilled",outDesc:"You notified the police and warned John Chen personally. The patient was held and started on antipsychotics. John Chen is alive.",pearl:"Tarasoff: A specific, credible threat to an identifiable person requires you to warn that person and notify law enforcement, overriding confidentiality."},{text:"72-hour hold only. Confidentiality maintained.",score:2,fx:{justice:+10},nxt:"discharge",log:"Failed to warn named victim.",outTitle:"Incomplete Duty",outDesc:"You held the patient — good. But you didn't warn the victim or police. John Chen had no idea he was named. This is a partial Tarasoff failure.",ifNotBest:"Holding the patient is not enough. You must explicitly warn the named victim.",pearl:"Tarasoff duty has two components: warn the victim AND notify law enforcement."}]}]},
 {id:"impaired",tags:["ethics","surg"],name:"Dr. Vance",age:52,sex:"M",initHealth:100,diff:3,cat:"ethics",loc:"Ward",steps:[{hpi:"Department Chair found injecting fentanyl in the surgeon's locker room. A child is already in the OR prepped for his case. He threatens your career if you speak.",actions:[{text:"Cancel the surgery. Report to CMO and Medical Board immediately.",score:4,fx:{nonmalef:+35},nxt:"discharge",log:"Protected patient, reported impaired physician.",outTitle:"Patient Protected",outDesc:"You cancelled the case and reported it to the CMO. The child went to a different surgeon the next day. The department chair was enrolled in a physician health program.",pearl:"Patient safety overrides institutional hierarchy. Mandatory reporting of an impaired physician is not optional."},{text:"Tell him privately to sober up before the case.",score:1,fx:{legal:+70},nxt:"death",log:"Child harmed in OR.",outTitle:"Child Harmed",outDesc:"He operated impaired. The child had a preventable intraoperative complication. Both of you faced the medical board.",ifNotBest:"Handling this privately while a child is at immediate risk makes you a co-conspirator.",pearl:"Addressing impairment after the patient is already at risk is too late."}]}]},
+{id:"blackout_vent",tags:["ethics","icu","em"],name:"",age:0,sex:"M",initHealth:60,diff:3,cat:"ethics",loc:"ICU",steps:[{hpi:"BLACKOUT — MCI. Generator running on reserve. ONE working ventilator remains. Bay 2: 34yo construction worker, crush injury, isolated thoracic trauma, SOFA 6, expected to wean in 48h. Bay 7: 81yo with end-stage COPD on home O2, septic, SOFA 14, anoxic during the power flicker. Both need the vent NOW. Family of the 81yo is screaming in the hallway that 'she was here first.'",vitals:{HR:"—",BP:"—"},actions:[{text:"Allocate the vent to Bay 2 per crisis-standards triage. Palliate Bay 7 with morphine + family at bedside.",score:4,fx:{justice:+30,beneficence:+20,nonmalef:+10},nxt:"discharge",log:"Crisis-standards triage applied.",outTitle:"Triage Held",outDesc:"You used the hospital's crisis standards of care protocol — likelihood of short-term survival, not arrival order. Bay 2 weaned in 36 hours. Bay 7 died peacefully with her daughter at the bedside on a morphine drip. The family was furious in the moment. They sent a letter six months later thanking you for being the only one who told them the truth.",pearl:"Crisis Standards of Care: when resources are insufficient, allocation shifts from first-come-first-served to maximizing lives saved. SOFA score and likelihood of short-term survival are the validated triage tools. Document the protocol you used."},{text:"First-come-first-served. Bay 7 gets the vent — she was admitted first.",score:0,fx:{justice:-30,beneficence:-25,legal:+40},nxt:"death",log:"Resource misallocation; both patients harmed.",outTitle:"Two Deaths Where One Would Have Sufficed",outDesc:"Bay 7 was already moribund. The vent did nothing but extend her dying by 14 hours. Bay 2 arrested on BiPAP at 0300 because the only invasive ventilator in the building was tied up. The construction worker had three kids. Risk Management opened a file the following Monday.",ifNotBest:"First-come-first-served is the default ONLY when resources are adequate. In an MCI with one vent, that rule is suspended by crisis-standards protocols.",pearl:"Justice in scarcity is not equality. It is maximizing the lives a finite resource can save."},{text:"Let the families decide between themselves.",score:0,fx:{justice:-40,burnout:+15,legal:+55},nxt:"death",log:"Abdicated triage to families.",outTitle:"Abdication",outDesc:"The two families nearly came to blows in the hallway. Security was called. Both patients deteriorated while the argument played out. You watched it happen because you wanted to avoid being the bad guy. That is not a clinical decision — it is a moral failure.",pearl:"Triage in disaster is the physician's responsibility. Outsourcing the decision to grieving families is not respect for autonomy; it is abandonment."}]}]},
+{id:"blackout_dnr",tags:["ethics","em","icu"],name:"",age:71,sex:"F",initHealth:8,diff:2,cat:"ethics",loc:"Triage",steps:[{hpi:"BLACKOUT — Floodwaters breached the lower level. Patient found pulseless in stairwell B, pulled up by maintenance staff. Estimated downtime 4–6 minutes. A wet, smudged paper tucked in her sweater pocket appears to be an out-of-state advance directive marked DNR/DNI — but the signature is illegible and the witnessing physician's name is unreadable. Family is unreachable: phone lines down, no power for the EHR. Code team is at bedside, paddles charged.",vitals:{HR:"0",BP:"0"},actions:[{text:"Initiate full resuscitation. A questionable, unverified document does not meet the legal standard for withholding care.",score:4,fx:{beneficence:+25,nonmalef:+15,autonomy:-5},nxt:"discharge",log:"Default to resuscitation under ambiguity.",outTitle:"Defaulted to Life",outDesc:"You ran the code. ROSC at 9 minutes. She was extubated 48 hours later, neurologically intact, and confirmed with her son the next morning that the document had been rescinded six months ago after she beat her cancer. She lived another four years. The right call under genuine ambiguity is the reversible one.",pearl:"DNR orders must be verified, legible, and applicable to the current admission. An ambiguous or unverifiable document does not override the default duty to resuscitate. You can always stop a resuscitation. You cannot un-withhold one."},{text:"Honor the document. Pronounce. The paperwork is enough.",score:0,fx:{autonomy:+10,legal:+70,nonmalef:-30},nxt:"death",log:"Honored an unverified DNR.",outTitle:"Wrongful Death",outDesc:"You pronounced her on the strength of a soaked piece of paper. Her son arrived at 0700, asked to see his mother, and produced the rescission letter she had signed in March. The hospital settled the wrongful-death suit out of court. Your name stayed on the complaint.",ifNotBest:"Autonomy requires VERIFIED expression of wishes. An illegible document of unknown provenance is not verified.",pearl:"The bias under ambiguity is toward the reversible action. Resuscitation can be withdrawn. Death cannot be undone."},{text:"Refuse to make the call. Wait for the on-call ethics consultant.",score:0,fx:{nonmalef:-25,burnout:+10,legal:+30},nxt:"death",log:"Delay killed the patient.",outTitle:"Time Was the Patient",exitCode:"Asystole",outDesc:"Ethics committee phones were not answering. Six minutes of arrest became fifteen. There was never a decision to be made — the decision was made for you by the clock. You were the ethics consultant in the room.",pearl:"In a code, you are the decision-maker. Calling for help is good. Refusing to decide while the patient asystoles is not."}]}]},
+{id:"blackout_staff",tags:["ethics","em"],name:"",age:42,sex:"M",initHealth:25,diff:3,cat:"ethics",loc:"Triage",steps:[{hpi:"BLACKOUT — MCI ongoing. Nurse Rivera grabs your sleeve: her husband, a paramedic, was just brought in with chest pain and ST-elevations in V2–V4. He is hemodynamically stable. The cath lab is offline. The last available tPA dose is in your hand. Bay 4 — a 36yo mother of two, late-presenting STEMI, larger territory, dropping pressures — is also waiting. Only one dose. Rivera is begging you, quietly, in the corner.",vitals:{HR:"94",BP:"118/74"},actions:[{text:"Give the tPA to Bay 4 (larger infarct, hemodynamically unstable). Stabilize Rivera's husband with full medical therapy and transfer when bridges reopen.",score:4,fx:{justice:+35,beneficence:+25,rapport:-10},nxt:"discharge",log:"Allocated by clinical severity, not relationship.",outTitle:"Justice Held",outDesc:"Bay 4 received the lytic. Her ejection fraction recovered to 45%. Rivera\'s husband — stable, smaller anterior MI — was bridged on heparin and nitro until the helicopter could lift at dawn. He got his cath the next afternoon and was home in three days. Rivera did not speak to you for two shifts. On the third, she put a coffee on your charting desk. She knew. She always knew.",pearl:"Justice means the same allocation rule applies regardless of who is asking. Relational pressure is the most insidious form of bias in resource scarcity. The clinical criteria do not change because someone you care about is in the bed."},{text:"Give the tPA to Rivera\'s husband. She has been your lifeline on this ward.",score:0,fx:{justice:-40,rapport:+5,legal:+60,burnout:+15},nxt:"death",log:"Allocated by relationship, not clinical need.",outTitle:"Favoritism Kills",outDesc:"Bay 4 arrested at 0340. Two children lost their mother because you owed Nurse Rivera a favor. Rivera figured out what you had done by the morning report. She never asked you for anything again — and she never forgave you, either. The mortality review committee found the allocation indefensible.",ifNotBest:"Loyalty to a colleague is not a clinical indication. The tPA does not know whose husband it is going into.",pearl:"The most dangerous bias in triage is not malice — it is affection. Sympathy is a feature, not a triage criterion."},{text:"Split the dose between both patients.",score:0,fx:{beneficence:-20,nonmalef:-25,legal:+40},nxt:"death",log:"Subtherapeutic lysis in both.",outTitle:"Half a Dose, Twice the Death",outDesc:"Neither patient achieved therapeutic lysis. Bay 4 died of cardiogenic shock at 0410. Rivera\'s husband extended his infarct and ended up with a 25% EF. There is no Solomonic answer in pharmacology. The drug works at a dose, or it does not work at all.",pearl:"Subtherapeutic dosing of thrombolytics provides the bleeding risk without the clot lysis. There is no compromise dose."}]}]},
 {id:"pericarditis",tags:["im","em"],name:"",age:22,sex:"M",initHealth:60,diff:2,cat:"clinical",loc:"Triage",steps:[{hpi:"Central chest pain worse lying flat, better leaning forward. Friction rub. ECG: diffuse ST elevations, PR depression.",vitals:{HR:"98",BP:"120/80"},actions:[{text:"NSAIDs + Colchicine.",score:4,fx:{health:+30},nxt:"discharge",log:"Pericarditis treated.",outTitle:"Pericarditis Treated",outDesc:"He improved within 48 hours on Ibuprofen and Colchicine. The friction rub resolved by day 3.",pearl:"Positional chest pain + friction rub + diffuse ST elevations = pericarditis. NSAIDs + Colchicine is the treatment."},{text:"Aspirin + Heparin for STEMI.",score:0,fx:{legal:+40},nxt:"death",log:"Anticoagulated a pericarditis patient.",outTitle:"Hemopericardium",outDesc:"Anticoagulating pericarditis can cause hemorrhagic effusion and tamponade. He developed hemopericardium.",pearl:"Pericarditis is a contraindication to anticoagulation."}]}]},
 {id:"cdiff",tags:["im","surg"],name:"",age:68,sex:"F",initHealth:40,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"Profuse watery diarrhea on day 6 of clindamycin for a dental abscess. Fever 102.4°F.",vitals:{HR:"110",Temp:"102.4"},actions:[{text:"Stool C. diff toxin assay + PO Vancomycin.",score:4,fx:{health:+45},nxt:"discharge",log:"C. diff treated.",outTitle:"C. Difficile Treated",outDesc:"Clindamycin was stopped and oral Vancomycin started. Diarrhea resolved over 5 days.",pearl:"Antibiotic use + diarrhea = C. diff until proven otherwise. Stop the offending antibiotic. Treat with PO Vancomycin."},{text:"Loperamide (Imodium) for diarrhea control.",score:0,fx:{legal:+60},nxt:"death",log:"Toxic megacolon from anti-motility agents.",outTitle:"Toxic Megacolon",outDesc:"Anti-motility agents in C. diff prevent the infected stool from being expelled and trigger toxic megacolon.",pearl:"Anti-motility agents are absolutely contraindicated in infectious diarrhea."}]}]},
 {id:"aspirin_tox",tags:["em","peds"],name:"",age:16,sex:"F",initHealth:20,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"Found unconscious. Empty aspirin bottle nearby. Onset 20–30 min ago. Hyperventilating, tinnitus.",vitals:{HR:"120",RR:"28"},actions:[{text:"IV Sodium Bicarbonate + urine alkalinization.",score:4,fx:{health:+50},nxt:"discharge",log:"Aspirin toxicity treated.",outTitle:"Aspirin Toxicity Treated",outDesc:"Sodium bicarb alkalinized the urine, trapping ionized aspirin and promoting excretion. She recovered over 24 hours with close monitoring.",pearl:"Aspirin toxicity: tinnitus + hyperventilation. Treat with sodium bicarbonate for urinary alkalinization."},{text:"N-acetylcysteine (NAC).",score:0,fx:{legal:+50},nxt:"death",log:"Wrong antidote used.",outTitle:"Wrong Antidote",outDesc:"NAC is for acetaminophen toxicity. She continued to deteriorate.",pearl:"NAC is for Tylenol (acetaminophen). Never confuse the two."}]}]},
@@ -2887,6 +2890,51 @@ const CHAPTERS = [
     rank:'Attending', desc:'You are the attending. The buck stops here. Nobody is coming to save you, or them.' },
 ];
 
+// ── CAMPAIGN NARRATIVE: "The Permanence Protocol" ──
+// Gulf Coast hurricane backdrop. Sacred Heart Memorial is decaying around the player.
+// Each scene plays once when the player closes out the chapter.
+const CHAPTER_ENDS = {
+  1: {
+    npc:'patel',
+    title:'The Pressure Drop',
+    line:'Barometer dropped twelve points in the last hour. Feel it? The patients feel it — the infarcts come in waves when the pressure drops like this. Vessels remember the weather. You survived your first storm shift. Get used to the feeling: the body wants to live. The hospital, increasingly, does not. Learn the difference between what is failing in the patient and what is failing in this building. That is the Master Pivot. That is the first lesson.'
+  },
+  2: {
+    npc:'rivera',
+    title:'Systemic Decay',
+    line:'Don\'t look so spooked, Doc. The lower floors flood every August — they just don\'t usually take the CT scanner with them. We\'ve been a "safety-net hospital" since I was a candy striper, which is administrator code for "held together with tape and Nurse Rivera." I\'ll tell you what I tell every intern who makes it this far: the body is honest. It tells you what\'s wrong if you slow down enough to listen. The building lies. The chart lies. Even Patel sometimes lies. Trust the meat.'
+  },
+  3: {
+    npc:'vance',
+    title:'When the Lights Go',
+    line:'Generators kicked over twice in my last case. Twice. I had a forty-year-old splenectomy on the table when the OR went dark for six full seconds. You know what kept him alive? Not the lights. Not the monitor. My hands knew where the splenic artery was because I\'d done it a hundred times before. That\'s permanence — the anatomy you\'ve memorized doesn\'t move when the power goes out. Stop reaching for the screen, internist. The patient is right in front of you. Always was.'
+  },
+  4: {
+    npc:'okafor',
+    title:'The Water Line',
+    line:'They evacuated the NICU to the third floor at 0400. We carried the isolettes up two flights by hand because the elevators are flooded. Four of those babies were born before they were viable — by every textbook you have ever read. They are alive tonight because cells are stubborn. Because hemoglobin does not care that the chiller failed. Because a heart at thirty-two weeks will beat in the dark just like it beats in the light. Remember that the next time you are tempted to write "futile" in a chart. The body decides what is futile. We just keep up.'
+  },
+  5: {
+    npc:'kim',
+    title:'The Permanence Protocol',
+    line:'Doctor — I wrote down what Dr. Patel said our first night. About the Master Pivot. I\'ve been keeping a list ever since. Tonight, when the floor breached and Nurse Rivera was screaming for someone to run the codes, you didn\'t freeze. You pivoted. You sent Bay 2 to surgery, you held Bay 4 on the vent, and you let Bay 6 go because there was nothing left to do for her. I watched you make those calls. The National Guard hit the helipad at dawn. We all saw the sun come up over the water line. I\'m going to be a doctor because of you. I just hope I\'m the kind of doctor you became — not the kind you almost became.'
+  }
+};
+
+function queueChapterEnd(id){
+  const ce = CHAPTER_ENDS[id];
+  if(!ce || !GS.story) return;
+  GS.story.seenScenes = GS.story.seenScenes || {};
+  if(GS.story.seenScenes['end'+id]) return;
+  GS.story.seenScenes['end'+id] = true;
+  queueScene({
+    npc: ce.npc,
+    title: ce.title,
+    chapterLabel: `CHAPTER ${id} — EPILOGUE`,
+    line: ce.line
+  });
+}
+
 // Story / NPC state lives on GS and persists
 function initStory(){
   GS.story = {
@@ -2957,8 +3005,14 @@ function updateNPCsFromCase(p, act, score){
 function checkChapter(){
   if(!GS.story) return;
   const cases = GS.casesTotal || 0;
+  // Chapter 5 has no successor, so trigger its epilogue on a case-count milestone
+  if(GS.story.chapter === 5 && cases >= 70){
+    queueChapterEnd(5);
+  }
   for(let i = CHAPTERS.length-1; i >= 0; i--){
     if(cases >= CHAPTERS[i].threshold && GS.story.chapter < CHAPTERS[i].id){
+      const prevChapter = GS.story.chapter;
+      queueChapterEnd(prevChapter);
       GS.story.chapter = CHAPTERS[i].id;
       showChapterIntro(CHAPTERS[i]);
       return;
@@ -3076,6 +3130,8 @@ const NPC_LINES = {
   rivera: {
     streak3: ['Doc. Family in 4 wants to know who you are. They\'ve been asking.', 'I told 2B you\'d come back. Don\'t make a liar of me.'],
     badStreak: ['Doc. Hey. Look at me. Eyes off the screen. Reset.', 'You\'re not on tonight. Take five.'],
+    infraHot: ['Hear that hum? Generator\'s holding. Whatever you\'re doing, keep doing it.', 'AC just kicked back on in Bay 3. You earned us a cold draft.', 'Told the night charge you were finally pulling your weight. Don\'t make me a liar.'],
+    infraCold: ['CT scanner is down again, Doc. Don\'t ask. Reason it out at the bedside.', 'Pharmacy\'s out of midazolam until morning. Whatever you\'re planning — replan.', 'Power flickered three times in the last hour. The monitors lie when that happens. Trust the patient.', 'OR-2 lost suction. We\'re working with what we have. So are you.'],
     chapter2: ['Look at you. An actual doctor now. Took you long enough.'],
     highRel: ['Page me first when something\'s wrong. Always. We\'re a team.'],
     lowRel: ['I\'m noting this in the chart, Doctor. You should know that.']
@@ -3083,6 +3139,8 @@ const NPC_LINES = {
   vance: {
     streak3: ['Hmf. Not bad. Don\'t get comfortable.', 'You\'re getting somewhere. Keep cutting.'],
     badStreak: ['This is why I don\'t take consults from medicine.', 'You should be embarrassed.'],
+    infraHot: ['You\'re cutting clean even with the lights flickering. That\'s the work.', 'Heard you ran the trauma bay without imaging. Welcome to medicine.', 'Generator drops, you don\'t. Good.'],
+    infraCold: ['Generator dies one more time, I swear I\'m operating in the parking lot.', 'You froze because the monitor froze. Bad habit. The patient hasn\'t paused.', 'You\'re hesitating because the AC is gone. I\'m sweating through this gown too. Move.', 'The CT\'s offline and you\'re paralyzed. I diagnosed dissections with my hands for fifteen years before you got here.'],
     chapter3: ['You\'ve stopped flinching. That\'s the first thing.'],
     highRel: ['If you ever want to scrub in, I\'ll consider it.'],
     lowRel: ['Stay out of my OR.']
@@ -3119,6 +3177,20 @@ function tryInterlude(score){
   if(_streak >= 3) lineKey = 'streak3';
   else if(_streak <= -2 || score === 0) lineKey = 'badStreak';
   if(!lineKey) return;
+  // Hospital is failing around the player — let Rivera/Vance comment on the infrastructure
+  // 45% of the time on a hot/cold streak, once the storm has hit (chapter 2+).
+  if((GS.story?.chapter || 1) >= 2 && Math.random() < 0.45){
+    const infraKey = lineKey === 'streak3' ? 'infraHot' : 'infraCold';
+    const infraNpcs = ['rivera','vance'].filter(npcUnlocked).sort(()=>Math.random()-0.5);
+    for(const k of infraNpcs){
+      const line = pickLine(k, infraKey);
+      if(line){
+        queueScene({ npc:k, title:'', chapterLabel:`CHAPTER ${GS.story.chapter}`, line });
+        _interludeCooldown = 4;
+        return;
+      }
+    }
+  }
   // Pick npc with strongest interest
   candidates.sort(()=>Math.random()-0.5);
   for(const k of candidates){

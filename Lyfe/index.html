@@ -376,10 +376,14 @@ input,select{font-family:inherit;}
     </div>
     <div id="actions-bar">
       <button class="act-btn primary" onclick="ageUp()">Age Up › <span style="opacity:.6;font-size:9px;">[Space]</span></button>
-      <button class="act-btn" onclick="openOccupation()">💼 Occupation</button>
-      <button class="act-btn" onclick="openCareerAction()">⚡ Career Action</button>
+      <button class="act-btn" onclick="openOccupation()">💼 Career</button>
+      <button class="act-btn" onclick="openQuickJobs()">⚡ Quick Jobs</button>
+      <button class="act-btn" onclick="openCareerAction()">🎯 Career Action</button>
+      <button class="act-btn" onclick="openColleges()">🎓 College</button>
       <button class="act-btn" onclick="openRelationships()">💕 Relationships</button>
       <button class="act-btn" onclick="openActivities()">🏋️ Activities</button>
+      <button class="act-btn" onclick="openReligion()">🕊️ Faith</button>
+      <button class="act-btn" onclick="openBanking()">🏦 Bank</button>
       <button class="act-btn" onclick="openShop()">🏠 Assets</button>
       <button class="act-btn" onclick="openCrime()">🦹 Crime</button>
     </div>
@@ -881,6 +885,226 @@ const CARS = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
+//  RELIGIONS — top 5 traditions with practices and effects
+// ═══════════════════════════════════════════════════════════════════════
+const RELIGIONS = {
+  christian: {
+    name:'Christianity', icon:'✝️',
+    practices:['Sunday Service','Confession','Bible Study','Lent Fasting','Christmas Eve Vigil'],
+    holyDay:'Sunday', holyMonth:'December',
+    desc:'Trinity-based monotheism rooted in the life and teachings of Jesus Christ. Branches include Catholic, Protestant, and Orthodox.',
+    perks:{ communityRapport:+8, charityBonus:+5 },
+  },
+  islam: {
+    name:'Islam', icon:'☪️',
+    practices:['Five Daily Prayers','Friday Jumu\'ah','Ramadan Fasting','Charity (Zakat)','Hajj Pilgrimage'],
+    holyDay:'Friday', holyMonth:'Ramadan',
+    desc:'Monotheistic tradition founded on the Qur\'an and the teachings of Prophet Muhammad. Five Pillars structure daily and yearly practice.',
+    perks:{ disciplineBonus:+8, communityRapport:+6 },
+  },
+  hindu: {
+    name:'Hinduism', icon:'🕉️',
+    practices:['Puja at Home','Temple Visit','Diwali','Holi','Yoga & Meditation'],
+    holyDay:'Daily Puja', holyMonth:'Diwali (Oct-Nov)',
+    desc:'Ancient family of dharmic traditions centered on karma, reincarnation, and a vast pantheon of deities. Practice is intensely personal.',
+    perks:{ karmaBonus:+10, smartsBonus:+1 },
+  },
+  buddhist: {
+    name:'Buddhism', icon:'☸️',
+    practices:['Daily Meditation','Vesak Ceremony','Monastic Retreat','Mindful Eating','Pilgrimage to Bodh Gaya'],
+    holyDay:'Vesak', holyMonth:'May',
+    desc:'A path of liberation from suffering through mindfulness, ethical conduct, and wisdom. Origins in the teachings of the Buddha.',
+    perks:{ happinessBonus:+10, healthBonus:+3 },
+  },
+  jewish: {
+    name:'Judaism', icon:'✡️',
+    practices:['Shabbat Observance','Torah Study','Yom Kippur Fast','Passover Seder','Bar/Bat Mitzvah'],
+    holyDay:'Shabbat (Friday-Saturday)', holyMonth:'Tishrei (High Holy Days)',
+    desc:'The covenant tradition of the Jewish people, structured around Torah, mitzvot, and community across millennia.',
+    perks:{ smartsBonus:+3, communityRapport:+5 },
+  },
+  secular: {
+    name:'Secular / None', icon:'🌐',
+    practices:['Volunteer Service','Philosophy Reading','Nature Walks','Community Service','Self-Reflection'],
+    holyDay:'—', holyMonth:'—',
+    desc:'You hold no formal religious tradition. Your meaning comes from family, work, philosophy, or the simple fact of being alive.',
+    perks:{ smartsBonus:+1, autonomyBonus:+5 },
+  },
+};
+
+const RELIGIOUS_ACTIVITIES = [
+  {id:'pray',     name:'Pray',                 ico:'🙏', fx:{faith:+4, happiness:+3, karma:+1}, desc:'A quiet prayer at the start of your day.'},
+  {id:'service',  name:'Attend Service',        ico:'⛪', fx:{faith:+8, happiness:+5, karma:+3}, cost:30, desc:'Weekly worship with your community.'},
+  {id:'fast',     name:'Observe Fast',          ico:'🍽️', fx:{faith:+12, health:-2, karma:+4}, desc:'A holy fast. Tests discipline.'},
+  {id:'charity',  name:'Give to Charity',       ico:'💝', fx:{karma:+10, happiness:+5}, cost:500, desc:'A generous donation. Karma soars.'},
+  {id:'pilgrimage',name:'Make a Pilgrimage',    ico:'🛕', fx:{faith:+25, happiness:+15, karma:+10}, cost:4500, desc:'A journey to your faith\'s holiest site.'},
+  {id:'meditate', name:'Daily Meditation',      ico:'🧘', fx:{faith:+5, happiness:+8, health:+1}, desc:'Twenty minutes of silence each morning.'},
+  {id:'volunteer',name:'Volunteer at Temple',   ico:'🤝', fx:{faith:+6, karma:+8, happiness:+4}, desc:'Help with weekend programs.'},
+  {id:'lose-faith',name:'Question Everything',  ico:'❓', fx:{faith:-15, smarts:+3}, desc:'A crisis of belief.'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  COLLEGES — top 20 spoof universities, prestige-tiered
+// ═══════════════════════════════════════════════════════════════════════
+const COLLEGES = [
+  {id:'harvell',     name:'Harvell University',                short:'Harvell',  prestige:10, minSmarts:92, tuition:78000, accept:0.05, mascot:'Crimson'},
+  {id:'yallup',      name:'Yallup University',                 short:'Yallup',   prestige:10, minSmarts:91, tuition:75000, accept:0.06, mascot:'Bulldogs'},
+  {id:'stanfeld',    name:'Stanfeld University',               short:'Stanfeld', prestige:10, minSmarts:91, tuition:74000, accept:0.05, mascot:'Cardinals'},
+  {id:'mitt',        name:'MITT - Inst. of Technical Things',  short:'MITT',     prestige:10, minSmarts:93, tuition:72000, accept:0.07, mascot:'Beavers',     specialty:'STEM'},
+  {id:'princetown',  name:'Princetown University',             short:'Princetown',prestige:9,  minSmarts:90, tuition:68000, accept:0.06, mascot:'Tigers'},
+  {id:'columbio',    name:'Columbio University',               short:'Columbio', prestige:9,  minSmarts:88, tuition:71000, accept:0.06, mascot:'Lions'},
+  {id:'berkelay',    name:'University of California, Berkelay',short:'UC Berkelay',prestige:9,minSmarts:86, tuition:42000, accept:0.15, mascot:'Golden Bears'},
+  {id:'caltick',     name:'Caltick Institute of Technology',   short:'Caltick',  prestige:10, minSmarts:94, tuition:68000, accept:0.07, mascot:'Beavers',     specialty:'STEM'},
+  {id:'chicargo',    name:'University of Chicargo',            short:'Chicargo', prestige:9,  minSmarts:88, tuition:69000, accept:0.07, mascot:'Maroons'},
+  {id:'penny',       name:'University of Pennsybania',         short:'Penny',    prestige:9,  minSmarts:86, tuition:70000, accept:0.08, mascot:'Quakers'},
+  {id:'cornfield',   name:'Cornfield University',              short:'Cornfield',prestige:9,  minSmarts:84, tuition:67000, accept:0.10, mascot:'Big Red'},
+  {id:'dartmoor',    name:'Dartmoor College',                  short:'Dartmoor', prestige:8,  minSmarts:84, tuition:69000, accept:0.08, mascot:'Big Green'},
+  {id:'brawn',       name:'Brawn University',                  short:'Brawn',    prestige:8,  minSmarts:82, tuition:68000, accept:0.07, mascot:'Bears'},
+  {id:'northwesterly',name:'Northwesterly University',         short:'Northwesterly',prestige:8,minSmarts:84,tuition:65000,accept:0.09, mascot:'Wildcats'},
+  {id:'hopkincs',    name:'John Hopkincs University',          short:'Hopkincs', prestige:9,  minSmarts:85, tuition:64000, accept:0.11, mascot:'Blue Jays',   specialty:'medical'},
+  {id:'drake',       name:'Drake University',                  short:'Drake',    prestige:8,  minSmarts:83, tuition:64000, accept:0.08, mascot:'Blue Devils'},
+  {id:'vanderbull',  name:'Vanderbull University',             short:'Vanderbull',prestige:8, minSmarts:84, tuition:62000, accept:0.09, mascot:'Commodores'},
+  {id:'ucla_la',     name:'Univ. of California, Los Angles',   short:'UCLALA',   prestige:8,  minSmarts:84, tuition:43000, accept:0.12, mascot:'Bruins'},
+  {id:'carnage',     name:'Carnage Mellon University',         short:'Carnage',  prestige:9,  minSmarts:88, tuition:62000, accept:0.13, mascot:'Tartans',     specialty:'STEM'},
+  {id:'rice_a_roni', name:'Rice-A-Roni University',            short:'RiceRoni', prestige:8,  minSmarts:85, tuition:54000, accept:0.09, mascot:'Owls'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  BANKING — savings + investments with annual interest
+// ═══════════════════════════════════════════════════════════════════════
+const BANKS = [
+  {id:'savings',     name:'Standard Savings Account',  apr:0.04,  risk:0,   desc:'Boring. Safe. 4% guaranteed.'},
+  {id:'highyield',   name:'High-Yield Savings',        apr:0.055, risk:0,   desc:'5.5% APR. Same insurance.'},
+  {id:'bonds',       name:'Treasury Bonds',            apr:0.045, risk:0,   desc:'Lock cash for 10 years for guaranteed return.'},
+  {id:'mutual',      name:'Diversified Mutual Fund',   apr:0.08,  risk:0.04,desc:'Stocks + bonds. 8% average, occasional drawdowns.'},
+  {id:'sp500',       name:'S&P 500 Index Fund',        apr:0.10,  risk:0.10,desc:'Broad market. Big swings.'},
+  {id:'crypto',      name:'Crypto Portfolio',          apr:0.15,  risk:0.40,desc:'Could 10x. Could go to zero. Both happen.'},
+  {id:'realestate',  name:'Real Estate Investment',    apr:0.07,  risk:0.06,desc:'Rental income + appreciation.'},
+  {id:'retirement',  name:'401(k) / Retirement Account',apr:0.075,risk:0.05,desc:'Tax-advantaged. Locked until 60.'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  HOUSING DISASTERS — top 20 catastrophes that can hit your house
+// ═══════════════════════════════════════════════════════════════════════
+const HOUSING_DISASTERS = [
+  {id:'fire',        name:'🔥 House Fire',                damage:[18000, 220000], prob:0.012, desc:'A faulty wire sparked overnight.'},
+  {id:'flood',       name:'🌊 Basement Flooding',         damage:[6000, 45000],   prob:0.022, desc:'Storm runoff overwhelmed the sump pump.'},
+  {id:'tornado',     name:'🌪️ Tornado Damage',            damage:[12000, 180000], prob:0.008, desc:'A funnel skipped through your block.'},
+  {id:'hurricane',   name:'🌀 Hurricane Damage',          damage:[15000, 220000], prob:0.010, desc:'Sustained winds tore off siding and shingles.'},
+  {id:'earthquake',  name:'🌎 Earthquake Damage',         damage:[20000, 280000], prob:0.006, desc:'The ground moved. Your house remembers.'},
+  {id:'burglary',    name:'🚪 Burglary',                  damage:[2500, 25000],   prob:0.025, desc:'You came home to a smashed back door.'},
+  {id:'roof',        name:'🏠 Roof Collapse',             damage:[12000, 75000],  prob:0.009, desc:'Years of deferred maintenance caught up.'},
+  {id:'plumbing',    name:'💧 Plumbing Burst',            damage:[3500, 30000],   prob:0.030, desc:'A pipe failed behind the wall while you slept.'},
+  {id:'electrical',  name:'⚡ Electrical Fire',           damage:[8000, 95000],   prob:0.011, desc:'The breaker held. The outlet did not.'},
+  {id:'foundation',  name:'🧱 Foundation Crack',          damage:[15000, 60000],  prob:0.012, desc:'Soil shifted. Your foundation tells you everything.'},
+  {id:'termites',    name:'🐛 Termite Infestation',       damage:[4500, 35000],   prob:0.018, desc:'They\'ve been eating the joists for two years.'},
+  {id:'mold',        name:'🦠 Mold Outbreak',             damage:[6000, 40000],   prob:0.020, desc:'Black mold behind the drywall. Needs remediation.'},
+  {id:'sinkhole',    name:'🕳️ Sinkhole',                  damage:[35000, 300000], prob:0.003, desc:'The yard opened up overnight. Nobody warned the geologists.'},
+  {id:'tree',        name:'🌳 Tree Fell On House',         damage:[8000, 55000],   prob:0.014, desc:'The oak you loved came down in a storm.'},
+  {id:'hvac',        name:'🌡️ HVAC Failure',              damage:[5500, 18000],   prob:0.035, desc:'The furnace died on the coldest weekend of the year.'},
+  {id:'pests',       name:'🐀 Rat Infestation',           damage:[1500, 12000],   prob:0.022, desc:'The attic has been theirs for months.'},
+  {id:'sewage',      name:'🚽 Sewage Backup',             damage:[4000, 22000],   prob:0.014, desc:'Main line backed up into the basement.'},
+  {id:'gas',         name:'🔥 Gas Leak',                  damage:[3000, 28000],   prob:0.008, desc:'Caught it before evacuation. Barely.'},
+  {id:'vandalism',   name:'🎨 Vandalism',                 damage:[2000, 18000],   prob:0.012, desc:'Someone tagged the entire west wall in red.'},
+  {id:'squatters',   name:'😴 Squatters Took Over',       damage:[8000, 40000],   prob:0.004, desc:'You went on vacation. Two strangers moved in.'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  EXTRA CAREERS — entry-level "quick jobs" that don't need full ladders
+// ═══════════════════════════════════════════════════════════════════════
+const QUICK_JOBS = [
+  {id:'cashier',       title:'Retail Cashier',          salary:24000, ico:'🛒', minAge:16},
+  {id:'barista',       title:'Barista',                 salary:28000, ico:'☕', minAge:18},
+  {id:'waiter',        title:'Restaurant Server',       salary:32000, ico:'🍽️', minAge:18, minLooks:50},
+  {id:'bartender',     title:'Bartender',               salary:42000, ico:'🍸', minAge:21, minLooks:55},
+  {id:'uber',          title:'Rideshare Driver',        salary:35000, ico:'🚖', minAge:21},
+  {id:'delivery',      title:'Delivery Driver',         salary:38000, ico:'📦', minAge:18},
+  {id:'plumber',       title:'Plumber',                 salary:62000, ico:'🔧', minAge:20},
+  {id:'electrician',   title:'Electrician',             salary:68000, ico:'💡', minAge:20},
+  {id:'carpenter',     title:'Carpenter',               salary:55000, ico:'🪚', minAge:20},
+  {id:'mechanic',      title:'Auto Mechanic',           salary:48000, ico:'🔩', minAge:20},
+  {id:'hairstylist',   title:'Hairstylist',             salary:38000, ico:'💇', minAge:18, minLooks:55},
+  {id:'trainer',       title:'Personal Trainer',        salary:46000, ico:'💪', minAge:18, minHealth:65, minLooks:55},
+  {id:'massage',       title:'Massage Therapist',       salary:54000, ico:'💆', minAge:20},
+  {id:'florist',       title:'Florist',                 salary:34000, ico:'💐', minAge:18},
+  {id:'librarian',     title:'Librarian',               salary:52000, ico:'📚', minAge:22, minSmarts:65},
+  {id:'flightattend',  title:'Flight Attendant',        salary:48000, ico:'🛫', minAge:21, minLooks:55, minHealth:60},
+  {id:'truck',         title:'Long-Haul Trucker',       salary:62000, ico:'🚚', minAge:21},
+  {id:'fisherman',     title:'Commercial Fisherman',    salary:54000, ico:'🎣', minAge:18, minHealth:70},
+  {id:'realestate',    title:'Real Estate Agent',       salary:62000, ico:'🏠', minAge:21, minLooks:55},
+  {id:'accountant',    title:'Accountant',              salary:65000, ico:'🧮', minAge:22, minSmarts:65, requiresDegree:'business'},
+  {id:'nurse',         title:'Registered Nurse',        salary:78000, ico:'💉', minAge:22, minSmarts:65, requiresDegree:'general'},
+  {id:'paramedic',     title:'Paramedic / EMT',         salary:42000, ico:'🚑', minAge:20, minHealth:70},
+  {id:'dentist',       title:'Dentist',                 salary:185000, ico:'🦷', minAge:26, minSmarts:75, requiresDegree:'medical'},
+  {id:'pharmacist',    title:'Pharmacist',              salary:135000, ico:'💊', minAge:24, minSmarts:75, requiresDegree:'medical'},
+  {id:'vet',           title:'Veterinarian',            salary:115000, ico:'🐕', minAge:24, minSmarts:72, requiresDegree:'medical'},
+  {id:'therapist',     title:'Psychologist',            salary:95000, ico:'🛋️', minAge:25, minSmarts:72, requiresDegree:'phd'},
+  {id:'architect',     title:'Architect',               salary:98000, ico:'📐', minAge:24, minSmarts:70, requiresDegree:'cs'},
+  {id:'data',          title:'Data Scientist',          salary:140000, ico:'📊', minAge:23, minSmarts:75, requiresDegree:'cs'},
+  {id:'cyber',         title:'Cybersecurity Analyst',   salary:115000, ico:'🛡️', minAge:22, minSmarts:72, requiresDegree:'cs'},
+  {id:'product',       title:'Product Manager',         salary:135000, ico:'📋', minAge:24, minSmarts:68, requiresDegree:'business'},
+  {id:'ux',            title:'UX Designer',             salary:98000, ico:'🎨', minAge:22, minSmarts:65, minLooks:55},
+  {id:'gamedev',       title:'Game Developer',          salary:95000, ico:'🎮', minAge:22, minSmarts:70, requiresDegree:'cs'},
+  {id:'aiengineer',    title:'AI/ML Engineer',          salary:185000, ico:'🤖', minAge:24, minSmarts:80, requiresDegree:'cs'},
+  {id:'patentatty',    title:'Patent Attorney',         salary:185000, ico:'📜', minAge:28, minSmarts:80, requiresDegree:'law'},
+  {id:'publicdef',     title:'Public Defender',         salary:68000, ico:'⚖️', minAge:25, minSmarts:70, requiresDegree:'law'},
+  {id:'prosecutor',    title:'District Attorney',       salary:85000, ico:'⚔️', minAge:26, minSmarts:72, requiresDegree:'law'},
+  {id:'diplomat',      title:'Diplomat',                salary:115000, ico:'🌐', minAge:26, minSmarts:75, requiresDegree:'polisci'},
+  {id:'fbi',           title:'FBI Agent',               salary:88000, ico:'🕵️', minAge:24, minSmarts:70, minHealth:70},
+  {id:'spy',           title:'Intelligence Officer',    salary:115000, ico:'🥷', minAge:26, minSmarts:75, minHealth:65},
+  {id:'mayor',         title:'Mayor',                   salary:135000, ico:'🎖️', minAge:32, minSmarts:68, requiresDegree:'polisci'},
+  {id:'astronomer',    title:'Astronomer',              salary:115000, ico:'🔭', minAge:26, minSmarts:78, requiresDegree:'phd'},
+  {id:'geologist',     title:'Geologist',               salary:88000, ico:'⛰️', minAge:22, minSmarts:65, requiresDegree:'cs'},
+  {id:'marine',        title:'Marine Biologist',        salary:82000, ico:'🐬', minAge:22, minSmarts:65, requiresDegree:'phd'},
+  {id:'comedian',      title:'Stand-up Comedian',       salary:38000, ico:'🎭', minAge:18, minLooks:55},
+  {id:'voiceactor',    title:'Voice Actor',             salary:68000, ico:'🎙️', minAge:18, minLooks:50},
+  {id:'model',         title:'Fashion Model',           salary:78000, ico:'👗', minAge:18, minLooks:80, minHealth:65},
+  {id:'fashion',       title:'Fashion Designer',        salary:85000, ico:'✂️', minAge:22, minLooks:60},
+  {id:'photographer',  title:'Photographer',            salary:52000, ico:'📷', minAge:20, minLooks:55},
+  {id:'filmmaker',     title:'Filmmaker',               salary:78000, ico:'🎬', minAge:22, minSmarts:65},
+  {id:'coach',         title:'Pro Sports Coach',        salary:135000, ico:'🏆', minAge:30, minHealth:60},
+  {id:'agent',         title:'Sports/Talent Agent',     salary:155000, ico:'📞', minAge:24, minSmarts:65, minLooks:55},
+  {id:'flight_inst',   title:'Flight Instructor',       salary:65000, ico:'✈️', minAge:22, minSmarts:62, minHealth:70},
+  {id:'ship_capt',     title:'Ship Captain',            salary:115000, ico:'🚢', minAge:28, minHealth:65},
+  {id:'train_eng',     title:'Train Engineer',          salary:78000, ico:'🚂', minAge:22, minHealth:65},
+  {id:'detective_pi',  title:'Private Investigator',    salary:62000, ico:'🔍', minAge:22, minSmarts:65},
+  {id:'bountyhunt',    title:'Bounty Hunter',           salary:72000, ico:'🤠', minAge:24, minHealth:70},
+  {id:'adventureg',    title:'Adventure Guide',         salary:48000, ico:'🧗', minAge:22, minHealth:75},
+  {id:'treasure',      title:'Treasure Hunter',         salary:42000, ico:'💎', minAge:24, minHealth:70, risk:'high'},
+  {id:'professorlite', title:'Adjunct Professor',       salary:58000, ico:'🎓', minAge:25, minSmarts:72, requiresDegree:'phd'},
+  {id:'translator',    title:'Translator/Interpreter',  salary:62000, ico:'💬', minAge:22, minSmarts:68},
+  {id:'social',        title:'Social Worker',           salary:48000, ico:'❤️', minAge:22, minSmarts:60, requiresDegree:'general'},
+  {id:'priest',        title:'Member of the Clergy',    salary:55000, ico:'⛪', minAge:25, minSmarts:60},
+  {id:'monk',          title:'Monastic / Monk',         salary:8000, ico:'🧘', minAge:25},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  APOCALYPSE EVENTS — top 20 world-ending scenarios (alt-realities)
+// ═══════════════════════════════════════════════════════════════════════
+const APOCALYPSE_EVENTS = [
+  {id:'nuclear',     reality:'apocalypse', text:'A nuclear exchange between superpowers has begun. The sirens are sounding.', fx:{health:-15, happiness:-30}, money:-20000},
+  {id:'asteroid',    reality:'apocalypse', text:'An asteroid the size of a small mountain is on impact trajectory in 18 months.', fx:{happiness:-25, faith:+12}},
+  {id:'pandemic',    reality:'apocalypse', text:'A new airborne pathogen with 40% mortality has emerged. Lockdown begins tomorrow.', fx:{health:-8, happiness:-20}},
+  {id:'climate',     reality:'apocalypse', text:'A heat dome killed 60,000 in a single weekend. Climate collapse is no longer a theory.', fx:{health:-5, happiness:-15}},
+  {id:'singularity', reality:'cyberpunk',  text:'The AGI achieved recursive self-improvement at 3:47 AM today. Nobody knows what comes next.', fx:{happiness:-12, smarts:+5}},
+  {id:'aliens',      reality:'spaceage',   text:'First confirmed contact. A ship 18km long is parked in lunar orbit.', fx:{happiness:+12, smarts:+8}},
+  {id:'zombie',      reality:'apocalypse', text:'The dead are walking. Lock the doors. Don\'t go outside until you know what you\'re dealing with.', fx:{health:-10, happiness:-25}},
+  {id:'robotrise',   reality:'cyberpunk',  text:'Industrial robots have begun coordinating across factories. They are no longer following instructions.', fx:{happiness:-18, money:-8000}},
+  {id:'vampires',    reality:'magical',    text:'The vampires made themselves public yesterday at 6 PM. They are asking for civil rights.', fx:{happiness:-8, karma:+3}},
+  {id:'solarflare',  reality:'apocalypse', text:'A class-X40 solar flare took the grid down across three continents.', fx:{happiness:-15, money:-12000}},
+  {id:'supervolcano',reality:'apocalypse', text:'Yellowstone has shown signs of eruption preparation. Geologists are not sleeping.', fx:{health:-3, happiness:-12}},
+  {id:'polereversal',reality:'apocalypse', text:'The Earth\'s magnetic field is flipping. Compasses are unreliable. So is the weather.', fx:{happiness:-8}},
+  {id:'greygoo',     reality:'cyberpunk',  text:'A nanotech swarm escaped containment in the Nevada desert. It is consuming the soil.', fx:{health:-12, happiness:-22}},
+  {id:'timefrac',    reality:'magical',    text:'Time is moving at different speeds in different places. The physicists are scared.', fx:{smarts:+5, happiness:-10}},
+  {id:'magicact',    reality:'magical',    text:'A magical cataclysm split the sky for six hours. Reality is more porous than we thought.', fx:{faith:+8, happiness:-8}},
+  {id:'demons',      reality:'magical',    text:'Demons are now real and they are filing lawsuits. The courts are overwhelmed.', fx:{happiness:-10, karma:-5}},
+  {id:'blackout',    reality:'apocalypse', text:'The power went out 47 days ago. Most people have stopped expecting it to come back.', fx:{health:-6, happiness:-18, money:-3000}},
+  {id:'tsunami',     reality:'apocalypse', text:'A mega-tsunami hit the Pacific Northwest at 4:18 AM. Three cities are gone.', fx:{happiness:-25}},
+  {id:'blackhole',   reality:'spaceage',   text:'A microscopic black hole is in stable orbit around Earth. The astronomers won\'t comment.', fx:{happiness:-15, smarts:+3}},
+  {id:'rapture',     reality:'magical',    text:'On Tuesday morning, 240 million people simultaneously vanished. The world is figuring out what comes next.', fx:{faith:+25, happiness:-20}},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
 //  RANDOM LIFE EVENTS
 // ═══════════════════════════════════════════════════════════════════════
 const LIFE_EVENTS = [
@@ -1098,7 +1322,14 @@ function defaultChar(seed){
     smarts:    40 + Math.floor(Math.random()*50),
     looks:     40 + Math.floor(Math.random()*50),
     karma:     60,
+    faith:     30,           // 0-100 spiritual stat
+    fame:      0,            // 0-100 celebrity stat (for actors/musicians/influencers)
     money:     0,
+    savings:   0,            // separate APR-earning bank account
+    investments: 0,          // brokerage / 401k
+    religion:  null,         // chosen religious tradition
+    college:   null,         // attended college id
+    insurance: { home:false, health:false, life:false, auto:false },
     career:    null,    // {key, rungIdx, yearsAtRung, totalYears, currentSalary}
     degree:    null,    // currently enrolled degree id
     degreeYearsLeft: 0,
@@ -1275,6 +1506,14 @@ function ageUp(){
   rollPartnerEvents();
   // alternate-reality fork check
   rollAlternateReality();
+  // housing disasters
+  rollHousingDisaster();
+  // apocalypse events for alt-realities
+  rollApocalypseEvent();
+  // banking interest tick
+  processBankingInterest();
+  // faith decay/practice
+  rollFaithEvent();
   // stat natural decay/growth
   applyAgeDrift();
   // Pad the year with a "quiet year" entry if nothing happened so every year is visible
@@ -1356,7 +1595,14 @@ function processDegree(){
 
 function processCareer(){
   const c = LIFE.char;
+  // Quick-job path: flat salary, no promotion logic, no risk
+  if(c.career.quickJobId){
+    c.career.totalYears++;
+    c.career.yearsAtRung++;
+    return;
+  }
   const cr = CAREERS[c.career.key];
+  if(!cr) return;
   const rung = cr.rungs[c.career.rungIdx];
   c.career.yearsAtRung++;
   c.career.totalYears++;
@@ -1601,7 +1847,11 @@ function renderCharCard(){
   document.getElementById('char-name').textContent = c.firstName + ' ' + c.lastName;
   let occ = 'Newborn';
   if(c.inJail) occ = '⛓ Incarcerated';
-  else if(c.career) occ = CAREERS[c.career.key].icon + ' ' + CAREERS[c.career.key].rungs[c.career.rungIdx].title;
+  else if(c.career && c.career.quickJobId){
+    occ = (c.career.icon||'💼') + ' ' + c.career.title;
+  } else if(c.career && CAREERS[c.career.key]){
+    occ = CAREERS[c.career.key].icon + ' ' + CAREERS[c.career.key].rungs[c.career.rungIdx].title;
+  }
   else if(c.degree) occ = '📚 ' + DEGREES[c.degree].name;
   else if(c.age < 6) occ = 'Toddler';
   else if(c.age < 13) occ = 'Schoolchild';
@@ -1622,6 +1872,8 @@ function renderStats(){
     {k:'smarts',    name:'Smarts',    v:c.smarts,    cls:'smarts'},
     {k:'looks',     name:'Looks',     v:c.looks,     cls:'looks'},
     {k:'karma',     name:'Karma',     v:c.karma,     cls:'karma'},
+    {k:'faith',     name:'Faith',     v:(c.faith||0),cls:'karma'},
+    {k:'fame',      name:'Fame',      v:(c.fame||0), cls:'looks'},
   ];
   wrap.innerHTML = stats.map(s => (
     '<div class="stat">'
@@ -1776,15 +2028,27 @@ function openOccupation(){
 
   // Current status
   if(c.career){
-    const cr = CAREERS[c.career.key];
-    const rung = cr.rungs[c.career.rungIdx];
-    html += '<div class="card" style="background:#1a1428;border-color:var(--accent);">'
-      + '<div class="card-ico">' + cr.icon + '</div>'
-      + '<div class="card-body"><div class="card-title">' + rung.title + '</div>'
-      + '<div class="card-meta">' + cr.name + ' · ' + c.career.totalYears + ' years total · ' + c.career.yearsAtRung + ' years at this rung</div>'
-      + '</div>'
-      + '<div class="card-act"><div class="card-pay">' + fmtMoney(c.career.currentSalary) + '/yr</div>'
-      + '<button class="card-btn danger" onclick="quitJob()">Quit</button></div></div>';
+    if(c.career.quickJobId){
+      html += '<div class="card" style="background:#1a1428;border-color:var(--accent);">'
+        + '<div class="card-ico">' + (c.career.icon||'💼') + '</div>'
+        + '<div class="card-body"><div class="card-title">' + c.career.title + '</div>'
+        + '<div class="card-meta">Quick Job · ' + c.career.totalYears + ' years worked</div>'
+        + '</div>'
+        + '<div class="card-act"><div class="card-pay">' + fmtMoney(c.career.currentSalary) + '/yr</div>'
+        + '<button class="card-btn danger" onclick="quitJob()">Quit</button></div></div>';
+    } else {
+      const cr = CAREERS[c.career.key];
+      if(cr){
+        const rung = cr.rungs[c.career.rungIdx];
+        html += '<div class="card" style="background:#1a1428;border-color:var(--accent);">'
+          + '<div class="card-ico">' + cr.icon + '</div>'
+          + '<div class="card-body"><div class="card-title">' + rung.title + '</div>'
+          + '<div class="card-meta">' + cr.name + ' · ' + c.career.totalYears + ' years total · ' + c.career.yearsAtRung + ' years at this rung</div>'
+          + '</div>'
+          + '<div class="card-act"><div class="card-pay">' + fmtMoney(c.career.currentSalary) + '/yr</div>'
+          + '<button class="card-btn danger" onclick="quitJob()">Quit</button></div></div>';
+      }
+    }
     html += '<div style="margin:14px 0;color:var(--t3);font-size:12px;text-align:center;">You can quit and start a new career anytime.</div>';
   } else if(c.degree){
     const d = DEGREES[c.degree];
@@ -1875,8 +2139,10 @@ function acceptJob(key){
 function quitJob(){
   const c = LIFE.char;
   if(c.career){
-    const rung = CAREERS[c.career.key].rungs[c.career.rungIdx];
-    pushEvent('career', '🚪 You quit your job as ' + rung.title + '.');
+    const title = c.career.quickJobId
+      ? c.career.title
+      : (CAREERS[c.career.key] && CAREERS[c.career.key].rungs[c.career.rungIdx].title) || 'your job';
+    pushEvent('career', '🚪 You quit your job as ' + title + '.');
     c.career = null;
     closeModal();
     renderAll();
@@ -2815,6 +3081,386 @@ function legalCaseChoose(i){
     }
   }
   _currentLegalCase = null;
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  HOUSING DISASTERS, APOCALYPSE, BANKING, FAITH — yearly rolls
+// ═══════════════════════════════════════════════════════════════════════
+function rollHousingDisaster(){
+  const c = LIFE.char;
+  if(c.houseId === 'family') return;
+  for(const d of HOUSING_DISASTERS){
+    if(Math.random() < d.prob){
+      const damage = rangeRand(d.damage[0], d.damage[1]);
+      const country = COUNTRIES[c.country];
+      const adjusted = Math.floor(damage * country.costMult);
+      let coverText = '';
+      if(c.insurance && c.insurance.home){
+        const covered = Math.floor(adjusted * 0.85);
+        c.money -= (adjusted - covered);
+        coverText = ' Home insurance covered ' + fmtMoney(covered) + '. You paid ' + fmtMoney(adjusted - covered) + '.';
+      } else {
+        c.money -= adjusted;
+        coverText = ' No insurance. You paid ' + fmtMoney(adjusted) + ' out of pocket.';
+      }
+      pushEvent('bad', d.name + ' — ' + d.desc + coverText, {money:-adjusted});
+      c.happiness = clamp(c.happiness - 6, 0, 100);
+      return; // one disaster per year max
+    }
+  }
+}
+
+function rollApocalypseEvent(){
+  const c = LIFE.char;
+  if(!c.reality) return;
+  const pool = APOCALYPSE_EVENTS.filter(e => e.reality === c.reality);
+  if(!pool.length) return;
+  if(Math.random() < 0.025){
+    const ev = pickRand(pool);
+    if(!c.flags['apoc_'+ev.id]){
+      c.flags['apoc_'+ev.id] = true;
+      const fx = ev.fx || {};
+      if(fx.happiness) c.happiness = clamp(c.happiness + fx.happiness, 0, 100);
+      if(fx.health)    c.health    = clamp(c.health + fx.health, 0, 100);
+      if(fx.smarts)    c.smarts    = clamp(c.smarts + fx.smarts, 0, 100);
+      if(fx.karma)     c.karma     = clamp(c.karma + fx.karma, 0, 100);
+      if(fx.faith)     c.faith     = clamp(c.faith + fx.faith, 0, 100);
+      if(ev.money)     c.money    += ev.money;
+      pushEvent('death', '☢ ' + ev.text, fx);
+    }
+  }
+}
+
+function processBankingInterest(){
+  const c = LIFE.char;
+  // Savings APR is 4% by default
+  if(c.savings > 0){
+    const yield_ = Math.floor(c.savings * 0.04);
+    c.savings += yield_;
+    if(yield_ > 100){
+      pushEvent('good', '🏦 Savings yielded ' + fmtMoney(yield_) + ' in interest.', {money:0});
+    }
+  }
+  if(c.investments > 0){
+    // 8% average return with volatility (-10% to +18%)
+    const swing = 0.04 + Math.random() * 0.14;
+    const direction = Math.random() < 0.7 ? +1 : -1;
+    const returnRate = direction > 0 ? swing : -swing/2;
+    const change = Math.floor(c.investments * returnRate);
+    c.investments += change;
+    if(c.investments < 0) c.investments = 0;
+    if(Math.abs(change) > 500){
+      const tag = change > 0 ? 'good' : 'bad';
+      pushEvent(tag, '📈 Investments ' + (change>0?'gained':'lost') + ' ' + fmtMoney(Math.abs(change)) + ' this year.', {money:0});
+    }
+  }
+}
+
+function rollFaithEvent(){
+  const c = LIFE.char;
+  if(!c.religion) return;
+  // Faith decays slightly each year if not practiced
+  if(Math.random() < 0.3){
+    c.faith = clamp(c.faith - 1, 0, 100);
+  }
+  // Random religious events
+  if(Math.random() < 0.05){
+    const rel = RELIGIONS[c.religion];
+    const events = [
+      {text:'You attended ' + rel.holyDay + ' service. Felt centered.', fx:{faith:+3, happiness:+3}},
+      {text:'A passage from your scriptures struck you deeply this week.', fx:{faith:+4, smarts:+1}},
+      {text:'You helped organize a religious community event.', fx:{faith:+5, karma:+5}},
+      {text:'You had a moment of doubt about your faith.', fx:{faith:-5, smarts:+1}},
+    ];
+    const ev = pickRand(events);
+    const fx = ev.fx;
+    if(fx.faith)     c.faith     = clamp(c.faith + fx.faith, 0, 100);
+    if(fx.happiness) c.happiness = clamp(c.happiness + fx.happiness, 0, 100);
+    if(fx.smarts)    c.smarts    = clamp(c.smarts + fx.smarts, 0, 100);
+    if(fx.karma)     c.karma     = clamp(c.karma + fx.karma, 0, 100);
+    pushEvent('', '🕊️ ' + ev.text, fx);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  RELIGION MODAL
+// ═══════════════════════════════════════════════════════════════════════
+function openReligion(){
+  const c = LIFE.char;
+  let html = '';
+  if(!c.religion){
+    html += '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">'
+      + 'Choose a tradition to follow. Religion provides community, meaning, and a Faith stat.</div>';
+    html += Object.keys(RELIGIONS).map(k => {
+      const r = RELIGIONS[k];
+      return '<div class="card">'
+        + '<div class="card-ico">' + r.icon + '</div>'
+        + '<div class="card-body"><div class="card-title">' + r.name + '</div>'
+        + '<div class="card-meta">' + r.desc + '</div>'
+        + '<div class="card-meta" style="margin-top:5px;color:var(--accent2);">Practices: ' + r.practices.join(', ') + '</div></div>'
+        + '<div class="card-act"><button class="card-btn" onclick="convertTo(\'' + k + '\')">Convert</button></div></div>';
+    }).join('');
+  } else {
+    const r = RELIGIONS[c.religion];
+    html += '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;text-align:center;">'
+      + '<div style="font-size:48px;">' + r.icon + '</div>'
+      + '<div style="font-family:var(--font-h);font-size:22px;color:var(--accent2);margin-top:6px;">' + r.name + '</div>'
+      + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:var(--gold);margin-top:6px;text-transform:uppercase;">Faith: ' + c.faith + ' / 100</div>'
+      + '</div>';
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;">Religious Practices</div>';
+    html += RELIGIOUS_ACTIVITIES.map(a => (
+      '<div class="card">'
+      + '<div class="card-ico">' + a.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + a.name + '</div>'
+      + '<div class="card-meta">' + a.desc + '</div></div>'
+      + '<div class="card-act">'
+      + (a.cost ? '<div class="card-pay neg">−' + fmtMoney(a.cost) + '</div>' : '')
+      + '<button class="card-btn" onclick="doReligious(\'' + a.id + '\')">Do It</button></div></div>'
+    )).join('');
+    html += '<button class="card-btn muted" style="width:100%;margin-top:10px;padding:10px;" onclick="leaveReligion()">Leave This Tradition</button>';
+  }
+  openModal('Faith & Religion', html);
+}
+function convertTo(k){
+  const c = LIFE.char;
+  c.religion = k;
+  c.faith = clamp(c.faith + 20, 0, 100);
+  pushEvent('milestone', '🕊️ You converted to ' + RELIGIONS[k].name + '.');
+  closeModal();
+  openReligion();
+  renderAll();
+  saveLife();
+}
+function leaveReligion(){
+  const c = LIFE.char;
+  pushEvent('milestone', '🌐 You left ' + RELIGIONS[c.religion].name + '. You are now secular.');
+  c.religion = null;
+  c.faith = clamp(c.faith - 20, 0, 100);
+  closeModal();
+  renderAll();
+  saveLife();
+}
+function doReligious(id){
+  const c = LIFE.char;
+  const a = RELIGIOUS_ACTIVITIES.find(x => x.id === id);
+  if(!a) return;
+  if(a.cost && c.money < a.cost){ toast('Not enough money.'); return; }
+  if(a.cost) c.money -= a.cost;
+  const fx = a.fx;
+  if(fx.faith)     c.faith     = clamp(c.faith + fx.faith, 0, 100);
+  if(fx.happiness) c.happiness = clamp(c.happiness + fx.happiness, 0, 100);
+  if(fx.karma)     c.karma     = clamp(c.karma + fx.karma, 0, 100);
+  if(fx.health)    c.health    = clamp(c.health + fx.health, 0, 100);
+  if(fx.smarts)    c.smarts    = clamp(c.smarts + fx.smarts, 0, 100);
+  pushEvent('good', '🕊️ ' + a.name + ' — ' + a.desc, fx);
+  closeModal();
+  openReligion();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  BANKING MODAL
+// ═══════════════════════════════════════════════════════════════════════
+function openBanking(){
+  const c = LIFE.char;
+  let html = ''
+    + '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    +   '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;font-family:var(--font-m);font-size:11px;">'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">CHECKING</span><br><span style="font-size:15px;color:' + (c.money>=0?'var(--green)':'var(--crimson)') + ';font-weight:700;">' + fmtMoney(c.money) + '</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">SAVINGS</span><br><span style="font-size:15px;color:var(--green);font-weight:700;">' + fmtMoney(c.savings||0) + '</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">INVESTMENTS</span><br><span style="font-size:15px;color:var(--accent2);font-weight:700;">' + fmtMoney(c.investments||0) + '</span></div>'
+    +   '</div>'
+    + '</div>'
+    + '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;">Transfer Money</div>'
+    + '<div class="card"><div class="card-ico">💸</div>'
+    + '<div class="card-body"><div class="card-title">Move Cash → Savings</div>'
+    + '<div class="card-meta">Earns 4% APR. Safe.</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="bankTransfer(\'tosavings\',1000)">Move $1k</button>'
+    + '<button class="card-btn green" onclick="bankTransfer(\'tosavings\',10000)">Move $10k</button></div></div>'
+    + '<div class="card"><div class="card-ico">💼</div>'
+    + '<div class="card-body"><div class="card-title">Move Cash → Investments</div>'
+    + '<div class="card-meta">Higher returns, real risk of loss.</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="bankTransfer(\'toinvest\',1000)">Invest $1k</button>'
+    + '<button class="card-btn green" onclick="bankTransfer(\'toinvest\',10000)">Invest $10k</button></div></div>'
+    + '<div class="card"><div class="card-ico">🏧</div>'
+    + '<div class="card-body"><div class="card-title">Withdraw from Savings</div>'
+    + '<div class="card-meta">Move money back to checking.</div></div>'
+    + '<div class="card-act"><button class="card-btn muted" onclick="bankTransfer(\'fromsavings\',1000)">Pull $1k</button>'
+    + '<button class="card-btn muted" onclick="bankTransfer(\'fromsavings\',10000)">Pull $10k</button></div></div>'
+    + '<div class="card"><div class="card-ico">💰</div>'
+    + '<div class="card-body"><div class="card-title">Sell Investments</div>'
+    + '<div class="card-meta">Liquidate position back to checking.</div></div>'
+    + '<div class="card-act"><button class="card-btn muted" onclick="bankTransfer(\'frominvest\',1000)">Sell $1k</button>'
+    + '<button class="card-btn muted" onclick="bankTransfer(\'frominvest\',10000)">Sell $10k</button></div></div>'
+    + '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:18px 0 10px;">Insurance</div>';
+  ['home','health','life','auto'].forEach(t => {
+    const has = c.insurance && c.insurance[t];
+    const cost = { home:1800, health:3600, life:1200, auto:1600 }[t];
+    html += '<div class="card"><div class="card-ico">🛡️</div>'
+      + '<div class="card-body"><div class="card-title">' + t.charAt(0).toUpperCase() + t.slice(1) + ' Insurance</div>'
+      + '<div class="card-meta">' + fmtMoney(cost) + ' / year · ' + (has?'✓ Active':'No coverage') + '</div></div>'
+      + '<div class="card-act">'
+      + (has ? '<button class="card-btn danger" onclick="toggleInsurance(\'' + t + '\')">Cancel</button>'
+            : '<button class="card-btn green" onclick="toggleInsurance(\'' + t + '\')">Get Insured</button>')
+      + '</div></div>';
+  });
+  openModal('🏦 Banking & Insurance', html);
+}
+
+function bankTransfer(action, amount){
+  const c = LIFE.char;
+  if(action === 'tosavings'){
+    if(c.money < amount){ toast('Not enough cash.'); return; }
+    c.money -= amount; c.savings = (c.savings||0) + amount;
+  } else if(action === 'toinvest'){
+    if(c.money < amount){ toast('Not enough cash.'); return; }
+    c.money -= amount; c.investments = (c.investments||0) + amount;
+  } else if(action === 'fromsavings'){
+    if((c.savings||0) < amount){ toast('Not enough in savings.'); return; }
+    c.savings -= amount; c.money += amount;
+  } else if(action === 'frominvest'){
+    if((c.investments||0) < amount){ toast('Not enough in investments.'); return; }
+    c.investments -= amount; c.money += amount;
+  }
+  closeModal();
+  openBanking();
+  renderAll();
+  saveLife();
+}
+
+function toggleInsurance(t){
+  const c = LIFE.char;
+  if(!c.insurance) c.insurance = { home:false, health:false, life:false, auto:false };
+  const cost = { home:1800, health:3600, life:1200, auto:1600 }[t];
+  if(c.insurance[t]){
+    c.insurance[t] = false;
+    pushEvent('milestone', '🛡️ You cancelled your ' + t + ' insurance.');
+  } else {
+    if(c.money < cost){ toast('Not enough to pay the first year premium.'); return; }
+    c.money -= cost;
+    c.insurance[t] = true;
+    pushEvent('milestone', '🛡️ You bought ' + t + ' insurance for ' + fmtMoney(cost) + '/yr.');
+  }
+  closeModal();
+  openBanking();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  COLLEGE ADMISSIONS — apply to spoof universities
+// ═══════════════════════════════════════════════════════════════════════
+function openColleges(){
+  const c = LIFE.char;
+  if(c.age < 17){ toast('Apply when you\'re 17 or older.'); return; }
+  let html = '';
+  if(c.college){
+    const col = COLLEGES.find(x => x.id === c.college);
+    if(col){
+      html += '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;text-align:center;">'
+        + '<div style="font-family:var(--font-h);font-size:22px;color:var(--accent2);">🎓 ' + col.name + '</div>'
+        + '<div style="font-family:var(--font-m);font-size:11px;color:var(--gold);margin-top:6px;letter-spacing:.16em;text-transform:uppercase;">' + col.mascot + ' · Prestige ' + col.prestige + '/10</div>'
+        + '</div>';
+      html += '<div style="color:var(--t3);font-size:13px;text-align:center;padding:10px;">You\'re already enrolled. Stick with it through your degree program.</div>';
+      openModal('College', html);
+      return;
+    }
+  }
+  html += '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Apply to top universities. Prestige determines acceptance rate. Tuition costs scale with country.</div>';
+  COLLEGES.forEach(col => {
+    const meets = c.smarts >= col.minSmarts;
+    const country = COUNTRIES[c.country];
+    const tuition = Math.floor(col.tuition * country.costMult);
+    const acceptOdds = Math.floor(col.accept * 100);
+    html += '<div class="card">'
+      + '<div class="card-ico">🎓</div>'
+      + '<div class="card-body"><div class="card-title">' + col.name + '</div>'
+      + '<div class="card-meta">Prestige ' + col.prestige + '/10 · ' + col.mascot + ' · Min Smarts ' + col.minSmarts + (meets?' ✓':' ✗')
+      + (col.specialty ? ' · ' + col.specialty + ' specialty' : '') + '</div>'
+      + '<div class="card-meta">Acceptance ~' + acceptOdds + '% · Tuition ' + fmtMoney(tuition) + '/yr</div></div>'
+      + '<div class="card-act">'
+      + '<button class="card-btn ' + (meets?'':'muted') + '" ' + (meets?'':'disabled') + ' onclick="applyToCollege(\'' + col.id + '\')">Apply</button>'
+      + '</div></div>';
+  });
+  openModal('🎓 College Admissions', html);
+}
+
+function applyToCollege(id){
+  const c = LIFE.char;
+  const col = COLLEGES.find(x => x.id === id);
+  if(!col) return;
+  // Acceptance probability: base accept rate, modified by smarts overshoot
+  const smartsOvershoot = (c.smarts - col.minSmarts) / 100;
+  const odds = col.accept + smartsOvershoot * 0.5;
+  if(Math.random() < odds){
+    c.college = id;
+    pushEvent('milestone', '🎉 You got accepted to ' + col.name + '!');
+    c.happiness = clamp(c.happiness + 12, 0, 100);
+  } else {
+    pushEvent('bad', '📪 ' + col.name + ' rejected your application.');
+    c.happiness = clamp(c.happiness - 6, 0, 100);
+  }
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  QUICK JOBS — entry-level employment beyond the deep careers
+// ═══════════════════════════════════════════════════════════════════════
+function openQuickJobs(){
+  const c = LIFE.char;
+  if(c.age < 16){ toast('Too young to work.'); return; }
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Quick jobs — flat salaries, no promotion ladders, but plenty of variety. ' + QUICK_JOBS.length + ' to choose from.</div>';
+  QUICK_JOBS.forEach(j => {
+    const country = COUNTRIES[c.country];
+    const salary = Math.floor(j.salary * country.salaryMult);
+    const meetsAge = c.age >= (j.minAge || 16);
+    const meetsSmarts = !j.minSmarts || c.smarts >= j.minSmarts;
+    const meetsLooks  = !j.minLooks  || c.looks  >= j.minLooks;
+    const meetsHealth = !j.minHealth || c.health >= j.minHealth;
+    const hasDeg = !j.requiresDegree || c.degrees.includes(j.requiresDegree);
+    const eligible = meetsAge && meetsSmarts && meetsLooks && meetsHealth && hasDeg && !c.inJail;
+    const reqs = [];
+    if(j.minAge && j.minAge > 16) reqs.push('Age ' + j.minAge + '+');
+    if(j.minSmarts) reqs.push('Smarts ' + j.minSmarts + '+');
+    if(j.minLooks) reqs.push('Looks ' + j.minLooks + '+');
+    if(j.minHealth) reqs.push('Health ' + j.minHealth + '+');
+    if(j.requiresDegree) reqs.push((hasDeg?'✓ ':'✗ ') + DEGREES[j.requiresDegree].name);
+    html += '<div class="card">'
+      + '<div class="card-ico">' + j.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + j.title + '</div>'
+      + (reqs.length ? '<div class="card-meta">' + reqs.join(' · ') + '</div>' : '')
+      + '</div>'
+      + '<div class="card-act"><div class="card-pay">' + fmtMoney(salary) + '/yr</div>'
+      + '<button class="card-btn ' + (eligible?'':'muted') + '" ' + (eligible?'':'disabled') + ' onclick="acceptQuickJob(\'' + j.id + '\')">Apply</button>'
+      + '</div></div>';
+  });
+  openModal('💼 Quick Jobs (' + QUICK_JOBS.length + ')', html);
+}
+
+function acceptQuickJob(id){
+  const c = LIFE.char;
+  const j = QUICK_JOBS.find(x => x.id === id);
+  if(!j) return;
+  const country = COUNTRIES[c.country];
+  const salary = Math.floor(j.salary * country.salaryMult);
+  // Quick jobs use a synthetic single-rung CAREERS entry
+  c.career = {
+    key: 'quickjob_' + j.id,
+    quickJobId: j.id,
+    rungIdx: 0,
+    yearsAtRung: 0,
+    totalYears: 0,
+    currentSalary: salary,
+    title: j.title,
+    icon: j.ico,
+  };
+  pushEvent('career', '💼 You took a job as a ' + j.title + '. ' + fmtMoney(salary) + '/yr');
   closeModal();
   renderAll();
   saveLife();

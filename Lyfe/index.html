@@ -1315,7 +1315,7 @@ const LIFE_EVENTS = [
   {age:12, text:'You started middle school.', fx:{smarts:+2}, tag:'milestone', auto:true},
   {age:14, text:'Puberty hit. Everything is more complicated now.', fx:{happiness:-4, looks:+2}, tag:'milestone', auto:true},
   {age:16, text:'You can legally drive now.', fx:{happiness:+5}, tag:'milestone', auto:true},
-  {age:18, text:'You are now a legal adult.', fx:{happiness:+10}, tag:'milestone', auto:true},
+  {age:18, text:'You graduated high school and are now a legal adult. Open the Education menu — you can apply to college, med school, law school, MBA, or PhD.', fx:{happiness:+10, smarts:+2}, tag:'milestone', auto:true},
   {age:21, text:'You can legally drink.', fx:{happiness:+5}, tag:'milestone', auto:true},
   {age:30, text:'You hit your thirties. The body knows.', fx:{health:-3}, tag:'milestone', auto:true},
   {age:50, text:'Half a century. You take stock.', fx:{}, tag:'milestone', auto:true},
@@ -1945,26 +1945,36 @@ function applyAgeDrift(){
 function checkDeath(){
   const c = LIFE.char;
   const country = COUNTRIES[c.country];
-  // forced death conditions
+  const lifeExp = country.lifeExp + (c.isVampire ? 250 : 0);
+  // Forced death conditions
   if(c.health <= 0){
     killCharacter('failing health');
     return true;
   }
-  // probabilistic death after life expectancy
-  if(c.age >= country.lifeExp - 10){
-    const overshoot = Math.max(0, c.age - country.lifeExp + 10);
-    const baseChance = 0.01 + overshoot * 0.015;
-    // healthier = less likely
+  // Hard cap at 115 (no immortals except vampires)
+  if(!c.isVampire && c.age >= 115){
+    killCharacter('extreme old age');
+    return true;
+  }
+  // Vampires can still die past 400
+  if(c.isVampire && c.age >= 450){
+    killCharacter('vampiric exhaustion');
+    return true;
+  }
+  // Probabilistic death past life expectancy minus 12, ramps fast
+  if(c.age >= lifeExp - 12){
+    const overshoot = Math.max(0, c.age - lifeExp + 12);
+    const baseChance = 0.02 + overshoot * 0.025; // ~2% at lifeExp-12, +2.5% per year over
     const healthMod = (100 - c.health) / 100;
-    const chance = baseChance * (1 + healthMod);
+    const chance = baseChance * (1 + healthMod * 1.5);
     if(Math.random() < chance){
       killCharacter('old age');
       return true;
     }
   }
-  // accidental death (very rare)
-  if(c.age > 5 && Math.random() < 0.0008){
-    killCharacter('accident');
+  // Accidental death — slightly higher than before so it shows up
+  if(c.age > 5 && Math.random() < 0.0015){
+    killCharacter(pickRand(['a car accident','a sudden cardiac event','a freak accident','complications from a fall','an unexpected illness']));
     return true;
   }
   return false;
@@ -3574,37 +3584,115 @@ function toggleInsurance(t){
 // ═══════════════════════════════════════════════════════════════════════
 function openColleges(){
   const c = LIFE.char;
-  if(c.age < 17){ toast('Apply when you\'re 17 or older.'); return; }
   let html = '';
+  const country = COUNTRIES[c.country];
+
+  // ─── Current status banner ───
+  let statusBits = [];
+  if(c.age >= 18) statusBits.push('🎓 High school graduate');
   if(c.college){
     const col = COLLEGES.find(x => x.id === c.college);
-    if(col){
-      html += '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;text-align:center;">'
-        + '<div style="font-family:var(--font-h);font-size:22px;color:var(--accent2);">🎓 ' + col.name + '</div>'
-        + '<div style="font-family:var(--font-m);font-size:11px;color:var(--gold);margin-top:6px;letter-spacing:.16em;text-transform:uppercase;">' + col.mascot + ' · Prestige ' + col.prestige + '/10</div>'
-        + '</div>';
-      html += '<div style="color:var(--t3);font-size:13px;text-align:center;padding:10px;">You\'re already enrolled. Stick with it through your degree program.</div>';
-      openModal('College', html);
-      return;
-    }
+    if(col) statusBits.push('📜 ' + col.short + ' alum');
   }
-  html += '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Apply to top universities. Prestige determines acceptance rate. Tuition costs scale with country.</div>';
-  COLLEGES.forEach(col => {
-    const meets = c.smarts >= col.minSmarts;
-    const country = COUNTRIES[c.country];
-    const tuition = Math.floor(col.tuition * country.costMult);
-    const acceptOdds = Math.floor(col.accept * 100);
-    html += '<div class="card">'
-      + '<div class="card-ico">🎓</div>'
-      + '<div class="card-body"><div class="card-title">' + col.name + '</div>'
-      + '<div class="card-meta">Prestige ' + col.prestige + '/10 · ' + col.mascot + ' · Min Smarts ' + col.minSmarts + (meets?' ✓':' ✗')
-      + (col.specialty ? ' · ' + col.specialty + ' specialty' : '') + '</div>'
-      + '<div class="card-meta">Acceptance ~' + acceptOdds + '% · Tuition ' + fmtMoney(tuition) + '/yr</div></div>'
-      + '<div class="card-act">'
-      + '<button class="card-btn ' + (meets?'':'muted') + '" ' + (meets?'':'disabled') + ' onclick="applyToCollege(\'' + col.id + '\')">Apply</button>'
-      + '</div></div>';
-  });
-  openModal('🎓 College Admissions', html);
+  if(c.degrees && c.degrees.length){
+    statusBits.push('🏅 Degrees: ' + c.degrees.map(d => DEGREES[d] ? DEGREES[d].name : d).join(', '));
+  }
+  if(c.degree){
+    statusBits.push('📚 Currently enrolled: ' + DEGREES[c.degree].name + ' (' + c.degreeYearsLeft + ' yrs left)');
+  }
+  if(statusBits.length){
+    html += '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+      + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.18em;color:var(--accent2);text-transform:uppercase;margin-bottom:8px;">Your Education So Far</div>'
+      + '<div style="font-size:13px;line-height:1.7;color:var(--t1);">' + statusBits.join('<br>') + '</div></div>';
+  }
+
+  // ─── HIGH SCHOOL (boost) ───
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:6px 0 10px;">High School (Ages 14-18)</div>';
+  if(c.age >= 14 && c.age < 18){
+    html += '<div class="card"><div class="card-ico">🏫</div>'
+      + '<div class="card-body"><div class="card-title">Study Hard This Year</div>'
+      + '<div class="card-meta">+4 Smarts. Costs nothing. Recommended every year of high school.</div></div>'
+      + '<div class="card-act"><button class="card-btn green" onclick="studyHighSchool()">Study</button></div></div>';
+  } else {
+    html += '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center;">' + (c.age >= 18 ? 'Already graduated.' : 'You\'re too young — high school starts at 14.') + '</div>';
+  }
+
+  // ─── UNDERGRAD COLLEGES ───
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 10px;">Undergraduate Colleges (Apply at 18)</div>';
+  if(c.age < 18){
+    html += '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center;">Apply at 18. Right now, just focus on raising your Smarts in high school.</div>';
+  } else if(c.college){
+    const col = COLLEGES.find(x => x.id === c.college);
+    if(col){
+      html += '<div class="card" style="border-color:var(--accent);background:#1a1428;">'
+        + '<div class="card-ico">🎓</div>'
+        + '<div class="card-body"><div class="card-title">Attending ' + col.name + '</div>'
+        + '<div class="card-meta">Prestige ' + col.prestige + '/10 · ' + col.mascot + '</div></div>'
+        + '<div class="card-act"><span class="card-tag">ENROLLED</span></div></div>';
+    }
+  } else {
+    COLLEGES.forEach(col => {
+      const meets = c.smarts >= col.minSmarts;
+      const tuition = Math.floor(col.tuition * country.costMult);
+      const acceptOdds = Math.floor(col.accept * 100);
+      html += '<div class="card">'
+        + '<div class="card-ico">🎓</div>'
+        + '<div class="card-body"><div class="card-title">' + col.name + '</div>'
+        + '<div class="card-meta">Prestige ' + col.prestige + '/10 · ' + col.mascot + ' · Min Smarts ' + col.minSmarts + (meets?' ✓':' ✗')
+        + (col.specialty ? ' · ' + col.specialty + ' specialty' : '') + '</div>'
+        + '<div class="card-meta">Acceptance ~' + acceptOdds + '% · Tuition ' + fmtMoney(tuition) + '/yr</div></div>'
+        + '<div class="card-act">'
+        + '<button class="card-btn ' + (meets?'':'muted') + '" ' + (meets?'':'disabled') + ' onclick="applyToCollege(\'' + col.id + '\')">Apply</button>'
+        + '</div></div>';
+    });
+  }
+
+  // ─── DEGREE PROGRAMS (Bachelor's + Grad School) ───
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 10px;">Degree Programs</div>';
+  html += '<div style="font-size:12px;color:var(--t3);font-style:italic;margin-bottom:10px;line-height:1.5;">'
+    + '<b>Path to Med School:</b> Smarts 78+ → Enroll in Medical School (4 yrs, $240k) → Apply for Medical Resident in the Career menu.<br>'
+    + '<b>Path to Law:</b> Smarts 72+ → Law School (3 yrs) → Apply as Junior Associate.<br>'
+    + '<b>Path to MBA / CEO:</b> Smarts 60+ → M.B.A. (2 yrs) → Apply as Corporate Director.<br>'
+    + '<b>Path to PhD / Scientist:</b> Smarts 75+ → PhD (5 yrs) → Apply as PhD Researcher.</div>';
+  if(c.age < 18){
+    html += '<div style="color:var(--t3);font-size:12px;padding:8px;text-align:center;">Available at age 18.</div>';
+  } else {
+    Object.keys(DEGREES).forEach(k => {
+      const d = DEGREES[k];
+      const owned = c.degrees && c.degrees.includes(k);
+      const current = c.degree === k;
+      const meets = c.smarts >= d.minSmarts;
+      const cost = Math.floor(d.cost * country.costMult);
+      const tag = owned ? '<span class="card-tag">COMPLETED ✓</span>'
+                  : current ? '<span class="card-tag req">IN PROGRESS</span>'
+                  : '';
+      let btn = '';
+      if(!owned && !current){
+        const can = meets && !c.degree;
+        btn = '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="enrollDegree(\'' + k + '\')">Enroll</button>';
+      } else if(current){
+        btn = '<button class="card-btn danger" onclick="dropOut()">Drop Out</button>';
+      }
+      html += '<div class="card" style="' + (owned?'border-color:var(--accent);background:#1a1428;':'') + '">'
+        + '<div class="card-ico">' + (k==='medical'?'⚕️':k==='law'?'⚖️':k==='business'?'💼':k==='phd'?'🔬':'📚') + '</div>'
+        + '<div class="card-body"><div class="card-title">' + d.name + '</div>'
+        + '<div class="card-meta">' + d.years + ' yrs · Min Smarts ' + d.minSmarts + (meets?' ✓':' ✗') + ' · Tuition ' + fmtMoney(cost) + '</div></div>'
+        + '<div class="card-act">' + (tag?'<div>'+tag+'</div>':'') + btn + '</div></div>';
+    });
+  }
+
+  openModal('🎓 Education', html);
+}
+
+function studyHighSchool(){
+  const c = LIFE.char;
+  c.smarts = clamp(c.smarts + 4, 0, 100);
+  c.happiness = clamp(c.happiness - 2, 0, 100);
+  pushEvent('milestone', '📖 You buckled down at school this year. +4 Smarts.');
+  closeModal();
+  openColleges();
+  renderAll();
+  saveLife();
 }
 
 function applyToCollege(id){
@@ -4025,12 +4113,21 @@ function toast(text){
 //  BOOT
 // ═══════════════════════════════════════════════════════════════════════
 renderIntroCountries();
-if(loadLife() && LIFE && LIFE.char && LIFE.char.alive){
-  // Offer continue
-  const cont = document.getElementById('intro-continue');
-  if(cont){
-    cont.style.display = 'block';
-    cont.textContent = 'Continue: ' + LIFE.char.firstName + ' ' + LIFE.char.lastName + ' · Age ' + LIFE.char.age;
+if(loadLife() && LIFE && LIFE.char){
+  if(LIFE.char.alive){
+    // Offer continue for a living character
+    const cont = document.getElementById('intro-continue');
+    if(cont){
+      cont.style.display = 'block';
+      cont.textContent = 'Continue: ' + LIFE.char.firstName + ' ' + LIFE.char.lastName + ' · Age ' + LIFE.char.age;
+    }
+  } else {
+    // Character died but we never closed the death screen — show it now
+    document.getElementById('intro').style.display = 'none';
+    document.getElementById('topbar').style.display = 'flex';
+    document.getElementById('main').style.display = 'grid';
+    renderAll();
+    setTimeout(showDeathScreen, 100);
   }
 }
 

@@ -375,8 +375,9 @@ input,select{font-family:inherit;}
       <div id="timeline"></div>
     </div>
     <div id="actions-bar">
-      <button class="act-btn primary" onclick="ageUp()">Age Up ›</button>
+      <button class="act-btn primary" onclick="ageUp()">Age Up › <span style="opacity:.6;font-size:9px;">[Space]</span></button>
       <button class="act-btn" onclick="openOccupation()">💼 Occupation</button>
+      <button class="act-btn" onclick="openCareerAction()">⚡ Career Action</button>
       <button class="act-btn" onclick="openRelationships()">💕 Relationships</button>
       <button class="act-btn" onclick="openActivities()">🏋️ Activities</button>
       <button class="act-btn" onclick="openShop()">🏠 Assets</button>
@@ -420,16 +421,21 @@ input,select{font-family:inherit;}
 // ═══════════════════════════════════════════════════════════════════════
 
 const COUNTRIES = {
-  us: { name:'United States', short:'USA', flag:'🇺🇸', cur:'$', salaryMult:1.0, costMult:1.0,
-        lifeExp:78, crimeChance:0.04, divorceRate:0.40 },
-  uk: { name:'United Kingdom', short:'UK', flag:'🇬🇧', cur:'£', salaryMult:0.85, costMult:0.95,
-        lifeExp:81, crimeChance:0.03, divorceRate:0.32 },
-  jp: { name:'Japan', short:'JPN', flag:'🇯🇵', cur:'¥', salaryMult:0.75, costMult:0.9,
-        lifeExp:84, crimeChance:0.008, divorceRate:0.18 },
-  br: { name:'Brazil', short:'BRA', flag:'🇧🇷', cur:'R$', salaryMult:0.42, costMult:0.55,
-        lifeExp:75, crimeChance:0.08, divorceRate:0.28 },
-  in: { name:'India', short:'IND', flag:'🇮🇳', cur:'₹', salaryMult:0.35, costMult:0.45,
-        lifeExp:70, crimeChance:0.05, divorceRate:0.13 },
+  us: { name:'United States', short:'USA', flag:'🇺🇸', cur:'$',  salaryMult:1.00, costMult:1.00, lifeExp:78, crimeChance:0.04,  divorceRate:0.40, religion:'Christian', culture:'individualist' },
+  uk: { name:'United Kingdom',short:'UK',  flag:'🇬🇧', cur:'£',  salaryMult:0.85, costMult:0.95, lifeExp:81, crimeChance:0.03,  divorceRate:0.32, religion:'Anglican',  culture:'reserved' },
+  jp: { name:'Japan',         short:'JPN', flag:'🇯🇵', cur:'¥',  salaryMult:0.75, costMult:0.90, lifeExp:84, crimeChance:0.008, divorceRate:0.18, religion:'Shinto',    culture:'collectivist' },
+  br: { name:'Brazil',        short:'BRA', flag:'🇧🇷', cur:'R$', salaryMult:0.42, costMult:0.55, lifeExp:75, crimeChance:0.08,  divorceRate:0.28, religion:'Catholic',  culture:'expressive' },
+  in: { name:'India',         short:'IND', flag:'🇮🇳', cur:'₹',  salaryMult:0.35, costMult:0.45, lifeExp:70, crimeChance:0.05,  divorceRate:0.13, religion:'Hindu',     culture:'family-first' },
+  fr: { name:'France',        short:'FRA', flag:'🇫🇷', cur:'€',  salaryMult:0.78, costMult:0.92, lifeExp:82, crimeChance:0.025, divorceRate:0.45, religion:'Secular',   culture:'romantic' },
+  de: { name:'Germany',       short:'DEU', flag:'🇩🇪', cur:'€',  salaryMult:0.88, costMult:0.95, lifeExp:81, crimeChance:0.02,  divorceRate:0.38, religion:'Mixed',     culture:'precise' },
+  cn: { name:'China',         short:'CHN', flag:'🇨🇳', cur:'¥',  salaryMult:0.55, costMult:0.55, lifeExp:77, crimeChance:0.012, divorceRate:0.22, religion:'Folk',      culture:'collectivist' },
+  ca: { name:'Canada',        short:'CAN', flag:'🇨🇦', cur:'C$', salaryMult:0.82, costMult:0.92, lifeExp:82, crimeChance:0.018, divorceRate:0.38, religion:'Mixed',     culture:'polite' },
+  au: { name:'Australia',     short:'AUS', flag:'🇦🇺', cur:'A$', salaryMult:0.90, costMult:1.05, lifeExp:83, crimeChance:0.02,  divorceRate:0.39, religion:'Secular',   culture:'laid-back' },
+  ng: { name:'Nigeria',       short:'NGA', flag:'🇳🇬', cur:'₦',  salaryMult:0.18, costMult:0.30, lifeExp:55, crimeChance:0.09,  divorceRate:0.15, religion:'Mixed',     culture:'communal' },
+  mx: { name:'Mexico',        short:'MEX', flag:'🇲🇽', cur:'$',  salaryMult:0.32, costMult:0.42, lifeExp:75, crimeChance:0.07,  divorceRate:0.22, religion:'Catholic',  culture:'family-first' },
+  kr: { name:'South Korea',   short:'KOR', flag:'🇰🇷', cur:'₩',  salaryMult:0.78, costMult:0.85, lifeExp:83, crimeChance:0.012, divorceRate:0.30, religion:'Mixed',     culture:'hardworking' },
+  ru: { name:'Russia',        short:'RUS', flag:'🇷🇺', cur:'₽',  salaryMult:0.34, costMult:0.50, lifeExp:73, crimeChance:0.05,  divorceRate:0.55, religion:'Orthodox',  culture:'stoic' },
+  it: { name:'Italy',         short:'ITA', flag:'🇮🇹', cur:'€',  salaryMult:0.65, costMult:0.85, lifeExp:83, crimeChance:0.03,  divorceRate:0.34, religion:'Catholic',  culture:'expressive' },
 };
 
 const CITIES = {
@@ -438,6 +444,16 @@ const CITIES = {
   jp: ['Tokyo','Osaka','Kyoto','Sapporo','Fukuoka','Nagoya','Yokohama','Kobe','Sendai','Hiroshima'],
   br: ['São Paulo','Rio de Janeiro','Salvador','Brasília','Fortaleza','Belo Horizonte','Curitiba','Recife','Porto Alegre','Manaus'],
   in: ['Mumbai','Delhi','Bangalore','Chennai','Hyderabad','Kolkata','Pune','Ahmedabad','Jaipur','Lucknow'],
+  fr: ['Paris','Marseille','Lyon','Toulouse','Nice','Nantes','Strasbourg','Montpellier','Bordeaux','Lille'],
+  de: ['Berlin','Munich','Hamburg','Cologne','Frankfurt','Stuttgart','Düsseldorf','Leipzig','Dresden','Bremen'],
+  cn: ['Shanghai','Beijing','Shenzhen','Guangzhou','Chengdu','Hangzhou','Wuhan','Xi\'an','Chongqing','Nanjing'],
+  ca: ['Toronto','Vancouver','Montreal','Calgary','Ottawa','Edmonton','Quebec City','Winnipeg','Halifax','Victoria'],
+  au: ['Sydney','Melbourne','Brisbane','Perth','Adelaide','Canberra','Gold Coast','Hobart','Darwin','Newcastle'],
+  ng: ['Lagos','Abuja','Kano','Ibadan','Port Harcourt','Benin City','Kaduna','Enugu','Onitsha','Jos'],
+  mx: ['Mexico City','Guadalajara','Monterrey','Puebla','Tijuana','Mérida','Cancún','Querétaro','León','Oaxaca'],
+  kr: ['Seoul','Busan','Incheon','Daegu','Daejeon','Gwangju','Ulsan','Suwon','Jeju','Changwon'],
+  ru: ['Moscow','Saint Petersburg','Novosibirsk','Yekaterinburg','Kazan','Sochi','Vladivostok','Krasnoyarsk','Samara','Rostov'],
+  it: ['Rome','Milan','Naples','Turin','Florence','Bologna','Venice','Verona','Palermo','Genoa'],
 };
 
 const NAMES = {
@@ -462,9 +478,59 @@ const NAMES = {
     l: ['Silva','Santos','Oliveira','Souza','Lima','Pereira','Carvalho','Ferreira','Rodrigues','Almeida','Costa','Gomes','Martins','Araújo','Ribeiro','Barbosa','Rocha','Dias','Cardoso','Castro'],
   },
   in: {
-    m: ['Arjun','Rohan','Vikram','Aditya','Kabir','Aarav','Vihaan','Reyansh','Krishna','Ishaan','Aryan','Dhruv','Nikhil','Sahil','Karan','Rohan','Yash','Rahul','Siddharth','Manish'],
+    m: ['Arjun','Rohan','Vikram','Aditya','Kabir','Aarav','Vihaan','Reyansh','Krishna','Ishaan','Aryan','Dhruv','Nikhil','Sahil','Karan','Yash','Rahul','Siddharth','Manish','Devang'],
     f: ['Aanya','Diya','Priya','Sneha','Aisha','Anika','Kavya','Saanvi','Riya','Ananya','Neha','Pooja','Sara','Mira','Tara','Pari','Avni','Khushi','Myra','Anaya'],
     l: ['Sharma','Patel','Singh','Kumar','Khan','Gupta','Verma','Reddy','Rao','Mehta','Joshi','Iyer','Nair','Chopra','Kapoor','Malhotra','Saxena','Bhatt','Agarwal','Desai'],
+  },
+  fr: {
+    m: ['Lucas','Léo','Hugo','Gabriel','Louis','Arthur','Jules','Adam','Maël','Raphaël','Liam','Noah','Théo','Nathan','Eden','Tom','Sacha','Gabin','Aaron','Mathis'],
+    f: ['Emma','Jade','Louise','Alice','Chloé','Lina','Mila','Léa','Manon','Sarah','Inès','Anna','Camille','Léna','Romane','Eva','Juliette','Rose','Lola','Zoé'],
+    l: ['Martin','Bernard','Dubois','Thomas','Robert','Richard','Petit','Durand','Leroy','Moreau','Simon','Laurent','Lefebvre','Michel','Garcia','David','Bertrand','Roux','Vincent','Fournier'],
+  },
+  de: {
+    m: ['Maximilian','Alexander','Lukas','Felix','Paul','Leon','Jonas','Elias','Noah','Ben','Finn','Luca','Liam','Mats','Henry','Anton','Theo','Jakob','Oskar','Emil'],
+    f: ['Sophie','Marie','Maria','Emma','Mia','Hannah','Anna','Lena','Lara','Lina','Emilia','Lea','Leonie','Amelie','Mila','Klara','Greta','Lilly','Frieda','Ida'],
+    l: ['Müller','Schmidt','Schneider','Fischer','Weber','Meyer','Wagner','Becker','Schulz','Hoffmann','Koch','Bauer','Richter','Klein','Wolf','Schröder','Neumann','Schwarz','Zimmermann','Krüger'],
+  },
+  cn: {
+    m: ['Wei','Wang','Li','Zhang','Liu','Chen','Yang','Zhao','Huang','Zhou','Wu','Xu','Sun','Hu','Lin','He','Gao','Liang','Zheng','Luo'],
+    f: ['Mei','Jing','Li','Ying','Hua','Yan','Min','Xin','Qian','Yu','Fang','Ling','Ping','Hong','Wen','Lan','Xia','Juan','Yun','Chen'],
+    l: ['Wang','Li','Zhang','Liu','Chen','Yang','Huang','Zhao','Wu','Zhou','Xu','Sun','Ma','Zhu','Hu','Guo','He','Gao','Lin','Luo'],
+  },
+  ca: {
+    m: ['Liam','Noah','Oliver','William','Benjamin','Lucas','Henry','Jack','Logan','Ethan','Mason','James','Owen','Theodore','Carter','Hunter','Jacob','Wyatt','Connor','Ryan'],
+    f: ['Olivia','Charlotte','Emma','Sophia','Amelia','Ava','Mia','Harper','Ella','Aria','Chloe','Violet','Hannah','Isabella','Grace','Layla','Zoe','Penelope','Lily','Avery'],
+    l: ['Smith','Brown','Tremblay','Martin','Roy','Gagnon','Lee','Wilson','Johnson','MacDonald','Taylor','Campbell','Anderson','White','Lavoie','Bouchard','Côté','Cohen','Singh','Patel'],
+  },
+  au: {
+    m: ['Oliver','Noah','Jack','William','Leo','Lucas','Thomas','Henry','Charlie','James','Mason','Alexander','Ethan','Hudson','Liam','Cooper','Theodore','Levi','Jaxon','Hunter'],
+    f: ['Olivia','Charlotte','Amelia','Ava','Mia','Isla','Grace','Willow','Harper','Chloe','Matilda','Ella','Sophie','Zoe','Evelyn','Sophia','Aria','Layla','Lily','Hazel'],
+    l: ['Smith','Jones','Williams','Brown','Wilson','Taylor','Johnson','Martin','Anderson','Thompson','Nguyen','Lee','Walker','White','Harris','Kelly','Ryan','Robinson','King','Wood'],
+  },
+  ng: {
+    m: ['Chinedu','Obinna','Emeka','Ifeanyi','Chibuzo','Tunde','Adebayo','Olumide','Ayodele','Kayode','Babatunde','Femi','Kunle','Wale','Segun','Bola','Yusuf','Ibrahim','Musa','Aliyu'],
+    f: ['Adaeze','Chiamaka','Ngozi','Amara','Ifeoma','Nneka','Folake','Bisola','Yemi','Tobi','Funmi','Bola','Aisha','Fatima','Halima','Zainab','Hadiza','Khadija','Maryam','Ramatu'],
+    l: ['Okafor','Adeyemi','Okonkwo','Eze','Adebayo','Bello','Mohammed','Ahmed','Ibrahim','Oluwaseun','Olabisi','Nwosu','Okeke','Adesanya','Babalola','Ojo','Lawal','Abdullahi','Yusuf','Salami'],
+  },
+  mx: {
+    m: ['Mateo','Santiago','Sebastián','Matías','Diego','Nicolás','Daniel','Alejandro','Emiliano','Leonardo','Joaquín','Tomás','Maximiliano','Lucas','Iker','Bruno','Andrés','David','Gabriel','Samuel'],
+    f: ['Sofía','Valentina','Isabella','Camila','María','Lucía','Mariana','Renata','Regina','Emilia','Daniela','Ximena','Andrea','Paula','Natalia','Victoria','Romina','Ana','Fernanda','Catalina'],
+    l: ['García','Martínez','Hernández','López','González','Rodríguez','Pérez','Sánchez','Ramírez','Cruz','Flores','Gómez','Morales','Vázquez','Reyes','Jiménez','Mendoza','Ruiz','Aguilar','Castillo'],
+  },
+  kr: {
+    m: ['Min-jun','Seo-jun','Ji-ho','Do-yun','Joon-ho','Hyun-woo','Tae-yang','Jung-woo','Sang-min','Jae-hyun','Sung-min','Dong-hyun','Ji-hoon','Min-seok','Jin-woo','Hyun-jun','Tae-hyun','Sung-ho','Kyung-soo','Joon-young'],
+    f: ['Ji-woo','Seo-yeon','Min-seo','Ha-yoon','Ji-eun','Yoo-jin','Eun-ji','Hye-jin','Soo-min','Yoo-na','Min-ji','Hyun-ah','Su-yeon','Ji-young','Eun-young','Mi-ran','Soo-jin','Ye-jin','Bo-ram','Da-eun'],
+    l: ['Kim','Lee','Park','Choi','Jung','Kang','Cho','Yoon','Jang','Lim','Han','Oh','Seo','Shin','Kwon','Hwang','Ahn','Song','Yoo','Hong'],
+  },
+  ru: {
+    m: ['Aleksandr','Dmitri','Maxim','Sergei','Andrei','Mikhail','Aleksey','Ivan','Nikolai','Vladimir','Kirill','Pavel','Yuri','Egor','Roman','Konstantin','Igor','Artem','Anton','Denis'],
+    f: ['Anastasia','Maria','Anna','Ekaterina','Olga','Tatyana','Natalia','Elena','Yulia','Svetlana','Irina','Marina','Daria','Polina','Sofia','Alina','Veronika','Elizaveta','Margarita','Valeria'],
+    l: ['Ivanov','Smirnov','Kuznetsov','Popov','Vasiliev','Petrov','Sokolov','Mikhailov','Novikov','Fedorov','Morozov','Volkov','Alekseev','Lebedev','Semyonov','Egorov','Pavlov','Kozlov','Stepanov','Nikolaev'],
+  },
+  it: {
+    m: ['Leonardo','Francesco','Alessandro','Lorenzo','Mattia','Andrea','Gabriele','Riccardo','Tommaso','Edoardo','Matteo','Giuseppe','Antonio','Diego','Marco','Giulio','Nicolò','Federico','Davide','Stefano'],
+    f: ['Sofia','Giulia','Aurora','Alice','Ginevra','Emma','Giorgia','Greta','Beatrice','Anna','Martina','Chiara','Sara','Vittoria','Bianca','Matilde','Francesca','Camilla','Noemi','Elena'],
+    l: ['Rossi','Russo','Ferrari','Esposito','Bianchi','Romano','Colombo','Ricci','Marino','Greco','Bruno','Gallo','Conti','De Luca','Mancini','Costa','Giordano','Rizzo','Lombardi','Moretti'],
   },
 };
 
@@ -480,147 +546,338 @@ function fmtMoney(n){
 //  CAREERS — multi-rung progression
 // ═══════════════════════════════════════════════════════════════════════
 const CAREERS = {
+  // ── MEDICINE (Ward-style ladder) ──
   doctor: {
-    name:'Medicine', icon:'🩺', minSmarts:78, requiresDegree:'medical',
+    name:'Medicine', icon:'🩺', minSmarts:78, requiresDegree:'medical', miniGame:'medical',
     rungs:[
-      {title:'Medical Resident',     salary:62000,  years:4, minSmarts:80, prestige:7},
-      {title:'Attending Physician',  salary:290000, years:8, minSmarts:82, prestige:9},
-      {title:'Department Chief',     salary:480000, years:10,minSmarts:85, prestige:10},
+      {title:'Medical Resident',         salary:62000,  years:4, minSmarts:80, prestige:7},
+      {title:'Attending Physician',      salary:290000, years:6, minSmarts:82, prestige:9},
+      {title:'Department Chief',         salary:480000, years:8, minSmarts:85, prestige:10},
+      {title:'White House Physician',    salary:740000, years:8, minSmarts:90, prestige:10, special:'president_doc'},
     ],
   },
+  // ── LAW (paralegal → JD → associate → partner → judge → SCOTUS) ──
   lawyer: {
-    name:'Law', icon:'⚖️', minSmarts:72, requiresDegree:'law',
+    name:'Law', icon:'⚖️', minSmarts:62, miniGame:'law',
     rungs:[
-      {title:'Junior Associate',     salary:95000,  years:5, minSmarts:75, prestige:6},
-      {title:'Senior Associate',     salary:185000, years:6, minSmarts:80, prestige:8},
-      {title:'Partner',              salary:480000, years:10,minSmarts:85, prestige:10},
+      {title:'Paralegal',                salary:54000,  years:3, minSmarts:62, prestige:4},
+      {title:'Junior Associate',         salary:105000, years:5, minSmarts:75, prestige:6, requiresDegree:'law'},
+      {title:'Senior Associate',         salary:215000, years:5, minSmarts:80, prestige:8},
+      {title:'Law Firm Partner',         salary:520000, years:8, minSmarts:85, prestige:9},
+      {title:'Federal Judge',            salary:225000, years:10,minSmarts:88, prestige:10, special:'judge'},
+      {title:'Supreme Court Justice',    salary:285000, years:15,minSmarts:92, prestige:10, special:'scotus'},
     ],
   },
+  // ── BUSINESS/ENTREPRENEUR (general path) ──
   business: {
     name:'Entrepreneur', icon:'💼', minSmarts:55,
     rungs:[
-      {title:'Founder (Bootstrapped)', salary:18000,   years:3, minSmarts:55, risk:'high', prestige:3},
-      {title:'Funded Startup CEO',    salary:120000,  years:4, minSmarts:65, risk:'high', prestige:6},
-      {title:'Profitable Company CEO',salary:380000,  years:6, minSmarts:70, prestige:8},
-      {title:'Industry Mogul',        salary:1400000, years:10,minSmarts:75, prestige:10},
+      {title:'Founder (Bootstrapped)',   salary:18000,    years:3, minSmarts:55, risk:'high', prestige:3},
+      {title:'Funded Startup CEO',       salary:140000,   years:4, minSmarts:65, risk:'high', prestige:6},
+      {title:'Profitable Company CEO',   salary:380000,   years:6, minSmarts:70, prestige:8},
+      {title:'Industry Mogul',           salary:1400000,  years:10,minSmarts:75, prestige:10},
     ],
   },
+  // ── CEO (Empire-style with employees, P&L, holidays) ──
+  ceo: {
+    name:'Corporate Executive', icon:'🏢', minSmarts:70, requiresDegree:'business', miniGame:'ceo',
+    rungs:[
+      {title:'Director',                 salary:185000,   years:4, minSmarts:72, prestige:7},
+      {title:'Vice President',           salary:340000,   years:5, minSmarts:78, prestige:8},
+      {title:'Chief Operating Officer',  salary:640000,   years:6, minSmarts:82, prestige:9},
+      {title:'CEO',                      salary:1850000,  years:10,minSmarts:85, prestige:10},
+      {title:'Fortune 500 CEO',          salary:8200000,  years:15,minSmarts:88, prestige:10},
+    ],
+  },
+  // ── ENGINEERING ──
   engineer: {
     name:'Software Engineering', icon:'💻', minSmarts:65, requiresDegree:'cs',
     rungs:[
-      {title:'Junior Engineer',      salary:95000,  years:3, minSmarts:65, prestige:5},
-      {title:'Senior Engineer',      salary:185000, years:5, minSmarts:72, prestige:7},
-      {title:'Staff Engineer',       salary:340000, years:7, minSmarts:78, prestige:8},
-      {title:'CTO',                  salary:680000, years:10,minSmarts:82, prestige:9},
+      {title:'Junior Engineer',          salary:95000,  years:3, minSmarts:65, prestige:5},
+      {title:'Senior Engineer',          salary:195000, years:5, minSmarts:72, prestige:7},
+      {title:'Staff Engineer',           salary:380000, years:7, minSmarts:78, prestige:8},
+      {title:'Principal Engineer',       salary:580000, years:8, minSmarts:82, prestige:9},
+      {title:'CTO',                      salary:980000, years:10,minSmarts:85, prestige:10},
     ],
   },
+  // ── EDUCATION ──
   teacher: {
     name:'Education', icon:'📚', minSmarts:52, requiresDegree:'edu',
     rungs:[
-      {title:'Teacher',              salary:54000, years:8, minSmarts:55, prestige:5, happyBonus:+2},
-      {title:'Department Head',      salary:78000, years:10,minSmarts:60, prestige:6, happyBonus:+2},
-      {title:'Principal',            salary:115000,years:12,minSmarts:65, prestige:7, happyBonus:+1},
+      {title:'Teacher',                  salary:54000, years:8, minSmarts:55, prestige:5, happyBonus:+2},
+      {title:'Department Head',          salary:82000, years:8, minSmarts:60, prestige:6, happyBonus:+2},
+      {title:'Principal',                salary:122000,years:10,minSmarts:65, prestige:7, happyBonus:+1},
+      {title:'University Professor',     salary:165000,years:12,minSmarts:78, prestige:8, requiresDegree:'phd'},
     ],
   },
+  // ── ATHLETICS ──
   athlete: {
     name:'Professional Athlete', icon:'⚽', minLooks:60, minHealth:75,
     rungs:[
-      {title:'Rookie Pro',           salary:620000,  years:3, minLooks:70, minHealth:75, prestige:8, retireAt:35},
-      {title:'Star Player',          salary:4800000, years:5, minLooks:75, minHealth:80, prestige:10, retireAt:35},
-      {title:'Hall of Famer',        salary:14000000,years:5, minLooks:80, minHealth:80, prestige:10, retireAt:38},
+      {title:'Rookie Pro',               salary:680000,   years:3, minLooks:70, minHealth:75, prestige:8, retireAt:35},
+      {title:'Star Player',              salary:5400000,  years:5, minLooks:75, minHealth:80, prestige:10,retireAt:35},
+      {title:'Hall of Famer',            salary:18000000, years:5, minLooks:80, minHealth:80, prestige:10,retireAt:38},
     ],
   },
+  // ── ARTS ──
   artist: {
     name:'Visual Artist', icon:'🎨',
     rungs:[
-      {title:'Struggling Artist',    salary:22000,    years:4, prestige:2, happyBonus:+3},
-      {title:'Working Artist',       salary:52000,    years:6, prestige:5, happyBonus:+3},
-      {title:'Recognized Artist',    salary:185000,   years:8, prestige:7, happyBonus:+2},
-      {title:'Legendary Artist',     salary:2400000,  years:10,prestige:10},
+      {title:'Struggling Artist',        salary:22000,    years:4, prestige:2, happyBonus:+3},
+      {title:'Working Artist',           salary:62000,    years:6, prestige:5, happyBonus:+3},
+      {title:'Recognized Artist',        salary:225000,   years:8, prestige:7, happyBonus:+2},
+      {title:'Legendary Artist',         salary:2400000,  years:10,prestige:10},
     ],
   },
   musician: {
     name:'Musician', icon:'🎸', minLooks:50,
     rungs:[
-      {title:'Indie Musician',       salary:28000,    years:5, minLooks:50, prestige:3, happyBonus:+4},
-      {title:'Touring Musician',     salary:135000,   years:5, minLooks:58, prestige:6, happyBonus:+3},
-      {title:'Recording Artist',     salary:780000,   years:6, minLooks:62, prestige:8, happyBonus:+2},
-      {title:'Global Superstar',     salary:9800000,  years:10,minLooks:70, prestige:10},
+      {title:'Indie Musician',           salary:28000,    years:5, minLooks:50, prestige:3, happyBonus:+4},
+      {title:'Touring Musician',         salary:155000,   years:5, minLooks:58, prestige:6, happyBonus:+3},
+      {title:'Recording Artist',         salary:880000,   years:6, minLooks:62, prestige:8, happyBonus:+2},
+      {title:'Global Superstar',         salary:12500000, years:10,minLooks:70, prestige:10},
     ],
   },
+  actor: {
+    name:'Actor', icon:'🎬', minLooks:65,
+    rungs:[
+      {title:'Bit-Part Actor',           salary:28000,    years:4, minLooks:65, prestige:3},
+      {title:'TV Series Regular',        salary:285000,   years:5, minLooks:72, prestige:7, happyBonus:+2},
+      {title:'Film Lead',                salary:2400000,  years:7, minLooks:78, prestige:9},
+      {title:'A-List Movie Star',        salary:18000000, years:10,minLooks:82, prestige:10},
+    ],
+  },
+  // ── POLITICS (path to President) ──
   politician: {
     name:'Politics', icon:'🏛️', minSmarts:60, requiresDegree:'polisci',
     rungs:[
-      {title:'City Councillor',      salary:52000,  years:4, minSmarts:62, prestige:6},
-      {title:'State Legislator',     salary:98000,  years:6, minSmarts:68, prestige:7},
-      {title:'Member of Congress',   salary:174000, years:10,minSmarts:72, prestige:9},
-      {title:'Head of State',        salary:400000, years:8, minSmarts:80, prestige:10},
+      {title:'City Councillor',          salary:52000,  years:4, minSmarts:62, prestige:6},
+      {title:'State Legislator',         salary:98000,  years:6, minSmarts:68, prestige:7},
+      {title:'Governor',                 salary:165000, years:8, minSmarts:72, prestige:9},
+      {title:'Senator',                  salary:185000, years:10,minSmarts:78, prestige:9},
+      {title:'Head of State',            salary:400000, years:8, minSmarts:84, prestige:10, special:'president'},
     ],
   },
+  // ── MILITARY ──
   military: {
     name:'Military Officer', icon:'🪖', minHealth:65,
     rungs:[
-      {title:'Enlisted',             salary:34000,  years:4, minHealth:65, prestige:5},
-      {title:'Sergeant',             salary:58000,  years:6, minHealth:70, prestige:6},
-      {title:'Captain',              salary:98000,  years:8, minHealth:70, prestige:8},
-      {title:'Colonel',              salary:185000, years:10,minHealth:65, prestige:9},
+      {title:'Enlisted',                 salary:34000,  years:4, minHealth:65, prestige:5},
+      {title:'Sergeant',                 salary:58000,  years:6, minHealth:70, prestige:6},
+      {title:'Captain',                  salary:98000,  years:8, minHealth:70, prestige:8},
+      {title:'Colonel',                  salary:195000, years:10,minHealth:65, prestige:9},
+      {title:'General',                  salary:285000, years:15,minHealth:60, prestige:10, special:'general'},
     ],
   },
+  // ── PUBLIC SAFETY ──
+  police: {
+    name:'Police Officer', icon:'👮', minHealth:60,
+    rungs:[
+      {title:'Patrol Officer',           salary:55000, years:5, minHealth:60, prestige:5},
+      {title:'Detective',                salary:78000, years:7, minHealth:60, prestige:7},
+      {title:'Lieutenant',               salary:115000,years:8, minHealth:55, prestige:8},
+      {title:'Chief of Police',          salary:185000,years:10,minHealth:55, prestige:9},
+    ],
+  },
+  firefighter: {
+    name:'Firefighter', icon:'🧑‍🚒', minHealth:70,
+    rungs:[
+      {title:'Probationary Firefighter', salary:48000, years:3, minHealth:70, prestige:5, happyBonus:+1},
+      {title:'Firefighter',              salary:68000, years:7, minHealth:70, prestige:6, happyBonus:+1},
+      {title:'Fire Captain',             salary:105000,years:10,minHealth:65, prestige:8},
+      {title:'Fire Chief',               salary:165000,years:12,minHealth:55, prestige:9},
+    ],
+  },
+  // ── SCIENCE ──
+  scientist: {
+    name:'Scientist', icon:'🔬', minSmarts:75, requiresDegree:'phd',
+    rungs:[
+      {title:'PhD Researcher',           salary:62000, years:4, minSmarts:78, prestige:7, happyBonus:+1},
+      {title:'Senior Researcher',        salary:128000,years:8, minSmarts:82, prestige:8},
+      {title:'Lab Director',             salary:245000,years:10,minSmarts:85, prestige:9},
+      {title:'Nobel Laureate',           salary:680000,years:15,minSmarts:92, prestige:10},
+    ],
+  },
+  astronaut: {
+    name:'Astronaut', icon:'🚀', minSmarts:75, minHealth:80, requiresDegree:'cs',
+    rungs:[
+      {title:'Astronaut Candidate',      salary:78000,  years:3, minSmarts:78, minHealth:80, prestige:9},
+      {title:'Mission Specialist',       salary:165000, years:6, minSmarts:82, minHealth:78, prestige:10},
+      {title:'Mission Commander',        salary:265000, years:10,minSmarts:85, minHealth:75, prestige:10},
+    ],
+  },
+  // ── AVIATION ──
+  pilot: {
+    name:'Commercial Pilot', icon:'✈️', minHealth:70, minSmarts:60,
+    rungs:[
+      {title:'First Officer',            salary:78000, years:5, minHealth:70, minSmarts:62, prestige:6},
+      {title:'Captain (Regional)',       salary:145000,years:7, minHealth:70, minSmarts:65, prestige:7},
+      {title:'Captain (International)',  salary:325000,years:12,minHealth:65, minSmarts:68, prestige:9},
+    ],
+  },
+  // ── CULINARY ──
   chef: {
     name:'Culinary Arts', icon:'👨‍🍳',
     rungs:[
-      {title:'Line Cook',            salary:42000, years:4, prestige:3},
-      {title:'Sous Chef',            salary:68000, years:5, prestige:5},
-      {title:'Executive Chef',       salary:135000,years:8, prestige:7},
-      {title:'Michelin-Star Chef',   salary:480000,years:10,prestige:10},
+      {title:'Line Cook',                salary:42000, years:4, prestige:3},
+      {title:'Sous Chef',                salary:68000, years:5, prestige:5},
+      {title:'Executive Chef',           salary:145000,years:8, prestige:7},
+      {title:'Michelin-Star Chef',       salary:580000,years:10,prestige:10, happyBonus:+2},
     ],
   },
+  // ── REAL ESTATE ──
+  realtor: {
+    name:'Real Estate Mogul', icon:'🏘️', minLooks:55,
+    rungs:[
+      {title:'Real Estate Agent',        salary:62000, years:4, minLooks:55, prestige:5},
+      {title:'Broker',                   salary:155000,years:7, minLooks:60, prestige:7},
+      {title:'Real Estate Developer',    salary:520000,years:10,prestige:9},
+      {title:'Real Estate Tycoon',       salary:3200000,years:12,prestige:10},
+    ],
+  },
+  // ── BANKING / FINANCE ──
+  banker: {
+    name:'Investment Banking', icon:'🏦', minSmarts:70, requiresDegree:'business',
+    rungs:[
+      {title:'Analyst',                  salary:135000, years:3, minSmarts:72, prestige:6},
+      {title:'Associate',                salary:265000, years:4, minSmarts:75, prestige:7},
+      {title:'VP, Investment Banking',   salary:580000, years:6, minSmarts:80, prestige:9},
+      {title:'Managing Director',        salary:1850000,years:10,minSmarts:85, prestige:10},
+    ],
+  },
+  // ── JOURNALISM ──
+  journalist: {
+    name:'Journalist', icon:'📰', minSmarts:60,
+    rungs:[
+      {title:'Staff Reporter',           salary:48000, years:5, minSmarts:60, prestige:5},
+      {title:'Senior Reporter',          salary:82000, years:7, minSmarts:65, prestige:6},
+      {title:'Editor-in-Chief',          salary:185000,years:10,minSmarts:72, prestige:8},
+      {title:'Pulitzer-Winning Journalist',salary:285000,years:12,minSmarts:78,prestige:10},
+    ],
+  },
+  // ── DIGITAL ──
+  influencer: {
+    name:'Social Media Influencer', icon:'📱', minLooks:55,
+    rungs:[
+      {title:'Niche Creator',            salary:18000,   years:3, minLooks:55, prestige:2, happyBonus:+2},
+      {title:'Verified Influencer',      salary:185000,  years:5, minLooks:62, prestige:5},
+      {title:'Mega-Influencer',          salary:1850000, years:8, minLooks:70, prestige:7},
+      {title:'Cultural Icon',            salary:8400000, years:12,minLooks:75, prestige:9},
+    ],
+  },
+  // ── LITERATURE ──
+  author: {
+    name:'Author', icon:'📖', minSmarts:65,
+    rungs:[
+      {title:'Aspiring Novelist',        salary:18000,   years:5, minSmarts:65, prestige:3, happyBonus:+2},
+      {title:'Published Author',         salary:78000,   years:8, minSmarts:70, prestige:6, happyBonus:+2},
+      {title:'Bestselling Author',       salary:680000,  years:10,minSmarts:75, prestige:8},
+      {title:'Literary Legend',          salary:2400000, years:12,minSmarts:80, prestige:10},
+    ],
+  },
+  // ── GAMING ──
+  progamer: {
+    name:'Pro Gamer / Streamer', icon:'🎮', minSmarts:60,
+    rungs:[
+      {title:'Hobby Streamer',           salary:14000,   years:2, minSmarts:60, prestige:1},
+      {title:'Pro Player (Salaried)',    salary:115000,  years:4, minSmarts:65, prestige:5},
+      {title:'Esports Star',             salary:680000,  years:6, minSmarts:70, prestige:7},
+      {title:'World Champion',           salary:3200000, years:8, minSmarts:75, prestige:9},
+    ],
+  },
+  // ── CRIME (illegal path) ──
   criminal: {
     name:'Crime', icon:'🦹', illegal:true,
     rungs:[
-      {title:'Petty Thief',          salary:14000,   years:2, prestige:1, risk:'extreme'},
-      {title:'Drug Dealer',          salary:78000,   years:4, prestige:3, risk:'extreme'},
-      {title:'Gang Lieutenant',      salary:420000,  years:5, prestige:5, risk:'extreme'},
-      {title:'Crime Boss',           salary:3200000, years:10,prestige:8, risk:'extreme'},
+      {title:'Petty Thief',              salary:14000,   years:2, prestige:1, risk:'extreme'},
+      {title:'Drug Dealer',              salary:78000,   years:4, prestige:3, risk:'extreme'},
+      {title:'Gang Lieutenant',          salary:420000,  years:5, prestige:5, risk:'extreme'},
+      {title:'Crime Boss',               salary:3200000, years:10,prestige:8, risk:'extreme'},
+    ],
+  },
+  // ── ALTERNATE-REALITY ONLY ──
+  wizard: {
+    name:'Wizard', icon:'🧙', minSmarts:60, realityGate:'magical',
+    rungs:[
+      {title:'Apprentice Wizard',        salary:18000,   years:5, minSmarts:60, prestige:4},
+      {title:'Court Wizard',             salary:185000,  years:8, minSmarts:75, prestige:8},
+      {title:'Archmage',                 salary:1850000, years:12,minSmarts:88, prestige:10},
+    ],
+  },
+  netrunner: {
+    name:'Netrunner / Hacker', icon:'🤖', minSmarts:70, realityGate:'cyberpunk',
+    rungs:[
+      {title:'Street Coder',             salary:42000,   years:3, minSmarts:70, prestige:3, risk:'high'},
+      {title:'Black-ICE Specialist',     salary:285000,  years:5, minSmarts:80, prestige:6, risk:'high'},
+      {title:'Corporate Netrunner',      salary:1450000, years:8, minSmarts:88, prestige:9, risk:'high'},
+    ],
+  },
+  scavenger: {
+    name:'Wasteland Scavenger', icon:'⚙️', minHealth:75, realityGate:'apocalypse',
+    rungs:[
+      {title:'Scavenger',                salary:18000,   years:3, minHealth:75, prestige:2, risk:'extreme'},
+      {title:'Raider Captain',           salary:145000,  years:5, minHealth:80, prestige:5, risk:'extreme'},
+      {title:'Settlement Mayor',         salary:580000,  years:10,minHealth:65, prestige:8},
     ],
   },
 };
 
 // Degree programs (university)
 const DEGREES = {
-  medical:  { name:'Medical School', years:4, minSmarts:78, cost:240000 },
-  law:      { name:'Law School',     years:3, minSmarts:72, cost:180000 },
-  cs:       { name:'B.S. Computer Science', years:4, minSmarts:65, cost:120000 },
-  edu:      { name:'B.S. Education', years:4, minSmarts:50, cost:80000 },
+  medical:  { name:'Medical School',         years:4, minSmarts:78, cost:240000 },
+  law:      { name:'Law School (JD)',        years:3, minSmarts:72, cost:180000 },
+  cs:       { name:'B.S. Computer Science',  years:4, minSmarts:65, cost:120000 },
+  edu:      { name:'B.S. Education',         years:4, minSmarts:50, cost:80000 },
   polisci:  { name:'B.A. Political Science', years:4, minSmarts:58, cost:100000 },
-  business: { name:'M.B.A.',         years:2, minSmarts:60, cost:140000 },
-  general:  { name:'General Bachelor\'s', years:4, minSmarts:55, cost:90000 },
+  business: { name:'M.B.A.',                 years:2, minSmarts:60, cost:140000 },
+  phd:      { name:'PhD',                    years:5, minSmarts:75, cost:60000 },
+  art:      { name:'B.A. Fine Arts',         years:4, minSmarts:55, cost:90000 },
+  general:  { name:'General Bachelor\'s',    years:4, minSmarts:55, cost:90000 },
 };
 
 // ═══════════════════════════════════════════════════════════════════════
 //  HOUSES & CARS — status ladders
 // ═══════════════════════════════════════════════════════════════════════
 const HOUSES = [
-  {id:'family',  name:'Living with Family',     price:0,        monthly:0,    rooms:0, status:0},
-  {id:'studio',  name:'Studio Apartment',       price:85000,    monthly:950,  rooms:1, status:1},
-  {id:'1br',     name:'One-Bedroom Apartment',  price:180000,   monthly:1450, rooms:2, status:2},
-  {id:'2br',     name:'Two-Bedroom Townhouse',  price:320000,   monthly:2200, rooms:3, status:3},
-  {id:'house',   name:'Suburban House',         price:540000,   monthly:3400, rooms:4, status:5},
-  {id:'condo',   name:'Luxury Condo',           price:1250000,  monthly:7200, rooms:3, status:7},
-  {id:'mansion', name:'Mansion',                price:4800000,  monthly:18500,rooms:8, status:9},
-  {id:'estate',  name:'Country Estate',         price:18000000, monthly:62000,rooms:14,status:10},
+  {id:'family',     name:'Living with Family',     price:0,        monthly:0,    rooms:0,  status:0},
+  {id:'trailer',    name:'Trailer Park Home',      price:24000,    monthly:480,  rooms:2,  status:1},
+  {id:'studio',     name:'Studio Apartment',       price:85000,    monthly:950,  rooms:1,  status:1},
+  {id:'tiny',       name:'Tiny House',             price:65000,    monthly:380,  rooms:1,  status:2},
+  {id:'1br',        name:'One-Bedroom Apartment',  price:180000,   monthly:1450, rooms:2,  status:2},
+  {id:'2br',        name:'Two-Bedroom Townhouse',  price:320000,   monthly:2200, rooms:3,  status:3},
+  {id:'duplex',     name:'Duplex',                 price:420000,   monthly:2800, rooms:4,  status:4},
+  {id:'house',      name:'Suburban House',         price:540000,   monthly:3400, rooms:4,  status:5},
+  {id:'farmhouse',  name:'Farmhouse with Land',    price:680000,   monthly:2800, rooms:5,  status:5},
+  {id:'condo',      name:'Luxury Condo',           price:1250000,  monthly:7200, rooms:3,  status:7},
+  {id:'beach',      name:'Beachfront Home',        price:2400000,  monthly:11500,rooms:5,  status:8},
+  {id:'penthouse',  name:'Penthouse',              price:3800000,  monthly:18000,rooms:6,  status:9},
+  {id:'mansion',    name:'Mansion',                price:4800000,  monthly:18500,rooms:8,  status:9},
+  {id:'estate',     name:'Country Estate',         price:18000000, monthly:62000,rooms:14, status:10},
+  {id:'island',     name:'Private Island',         price:85000000, monthly:280000,rooms:20,status:10},
 ];
 
 const CARS = [
-  {id:'none',    name:'No Vehicle',             price:0,       status:0, mph:0},
-  {id:'used',    name:'Used Honda Civic',       price:8000,    status:1, mph:115},
-  {id:'sedan',   name:'Toyota Camry',           price:28000,   status:3, mph:130},
-  {id:'suv',     name:'Honda Pilot SUV',        price:42000,   status:4, mph:125},
-  {id:'bmw',     name:'BMW 3 Series',           price:55000,   status:6, mph:155},
-  {id:'tesla',   name:'Tesla Model S',          price:95000,   status:7, mph:165},
-  {id:'porsche', name:'Porsche 911',            price:165000,  status:8, mph:182},
-  {id:'lambo',   name:'Lamborghini Huracán',    price:280000,  status:9, mph:201},
-  {id:'bugatti', name:'Bugatti Chiron',         price:3200000, status:10,mph:261},
+  {id:'none',      name:'No Vehicle',              price:0,       status:0,  mph:0},
+  {id:'bike',      name:'Mountain Bike',           price:600,     status:1,  mph:28},
+  {id:'scooter',   name:'Electric Scooter',        price:1800,    status:1,  mph:35},
+  {id:'moto',      name:'Motorcycle',              price:9500,    status:3,  mph:155},
+  {id:'used',      name:'Used Honda Civic',        price:8000,    status:1,  mph:115},
+  {id:'compact',   name:'Honda Civic (New)',       price:24000,   status:2,  mph:125},
+  {id:'sedan',     name:'Toyota Camry',            price:28000,   status:3,  mph:130},
+  {id:'pickup',    name:'Ford F-150',              price:42000,   status:4,  mph:120},
+  {id:'minivan',   name:'Honda Odyssey',           price:38000,   status:3,  mph:115},
+  {id:'suv',       name:'Honda Pilot SUV',         price:42000,   status:4,  mph:125},
+  {id:'audi',      name:'Audi A6',                 price:62000,   status:6,  mph:150},
+  {id:'bmw',       name:'BMW 3 Series',            price:55000,   status:6,  mph:155},
+  {id:'mercedes',  name:'Mercedes-Benz S-Class',   price:115000,  status:7,  mph:160},
+  {id:'tesla',     name:'Tesla Model S Plaid',     price:135000,  status:7,  mph:200},
+  {id:'classic',   name:'Restored 1967 Mustang',   price:165000,  status:8,  mph:142},
+  {id:'porsche',   name:'Porsche 911 Turbo',       price:225000,  status:8,  mph:200},
+  {id:'ferrari',   name:'Ferrari F8 Tributo',      price:320000,  status:9,  mph:211},
+  {id:'lambo',     name:'Lamborghini Huracán',     price:280000,  status:9,  mph:201},
+  {id:'rollsroyce',name:'Rolls-Royce Phantom',     price:540000,  status:10, mph:155},
+  {id:'bugatti',   name:'Bugatti Chiron',          price:3200000, status:10, mph:261},
+  {id:'jet',       name:'Gulfstream G700',         price:78000000,status:10, mph:710},
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -673,6 +930,57 @@ const LIFE_EVENTS = [
   {minAge:35, maxAge:99, prob:0.02, text:'Your mother passed away.', fx:{happiness:-25}, money:+20000, oneShot:'momDeath', tag:'death'},
   {minAge:40, maxAge:99, prob:0.02, text:'Your father passed away.', fx:{happiness:-25}, money:+15000, oneShot:'dadDeath', tag:'death'},
 
+  // EXTENDED POOL — random fillers, more flavor
+  {minAge:5, maxAge:13, prob:0.07, text:'You spent the summer at your grandparents\' house.', fx:{happiness:+6, karma:+2}, tag:'good'},
+  {minAge:8, maxAge:16, prob:0.05, text:'You finally beat the hardest level in your favorite game.', fx:{happiness:+4, smarts:+1}, tag:'good'},
+  {minAge:10, maxAge:18, prob:0.04, text:'You got grounded after sneaking out.', fx:{happiness:-5}, tag:'bad'},
+  {minAge:11, maxAge:17, prob:0.05, text:'You broke up with your first crush over text.', fx:{happiness:-7}, tag:'romantic'},
+  {minAge:13, maxAge:19, prob:0.04, text:'You got into a screaming match with your parents.', fx:{happiness:-6, karma:-3}, tag:'bad'},
+  {minAge:15, maxAge:20, prob:0.05, text:'You volunteered at a soup kitchen for a semester.', fx:{karma:+10, happiness:+5}, tag:'good'},
+  {minAge:18, maxAge:30, prob:0.04, text:'You backpacked across a continent for a year.', fx:{happiness:+18, smarts:+3, money:-12000}, tag:'good'},
+  {minAge:18, maxAge:40, prob:0.04, text:'You adopted a rescue dog.', fx:{happiness:+10, karma:+5}, tag:'good', money:-1200},
+  {minAge:20, maxAge:50, prob:0.03, text:'You learned a new language to fluency.', fx:{smarts:+8, happiness:+6}, tag:'good'},
+  {minAge:22, maxAge:45, prob:0.03, text:'You ran for local office and lost.', fx:{happiness:-8, money:-4000}, tag:'bad'},
+  {minAge:22, maxAge:55, prob:0.04, text:'You wrote a book that nobody read.', fx:{smarts:+3, happiness:-4}, tag:''},
+  {minAge:25, maxAge:65, prob:0.025, text:'You started a side hustle that actually made money.', fx:{money:+18000, happiness:+8}, requires:{smarts:65}, tag:'good'},
+  {minAge:25, maxAge:65, prob:0.02, text:'You invested in crypto. It worked.', fx:{money:+45000}, requires:{smarts:60}, tag:'good'},
+  {minAge:25, maxAge:65, prob:0.025, text:'You invested in crypto. It did not work.', fx:{money:-22000, happiness:-8}, tag:'bad'},
+  {minAge:25, maxAge:70, prob:0.04, text:'You attended a stranger\'s funeral by mistake. Stayed anyway.', fx:{karma:+3}, tag:''},
+  {minAge:28, maxAge:60, prob:0.025, text:'You got into an embarrassing public argument.', fx:{happiness:-8, looks:-1}, tag:'bad'},
+  {minAge:28, maxAge:55, prob:0.03, text:'A stranger paid for your coffee for no reason.', fx:{happiness:+4, karma:+2}, tag:'good'},
+  {minAge:30, maxAge:50, prob:0.04, text:'You ran into your high-school ex unexpectedly.', fx:{happiness:+2}, tag:'romantic'},
+  {minAge:30, maxAge:60, prob:0.025, text:'You discovered a long-lost half-sibling on a DNA site.', fx:{happiness:+5, karma:+3}, tag:'milestone'},
+  {minAge:30, maxAge:70, prob:0.02, text:'You almost died in a freak accident but walked away.', fx:{happiness:+8, health:-6, karma:+4}, tag:'milestone'},
+  {minAge:35, maxAge:75, prob:0.03, text:'Your therapist said something that actually helped.', fx:{happiness:+10}, tag:'good'},
+  {minAge:35, maxAge:80, prob:0.025, text:'You forgave someone you thought you never would.', fx:{karma:+8, happiness:+10}, tag:'good'},
+  {minAge:40, maxAge:80, prob:0.02, text:'You took up gardening. It changed you.', fx:{happiness:+8, health:+3}, tag:'good'},
+  {minAge:40, maxAge:80, prob:0.025, text:'A childhood friend reached out after 20 years of silence.', fx:{happiness:+12, karma:+3}, tag:'good'},
+  {minAge:45, maxAge:80, prob:0.025, text:'You wrote a memoir that nobody wanted to publish.', fx:{happiness:-3, smarts:+2}, tag:''},
+  {minAge:50, maxAge:90, prob:0.03, text:'You retired briefly, then unretired because you were bored.', fx:{happiness:-2}, tag:''},
+  {minAge:55, maxAge:95, prob:0.02, text:'You took up painting in your sixties. It saved you.', fx:{happiness:+15, karma:+4}, tag:'good'},
+  {minAge:60, maxAge:99, prob:0.025, text:'Your back went out lifting a grocery bag.', fx:{health:-6}, tag:'bad'},
+  {minAge:65, maxAge:99, prob:0.04, text:'You became a grandparent (officially, in your heart).', fx:{happiness:+18, karma:+5}, requires:{}, tag:'milestone'},
+
+  // CULTURAL / COUNTRY-SPECIFIC (universal flavors)
+  {minAge:18, maxAge:50, prob:0.02, text:'You went on a religious pilgrimage.', fx:{karma:+10, happiness:+8}, tag:'good'},
+  {minAge:25, maxAge:60, prob:0.025, text:'You marched in a protest that made the news.', fx:{karma:+5, happiness:+5}, tag:''},
+  {minAge:18, maxAge:99, prob:0.015, text:'You met a famous person in a coffee shop.', fx:{happiness:+8}, tag:'good'},
+
+  // ALT-REALITY FLAVOR (magical)
+  {minAge:18, maxAge:60, prob:0.03, text:'You levitated a teacup unintentionally.', fx:{happiness:+6, smarts:+2}, requires:{realityIs:'magical'}, tag:'good'},
+  {minAge:20, maxAge:80, prob:0.02, text:'A dragon flew over your city today.', fx:{happiness:+4}, requires:{realityIs:'magical'}, tag:''},
+
+  // ALT-REALITY FLAVOR (cyberpunk)
+  {minAge:18, maxAge:60, prob:0.03, text:'You upgraded your retinal implant. The world looks sharper.', fx:{looks:+2, smarts:+1, money:-8000}, requires:{realityIs:'cyberpunk'}, tag:'good'},
+  {minAge:18, maxAge:60, prob:0.02, text:'Mega-corp drones buzzed your apartment all night.', fx:{happiness:-4, health:-1}, requires:{realityIs:'cyberpunk'}, tag:'bad'},
+
+  // ALT-REALITY FLAVOR (apocalypse)
+  {minAge:14, maxAge:80, prob:0.04, text:'You scavenged enough copper wire to trade for a week of food.', fx:{money:+200, health:-1}, requires:{realityIs:'apocalypse'}, tag:''},
+  {minAge:14, maxAge:80, prob:0.03, text:'A radiation storm forced you into the shelter for three days.', fx:{health:-4, happiness:-3}, requires:{realityIs:'apocalypse'}, tag:'bad'},
+
+  // ALT-REALITY FLAVOR (space age)
+  {minAge:18, maxAge:80, prob:0.025, text:'You took the orbital elevator up just to see Earth from above.', fx:{happiness:+12, money:-2400}, requires:{realityIs:'spaceage'}, tag:'good'},
+
   // CHILDHOOD MILESTONES (automatic)
   {age:6, text:'You started elementary school.', fx:{smarts:+3}, tag:'milestone', auto:true},
   {age:12, text:'You started middle school.', fx:{smarts:+2}, tag:'milestone', auto:true},
@@ -684,6 +992,59 @@ const LIFE_EVENTS = [
   {age:50, text:'Half a century. You take stock.', fx:{}, tag:'milestone', auto:true},
   {age:65, text:'You can retire if you want to.', fx:{happiness:+8}, tag:'milestone', auto:true},
 ];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ALTERNATE REALITIES — at age 16, a one-time fork that changes the world
+// ═══════════════════════════════════════════════════════════════════════
+const REALITIES = {
+  mundane:   { name:'Mundane Reality',     icon:'🌍', desc:'The ordinary world you grew up in. Nothing supernatural, no cyber-augmentation, no apocalypse. Normal jobs, normal politics.', unlocks:[] },
+  magical:   { name:'Magical Reality',     icon:'🧙', desc:'You wake up able to see things others cannot. Magic is real. Wizards exist. Dragons fly above the cities. Your latent ability has just awakened.', unlocks:['wizard'] },
+  cyberpunk: { name:'Cyberpunk Reality',   icon:'🤖', desc:'Mega-corps own the cities. Cybernetic augmentation is everywhere. Hackers wage war in the net. The line between human and machine has dissolved.', unlocks:['netrunner'] },
+  apocalypse:{ name:'Post-Apocalyptic',    icon:'⚙️', desc:'A nuclear exchange ended the old world fifteen years ago. The cities are radioactive. Settlements survive in the ruins. Most careers are gone — but survival is its own profession.', unlocks:['scavenger'] },
+  spaceage:  { name:'Space Age',           icon:'🚀', desc:'Humanity colonized Mars three years before you were born. The orbital elevators went up last summer. Pick a career that matters in a multi-planet civilization.', unlocks:['astronaut'] },
+};
+
+function rollAlternateReality(){
+  const c = LIFE.char;
+  // Fork once, at age 16. Player chooses one reality which alters available careers and events.
+  if(c.age !== 16) return;
+  if(c.reality) return;
+  // Offer the fork via modal
+  setTimeout(() => offerRealityFork(), 200);
+}
+
+let _pendingRealityFork = false;
+function offerRealityFork(){
+  if(_pendingRealityFork) return;
+  _pendingRealityFork = true;
+  let html = '<div style="color:var(--accent2);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">'
+    + 'Something is shifting. You can feel it. Choose the reality that defines your world from this moment forward.</div>';
+  html += Object.keys(REALITIES).map(k => {
+    const r = REALITIES[k];
+    return '<div class="card" onclick="pickReality(\'' + k + '\')" style="cursor:pointer;">'
+      + '<div class="card-ico">' + r.icon + '</div>'
+      + '<div class="card-body"><div class="card-title">' + r.name + '</div>'
+      + '<div class="card-meta">' + r.desc + '</div>'
+      + (r.unlocks.length ? '<div style="margin-top:5px;"><span class="card-tag req">Unlocks: ' + r.unlocks.join(', ') + '</span></div>' : '')
+      + '</div>'
+      + '<div class="card-act"><button class="card-btn">Choose</button></div></div>';
+  }).join('');
+  openModal('⚡ Alternate Realities — Pick One', html);
+}
+
+function pickReality(k){
+  const c = LIFE.char;
+  c.reality = k;
+  const r = REALITIES[k];
+  pushEvent('milestone', '⚡ You chose the ' + r.name + '. ' + r.desc);
+  if(r.unlocks.length){
+    pushEvent('milestone', '🔓 Unlocked careers: ' + r.unlocks.join(', '));
+  }
+  _pendingRealityFork = false;
+  closeModal();
+  renderAll();
+  saveLife();
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 //  PARTNER (date pool) GENERATION
@@ -894,6 +1255,8 @@ function ageUp(){
   if(!LIFE || !LIFE.char || !LIFE.char.alive) return;
   const c = LIFE.char;
   c.age++;
+  const eventsBeforeRoll = (c.timeline[c.timeline.length-1] && c.timeline[c.timeline.length-1].age === c.age)
+    ? c.timeline[c.timeline.length-1].events.length : 0;
   // age siblings, parents, partner, kids
   ageOthers();
   // automatic milestone for this age
@@ -910,14 +1273,36 @@ function ageUp(){
   rollChildEvents();
   // partner events
   rollPartnerEvents();
+  // alternate-reality fork check
+  rollAlternateReality();
   // stat natural decay/growth
   applyAgeDrift();
+  // Pad the year with a "quiet year" entry if nothing happened so every year is visible
+  const lastBlock = c.timeline[c.timeline.length-1];
+  if(!lastBlock || lastBlock.age !== c.age || lastBlock.events.length === 0){
+    const flavor = pickRand(QUIET_YEAR_LINES);
+    pushEvent('', flavor);
+  }
   // death check
   if(!checkDeath()){
     renderAll();
     saveLife();
   }
 }
+
+// Filler lines for years where nothing random fires — every year is now visible
+const QUIET_YEAR_LINES = [
+  'A quiet year. Nothing of note.',
+  'Life went on as usual.',
+  'You blinked and the year was over.',
+  'Same routine. Coffee. Work. Sleep.',
+  'A year of steady, ordinary days.',
+  'No drama, no disasters. You\'ll take it.',
+  'The seasons turned. You aged.',
+  'You spent the year keeping your head down.',
+  'A year so ordinary you barely remember it.',
+  'Routines deepened. The world kept spinning.',
+];
 
 function ageOthers(){
   const c = LIFE.char;
@@ -1063,6 +1448,7 @@ function meetsRequires(req){
   if(req.money && c.money < req.money) return false;
   if(req.career && !c.career) return false;
   if(req.houseOwned && (c.houseId === 'family' || c.houseId === 'studio')) return false;
+  if(req.realityIs && c.reality !== req.realityIs) return false;
   return true;
 }
 
@@ -1415,8 +1801,10 @@ function openOccupation(){
   Object.keys(CAREERS).forEach(k => {
     const cr = CAREERS[k];
     if(c.career && c.career.key === k) return;
+    // Reality gating: alt-reality careers locked unless player picked that reality
+    if(cr.realityGate && c.reality !== cr.realityGate) return;
     const rung = cr.rungs[0];
-    const reqDeg = cr.requiresDegree;
+    const reqDeg = cr.requiresDegree || rung.requiresDegree;
     const hasDeg = !reqDeg || c.degrees.includes(reqDeg);
     const meetsStats = (!rung.minSmarts || c.smarts >= rung.minSmarts)
                     && (!rung.minLooks  || c.looks  >= rung.minLooks)
@@ -2113,6 +2501,326 @@ function confirmRestart(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+//  CAREER MINI-GAMES (CEO, Medical, Lawyer)
+// ═══════════════════════════════════════════════════════════════════════
+function openCareerAction(){
+  const c = LIFE.char;
+  if(!c.career){ toast('Get a career first.'); return; }
+  const cr = CAREERS[c.career.key];
+  if(cr.miniGame === 'ceo'){ openCEOEmpire(); return; }
+  if(cr.miniGame === 'medical'){ openMedicalCase(); return; }
+  if(cr.miniGame === 'law'){ openLegalCase(); return; }
+  toast('No mini-game available for this career.');
+}
+
+// ── CEO BUSINESS EMPIRE ─────────────────────────────────────────────
+function defaultCompany(){
+  return {
+    name: pickRand(['Apex','Vertex','Helix','Pinnacle','Strata','Cipher','Nexus','Orion']) + ' '
+        + pickRand(['Industries','Capital','Dynamics','Systems','Holdings','Group','Labs','Partners']),
+    cash: 1500000,
+    revenue: 4200000,
+    profitMargin: 0.08,    // % of revenue that becomes profit
+    employees: 50,
+    morale: 70,
+    marketCap: 15000000,
+    quarter: 1,
+    year: 1,
+    crises: 0,
+    legacy: [],
+  };
+}
+function ensureCompany(){
+  const c = LIFE.char;
+  if(!c.company) c.company = defaultCompany();
+  return c.company;
+}
+function openCEOEmpire(){
+  const c = LIFE.char;
+  const co = ensureCompany();
+  const profit = Math.floor(co.revenue * co.profitMargin);
+  const profitCls = profit >= 0 ? 'good' : 'bad';
+  let html = ''
+    + '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    +   '<div style="font-family:var(--font-h);font-size:20px;color:var(--accent2);margin-bottom:8px;">🏢 ' + co.name + '</div>'
+    +   '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;font-family:var(--font-m);font-size:11px;">'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">CASH</span><br><span style="font-size:15px;color:var(--green);font-weight:700;">' + fmtMoney(co.cash) + '</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">REVENUE/YR</span><br><span style="font-size:15px;color:var(--t1);font-weight:700;">' + fmtMoney(co.revenue) + '</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">PROFIT</span><br><span style="font-size:15px;color:' + (profit>=0?'var(--green)':'var(--crimson)') + ';font-weight:700;">' + (profit>=0?'+':'−') + fmtMoney(Math.abs(profit)) + '</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">EMPLOYEES</span><br><span style="font-size:15px;color:var(--t1);font-weight:700;">' + co.employees + '</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">MORALE</span><br><span style="font-size:15px;color:' + (co.morale>=60?'var(--green)':co.morale>=35?'var(--gold)':'var(--crimson)') + ';font-weight:700;">' + co.morale + '%</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">MARKET CAP</span><br><span style="font-size:15px;color:var(--accent2);font-weight:700;">' + fmtMoney(co.marketCap) + '</span></div>'
+    +   '</div>'
+    + '</div>';
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;">Quarterly Actions</div>';
+  const actions = [
+    {id:'hire',     ico:'👥', name:'Hire 10 Employees',          desc:'Onboarding + salaries. Revenue grows but margin tightens.', cash:-300000},
+    {id:'fire',     ico:'✂️', name:'Layoff 15% of Workforce',     desc:'Cuts costs. Tanks morale. Stock might pop.',                  cash:0},
+    {id:'bonus',    ico:'🎁', name:'Pay Holiday Bonuses',         desc:'Costs cash. Morale and retention jump.',                       cash:-600000},
+    {id:'acquire',  ico:'🤝', name:'Acquire Smaller Competitor',  desc:'+25% revenue, big cash hit, integration risk.',                cash:-2400000},
+    {id:'pivot',    ico:'🔄', name:'Pivot Product Strategy',      desc:'Risk: revenue could double or halve.',                         cash:-450000},
+    {id:'ipo',      ico:'📈', name:'IPO / Secondary Offering',    desc:'Raise cash. Market cap fluctuates.',                           cash:0},
+    {id:'rd',       ico:'🔬', name:'R&D Investment',              desc:'Long-term margin boost.',                                      cash:-800000},
+    {id:'crisis',   ico:'🚨', name:'Handle a Crisis',              desc:'Random event. PR, lawsuit, scandal, recall, etc.',             cash:0},
+  ];
+  html += actions.map(a => (
+    '<div class="card">'
+    + '<div class="card-ico">' + a.ico + '</div>'
+    + '<div class="card-body"><div class="card-title">' + a.name + '</div>'
+    + '<div class="card-meta">' + a.desc + '</div></div>'
+    + '<div class="card-act">'
+    + (a.cash ? '<div class="card-pay ' + (a.cash<0?'neg':'') + '">' + (a.cash<0?'−':'+') + fmtMoney(Math.abs(a.cash)) + '</div>' : '')
+    + '<button class="card-btn" onclick="ceoAction(\'' + a.id + '\')">Execute</button></div></div>'
+  )).join('');
+  openModal('CEO · ' + co.name, html);
+}
+
+function ceoAction(id){
+  const c = LIFE.char;
+  const co = ensureCompany();
+  let msg = '';
+  if(id === 'hire'){
+    if(co.cash < 300000){ toast('Not enough cash.'); return; }
+    co.cash -= 300000;
+    co.employees += 10;
+    co.revenue = Math.floor(co.revenue * 1.06);
+    co.profitMargin = Math.max(0.02, co.profitMargin - 0.01);
+    co.morale = clamp(co.morale + 4, 0, 100);
+    msg = 'Hired 10 new employees. Revenue +6%.';
+  } else if(id === 'fire'){
+    const fired = Math.floor(co.employees * 0.15);
+    co.employees -= fired;
+    co.morale = clamp(co.morale - 18, 0, 100);
+    co.profitMargin = Math.min(0.30, co.profitMargin + 0.025);
+    co.marketCap = Math.floor(co.marketCap * 1.04);
+    msg = 'Laid off ' + fired + ' employees. Margin up. Morale crashed.';
+  } else if(id === 'bonus'){
+    if(co.cash < 600000){ toast('Not enough cash.'); return; }
+    co.cash -= 600000;
+    co.morale = clamp(co.morale + 22, 0, 100);
+    co.profitMargin = Math.min(0.30, co.profitMargin + 0.008);
+    msg = 'Holiday bonuses delivered. Morale soared.';
+  } else if(id === 'acquire'){
+    if(co.cash < 2400000){ toast('Not enough cash for the acquisition.'); return; }
+    co.cash -= 2400000;
+    co.revenue = Math.floor(co.revenue * 1.25);
+    co.employees += 20;
+    co.morale = clamp(co.morale - 6, 0, 100);
+    co.marketCap = Math.floor(co.marketCap * 1.12);
+    msg = 'Acquisition closed. Revenue +25%, integration headache.';
+  } else if(id === 'pivot'){
+    if(co.cash < 450000){ toast('Not enough cash.'); return; }
+    co.cash -= 450000;
+    if(Math.random() < c.smarts/100){
+      co.revenue = Math.floor(co.revenue * 1.8);
+      co.profitMargin = Math.min(0.30, co.profitMargin + 0.04);
+      msg = 'The pivot worked. Revenue +80%.';
+    } else {
+      co.revenue = Math.floor(co.revenue * 0.6);
+      co.morale = clamp(co.morale - 10, 0, 100);
+      msg = 'The pivot bombed. Revenue −40%.';
+    }
+  } else if(id === 'ipo'){
+    const raise = Math.floor(co.marketCap * 0.18);
+    co.cash += raise;
+    co.marketCap = Math.floor(co.marketCap * (0.95 + Math.random() * 0.3));
+    msg = 'Secondary offering raised ' + fmtMoney(raise) + '.';
+  } else if(id === 'rd'){
+    if(co.cash < 800000){ toast('Not enough cash.'); return; }
+    co.cash -= 800000;
+    co.profitMargin = Math.min(0.30, co.profitMargin + 0.025);
+    co.revenue = Math.floor(co.revenue * 1.04);
+    msg = 'R&D investment paid off. Margin +2.5pp.';
+  } else if(id === 'crisis'){
+    const crises = [
+      {text:'A product recall hit the news.',           cash:-400000, morale:-8,  cap:0.92},
+      {text:'A whistleblower leaked internal emails.',  cash:-180000, morale:-15, cap:0.88},
+      {text:'A class-action lawsuit was filed.',        cash:-850000, morale:-5,  cap:0.85},
+      {text:'A competitor exposed your supply chain.',  cash:-120000, morale:-3,  cap:0.95},
+      {text:'A board member resigned publicly.',        cash:0,       morale:-10, cap:0.93},
+      {text:'A regulator opened an investigation.',     cash:-220000, morale:-6,  cap:0.90},
+    ];
+    const cr = pickRand(crises);
+    co.cash += cr.cash;
+    co.morale = clamp(co.morale + cr.morale, 0, 100);
+    co.marketCap = Math.floor(co.marketCap * cr.cap);
+    co.crises++;
+    msg = '🚨 Crisis — ' + cr.text;
+  }
+  // Year-end: profit added to cash
+  co.cash += Math.floor(co.revenue * co.profitMargin);
+  co.marketCap = Math.floor(co.revenue * (5 + co.profitMargin * 20) * (co.morale/100 + 0.5));
+  pushEvent('career', '🏢 ' + co.name + ' · ' + msg);
+  // CEO bonus into personal money: 10% of profit when positive
+  const profit = Math.floor(co.revenue * co.profitMargin);
+  if(profit > 0){
+    const bonus = Math.floor(profit * 0.10);
+    c.money += bonus;
+    pushEvent('career', '💼 You took home a ' + fmtMoney(bonus) + ' performance bonus.');
+  }
+  closeModal();
+  renderAll();
+  saveLife();
+  // Reopen so they can see new state
+  setTimeout(openCEOEmpire, 80);
+}
+
+// ── MEDICAL CASES (Ward-style mini case) ───────────────────────────
+const MEDICAL_CASES = [
+  {hpi:'A 58yo man arrives with crushing chest pain and ST-elevations in V1–V4. The cath lab is open.', actions:[
+    {text:'Aspirin + IV Heparin + activate Cath Lab.', score:4, fb:'STEMI treated with primary PCI. He survived.'},
+    {text:'Aspirin + IV tPA.', score:2, fb:'Lytics worked but PCI was available. Suboptimal.'},
+    {text:'Hold for troponins.', score:0, fb:'Fatal delay. The ECG was diagnostic.'},
+  ]},
+  {hpi:'A 26yo trauma patient with absent right breath sounds, deviated trachea, SpO2 78%. BP 70/40.', actions:[
+    {text:'Needle decompression at 2nd ICS midclavicular.', score:4, fb:'Tension PTX decompressed. Saved.'},
+    {text:'Stat portable CXR to confirm.', score:0, fb:'He arrested in radiology.'},
+    {text:'Bag-mask ventilate.', score:0, fb:'Positive pressure made the tension worse.'},
+  ]},
+  {hpi:'A 74yo woman with PND, JVD, crackles, BNP 2340. BP 168/100, SpO2 87%.', actions:[
+    {text:'IV Furosemide + IV Nitroglycerin + O2.', score:4, fb:'Decompensated CHF resolved overnight.'},
+    {text:'1L IV Normal Saline bolus.', score:0, fb:'Flash pulmonary edema. Fatal.'},
+    {text:'Albuterol nebulizer.', score:1, fb:'Treated wrong pathology. She decompensated.'},
+  ]},
+  {hpi:'A 21yo with fever 104.2°F, neck stiffness, petechial rash, BP 82/50. No focal deficits.', actions:[
+    {text:'IV Ceftriaxone + Vanc + Dexamethasone IMMEDIATELY.', score:4, fb:'Bacterial meningitis treated within 20 min.'},
+    {text:'CT head, then LP, then antibiotics.', score:1, fb:'Delay cost critical minutes. He herniated.'},
+    {text:'Acyclovir for HSV encephalitis.', score:0, fb:'Wrong pathogen. Fatal.'},
+  ]},
+  {hpi:'A 30yo woman, confusion, fever, petechiae. Platelets 12k. Schistocytes on smear. LDH high.', actions:[
+    {text:'Emergent Plasmapheresis.', score:4, fb:'TTP managed. She recovered.'},
+    {text:'Platelet transfusion.', score:0, fb:'Microthrombi propagated. Fatal.'},
+    {text:'Steroids alone.', score:1, fb:'Insufficient. Worsened over 48 hours.'},
+  ]},
+  {hpi:'A 64yo with sudden tearing chest pain radiating to back. Right arm BP 196/112; left 136/80.', actions:[
+    {text:'Stat CT Angio + IV Labetalol + CT surgery consult.', score:4, fb:'Type A dissection. To the OR.'},
+    {text:'Aspirin + Heparin (suspect STEMI).', score:0, fb:'Anticoagulation in dissection. Bled out.'},
+    {text:'Nitroprusside alone.', score:1, fb:'Reflex tachycardia worsened shear stress.'},
+  ]},
+];
+function openMedicalCase(){
+  const c = LIFE.char;
+  const cs = MEDICAL_CASES[Math.floor(Math.random()*MEDICAL_CASES.length)];
+  let html = '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:var(--accent2);text-transform:uppercase;margin-bottom:8px;">Patient at the Bedside</div>'
+    + '<div style="font-size:14px;line-height:1.55;color:var(--t1);">' + cs.hpi + '</div></div>';
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;">Your Move</div>';
+  html += cs.actions.map((a,i) => (
+    '<div class="card">'
+    + '<div class="card-ico">🩺</div>'
+    + '<div class="card-body"><div class="card-title">' + a.text + '</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="medCaseChoose(' + i + ',' + cs.actions.indexOf(a) + ')">Order</button></div></div>'
+  )).join('');
+  _currentMedCase = cs;
+  openModal('🩺 Patient Round', html);
+}
+let _currentMedCase = null;
+function medCaseChoose(i){
+  const c = LIFE.char;
+  const cs = _currentMedCase;
+  if(!cs) return;
+  const a = cs.actions[i];
+  const score = a.score;
+  pushEvent(score===4?'good':score===0?'bad':'career', '🩺 Patient round — ' + a.fb);
+  if(score === 4){
+    c.smarts = clamp(c.smarts + 1, 0, 100);
+    c.money += 4000;
+    // chance of early promotion if career allows
+    if(c.career && c.career.yearsAtRung >= 1){
+      c.career.yearsAtRung += 1;
+    }
+  } else if(score === 0){
+    c.karma = clamp(c.karma - 3, 0, 100);
+    c.happiness = clamp(c.happiness - 6, 0, 100);
+    // malpractice risk — small chance of lawsuit cost
+    if(Math.random() < 0.25){
+      const settle = 12000 + Math.floor(Math.random()*50000);
+      c.money -= settle;
+      pushEvent('bad', '⚖️ Malpractice settled out of court for ' + fmtMoney(settle) + '.');
+    }
+  } else {
+    c.happiness = clamp(c.happiness - 2, 0, 100);
+  }
+  _currentMedCase = null;
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ── LEGAL CASES (Lawyer mini-game) ─────────────────────────────────
+const LEGAL_CASES = [
+  {brief:'A small-business owner is being sued by a former partner over IP rights. Discovery is messy. Court date is in 11 days.', actions:[
+    {text:'File a motion to dismiss based on jurisdiction.', score:3, fb:'Granted. Case dismissed without a trial.'},
+    {text:'Push for early settlement.', score:4, fb:'Settled for a number the client liked. Clean win.'},
+    {text:'Go to trial. Bury them in motions.', score:2, fb:'Won, but burned the client\'s war chest.'},
+    {text:'Accept defeat. Encourage your client to pay.', score:0, fb:'You folded. Your firm noted it.'},
+  ]},
+  {brief:'You\'re defending a CEO accused of insider trading. The SEC has emails. Your client is lying about the timeline.', actions:[
+    {text:'Plea bargain. Cooperate with the SEC.', score:3, fb:'Reduced sentence. Client kept some assets.'},
+    {text:'Trial — challenge the emails as out-of-context.', score:2, fb:'Mixed verdict. Client lost their CEO seat.'},
+    {text:'Coach the client to lie under oath.', score:0, fb:'Witness tampering. Your bar license is at risk.'},
+    {text:'Settle and pay a fine.', score:4, fb:'Clean settle. Client kept their freedom and most assets.'},
+  ]},
+  {brief:'A landlord is evicting a single mother with two kids. She has a partial-pay history. She is your pro-bono client.', actions:[
+    {text:'Negotiate a payment plan with the landlord.', score:4, fb:'Eviction halted. Family stayed in the apartment.'},
+    {text:'File a habitability counterclaim.', score:3, fb:'Won an inspection. Landlord settled.'},
+    {text:'Withdraw representation. She can\'t pay you.', score:0, fb:'She lost the apartment. You felt nothing for weeks.'},
+  ]},
+  {brief:'A doctor is being sued for malpractice after a missed diagnosis killed a patient. The chart is incomplete.', actions:[
+    {text:'Build a defense around the standard-of-care testimony.', score:4, fb:'Jury sided with the doctor. Defense verdict.'},
+    {text:'Settle out of court to spare the doctor\'s career.', score:3, fb:'Settled. Doctor kept their license.'},
+    {text:'Suggest the doctor amend the chart.', score:0, fb:'Witness tampering. You were sanctioned.'},
+  ]},
+  {brief:'You\'re prosecuting a high-profile corruption case. A key witness wants to recant.', actions:[
+    {text:'Subpoena their prior statement. Use it at trial.', score:4, fb:'Trial conviction. Career-defining win.'},
+    {text:'Cut a deal with the defendant for cooperation.', score:3, fb:'Convicted the next person up.'},
+    {text:'Drop the witness and proceed on circumstantial evidence.', score:1, fb:'Mistrial. The defendant walked.'},
+  ]},
+];
+let _currentLegalCase = null;
+function openLegalCase(){
+  const c = LIFE.char;
+  const cs = LEGAL_CASES[Math.floor(Math.random()*LEGAL_CASES.length)];
+  let html = '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:var(--accent2);text-transform:uppercase;margin-bottom:8px;">Case Brief</div>'
+    + '<div style="font-size:14px;line-height:1.55;color:var(--t1);">' + cs.brief + '</div></div>';
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;">Your Strategy</div>';
+  html += cs.actions.map((a,i) => (
+    '<div class="card">'
+    + '<div class="card-ico">⚖️</div>'
+    + '<div class="card-body"><div class="card-title">' + a.text + '</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="legalCaseChoose(' + i + ')">File</button></div></div>'
+  )).join('');
+  _currentLegalCase = cs;
+  openModal('⚖️ Legal Case', html);
+}
+function legalCaseChoose(i){
+  const c = LIFE.char;
+  const cs = _currentLegalCase;
+  if(!cs) return;
+  const a = cs.actions[i];
+  const score = a.score;
+  pushEvent(score===4?'good':score===0?'bad':'career', '⚖️ ' + a.fb);
+  if(score === 4){
+    c.smarts = clamp(c.smarts + 1, 0, 100);
+    c.money += 12000;
+    if(c.career && c.career.yearsAtRung >= 1) c.career.yearsAtRung += 1;
+  } else if(score === 0){
+    c.karma = clamp(c.karma - 8, 0, 100);
+    // Bar complaint risk
+    if(Math.random() < 0.35){
+      const fine = 18000 + Math.floor(Math.random()*40000);
+      c.money -= fine;
+      pushEvent('bad', '🚫 Bar sanction — ' + fmtMoney(fine) + ' fine, public reprimand.');
+    }
+  }
+  _currentLegalCase = null;
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 //  TOAST
 // ═══════════════════════════════════════════════════════════════════════
 let _toastTimer = null;
@@ -2137,13 +2845,23 @@ if(loadLife() && LIFE && LIFE.char && LIFE.char.alive){
   }
 }
 
-// Keyboard shortcut: space to age up when in game
+// Keyboard shortcut: SPACE or ENTER to age up. Hold SHIFT+SPACE to fast-forward 5 years.
 window.addEventListener('keydown', e => {
-  if(document.getElementById('main').style.display !== 'grid') return;
+  // Don't intercept keys while typing in inputs or while intro/death screens are open
+  const tag = (e.target && e.target.tagName) || '';
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if(!LIFE || !LIFE.char || !LIFE.char.alive) return;
+  if(document.getElementById('intro').style.display !== 'none') return;
   if(document.getElementById('modal').classList.contains('show')) return;
-  if(e.key === ' ' || e.key === 'Enter'){
+  if(document.getElementById('death-screen').classList.contains('show')) return;
+  if(e.key === ' ' || e.code === 'Space' || e.key === 'Enter'){
     e.preventDefault();
-    ageUp();
+    if(e.shiftKey){
+      // Hold shift: rip through 5 years
+      for(let i = 0; i < 5 && LIFE.char && LIFE.char.alive; i++) ageUp();
+    } else {
+      ageUp();
+    }
   }
 });
 </script>

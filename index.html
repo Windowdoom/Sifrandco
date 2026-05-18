@@ -897,6 +897,64 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 #pa-msg{white-space:nowrap;animation:tickerScroll 18s linear infinite;}
 @keyframes tickerScroll{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
 
+/* ── BEDSIDE ROOM (in-world case visualization) ── */
+#bedside-room{position:relative;height:170px;
+  background:
+    linear-gradient(180deg,#1c2940 0%,#1c2940 48%,#0b121f 48%,#0b121f 100%);
+  border-top:1px solid #2c3a52;border-bottom:1px solid #2c3a52;overflow:hidden;
+  display:none;}
+#bedside-room.show{display:block;animation:br-fadein .35s ease;}
+@keyframes br-fadein{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.br-floor{position:absolute;left:0;right:0;top:48%;bottom:0;
+  background:
+    repeating-linear-gradient(90deg,#0e1828 0,#0e1828 36px,#13213a 36px,#13213a 72px),
+    repeating-linear-gradient(0deg,transparent 0,transparent 35px,rgba(255,255,255,.03) 35px,rgba(255,255,255,.03) 36px);}
+.br-wall-line{position:absolute;left:0;right:0;top:48%;height:1px;background:#2c3a52;}
+.br-bed{position:absolute;right:7%;top:54px;width:200px;height:88px;z-index:3;
+  filter:drop-shadow(0 4px 4px rgba(0,0,0,.45));}
+.br-bed svg{width:100%;height:100%;image-rendering:pixelated;}
+.br-doctor{position:absolute;bottom:8px;right:calc(7% + 210px);width:48px;height:72px;z-index:4;
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,.55));}
+.br-doctor svg{width:100%;height:100%;image-rendering:pixelated;}
+.br-doctor.acting{animation:br-doc-bob .5s ease 2;}
+@keyframes br-doc-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+.br-iv-pole{position:absolute;top:8px;right:5%;width:14px;height:120px;z-index:2;pointer-events:none;}
+.br-iv-pole::before{content:'';position:absolute;left:6px;top:0;width:2px;height:100%;background:#7a8aa0;}
+.br-iv-pole::after{content:'';position:absolute;left:0;top:8px;width:14px;height:18px;
+  background:linear-gradient(180deg,rgba(180,220,255,.7),rgba(120,160,210,.85));border:1px solid #8aa8c8;border-radius:2px;}
+.br-monitor-wall{position:absolute;top:10px;right:24%;width:70px;height:42px;
+  background:linear-gradient(180deg,#021810,#001208);border:2px solid #2c3a52;border-radius:3px;
+  font-family:var(--font-m);font-size:7px;letter-spacing:.18em;color:#5ee27a;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.4;
+  box-shadow:inset 0 0 8px rgba(80,230,120,.35);}
+.br-monitor-wall .br-mw-hr{font-size:14px;color:#7fff90;letter-spacing:.05em;}
+.br-monitor-wall.abn{border-color:#ff5050;color:#ff8080;box-shadow:inset 0 0 8px rgba(255,80,80,.5);}
+.br-monitor-wall.abn .br-mw-hr{color:#ff5050;}
+.br-crash-cart{position:absolute;bottom:10px;left:5%;width:38px;height:52px;z-index:2;
+  background:linear-gradient(180deg,#d03e2c 0 18px,#a02820 18px 22px,#d03e2c 22px 40px,#7a1a14 40px 48px,#3a3a3a 48px 52px);
+  border:1px solid #5a1410;border-radius:2px;
+  box-shadow:0 3px 4px rgba(0,0,0,.5);}
+.br-crash-cart::before{content:'+';position:absolute;top:4px;left:50%;transform:translateX(-50%);
+  color:#fff;font-family:var(--font-m);font-size:14px;font-weight:900;}
+.br-chair{position:absolute;bottom:10px;left:14%;width:24px;height:34px;z-index:2;
+  background:linear-gradient(180deg,#3a4a64 0 14px,#22304a 14px 18px,#3a4a64 18px 28px,#1a2436 28px 34px);
+  border:1px solid #142036;border-radius:2px;}
+.br-speech{position:absolute;top:8px;left:50%;transform:translateX(-58%);max-width:62%;z-index:5;
+  background:#fff;color:#101820;padding:7px 12px 8px;border-radius:9px;
+  font-family:var(--font-s);font-size:11.5px;line-height:1.35;
+  box-shadow:0 3px 10px rgba(0,0,0,.5);
+  animation:br-speech-pop .35s ease;}
+@keyframes br-speech-pop{from{opacity:0;transform:translate(-58%,-6px);}to{opacity:1;transform:translate(-58%,0);}}
+.br-speech::after{content:'';position:absolute;bottom:-7px;right:18%;
+  border:7px solid transparent;border-top-color:#fff;border-bottom:0;}
+.br-speech-tag{font-family:var(--font-m);font-size:8px;letter-spacing:.18em;color:#7080a0;
+  text-transform:uppercase;margin-bottom:3px;}
+.br-tag{position:absolute;top:8px;left:14px;z-index:5;
+  font-family:var(--font-m);font-size:9px;letter-spacing:.2em;
+  background:rgba(0,0,0,.55);color:var(--gold2);padding:3px 8px;border-radius:2px;
+  border-left:2px solid var(--gold2);text-transform:uppercase;}
+.br-tag.crit{color:#ff8080;border-left-color:#ff5050;}
+
 /* ── CASE TIMER (live decision window) ── */
 .case-timer{margin:0 0 14px;padding:10px 12px;background:linear-gradient(180deg,#1a0d0d,#0a0404);
   border:1px solid #4a1a1a;border-radius:6px;font-family:var(--font-m);}
@@ -1322,6 +1380,7 @@ body.text-small { font-size: 12px; }
           <div class="mon-label" id="mon-label">MONITORING</div>
         </div>
         <div id="reaction-strip"></div>
+        <div id="bedside-room"></div>
         <div id="pt-dialogue-slot"></div>
         <div class="chart-hdr">
           <div class="ch-hdr-wrap">
@@ -2794,6 +2853,72 @@ function svgDoctor(av, opts={}){
     <path d="M44 70 L50 75 L56 70 L50 86 Z" fill="${sc.t}" opacity="0.7"/>
     ${stethoscope}
     </g></svg>`;
+}
+
+// ── BEDSIDE ROOM RENDER ─────────────────────────────────
+// Re-skins the case interaction as an in-world hospital room:
+// pixel-art floor + back wall, patient in bed, your doctor avatar
+// standing beside them, IV pole + wall monitor + crash cart,
+// and a speech bubble carrying the patient's presenting complaint.
+function bedsideOpeningLine(p, step){
+  // Prefer a personality-driven line if present; otherwise lift the
+  // first sentence of the HPI into the patient's mouth.
+  if(p.dialogue && p.dialogue.arrival && p.dialogue.arrival.length){
+    const arr = p.dialogue.arrival;
+    return arr[Math.floor(Math.random()*arr.length)];
+  }
+  const hpi = (step && step.hpi) || '';
+  // Strip leading markers like "BLACKOUT —" and take the first natural sentence
+  const cleaned = hpi.replace(/^[A-Z ]{3,}—\s*/, '').trim();
+  const firstSentence = cleaned.split(/[.!?]/)[0];
+  if(!firstSentence) return 'Doctor — I\'m glad you\'re here.';
+  // Truncate to a reasonable speech-bubble length
+  return firstSentence.length > 180
+    ? firstSentence.slice(0, 178).replace(/[, ]+$/,'') + '…'
+    : firstSentence + '.';
+}
+
+function renderBedsideRoom(p, step, vitals){
+  const wrap = document.getElementById('bedside-room');
+  if(!wrap) return;
+  if(!p){ wrap.classList.remove('show'); wrap.innerHTML=''; return; }
+  const hr = parseInt((vitals && vitals.hr) || '0', 10);
+  const monitorAbn = hr > 120 || (hr > 0 && hr < 50);
+  const bedSvg = pixelPatientInBed(p);
+  const docSvg = pixelSpriteSVG(AVATAR, 'right', 0);
+  const critical = (p.health||100) < 30;
+  const opener = bedsideOpeningLine(p, step);
+  const speakerLabel = p.acted
+    ? 'Bedside — monitoring'
+    : (p.name ? p.name + ' · ' + (p.age!=null?p.age+' y/o':'') : 'Patient · presenting');
+  const tagText = (p.loc || 'TRIAGE') + ' · ' + (p.cat ? p.cat.toUpperCase() : 'CLINICAL');
+  wrap.innerHTML =
+    '<div class="br-floor"></div>'
+    + '<div class="br-wall-line"></div>'
+    + '<div class="br-tag' + (critical?' crit':'') + '">' + tagText + (critical ? ' · CRITICAL' : '') + '</div>'
+    + '<div class="br-monitor-wall' + (monitorAbn?' abn':'') + '">'
+    +   '<div class="br-mw-hr">' + (hr || '—') + '</div>'
+    +   '<div>BPM</div>'
+    + '</div>'
+    + '<div class="br-iv-pole"></div>'
+    + '<div class="br-crash-cart" title="Crash Cart"></div>'
+    + '<div class="br-chair"></div>'
+    + '<div class="br-bed">' + bedSvg + '</div>'
+    + '<div class="br-doctor" id="br-doctor">' + docSvg + '</div>'
+    + '<div class="br-speech">'
+    +   '<div class="br-speech-tag">' + speakerLabel + '</div>'
+    +   opener
+    + '</div>';
+  wrap.classList.add('show');
+}
+
+// ── Tiny action-feedback flourish: doctor avatar bobs after an order
+function bedsideDoctorReact(){
+  const d = document.getElementById('br-doctor');
+  if(!d) return;
+  d.classList.remove('acting');
+  void d.offsetWidth;
+  d.classList.add('acting');
 }
 
 function renderPatientSprite(p){
@@ -6452,6 +6577,7 @@ function renderChart(id){
   const v=parseVitals(step.vitals);
   renderVitals(v);
   startECG(v.hr, p);
+  renderBedsideRoom(p, step, v);
   $text('ch-hpi',step.hpi||'');
   // Show patient personality + opening dialogue
   showPatientDialogue(p, 'arrival');
@@ -6507,6 +6633,7 @@ function renderChart(id){
 // ── TAKE ACTION ──
 function takeAction(pId, actIdx){
   clearCaseTimer();
+  bedsideDoctorReact();
   const p=getPt(pId); if(!p) return;
   const step=p.steps[p.currStep];
   const act=step.actions[actIdx];

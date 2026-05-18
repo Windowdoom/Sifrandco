@@ -386,6 +386,7 @@ input,select{font-family:inherit;}
       <button class="act-btn" onclick="openBanking()">🏦 Bank</button>
       <button class="act-btn" onclick="openShop()">🏠 Assets</button>
       <button class="act-btn" onclick="openCrime()">🦹 Crime</button>
+      <button class="act-btn" onclick="openMore()">✨ More</button>
     </div>
   </div>
 
@@ -984,6 +985,110 @@ const BANKS = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
+//  HOUSE ROOMS & UPGRADES — Virtual Families-style room additions
+// ═══════════════════════════════════════════════════════════════════════
+const ROOMS = [
+  {id:'kitchen',    name:'Gourmet Kitchen',          ico:'🍳', price:18000,  passive:{health:+1},                 desc:'Cook properly. Eat better. Live longer.'},
+  {id:'bedroom',    name:'Master Bedroom Upgrade',   ico:'🛏️', price:12000,  passive:{happiness:+1},              desc:'You actually sleep through the night now.'},
+  {id:'bathroom',   name:'Luxury Bathroom',          ico:'🛁', price:22000,  passive:{happiness:+1, looks:+1},    desc:'Heated floors. Rain shower. You earned this.'},
+  {id:'garden',     name:'Backyard Garden',          ico:'🌷', price:8000,   passive:{happiness:+1, health:+1},   desc:'Tomatoes, herbs, peace.'},
+  {id:'gym',        name:'Home Gym',                 ico:'🏋️', price:14000,  passive:{health:+2},                 desc:'No more excuses. The dumbbells are right there.'},
+  {id:'theater',    name:'Home Theater',             ico:'🎬', price:28000,  passive:{happiness:+2},              desc:'12 reclining seats. Bass you can feel.'},
+  {id:'gameroom',   name:'Game Room',                ico:'🎮', price:18000,  passive:{happiness:+2, smarts:+1},   desc:'Pool table, arcade cabinet, every console.'},
+  {id:'library',    name:'Library',                  ico:'📚', price:32000,  passive:{smarts:+2},                 desc:'Floor-to-ceiling oak shelves. The ladder rolls.'},
+  {id:'pool',       name:'In-Ground Pool',           ico:'🏊', price:65000,  passive:{happiness:+2, health:+1},   desc:'Heated, salt-water, perfect.'},
+  {id:'office',     name:'Home Office',              ico:'💻', price:14000,  passive:{smarts:+1, happiness:+1},   desc:'Working from home actually works now.'},
+  {id:'studio',     name:'Art / Music Studio',       ico:'🎨', price:24000,  passive:{happiness:+2, smarts:+1},   desc:'Soundproof. The neighbors are grateful.'},
+  {id:'guesthouse', name:'Guest House',              ico:'🏡', price:120000, passive:{happiness:+2},              desc:'Out-of-town family stay 3 days, not 30.'},
+  {id:'wine',       name:'Wine Cellar',              ico:'🍷', price:48000,  passive:{happiness:+2},              desc:'Temperature-controlled. Properly snobby.'},
+  {id:'meditation', name:'Meditation Room',          ico:'🧘', price:9000,   passive:{happiness:+1, faith:+1},    desc:'Tatami mat, soft lighting, no phone allowed.'},
+  {id:'workshop',   name:'Workshop / Garage',        ico:'🔨', price:18000,  passive:{smarts:+1, happiness:+1},   desc:'Tools, lifts, the smell of motor oil.'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PETS — Virtual Families inspired
+// ═══════════════════════════════════════════════════════════════════════
+const PETS = [
+  {id:'goldfish', name:'Goldfish',           ico:'🐠', price:12,     monthly:8,    fx:{happiness:+1}, span:5},
+  {id:'hamster',  name:'Hamster',            ico:'🐹', price:25,     monthly:20,   fx:{happiness:+2}, span:3},
+  {id:'parakeet', name:'Parakeet',           ico:'🦜', price:80,     monthly:35,   fx:{happiness:+3}, span:10},
+  {id:'cat',      name:'Cat',                ico:'🐈', price:200,    monthly:80,   fx:{happiness:+5, karma:+2}, span:15},
+  {id:'dog',      name:'Dog',                ico:'🐕', price:600,    monthly:140,  fx:{happiness:+8, karma:+3, health:+1}, span:13},
+  {id:'rabbit',   name:'Rabbit',             ico:'🐇', price:65,     monthly:45,   fx:{happiness:+3}, span:8},
+  {id:'turtle',   name:'Turtle',             ico:'🐢', price:120,    monthly:25,   fx:{happiness:+2, karma:+1}, span:40},
+  {id:'snake',    name:'Ball Python',        ico:'🐍', price:280,    monthly:35,   fx:{happiness:+3, looks:+1}, span:25},
+  {id:'horse',    name:'Horse',              ico:'🐎', price:8500,   monthly:1200, fx:{happiness:+9, health:+2, looks:+2}, span:25},
+  {id:'monkey',   name:'Capuchin Monkey',    ico:'🐒', price:14000,  monthly:800,  fx:{happiness:+8, karma:-3}, span:35, illegal:true},
+  {id:'tiger',    name:'Exotic Tiger',       ico:'🐅', price:45000,  monthly:4500, fx:{happiness:+10, fame:+8, karma:-5, health:-2}, span:18, illegal:true},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SKILLS / HOBBIES — Virtual Families + InstLife inspired
+// ═══════════════════════════════════════════════════════════════════════
+const SKILLS = [
+  {id:'painting',    name:'Painting',         ico:'🖌️',  monetize:'Sell paintings'},
+  {id:'music',       name:'Music',            ico:'🎵',  monetize:'Sell singles'},
+  {id:'writing',     name:'Writing',          ico:'✍️',  monetize:'Publish stories'},
+  {id:'cooking',     name:'Cooking',          ico:'🍳',  monetize:'Cater events'},
+  {id:'photography', name:'Photography',      ico:'📸',  monetize:'Sell stock photos'},
+  {id:'programming', name:'Programming',      ico:'💻',  monetize:'Build apps'},
+  {id:'martialarts', name:'Martial Arts',     ico:'🥋',  monetize:'Teach classes'},
+  {id:'dancing',     name:'Dancing',          ico:'💃',  monetize:'Perform'},
+  {id:'meditation',  name:'Meditation',       ico:'🧘',  monetize:'Lead retreats'},
+  {id:'investing',   name:'Investing Acumen', ico:'📈',  monetize:'Better returns'},
+  {id:'languages',   name:'Languages',        ico:'🗣️',  monetize:'Translate work'},
+  {id:'auto',        name:'Auto Repair',      ico:'🔧',  monetize:'Fix friends\' cars'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PERSONALITY TRAITS — assigned at birth
+// ═══════════════════════════════════════════════════════════════════════
+const TRAITS = [
+  {id:'optimist',  name:'Optimist',     ico:'☀️', desc:'+2 happiness per year, weathers bad events better.'},
+  {id:'pessimist', name:'Pessimist',    ico:'🌧️', desc:'−1 happiness per year, but cynicism is correct often.'},
+  {id:'introvert', name:'Introvert',    ico:'📖', desc:'+1 smarts per year, finds parties exhausting.'},
+  {id:'extrovert', name:'Extrovert',    ico:'🎉', desc:'+1 looks per year, energizes around others.'},
+  {id:'generous',  name:'Generous',     ico:'💝', desc:'+karma when giving, gives more freely.'},
+  {id:'greedy',    name:'Greedy',       ico:'💰', desc:'+1 investment return per year, but karma drags.'},
+  {id:'creative',  name:'Creative',     ico:'🎨', desc:'Skills level up faster.'},
+  {id:'athletic',  name:'Athletic',     ico:'💪', desc:'+1 health per year, better at physical jobs.'},
+  {id:'brainy',    name:'Brainy',       ico:'🧠', desc:'+1 smarts per year, better at academic tracks.'},
+  {id:'charismatic',name:'Charismatic', ico:'😎', desc:'+1 looks per year, partners 20% more compatible.'},
+  {id:'stoic',     name:'Stoic',        ico:'🗿', desc:'Resists negative events, less reactive.'},
+  {id:'adventurous',name:'Adventurous', ico:'🧭', desc:'+1 happiness from travel, drawn to risk.'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  GIFTS — for relationships
+// ═══════════════════════════════════════════════════════════════════════
+const GIFTS = [
+  {id:'flowers',   name:'Bouquet of Flowers',    ico:'💐', cost:40,    boost:5,  to:'partner'},
+  {id:'chocolate', name:'Fancy Chocolates',      ico:'🍫', cost:25,    boost:3,  to:'any'},
+  {id:'card',      name:'Handwritten Card',      ico:'💌', cost:5,     boost:4,  to:'any'},
+  {id:'jewelry',   name:'Jewelry',               ico:'💎', cost:680,   boost:12, to:'partner'},
+  {id:'watch',     name:'Luxury Watch',          ico:'⌚', cost:2400,  boost:15, to:'any'},
+  {id:'concert',   name:'Concert Tickets',       ico:'🎫', cost:180,   boost:10, to:'any'},
+  {id:'vacation',  name:'Surprise Vacation',     ico:'🏖️', cost:4500,  boost:20, to:'partner'},
+  {id:'car',       name:'New Car',               ico:'🚗', cost:32000, boost:25, to:'any'},
+  {id:'toy',       name:'Toy for Your Kid',      ico:'🧸', cost:60,    boost:8,  to:'kid'},
+  {id:'collegefund',name:'College Fund Deposit', ico:'💰', cost:5000,  boost:18, to:'kid'},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PLASTIC SURGERY — buy looks
+// ═══════════════════════════════════════════════════════════════════════
+const SURGERIES = [
+  {id:'whitening',  name:'Teeth Whitening',          ico:'😁', cost:600,    looks:+2,  risk:0.02},
+  {id:'rhino',      name:'Rhinoplasty (Nose Job)',   ico:'👃', cost:8500,   looks:+8,  risk:0.08},
+  {id:'lipo',       name:'Liposuction',              ico:'⚖️', cost:6500,   looks:+6,  risk:0.10},
+  {id:'botox',      name:'Botox Treatment',          ico:'💉', cost:1200,   looks:+4,  risk:0.05},
+  {id:'facelift',   name:'Full Facelift',            ico:'🪞', cost:18000,  looks:+12, risk:0.12},
+  {id:'implants',   name:'Implants',                 ico:'✨', cost:9500,   looks:+8,  risk:0.10},
+  {id:'hair',       name:'Hair Restoration',         ico:'💇', cost:7500,   looks:+5,  risk:0.04},
+  {id:'lasik',      name:'LASIK Eye Surgery',        ico:'👁️', cost:4200,   looks:+1,  risk:0.03},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
 //  HOUSING DISASTERS — top 20 catastrophes that can hit your house
 // ═══════════════════════════════════════════════════════════════════════
 const HOUSING_DISASTERS = [
@@ -1330,6 +1435,12 @@ function defaultChar(seed){
     religion:  null,         // chosen religious tradition
     college:   null,         // attended college id
     insurance: { home:false, health:false, life:false, auto:false },
+    rooms:     [],           // owned room upgrades (ids)
+    pets:      [],           // [{id, name, age, alive}]
+    skills:    {},           // {painting:25, music:12, ...} 0-100
+    traits:    [],           // assigned at birth
+    surgeries: [],           // list of cosmetic procedures
+    isVampire: false,
     career:    null,    // {key, rungIdx, yearsAtRung, totalYears, currentSalary}
     degree:    null,    // currently enrolled degree id
     degreeYearsLeft: 0,
@@ -1457,6 +1568,16 @@ function enterGame(){
 function pushBirthEvents(){
   const c = LIFE.char;
   const country = COUNTRIES[c.country];
+  // Assign 2 random personality traits at birth (no conflicts: opt vs pess, intro vs extro)
+  const conflicting = { optimist:'pessimist', pessimist:'optimist', introvert:'extrovert', extrovert:'introvert', generous:'greedy', greedy:'generous' };
+  const pool = TRAITS.slice().sort(() => Math.random() - 0.5);
+  const picked = [];
+  for(const t of pool){
+    if(picked.length >= 2) break;
+    if(picked.some(p => conflicting[p.id] === t.id)) continue;
+    picked.push(t);
+  }
+  c.traits = picked.map(t => t.id);
   pushEvent('milestone',
     'You were born in ' + c.city + ', ' + country.name + '. '
     + 'Your parents are ' + c.parents.mom.firstName + ' (' + c.parents.mom.occupation + ') '
@@ -1466,6 +1587,60 @@ function pushBirthEvents(){
   pushEvent('milestone',
     'Starting stats: Smarts ' + c.smarts + ' · Health ' + c.health + ' · Looks ' + c.looks
     + '. You are a ' + (c.sex==='m'?'baby boy':'baby girl') + '.');
+  pushEvent('milestone', '✨ Personality traits: ' + picked.map(t => t.ico + ' ' + t.name).join(' · '));
+}
+
+function applyTraitDrifts(){
+  const c = LIFE.char;
+  if(!c.traits) return;
+  for(const tid of c.traits){
+    if(tid === 'optimist')   c.happiness = clamp(c.happiness + 2, 0, 100);
+    if(tid === 'pessimist')  c.happiness = clamp(c.happiness - 1, 0, 100);
+    if(tid === 'introvert' && c.age % 2 === 0)   c.smarts = clamp(c.smarts + 1, 0, 100);
+    if(tid === 'extrovert' && c.age % 2 === 0)   c.looks  = clamp(c.looks + 1, 0, 100);
+    if(tid === 'athletic' && c.age > 8)  c.health = clamp(c.health + 1, 0, 100);
+    if(tid === 'brainy' && c.age > 5)    c.smarts = clamp(c.smarts + 1, 0, 100);
+    if(tid === 'charismatic' && c.age > 12) c.looks = clamp(c.looks + 1, 0, 100);
+  }
+}
+
+function processRooms(){
+  const c = LIFE.char;
+  if(!c.rooms || !c.rooms.length) return;
+  c.rooms.forEach(rid => {
+    const r = ROOMS.find(x => x.id === rid);
+    if(!r || !r.passive) return;
+    if(r.passive.health)    c.health    = clamp(c.health + r.passive.health, 0, 100);
+    if(r.passive.happiness) c.happiness = clamp(c.happiness + r.passive.happiness, 0, 100);
+    if(r.passive.smarts)    c.smarts    = clamp(c.smarts + r.passive.smarts, 0, 100);
+    if(r.passive.looks)     c.looks     = clamp(c.looks + r.passive.looks, 0, 100);
+    if(r.passive.faith)     c.faith     = clamp(c.faith + r.passive.faith, 0, 100);
+  });
+}
+
+function processPets(){
+  const c = LIFE.char;
+  if(!c.pets || !c.pets.length) return;
+  c.pets.forEach(pet => {
+    if(!pet.alive) return;
+    pet.age++;
+    const p = PETS.find(x => x.id === pet.id);
+    if(!p) return;
+    // monthly cost x 12
+    c.money -= Math.floor(p.monthly * 12 * (COUNTRIES[c.country].costMult || 1));
+    // passive happiness/karma/etc
+    if(p.fx.happiness) c.happiness = clamp(c.happiness + p.fx.happiness, 0, 100);
+    if(p.fx.karma)     c.karma     = clamp(c.karma + p.fx.karma, 0, 100);
+    if(p.fx.health)    c.health    = clamp(c.health + p.fx.health, 0, 100);
+    if(p.fx.looks)     c.looks     = clamp(c.looks + p.fx.looks, 0, 100);
+    if(p.fx.fame)      c.fame      = clamp((c.fame||0) + p.fx.fame, 0, 100);
+    // death check
+    if(pet.age >= p.span){
+      pet.alive = false;
+      pushEvent('death', '🕯️ Your ' + p.name.toLowerCase() + ' ' + pet.name + ' passed away after ' + pet.age + ' good years.');
+      c.happiness = clamp(c.happiness - 8, 0, 100);
+    }
+  });
 }
 
 function pushEvent(tag, text, fx){
@@ -1514,6 +1689,12 @@ function ageUp(){
   processBankingInterest();
   // faith decay/practice
   rollFaithEvent();
+  // personality drift
+  applyTraitDrifts();
+  // room passive bonuses
+  processRooms();
+  // pets aging + cost + bonus
+  processPets();
   // stat natural decay/growth
   applyAgeDrift();
   // Pad the year with a "quiet year" entry if nothing happened so every year is visible
@@ -1979,18 +2160,55 @@ function renderFamily(){
     html += '</div>';
   }
 
+  // Personality traits
+  if(c.traits && c.traits.length){
+    html += '<div class="fam-section"><div class="fam-section-h">Personality</div>';
+    c.traits.forEach(tid => {
+      const t = TRAITS.find(x => x.id === tid);
+      if(!t) return;
+      html += '<div class="fam-row"><div class="fam-emoji">' + t.ico + '</div>'
+        + '<div class="fam-info"><div class="fam-name">' + t.name + '</div>'
+        + '<div class="fam-meta">' + t.desc + '</div></div></div>';
+    });
+    if(c.isVampire){
+      html += '<div class="fam-row"><div class="fam-emoji">🧛</div>'
+        + '<div class="fam-info"><div class="fam-name">Vampire</div>'
+        + '<div class="fam-meta">Immortal. Aging slows. Thirsts.</div></div></div>';
+    }
+    html += '</div>';
+  }
+  // Pets
+  const alivePets = (c.pets || []).filter(p => p.alive);
+  if(alivePets.length){
+    html += '<div class="fam-section"><div class="fam-section-h">Pets</div>';
+    alivePets.forEach(pet => {
+      const p = PETS.find(x => x.id === pet.id);
+      html += '<div class="fam-row"><div class="fam-emoji">' + (p?p.ico:'🐾') + '</div>'
+        + '<div class="fam-info"><div class="fam-name">' + pet.name + '</div>'
+        + '<div class="fam-meta">' + (p?p.name:'Pet') + ' · Age ' + pet.age + '</div></div></div>';
+    });
+    html += '</div>';
+  }
+
   // Assets
   html += '<div class="fam-section"><div class="fam-section-h">Assets</div>';
   const house = HOUSES.find(h => h.id === c.houseId);
   html += '<div class="asset-card">'
     + '<div class="asset-name">🏠 ' + house.name + '</div>'
     + '<div class="asset-meta">' + (house.monthly ? fmtMoney(house.monthly) + '/mo · ' : '') + house.rooms + ' rooms · Status ' + house.status + '/10</div>'
+    + (c.rooms && c.rooms.length ? '<div class="asset-meta" style="color:var(--accent2);margin-top:3px;">+' + c.rooms.length + ' upgrades</div>' : '')
     + '</div>';
   const car = CARS.find(x => x.id === c.carId);
   if(car){
     html += '<div class="asset-card">'
       + '<div class="asset-name">🚗 ' + car.name + '</div>'
       + '<div class="asset-meta">' + (car.mph ? car.mph + ' mph top speed · ' : '') + 'Status ' + car.status + '/10</div>'
+      + '</div>';
+  }
+  if(c.savings > 0 || c.investments > 0){
+    html += '<div class="asset-card">'
+      + '<div class="asset-name">🏦 Bank</div>'
+      + '<div class="asset-meta">Savings ' + fmtMoney(c.savings||0) + ' · Investments ' + fmtMoney(c.investments||0) + '</div>'
       + '</div>';
   }
   html += '</div>';
@@ -3464,6 +3682,331 @@ function acceptQuickJob(id){
   closeModal();
   renderAll();
   saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ROOMS — house upgrades (Virtual Families style)
+// ═══════════════════════════════════════════════════════════════════════
+function openRooms(){
+  const c = LIFE.char;
+  if(c.houseId === 'family' || c.houseId === 'trailer'){
+    toast('Get your own place first — rooms attach to houses you own.');
+    return;
+  }
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Customize your home. Each room adds passive stat bonuses every year.</div>';
+  ROOMS.forEach(r => {
+    const owned = (c.rooms||[]).includes(r.id);
+    const country = COUNTRIES[c.country];
+    const price = Math.floor(r.price * country.costMult);
+    const can = c.money >= price && !owned;
+    const fxText = Object.keys(r.passive||{}).map(k => '+' + r.passive[k] + ' ' + k + '/yr').join(' · ');
+    html += '<div class="card" style="' + (owned?'border-color:var(--accent);background:#1a1428;':'') + '">'
+      + '<div class="card-ico">' + r.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + r.name + (owned?' · OWNED':'') + '</div>'
+      + '<div class="card-meta">' + r.desc + '</div>'
+      + '<div class="card-meta" style="color:var(--green);">' + fxText + '</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(price) + '</div>'
+      + (owned ? '<span class="card-tag">OWNED</span>'
+              : '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="buyRoom(\'' + r.id + '\')">Build</button>')
+      + '</div></div>';
+  });
+  openModal('🏠 House Rooms & Upgrades', html);
+}
+function buyRoom(id){
+  const c = LIFE.char;
+  const r = ROOMS.find(x => x.id === id);
+  if(!r) return;
+  const country = COUNTRIES[c.country];
+  const price = Math.floor(r.price * country.costMult);
+  if(c.money < price){ toast('Not enough money.'); return; }
+  if(!c.rooms) c.rooms = [];
+  c.rooms.push(id);
+  c.money -= price;
+  pushEvent('milestone', '🏗️ You added a ' + r.name + ' to your home. ' + r.desc);
+  closeModal();
+  openRooms();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PETS — adopt + care
+// ═══════════════════════════════════════════════════════════════════════
+function openPets(){
+  const c = LIFE.char;
+  let html = '';
+  // Current pets
+  if(c.pets && c.pets.filter(p=>p.alive).length){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;">Your Pets</div>';
+    c.pets.filter(p=>p.alive).forEach(pet => {
+      const p = PETS.find(x => x.id === pet.id);
+      html += '<div class="card" style="border-color:var(--accent);background:#1a1428;">'
+        + '<div class="card-ico">' + (p?p.ico:'🐾') + '</div>'
+        + '<div class="card-body"><div class="card-title">' + pet.name + '</div>'
+        + '<div class="card-meta">' + (p?p.name:'Pet') + ' · Age ' + pet.age + ' (max ~' + (p?p.span:0) + ')</div>'
+        + '<div class="card-meta">Costs ' + fmtMoney((p?p.monthly:0)*12) + '/yr</div></div>'
+        + '<div class="card-act"><button class="card-btn muted" onclick="giveUpPet(' + c.pets.indexOf(pet) + ')">Rehome</button></div></div>';
+    });
+  }
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:18px 0 10px;">Adopt a Pet</div>';
+  PETS.forEach(p => {
+    const can = c.money >= p.price;
+    html += '<div class="card">'
+      + '<div class="card-ico">' + p.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + p.name + (p.illegal?' <span class="card-tag illegal">EXOTIC/ILLEGAL</span>':'') + '</div>'
+      + '<div class="card-meta">Lifespan ~' + p.span + ' yrs · ' + fmtMoney(p.monthly) + '/mo upkeep</div>'
+      + '<div class="card-meta" style="color:var(--green)">+' + (p.fx.happiness||0) + ' happiness/yr</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(p.price) + '</div>'
+      + '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="adoptPet(\'' + p.id + '\')">Adopt</button></div></div>';
+  });
+  openModal('🐾 Pets', html);
+}
+function adoptPet(id){
+  const c = LIFE.char;
+  const p = PETS.find(x => x.id === id);
+  if(!p) return;
+  if(c.money < p.price){ toast('Not enough money.'); return; }
+  const name = prompt('Name your new ' + p.name.toLowerCase() + ':', 'Buddy');
+  if(name === null) return;
+  c.money -= p.price;
+  if(!c.pets) c.pets = [];
+  c.pets.push({ id:p.id, name: name || 'Pet', age: 0, alive: true });
+  pushEvent('milestone', '🎉 You adopted a ' + p.name.toLowerCase() + ' named ' + (name||'Pet') + '!');
+  c.happiness = clamp(c.happiness + 12, 0, 100);
+  closeModal();
+  openPets();
+  renderAll();
+  saveLife();
+}
+function giveUpPet(idx){
+  const c = LIFE.char;
+  const pet = c.pets[idx];
+  if(!pet) return;
+  if(!confirm('Rehome ' + pet.name + '?')) return;
+  pet.alive = false;
+  pushEvent('bad', '😔 You rehomed ' + pet.name + '.');
+  c.happiness = clamp(c.happiness - 6, 0, 100);
+  closeModal();
+  openPets();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SKILLS — practice and monetize
+// ═══════════════════════════════════════════════════════════════════════
+function openSkills(){
+  const c = LIFE.char;
+  if(!c.skills) c.skills = {};
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Practice to level up (0-100). Once at 60+ you can monetize the skill.</div>';
+  SKILLS.forEach(s => {
+    const level = c.skills[s.id] || 0;
+    const monetizable = level >= 60;
+    html += '<div class="card">'
+      + '<div class="card-ico">' + s.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + s.name + '</div>'
+      + '<div class="card-meta">Level ' + level + ' / 100 · Monetize: ' + s.monetize + '</div>'
+      + '<div class="stat-bar" style="margin-top:5px;"><div class="stat-fill smarts" style="width:' + level + '%"></div></div></div>'
+      + '<div class="card-act">'
+      + '<button class="card-btn" onclick="practiceSkill(\'' + s.id + '\')">Practice</button>'
+      + (monetizable ? '<button class="card-btn green" onclick="monetizeSkill(\'' + s.id + '\')">Monetize</button>' : '')
+      + '</div></div>';
+  });
+  openModal('🎯 Skills & Hobbies', html);
+}
+function practiceSkill(id){
+  const c = LIFE.char;
+  if(!c.skills) c.skills = {};
+  const creative = (c.traits||[]).includes('creative');
+  const gain = (creative ? 6 : 3) + Math.floor(c.smarts/40);
+  c.skills[id] = Math.min(100, (c.skills[id]||0) + gain);
+  pushEvent('good', '🎯 Practiced ' + SKILLS.find(x=>x.id===id).name + '. +' + gain + ' to that skill.');
+  closeModal();
+  openSkills();
+  renderAll();
+  saveLife();
+}
+function monetizeSkill(id){
+  const c = LIFE.char;
+  const level = (c.skills && c.skills[id]) || 0;
+  if(level < 60){ toast('Skill must be at least level 60.'); return; }
+  // Pay scales with level
+  const base = (level - 50) * 80;
+  const luck = 0.5 + Math.random() * 1.5;
+  const pay = Math.floor(base * luck);
+  c.money += pay;
+  pushEvent('career', '💰 You monetized ' + SKILLS.find(x=>x.id===id).name + ' — earned ' + fmtMoney(pay) + '.');
+  closeModal();
+  openSkills();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  GIFTS — boost relationships
+// ═══════════════════════════════════════════════════════════════════════
+function openGifts(){
+  const c = LIFE.char;
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Buy a gift. Boosts the recipient\'s rapport with you.</div>';
+  GIFTS.forEach(g => {
+    const can = c.money >= g.cost;
+    html += '<div class="card">'
+      + '<div class="card-ico">' + g.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + g.name + '</div>'
+      + '<div class="card-meta">For: ' + g.to + ' · +' + g.boost + ' rapport</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(g.cost) + '</div>'
+      + '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="giveGift(\'' + g.id + '\')">Buy &amp; Give</button></div></div>';
+  });
+  openModal('🎁 Gifts', html);
+}
+function giveGift(id){
+  const c = LIFE.char;
+  const g = GIFTS.find(x => x.id === id);
+  if(!g) return;
+  if(c.money < g.cost){ toast('Not enough money.'); return; }
+  c.money -= g.cost;
+  let recipientText = '';
+  if(g.to === 'partner' || (g.to === 'any' && c.partner)){
+    if(c.partner){
+      c.partner.compat = clamp(c.partner.compat + g.boost, 0, 100);
+      recipientText = 'Gave ' + g.name + ' to ' + c.partner.firstName + '. (+' + g.boost + ' compat)';
+    } else {
+      c.happiness = clamp(c.happiness - 2, 0, 100);
+      recipientText = 'Bought ' + g.name + ' but had nobody to give it to.';
+    }
+  } else if(g.to === 'kid'){
+    if(c.children.length){
+      const kid = c.children.find(k => k.alive);
+      if(kid){
+        recipientText = 'Gave ' + g.name + ' to ' + kid.name + '. They loved it.';
+        c.happiness = clamp(c.happiness + 4, 0, 100);
+      }
+    }
+  }
+  pushEvent('romantic', '🎁 ' + recipientText);
+  c.karma = clamp(c.karma + 2, 0, 100);
+  closeModal();
+  openGifts();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  LOTTERY — buy a ticket, hope
+// ═══════════════════════════════════════════════════════════════════════
+function buyLottery(){
+  const c = LIFE.char;
+  if(c.age < 18){ toast('Must be 18 to buy lottery tickets.'); return; }
+  if(c.money < 5){ toast('Need $5 for a ticket.'); return; }
+  c.money -= 5;
+  const roll = Math.random();
+  let prize = 0;
+  let text = '';
+  if(roll < 0.0001){
+    prize = 84000000; text = '🎉 JACKPOT! You won ' + fmtMoney(prize) + '!!!';
+  } else if(roll < 0.001){
+    prize = 250000; text = '🎉 Big win! ' + fmtMoney(prize);
+  } else if(roll < 0.01){
+    prize = 5000; text = '🎉 Nice win! ' + fmtMoney(prize);
+  } else if(roll < 0.06){
+    prize = 100; text = '🎟️ Small win! ' + fmtMoney(prize);
+  } else if(roll < 0.20){
+    prize = 5; text = '🎟️ You got your $5 back.';
+  } else {
+    text = '🎟️ No luck this time.';
+  }
+  if(prize > 0){ c.money += prize; c.happiness = clamp(c.happiness + Math.min(25, Math.floor(prize/1000)), 0, 100); }
+  pushEvent(prize>0?'good':'', text);
+  renderAll();
+  saveLife();
+  toast(text);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PLASTIC SURGERY
+// ═══════════════════════════════════════════════════════════════════════
+function openSurgery(){
+  const c = LIFE.char;
+  if(c.age < 18){ toast('Must be 18+ for elective procedures.'); return; }
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Cosmetic procedures boost Looks. Each has a chance of complications.</div>';
+  SURGERIES.forEach(s => {
+    const country = COUNTRIES[c.country];
+    const cost = Math.floor(s.cost * country.costMult);
+    const can = c.money >= cost;
+    html += '<div class="card">'
+      + '<div class="card-ico">' + s.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + s.name + '</div>'
+      + '<div class="card-meta">+' + s.looks + ' looks · ' + Math.floor(s.risk*100) + '% complication risk</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(cost) + '</div>'
+      + '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="doSurgery(\'' + s.id + '\')">Schedule</button></div></div>';
+  });
+  openModal('💉 Cosmetic Surgery', html);
+}
+function doSurgery(id){
+  const c = LIFE.char;
+  const s = SURGERIES.find(x => x.id === id);
+  if(!s) return;
+  const country = COUNTRIES[c.country];
+  const cost = Math.floor(s.cost * country.costMult);
+  if(c.money < cost){ toast('Not enough money.'); return; }
+  c.money -= cost;
+  if(Math.random() < s.risk){
+    c.health = clamp(c.health - 12, 0, 100);
+    c.looks  = clamp(c.looks - 3, 0, 100);
+    pushEvent('bad', '⚠️ ' + s.name + ' had complications. Health and looks took a hit.');
+  } else {
+    c.looks = clamp(c.looks + s.looks, 0, 100);
+    if(!c.surgeries) c.surgeries = [];
+    c.surgeries.push(s.id);
+    pushEvent('good', '💉 ' + s.name + ' went well. +' + s.looks + ' looks.');
+  }
+  closeModal();
+  openSurgery();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  VAMPIRE MODE — magical reality special
+// ═══════════════════════════════════════════════════════════════════════
+function tryBecomeVampire(){
+  const c = LIFE.char;
+  if(c.reality !== 'magical'){ toast('Only available in the magical reality.'); return; }
+  if(c.isVampire){ toast('You are already a vampire.'); return; }
+  if(!confirm('A vampire offers to turn you. You will be immortal but undead. Accept?')) return;
+  c.isVampire = true;
+  c.health = 95;
+  c.looks  = clamp(c.looks + 12, 0, 100);
+  c.karma  = clamp(c.karma - 10, 0, 100);
+  pushEvent('milestone', '🧛 You were turned into a vampire. You will age slowly. You will need blood.');
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  MORE LIFE — combines lottery, surgery, gifts, skills into a "More" modal
+// ═══════════════════════════════════════════════════════════════════════
+function openMore(){
+  const c = LIFE.char;
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Quick actions — lottery, gifts, skills, surgery, pets, rooms, vampire mode.</div>';
+  const opts = [
+    {label:'🏠 House Rooms & Upgrades', fn:'openRooms'},
+    {label:'🐾 Pets', fn:'openPets'},
+    {label:'🎯 Skills & Hobbies', fn:'openSkills'},
+    {label:'🎁 Buy a Gift', fn:'openGifts'},
+    {label:'💉 Cosmetic Surgery', fn:'openSurgery'},
+    {label:'🎟️ Buy Lottery Ticket ($5)', fn:'buyLottery'},
+  ];
+  if(c.reality === 'magical' && !c.isVampire){
+    opts.push({label:'🧛 Try to Become a Vampire', fn:'tryBecomeVampire'});
+  }
+  html += opts.map(o => (
+    '<div class="card" onclick="closeModal();' + o.fn + '()" style="cursor:pointer;">'
+    + '<div class="card-ico">→</div>'
+    + '<div class="card-body"><div class="card-title">' + o.label + '</div></div>'
+    + '<div class="card-act"><button class="card-btn">Open</button></div></div>'
+  )).join('');
+  openModal('✨ More', html);
 }
 
 // ═══════════════════════════════════════════════════════════════════════

@@ -2805,8 +2805,36 @@ function saveLife(){
 function loadLife(){
   try {
     const s = localStorage.getItem('lyfe_save');
-    if(s){ LIFE = JSON.parse(s); return true; }
-  } catch(e){}
+    if(s){
+      LIFE = JSON.parse(s);
+      // Migrate old saves — fill missing fields so new code paths don't crash
+      if(LIFE && LIFE.char){
+        const c = LIFE.char;
+        if(!c.traits) c.traits = [];
+        if(!c.diseases) c.diseases = [];
+        if(!c.degrees) c.degrees = [];
+        if(!c.kids && c.children) c.kids = c.children;
+        if(!c.children) c.children = [];
+        if(!c.placesVisited) c.placesVisited = [];
+        if(!c.bodyMods) c.bodyMods = [];
+        if(!c.addictions) c.addictions = [];
+        if(!c.surgeries) c.surgeries = [];
+        if(!c.flags) c.flags = {};
+        if(!c.pets) c.pets = [];
+        if(!c.skills) c.skills = {};
+        if(!c.friends) c.friends = [];
+        if(!c.affairsHistory) c.affairsHistory = [];
+        if(!c.neighbors) c.neighbors = {};
+        if(c.fertility == null) c.fertility = 'normal';
+        if(c.faith == null) c.faith = 30;
+        if(c.fame == null) c.fame = 0;
+        if(c.savings == null) c.savings = 0;
+        if(c.investments == null) c.investments = 0;
+        if(!c.insurance) c.insurance = {home:false, health:false, life:false, auto:false};
+      }
+      return true;
+    }
+  } catch(e){ console.error('loadLife failed:', e.message); }
   return false;
 }
 function clearSave(){ try { localStorage.removeItem('lyfe_save'); } catch(e){} }

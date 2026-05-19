@@ -2347,6 +2347,212 @@ const MORE_LIFE_EVENTS = [
   {minAge:100, maxAge:115, prob:0.02, text:'You became a centenarian.', fx:{happy:+50, fame:+10}, tag:'milestone'},
 ];
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+// FORCED LABOR / TRAFFICKING — depicted as the tragedy it is.
+// Real-world reference: ILO estimates 27.6M people in forced labor globally as of 2021,
+// including 3.3M children. Game treats victims as survivors and perpetrators as criminals.
+// ═══════════════════════════════════════════════════════════════════════════════════
+const FORCED_LABOR_EVENTS = [
+  {id:'sweatshop_child', minAge:8, maxAge:17, tag:'death',
+   text:'Your family was recruited by a "broker" promising legitimate factory work in the city. You found yourself in a locked sweatshop sewing 16 hours a day. Some children there had been missing for years.',
+   choices:[
+     {label:'Escape through the back door at 3 AM.',
+      fx:{health:-8, happiness:-25, smarts:+2, karma:+3, money:-50},
+      result:'You ran for three days. A truck driver gave you a ride to a shelter. The shelter found your family. You will carry this. The trait "Trauma Survivor" was added to your record.', addTrait:'trauma_survivor'},
+     {label:'Endure. Wait for an inspection.',
+      fx:{health:-22, happiness:-30, smarts:-1},
+      result:'Months passed. An anonymous tip led to a police raid. You were freed but the trauma stayed. The factory owner served 4 years. You served the rest of your childhood healing.', addTrait:'trauma_survivor'},
+     {label:'Organize the other children quietly. Tell a journalist.',
+      fx:{health:-12, happiness:-20, smarts:+5, karma:+10}, requires:{smarts:60},
+      result:'A reporter you trusted ran the story. Federal raids hit five facilities. Your testimony put the operators in prison for life. You became a child-labor advocate at 24.', addTrait:'survivor_advocate'},
+   ],
+   minIncome:0, povertyOnly:true},
+  {id:'domestic_servitude', minAge:10, maxAge:17, tag:'death',
+   text:'A "wealthy aunt" offered to take you in and give you school in the capital. There was no school. There was a household where you cooked and cleaned 18 hours a day, slept under a stairwell, and were beaten for slow work.',
+   choices:[
+     {label:'Run away to the police station two blocks away.',
+      fx:{health:-6, happiness:-22, karma:+3},
+      result:'The officer believed you. A social worker placed you with a foster family. You finished school. You won\'t talk about that house, but you graduated.', addTrait:'trauma_survivor'},
+     {label:'Endure in silence — they threatened your family.',
+      fx:{health:-25, happiness:-35, smarts:-2},
+      result:'Years passed before another guest noticed. You were 17 when the household was raided. The "aunt" pled guilty. You are now in college, on a survivors\' scholarship.', addTrait:'trauma_survivor'},
+     {label:'Confront them with what you know.',
+      fx:{health:-30, happiness:-30, karma:+8},
+      result:'They threw you out into the street. You were rescued by an NGO outreach worker. They are now serving 12 years.', addTrait:'survivor_advocate'},
+   ],
+   povertyOnly:true},
+  {id:'farm_bonded', minAge:9, maxAge:17, tag:'death',
+   text:'Your father borrowed money he could not repay. The lender said you would work the debt off in the fields. You worked 14 hours a day in the heat. The debt grew faster than you could pay it.',
+   choices:[
+     {label:'A traveling teacher noticed you. Accept her offer to escape.',
+      fx:{health:-10, happiness:-18, smarts:+4, karma:+3},
+      result:'She drove you to a sanctuary three states away. You learned to read at 14. You finished school by 19. The lender was eventually arrested under anti-bonded-labor laws.', addTrait:'trauma_survivor'},
+     {label:'Endure for the family\'s honor.',
+      fx:{health:-30, happiness:-40, smarts:-2},
+      result:'You worked seven years before the law caught up to the lender. You came home at 19 to a family that did not know you anymore. Healing took the next decade.', addTrait:'trauma_survivor'},
+     {label:'Lead the other bonded workers into a coordinated strike.',
+      fx:{health:-18, happiness:-25, karma:+12, smarts:+5}, requires:{smarts:55},
+      result:'Forty of you walked off the fields at dawn. A regional rights commission heard the case. The bonded-labor system in your district was prosecuted. You are now a member of the commission.', addTrait:'survivor_advocate'},
+   ],
+   povertyOnly:true},
+  {id:'street_recruiter', minAge:6, maxAge:14, tag:'death',
+   text:'A man with kind eyes offered you sweets and asked if you wanted to "see a beautiful house." Something in you said no. You ran the other way and didn\'t stop until you reached your mother.',
+   choices:[
+     {label:'Tell your mother everything. She believes you.',
+      fx:{happiness:-8, karma:+5, smarts:+3},
+      result:'Your mother called the police that hour. Officers identified the man — he had a record. You were safe. The trait "Streetwise" was added.', addTrait:'streetwise'},
+     {label:'Keep the secret. You\'re scared no one will believe you.',
+      fx:{happiness:-15, smarts:+2},
+      result:'You never told anyone for years. He moved on to another town. You learned to read the world through the gap in your story. The trait "Cautious" was added.', addTrait:'cautious'},
+   ],
+   povertyOnly:false},
+];
+
+// Trait registration for survivor traits
+const SURVIVOR_TRAITS = {
+  trauma_survivor:    {id:'trauma_survivor',   name:'Trauma Survivor',  ico:'💪', desc:'Endured forced labor. Resilience runs deep, but flashbacks linger.', drift:{happiness:-1}},
+  survivor_advocate:  {id:'survivor_advocate', name:'Survivor Advocate',ico:'⚖️', desc:'Channels trauma into helping others. Karma rises faster.', drift:{karma:+2}},
+  streetwise:         {id:'streetwise',        name:'Streetwise',       ico:'🚸', desc:'You read danger before it reaches you.', drift:{smarts:+1}},
+};
+
+// Adult perpetrator decisions — anyone who participates faces consequences
+const TRAFFICKING_ADULT_EVENT = {
+  id:'trafficking_pitch', minAge:22, maxAge:75, tag:'death', requires:{karma:-1},
+  text:'A "business associate" approached you with a "labor brokerage" opportunity in another country. They explained how easy it is. The pay was obscene.',
+  choices:[
+    {label:'Refuse and report them to federal authorities.',
+     fx:{karma:+18, happiness:+5, money:0},
+     result:'Your tip led to a 14-person trafficking ring being taken down. You were called as a witness. Your name went on a Department-of-Justice honor list.'},
+    {label:'Refuse but stay quiet to protect yourself.',
+     fx:{karma:+5, happiness:-4},
+     result:'You said no and changed your number. The ring continued. You carry that.'},
+    {label:'Engage. Take the money.',
+     fx:{karma:-60, happiness:+8, money:+250000, history:'You took money from human traffickers.', secret:'You participated in human trafficking. You will be found.'},
+     result:'You became rich for a while. Federal investigators traced the money in your fourth year. You served 25 years federal. Your descendants carry your name as a stain.',
+     addFlag:'trafficker'},
+  ],
+};
+
+// Roll a forced-labor event for an at-risk child (poverty + young age)
+function rollForcedLaborEvent(){
+  const c = LIFE.char;
+  if(!c) return;
+  // Only fire for children in low-income contexts
+  const country = COUNTRIES[c.country];
+  if(!country) return;
+  const inPoverty = country.salaryMult < 0.50 || (c.parents && c.parents.dad && /^Unemployed|Farm|Labor/i.test(c.parents.dad.occupation||''));
+  if(c.age >= 18) return;
+  if(!inPoverty) return;
+  if(c.flags && c.flags.forcedLaborSeen) return;
+  // Low probability — this is a rare, life-defining tragedy, not background noise
+  if(Math.random() > 0.012) return;
+  const eligible = FORCED_LABOR_EVENTS.filter(e =>
+    c.age >= e.minAge && c.age <= e.maxAge);
+  if(!eligible.length) return;
+  const ev = eligible[Math.floor(Math.random()*eligible.length)];
+  if(!GS_isSafeMode()){
+    queueForcedLaborEvent(ev);
+  }
+}
+
+// Player can disable difficult-content events from a settings toggle (default: enabled)
+function GS_isSafeMode(){
+  try { return localStorage.getItem('lyfe_safeMode') === '1'; } catch(e){ return false; }
+}
+function setSafeMode(v){
+  try { localStorage.setItem('lyfe_safeMode', v ? '1' : '0'); } catch(e){}
+}
+
+let _pendingForcedLaborEvent = null;
+function queueForcedLaborEvent(ev){
+  _pendingForcedLaborEvent = ev;
+  // Open as an event-decision modal (re-uses existing life-event UI if available)
+  setTimeout(() => playForcedLaborEvent(ev), 200);
+}
+
+function playForcedLaborEvent(ev){
+  const c = LIFE.char;
+  const overlay = document.getElementById('life-event-overlay');
+  const box = document.getElementById('life-event-box');
+  if(!overlay || !box){
+    // Fallback: apply first option silently and log the event
+    if(ev.choices && ev.choices[0]){
+      applyForcedLaborChoice(ev, 0);
+    }
+    return;
+  }
+  box.innerHTML =
+    '<div class="le-tag dark">CHILDHOOD · HUMAN-RIGHTS WARNING</div>'
+    + '<div class="le-title">A Dangerous Moment</div>'
+    + '<div class="le-setting">' + ev.text + '</div>'
+    + '<div class="le-choices" id="le-choices-block-fl">'
+    + ev.choices.map((ch, i) => {
+        const fx = ch.fx || {};
+        const eff = [];
+        if(fx.health)    eff.push('<span class="le-eff ' + (fx.health<0?'neg':'pos') + '">Health ' + (fx.health>0?'+':'') + fx.health + '</span>');
+        if(fx.happiness) eff.push('<span class="le-eff ' + (fx.happiness<0?'neg':'pos') + '">Happiness ' + (fx.happiness>0?'+':'') + fx.happiness + '</span>');
+        if(fx.smarts)    eff.push('<span class="le-eff ' + (fx.smarts<0?'neg':'pos') + '">Smarts ' + (fx.smarts>0?'+':'') + fx.smarts + '</span>');
+        if(fx.karma)     eff.push('<span class="le-eff ' + (fx.karma<0?'neg':'pos') + '">Karma ' + (fx.karma>0?'+':'') + fx.karma + '</span>');
+        return '<button class="le-choice" onclick="applyForcedLaborChoice(_pendingForcedLaborEvent, ' + i + ')">'
+          + ch.label
+          + (eff.length ? '<div class="le-effects">' + eff.join('') + '</div>' : '')
+          + '</button>';
+      }).join('')
+    + '</div>';
+  overlay.classList.add('show');
+}
+
+function applyForcedLaborChoice(ev, idx){
+  const c = LIFE.char;
+  const choice = ev.choices[idx];
+  if(!choice){ closeForcedLaborEvent(); return; }
+  const fx = choice.fx || {};
+  if(fx.health    != null) c.health    = clamp(c.health + fx.health, 0, 100);
+  if(fx.happiness != null) c.happiness = clamp(c.happiness + fx.happiness, 0, 100);
+  if(fx.smarts    != null) c.smarts    = clamp(c.smarts + fx.smarts, 0, 100);
+  if(fx.karma     != null) c.karma     = clamp(c.karma + fx.karma, 0, 100);
+  if(fx.money) c.money += fx.money;
+  if(choice.addTrait){
+    if(!c.traits) c.traits = [];
+    if(!c.traits.includes(choice.addTrait)) c.traits.push(choice.addTrait);
+  }
+  // Mark so a child can't experience multiple of these in a single childhood
+  c.flags = c.flags || {};
+  c.flags.forcedLaborSeen = true;
+  if(typeof pushEvent === 'function'){
+    pushEvent('death', 'A childhood ordeal: ' + choice.result);
+  }
+  // Replace choices with result text
+  const block = document.getElementById('le-choices-block-fl');
+  if(block){
+    block.innerHTML = '<div class="le-result"><div class="le-result-h">Survivor\'s Aftermath</div>' + choice.result + '</div>'
+      + '<button class="le-cont" onclick="closeForcedLaborEvent()">Continue</button>';
+  }
+  saveLife();
+}
+function closeForcedLaborEvent(){
+  const ov = document.getElementById('life-event-overlay');
+  if(ov) ov.classList.remove('show');
+  _pendingForcedLaborEvent = null;
+  if(typeof renderAll === 'function') renderAll();
+}
+
+// Adult perpetrator event — fires for low-karma adults rarely
+function rollTraffickingAdultEvent(){
+  const c = LIFE.char;
+  if(!c || c.age < 22 || c.age > 75) return;
+  if(c.flags && c.flags.trafficker) return;
+  if(c.flags && c.flags.trafficking_seen) return;
+  if(GS_isSafeMode()) return;
+  // Only when karma is already lower (the universe lines up the temptation)
+  if(c.karma > 45) return;
+  if(Math.random() > 0.004) return;
+  c.flags = c.flags || {};
+  c.flags.trafficking_seen = true;
+  // Reuse same modal flow
+  queueForcedLaborEvent(TRAFFICKING_ADULT_EVENT);
+}
+
 // Bundle extensions DEFERRED — called at end of script after all const declarations
 function applyMegaExpansion(){
   try { LIFE_EVENTS.push(...LIFE_EVENTS_EXT, ...MORE_LIFE_EVENTS); } catch(e){}
@@ -2459,6 +2665,22 @@ const QUICK_JOBS = [
   {id:'social',        title:'Social Worker',           salary:48000, ico:'❤️', minAge:22, minSmarts:60, requiresDegree:'general'},
   {id:'priest',        title:'Member of the Clergy',    salary:55000, ico:'⛪', minAge:25, minSmarts:60},
   {id:'monk',          title:'Monastic / Monk',         salary:8000, ico:'🧘', minAge:25},
+  // ── TEEN JOBS (age 13+) — small income, age-gated, builds early savings ──
+  {id:'lemonade',      title:'Lemonade Stand',          salary:1200,  ico:'🍋', minAge:7,  teen:true},
+  {id:'paperboy',      title:'Paper Route',             salary:3600,  ico:'📰', minAge:11, teen:true},
+  {id:'lawnmowing',    title:'Lawn Mowing',             salary:4800,  ico:'🌱', minAge:12, teen:true, minHealth:50},
+  {id:'babysitting',   title:'Babysitting',             salary:5200,  ico:'👶', minAge:13, teen:true},
+  {id:'dogwalking',    title:'Dog Walking',             salary:4400,  ico:'🐕', minAge:12, teen:true},
+  {id:'tutoring_peers',title:'Tutoring Younger Kids',   salary:6500,  ico:'📚', minAge:14, teen:true, minSmarts:62},
+  {id:'bagger',        title:'Grocery Bagger',          salary:8800,  ico:'🛒', minAge:16, teen:true},
+  {id:'busser',        title:'Restaurant Busser',       salary:11000, ico:'🍽️', minAge:16, teen:true},
+  {id:'lifeguard_teen',title:'Pool Lifeguard',          salary:14000, ico:'🏊', minAge:16, teen:true, minHealth:65},
+  {id:'icecream',      title:'Ice-Cream Truck Helper',  salary:9200,  ico:'🍦', minAge:14, teen:true},
+  {id:'youthcoach',    title:'Youth Sports Coach',      salary:6800,  ico:'⚽', minAge:15, teen:true, minHealth:60},
+  {id:'retail_teen',   title:'Mall Retail Associate',   salary:13500, ico:'🛍️', minAge:16, teen:true},
+  {id:'caddy',         title:'Golf Caddy',              salary:14500, ico:'⛳', minAge:14, teen:true, minHealth:55},
+  {id:'movie_usher',   title:'Movie Theater Usher',     salary:11200, ico:'🎬', minAge:16, teen:true},
+  {id:'farm_hand',     title:'Farm Hand (Seasonal)',    salary:9500,  ico:'🌾', minAge:13, teen:true, minHealth:65},
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2992,6 +3214,11 @@ function ageUp(){
   processFinances();
   // random life event(s)
   rollLifeEvents();
+  // At-risk forced-labor events for children in extreme poverty (rare).
+  // Adult-perpetrator temptation event for low-karma adults (rare).
+  // Both can be disabled via Safe Mode setting.
+  rollForcedLaborEvent();
+  rollTraffickingAdultEvent();
   // child raising events
   rollChildEvents();
   // partner events
@@ -3180,11 +3407,17 @@ function processCareer(){
 
 function processFinances(){
   const c = LIFE.char;
-  // salary in
+  // salary in (teen jobs included — already part of c.career if they applied)
   let income = 0;
   if(c.career && !c.inJail){
     income = c.career.currentSalary;
     c.money += income;
+  }
+  // Children under 18 live with parents — no housing or living expenses
+  if(c.age < 18){
+    // Floor money at 0 so they never start adult life in debt from minor years
+    if(c.money < 0) c.money = 0;
+    return;
   }
   // housing
   const house = HOUSES.find(h => h.id === c.houseId) || HOUSES[0];
@@ -5108,9 +5341,17 @@ function applyToCollege(id){
 // ═══════════════════════════════════════════════════════════════════════
 function openQuickJobs(){
   const c = LIFE.char;
-  if(c.age < 16){ toast('Too young to work.'); return; }
-  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Quick jobs — flat salaries, no promotion ladders, but plenty of variety. ' + QUICK_JOBS.length + ' to choose from.</div>';
-  QUICK_JOBS.forEach(j => {
+  if(c.age < 7){ toast('Too young to work.'); return; }
+  // Show teen jobs first when player is under 18, otherwise full job list
+  const showOnlyTeen = c.age < 18;
+  const jobs = showOnlyTeen
+    ? QUICK_JOBS.filter(j => j.teen)
+    : QUICK_JOBS;
+  let intro = showOnlyTeen
+    ? 'Small jobs for under-18s. Real-world part-time work — pocket money, no rent eats your savings before adulthood.'
+    : 'Quick jobs — flat salaries, no promotion ladders, but plenty of variety. ' + QUICK_JOBS.length + ' to choose from.';
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">' + intro + '</div>';
+  jobs.forEach(j => {
     const country = COUNTRIES[c.country];
     const salary = Math.floor(j.salary * country.salaryMult);
     const meetsAge = c.age >= (j.minAge || 16);

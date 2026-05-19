@@ -240,6 +240,10 @@ button,input,select{font-family:inherit;cursor:pointer;}
   <div class="hud-chip money" id="hud-money">$1,500</div>
   <button class="tb-btn" onclick="openStats()">Stats</button>
   <button class="tb-btn" onclick="openAchievements()">🏆</button>
+  <button class="tb-btn" onclick="openDatingPrefs()">💞 Prefs</button>
+  <button class="tb-btn" onclick="openAffairMenu()">💋 Risky</button>
+  <button class="tb-btn" onclick="openBabyDrama()">👶 Drama</button>
+  <button class="tb-btn" onclick="openDowry()">💍 Dowry</button>
   <button class="tb-btn" onclick="openCharSheet()">📋</button>
   <button class="tb-btn" onclick="confirmRestart()">New</button>
 </div>
@@ -841,7 +845,12 @@ const WORLDS = {
         {id:'cardealer', icon:'🚗', name:'Car Dealership',    x:35, y:14, w:4, h:3, action:'openCarDealer',    cls:'shop'},
         {id:'realtor',   icon:'🏘️', name:'Real Estate',       x:41, y:14, w:4, h:3, action:'openRealtor',      cls:'shop'},
         {id:'airport',   icon:'✈️', name:'Airport',           x:47, y:14, w:4, h:3, action:'openAirport',      cls:'civic'},
-        {id:'library',   icon:'📚', name:'Library',           x:52, y:14, w:3, h:3, action:'openLibrary',      cls:'school'},
+        {id:'library',     icon:'📚', name:'Library',          x:52, y:14, w:3, h:3, action:'openLibrary',          cls:'school'},
+        {id:'courthouse',  icon:'⚖️', name:'Family Court',      x:33, y:6,  w:3, h:2, action:'openFamilyCourt',      cls:'civic'},
+        {id:'mosque',      icon:'🕌', name:'Mosque',            x:38, y:6,  w:3, h:2, action:'openMosque',           cls:'civic'},
+        {id:'temple',      icon:'🕍', name:'Synagogue / Temple',x:43, y:6,  w:3, h:2, action:'openTemple',           cls:'civic'},
+        {id:'mandir',      icon:'🛕', name:'Mandir',            x:48, y:6,  w:3, h:2, action:'openMandir',           cls:'civic'},
+        {id:'pagoda',      icon:'⛩️', name:'Buddhist Pagoda',   x:53, y:6,  w:3, h:2, action:'openPagoda',           cls:'civic'},
       ],
       exits: [
         {x:0, y:9, w:1, h:2, target:'neighborhood', spawnX:27, spawnY:8},
@@ -1744,10 +1753,363 @@ function openChurch(){
       + '<button class="btn" onclick="faithPray()">🙏 Pray</button>'
       + '<button class="btn green" onclick="faithService()">⛪ Attend Service ($30)</button>'
       + '<button class="btn" onclick="faithCharity()">💝 Donate ($500)</button>'
+      + '<button class="btn" onclick="openReligiousCeremonies()">🕊️ Ceremonies / Rituals</button>'
       + '<button class="btn red" onclick="leaveReligion()">Leave Faith</button>'
       + '</div>';
   }
   openMod('⛪ ' + (c.religion ? RELIGIONS[c.religion].name : 'Faith & Religion'), html);
+}
+
+// ── RELIGIOUS CEREMONIES (Nikkah, Canon Wedding, Bar Mitzvah, Saptapadi, etc.) ──
+function openReligiousCeremonies(){
+  const c = G.char;
+  if(!c.religion){ toast('Adopt a religion first.'); return; }
+  const lawId = Object.keys(RELIGIOUS_LAWS).find(k => RELIGIOUS_LAWS[k].religion === c.religion);
+  if(!lawId){ toast('No catalogued ceremonies for this religion.'); return; }
+  const law = RELIGIOUS_LAWS[lawId];
+  let html = '<p style="font-family:var(--font-m);font-size:11px;color:var(--accent2);letter-spacing:.16em;margin-bottom:6px;text-transform:uppercase;">'
+    + law.ico + ' ' + law.name + '</p>';
+  if(law.rules){
+    html += '<p style="font-size:11px;color:var(--t3);line-height:1.6;margin-bottom:14px;font-style:italic;">'
+      + 'Key tenets:<br>' + law.rules.map(r => '· ' + r).join('<br>') + '</p>';
+  }
+  Object.keys(law.rituals).forEach(rid => {
+    const r = law.rituals[rid];
+    const can = c.money >= (r.cost || 0);
+    const fxText = Object.keys(r.effect||{}).map(k => (r.effect[k]>0?'+':'') + r.effect[k] + ' ' + k).join(' · ');
+    html += '<div class="shop-item" onclick="' + (can?'performRitual(\'' + lawId + '\',\'' + rid + '\')':'toast(\'Not enough money\')') + '">'
+      + '<div class="shop-item-ico">' + r.ico + '</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + r.name + '</div>'
+      + (fxText ? '<div class="shop-item-desc">' + fxText + '</div>' : '')
+      + '</div>'
+      + (r.cost ? '<div class="shop-item-pay neg">−' + fmt(r.cost) + '</div>' : '<div class="shop-item-pay">FREE</div>')
+      + '</div>';
+  });
+  closeModal();
+  openMod('🕊️ ' + law.name + ' — Ceremonies', html);
+}
+
+function performRitual(lawId, ritualId){
+  const c = G.char;
+  const law = RELIGIOUS_LAWS[lawId];
+  if(!law) return;
+  const r = law.rituals[ritualId];
+  if(!r) return;
+  if(r.cost && c.money < r.cost){ toast('Not enough money.'); return; }
+  if(r.cost) c.money -= r.cost;
+  const fx = r.effect || {};
+  // Map effect keys to char keys
+  if(fx.happy != null)  c.happiness = clamp(c.happiness + fx.happy, 0, 100);
+  if(fx.karma != null)  c.karma     = clamp(c.karma + fx.karma, 0, 100);
+  if(fx.faith != null)  c.faith     = clamp((c.faith||0) + fx.faith, 0, 100);
+  if(fx.smarts != null) c.smarts    = clamp(c.smarts + fx.smarts, 0, 100);
+  if(fx.health != null) c.health    = clamp(c.health + fx.health, 0, 100);
+  if(fx.looks != null)  c.looks     = clamp(c.looks + fx.looks, 0, 100);
+  if(!c.ritualsCompleted) c.ritualsCompleted = [];
+  c.ritualsCompleted.push(ritualId);
+  // Marriage / divorce side effects
+  if(['nikkah','cat_wedding','jew_wedding','hin_wedding','bud_wedding','civil_mar'].includes(ritualId)){
+    if(c.relationship){ c.relationship.married = true; c.relationship.weddingType = ritualId; }
+  } else if(['talaq','annulment','get_div','civil_div'].includes(ritualId)){
+    if(c.relationship){
+      c.money = Math.floor(c.money / 2);
+      miniMsg('💔 Marriage ended. Assets split.');
+      c.relationship = null;
+    }
+  }
+  miniMsg(r.ico + ' ' + r.name + ' completed.');
+  closeModal();
+  updateHud();
+  save();
+  setTimeout(openReligiousCeremonies, 80);
+}
+
+// ── DATING PREFERENCES ──
+function ensureDatingPrefs(){
+  const c = G.char;
+  if(!c.datingPrefs){
+    c.datingPrefs = {
+      minAge: Math.max(18, c.age - 5),
+      maxAge: c.age + 10,
+      sexPref: c.sex === 'm' ? 'f' : 'm',
+      religionFilter: null,
+      minSmarts: 30,
+      minLooks: 30,
+    };
+  }
+}
+function openDatingPrefs(){
+  ensureDatingPrefs();
+  const c = G.char;
+  const p = c.datingPrefs;
+  let html = '<p style="font-size:12px;color:var(--t3);font-style:italic;margin-bottom:14px;">Tune your dating preferences. New matches respect these filters.</p>';
+  html += '<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:center;font-size:13px;">';
+  html += '<span style="font-family:var(--font-m);font-size:9px;letter-spacing:.16em;color:var(--accent2);text-transform:uppercase;">Sex Pref</span>'
+    + '<div style="display:flex;gap:6px;">'
+    + '<button class="btn ' + (p.sexPref==='m'?'green':'') + '" onclick="setDP(\'sexPref\',\'m\')">Male</button>'
+    + '<button class="btn ' + (p.sexPref==='f'?'green':'') + '" onclick="setDP(\'sexPref\',\'f\')">Female</button>'
+    + '<button class="btn ' + (p.sexPref==='any'?'green':'') + '" onclick="setDP(\'sexPref\',\'any\')">Anyone</button>'
+    + '</div>';
+  html += '<span style="font-family:var(--font-m);font-size:9px;letter-spacing:.16em;color:var(--accent2);text-transform:uppercase;">Min Age</span>'
+    + '<input type="number" min="18" max="80" value="' + p.minAge + '" oninput="setDP(\'minAge\',+this.value)" style="background:#0a0a14;border:1px solid #2a2a3a;color:var(--t1);padding:6px 10px;border-radius:3px;width:80px;">';
+  html += '<span style="font-family:var(--font-m);font-size:9px;letter-spacing:.16em;color:var(--accent2);text-transform:uppercase;">Max Age</span>'
+    + '<input type="number" min="18" max="120" value="' + p.maxAge + '" oninput="setDP(\'maxAge\',+this.value)" style="background:#0a0a14;border:1px solid #2a2a3a;color:var(--t1);padding:6px 10px;border-radius:3px;width:80px;">';
+  const relButton = (val,label) => '<button class="btn ' + (p.religionFilter===val?'green':'') + '" onclick="setDP(\'religionFilter\',' + (val?'\''+val+'\'':'null') + ')">' + label + '</button>';
+  html += '<span style="font-family:var(--font-m);font-size:9px;letter-spacing:.16em;color:var(--accent2);text-transform:uppercase;">Religion</span>'
+    + '<div style="display:flex;gap:5px;flex-wrap:wrap;">'
+    + relButton(null,'Any')
+    + relButton('christian','✝️ Christian')
+    + relButton('islam','☪️ Muslim')
+    + relButton('hindu','🕉️ Hindu')
+    + relButton('buddhist','☸️ Buddhist')
+    + relButton('jewish','✡️ Jewish')
+    + relButton('secular','🌐 Secular')
+    + '</div>';
+  html += '<span style="font-family:var(--font-m);font-size:9px;letter-spacing:.16em;color:var(--accent2);text-transform:uppercase;">Min Smarts</span>'
+    + '<input type="number" min="0" max="100" value="' + p.minSmarts + '" oninput="setDP(\'minSmarts\',+this.value)" style="background:#0a0a14;border:1px solid #2a2a3a;color:var(--t1);padding:6px 10px;border-radius:3px;width:80px;">';
+  html += '<span style="font-family:var(--font-m);font-size:9px;letter-spacing:.16em;color:var(--accent2);text-transform:uppercase;">Min Looks</span>'
+    + '<input type="number" min="0" max="100" value="' + p.minLooks + '" oninput="setDP(\'minLooks\',+this.value)" style="background:#0a0a14;border:1px solid #2a2a3a;color:var(--t1);padding:6px 10px;border-radius:3px;width:80px;">';
+  html += '</div>';
+  html += '<button class="btn green" style="width:100%;margin-top:14px;padding:10px;" onclick="closeModal()">Save Preferences</button>';
+  openMod('💞 Dating Preferences', html);
+}
+function setDP(field, val){
+  ensureDatingPrefs();
+  G.char.datingPrefs[field] = val;
+  save();
+  openDatingPrefs();
+}
+
+// ── INFIDELITY / AFFAIRS ──
+function openAffairMenu(){
+  const c = G.char;
+  if(!c.relationship){ toast('You\'re not in a relationship — nothing to cheat on.'); return; }
+  let html = '<p style="font-family:var(--font-s);font-size:13px;color:var(--t2);margin-bottom:14px;line-height:1.5;">Cheating has consequences. Discovery risk, karma loss, partner damage.</p>';
+  html += '<div class="shop-item" onclick="haveAffair(\'brief\')">'
+    + '<div class="shop-item-ico">😈</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">Brief Affair</div>'
+    + '<div class="shop-item-desc">+10 happy short-term · −12 karma · 20% discovery</div></div>'
+    + '<button class="btn red">Cheat</button></div>';
+  html += '<div class="shop-item" onclick="haveAffair(\'long\')">'
+    + '<div class="shop-item-ico">😏</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">Long-Term Affair Partner</div>'
+    + '<div class="shop-item-desc">+18 happy · −20 karma · 45% discovery over time</div></div>'
+    + '<button class="btn red">Pursue</button></div>';
+  html += '<div class="shop-item" onclick="haveAffair(\'emotional\')">'
+    + '<div class="shop-item-ico">📱</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">Emotional Affair</div>'
+    + '<div class="shop-item-desc">+8 happy · −6 karma · 15% discovery</div></div>'
+    + '<button class="btn red">Engage</button></div>';
+  openMod('💋 Risky Choices', html);
+}
+function haveAffair(type){
+  const c = G.char;
+  if(!c.relationship){ return; }
+  const params = {
+    brief:    {happy:10, karma:-12, discChance:0.20, compatLoss:25, secret:'Brief affair.'},
+    long:     {happy:18, karma:-20, discChance:0.45, compatLoss:45, secret:'Long-term affair.'},
+    emotional:{happy:8,  karma:-6,  discChance:0.15, compatLoss:15, secret:'Emotional affair.'},
+  };
+  const cfg = params[type] || params.brief;
+  applyFx({happy:cfg.happy, karma:cfg.karma});
+  if(!c.affairs) c.affairs = [];
+  c.affairs.push({type, atAge:c.age, secret:cfg.secret});
+  if(Math.random() < cfg.discChance){
+    c.relationship.compat = clamp((c.relationship.compat||50) - cfg.compatLoss, 0, 100);
+    miniMsg('💔 ' + c.relationship.name + ' discovered your affair.');
+    if(c.relationship.compat < 25 && Math.random() < 0.6){
+      // Auto-divorce
+      c.money = Math.floor(c.money/2);
+      miniMsg('💸 Divorce filed. Assets split.');
+      c.relationship = null;
+    }
+  } else {
+    miniMsg('🙊 You got away with it — for now.');
+  }
+  closeModal();
+  updateHud();
+  save();
+}
+
+// ── BABY MAMA / CHILD SUPPORT ──
+function openBabyDrama(){
+  const c = G.char;
+  let html = '<p style="font-size:12px;color:var(--t3);font-style:italic;margin-bottom:14px;">Out-of-wedlock children + custody + child-support obligations.</p>';
+  const oow = (c.kids||[]).filter(k => k.outOfWedlock);
+  if(oow.length){
+    html += '<p style="font-family:var(--font-m);font-size:10px;letter-spacing:.16em;color:var(--accent2);text-transform:uppercase;margin-bottom:10px;">Children Out of Wedlock</p>';
+    oow.forEach(k => {
+      const support = computeChildSupport();
+      html += '<div class="shop-item"><div class="shop-item-ico">👶</div>'
+        + '<div class="shop-item-info"><div class="shop-item-name">' + k.name + ' (age ' + k.age + ')</div>'
+        + '<div class="shop-item-desc">Other parent: ' + (k.otherParent || 'unknown') + '</div></div>'
+        + '<button class="btn green" onclick="payChildSupport(\'' + k.name + '\')">Pay ' + fmt(support) + '/mo</button></div>';
+    });
+  }
+  html += '<div class="shop-item" onclick="triggerBabyDrama()">'
+    + '<div class="shop-item-ico">📞</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">A One-Night Stand Says She\'s Pregnant</div>'
+    + '<div class="shop-item-desc">A potential out-of-wedlock child arrives. Choose your response.</div></div>'
+    + '<button class="btn">Trigger</button></div>';
+  openMod('👶 Baby Mama Drama', html);
+}
+function computeChildSupport(){
+  const c = G.char;
+  const monthly = (c.salary || 50000) / 12;
+  return Math.max(200, Math.floor(monthly * 0.17));
+}
+function payChildSupport(kidName){
+  const c = G.char;
+  const amt = computeChildSupport() * 12;
+  c.money -= amt;
+  miniMsg('💸 Paid ' + fmt(amt) + ' in annual support for ' + kidName + '.');
+  closeModal();
+  updateHud();
+  save();
+}
+function triggerBabyDrama(){
+  const c = G.char;
+  const sex = Math.random() < 0.5 ? 'm' : 'f';
+  const otherName = (Math.random()<0.5?'Maria':'Jessica') + ' ' + (Math.random()<0.5?'Smith':'Garcia');
+  closeModal();
+  openMod('👶 Unexpected Call',
+    '<p style="font-family:var(--font-s);font-size:14px;line-height:1.6;">' + otherName + ' called. She says she\'s pregnant — and you\'re the father. DNA test pending. What do you do?</p>'
+    + '<div class="btn-row" style="margin-top:14px;">'
+    + '<button class="btn green" onclick="babyDecide(\'accept\',\'' + otherName + '\',\'' + sex + '\')">Accept Paternity</button>'
+    + '<button class="btn" onclick="babyDecide(\'dna\',\'' + otherName + '\',\'' + sex + '\')">Demand DNA Test ($800)</button>'
+    + '<button class="btn red" onclick="babyDecide(\'deny\',\'' + otherName + '\',\'' + sex + '\')">Deny &amp; Fight</button>'
+    + '</div>');
+}
+function babyDecide(mode, otherName, sex){
+  const c = G.char;
+  closeModal();
+  if(mode === 'accept'){
+    const babyName = prompt('Baby name?', sex==='m'?'James':'Mary');
+    if(babyName === null) return;
+    c.kids = c.kids || [];
+    c.kids.push({name:babyName||'Baby', sex, age:0, alive:true, outOfWedlock:true, otherParent:otherName});
+    applyFx({happy:8, karma:5});
+    miniMsg('👶 You accepted paternity of ' + (babyName||'a child') + '.');
+  } else if(mode === 'dna'){
+    if(c.money < 800){ toast('Need $800.'); return; }
+    c.money -= 800;
+    if(Math.random() < 0.65){
+      miniMsg('🧬 DNA test positive. You\'re the father.');
+      babyDecide('accept', otherName, sex);
+    } else {
+      miniMsg('🧬 DNA test negative. You\'re off the hook.');
+      applyFx({happy:10});
+    }
+  } else if(mode === 'deny'){
+    if(Math.random() < 0.5){
+      const arrears = 25000 + Math.floor(Math.random()*40000);
+      c.money -= arrears;
+      miniMsg('⚖️ Court found you the father. Back support: −' + fmt(arrears));
+      applyFx({happy:-12, karma:-8});
+    } else {
+      miniMsg('⚖️ The case was dropped.');
+    }
+  }
+  updateHud();
+  save();
+}
+
+// ── DOWRY / MAHR ──
+function openDowry(){
+  const c = G.char;
+  if(!c.relationship){ toast('Need a partner first.'); return; }
+  let html = '<p style="font-size:12px;color:var(--t3);font-style:italic;margin-bottom:14px;">A pre-marital financial obligation. Higher amounts boost partner approval.</p>';
+  [3000, 8500, 18000, 35000, 75000].forEach(amt => {
+    const can = c.money >= amt;
+    html += '<div class="shop-item" onclick="' + (can?'payDowry(' + amt + ')':'toast(\'Not enough money\')') + '">'
+      + '<div class="shop-item-ico">💍</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + fmt(amt) + ' Mahr / Dowry</div>'
+      + '<div class="shop-item-desc">Compat +' + Math.floor(amt/2000) + '</div></div>'
+      + '<button class="btn green">Pay</button></div>';
+  });
+  openMod('💍 Set the Dowry', html);
+}
+function payDowry(amt){
+  const c = G.char;
+  if(c.money < amt){ toast('Not enough money.'); return; }
+  c.money -= amt;
+  if(!c.relationship.compat) c.relationship.compat = 50;
+  c.relationship.compat = clamp(c.relationship.compat + Math.floor(amt/2000), 0, 100);
+  applyFx({happy:8, karma:3});
+  miniMsg('💍 Paid ' + fmt(amt) + ' as dowry.');
+  closeModal();
+  updateHud();
+  save();
+}
+
+// ── FAMILY COURT BUILDING ──
+function openFamilyCourt(){
+  let html = '<p style="font-size:12px;color:var(--t3);font-style:italic;margin-bottom:14px;">Civil law: weddings, divorces, paternity, custody, prenups, adoption.</p>';
+  html += '<div class="shop-item" onclick="performRitual(\'secular_civil\',\'civil_mar\')">'
+    + '<div class="shop-item-ico">📋</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">Civil Marriage</div>'
+    + '<div class="shop-item-desc">+15 happy · $200 filing fee</div></div>'
+    + '<button class="btn green">Marry</button></div>';
+  html += '<div class="shop-item" onclick="performRitual(\'secular_civil\',\'dom_part\')">'
+    + '<div class="shop-item-ico">🤝</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">Domestic Partnership</div>'
+    + '<div class="shop-item-desc">+10 happy · $150 filing fee</div></div>'
+    + '<button class="btn">File</button></div>';
+  html += '<div class="shop-item" onclick="performRitual(\'secular_civil\',\'prenup\')">'
+    + '<div class="shop-item-ico">📄</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">Prenuptial Agreement</div>'
+    + '<div class="shop-item-desc">$8,500 in legal fees</div></div>'
+    + '<button class="btn">Sign</button></div>';
+  html += '<div class="shop-item" onclick="performRitual(\'secular_civil\',\'civil_div\')">'
+    + '<div class="shop-item-ico">📜</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">Civil Divorce</div>'
+    + '<div class="shop-item-desc">−12 happy · $18k in fees · assets split 50/50</div></div>'
+    + '<button class="btn red">File</button></div>';
+  html += '<div class="shop-item" onclick="performRitual(\'secular_civil\',\'adoption\')">'
+    + '<div class="shop-item-ico">👶</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">Legal Adoption</div>'
+    + '<div class="shop-item-desc">+25 happy · +10 karma · $38k</div></div>'
+    + '<button class="btn green">Adopt</button></div>';
+  html += '<div class="shop-item" onclick="openBabyDrama()">'
+    + '<div class="shop-item-ico">👶</div>'
+    + '<div class="shop-item-info"><div class="shop-item-name">Paternity / Child Support Case</div>'
+    + '<div class="shop-item-desc">Family Court — file or respond to a paternity case</div></div>'
+    + '<button class="btn">Open</button></div>';
+  openMod('⚖️ Family Court', html);
+}
+
+// ── ETHNIC HOUSES OF WORSHIP ──
+function openMosque(){
+  const c = G.char;
+  if(c.religion !== 'islam'){
+    if(confirm('Convert to Islam to access mosque ceremonies?')) convertTo('islam');
+    else return;
+  }
+  openReligiousCeremonies();
+}
+function openTemple(){
+  const c = G.char;
+  if(c.religion !== 'jewish'){
+    if(confirm('Convert to Judaism to access temple ceremonies?')) convertTo('jewish');
+    else return;
+  }
+  openReligiousCeremonies();
+}
+function openMandir(){
+  const c = G.char;
+  if(c.religion !== 'hindu'){
+    if(confirm('Convert to Hinduism to access mandir ceremonies?')) convertTo('hindu');
+    else return;
+  }
+  openReligiousCeremonies();
+}
+function openPagoda(){
+  const c = G.char;
+  if(c.religion !== 'buddhist'){
+    if(confirm('Convert to Buddhism to access pagoda ceremonies?')) convertTo('buddhist');
+    else return;
+  }
+  openReligiousCeremonies();
 }
 function convertTo(k){
   G.char.religion = k;

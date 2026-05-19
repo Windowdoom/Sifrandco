@@ -552,6 +552,189 @@ const MOVIES = [
   {id:'animated',   name:'The Last Lighthouse',  cost:13, happy:7, smarts:1},
 ];
 
+// ── EXPANDED JOBS (~60 more careers, pushed into JOBS after declaration) ──
+JOBS.push(
+  // ── MEDICAL SPECIALTIES ──
+  {id:'surgeon',     title:'Surgeon',              salary:380000, minSmarts:84, ico:'🔪'},
+  {id:'cardiologist',title:'Cardiologist',         salary:420000, minSmarts:85, ico:'❤️'},
+  {id:'neurosurgeon',title:'Neurosurgeon',         salary:680000, minSmarts:88, ico:'🧠'},
+  {id:'oncologist',  title:'Oncologist',           salary:425000, minSmarts:84, ico:'🎗️'},
+  {id:'pediatrician',title:'Pediatrician',         salary:240000, minSmarts:78, ico:'🧸'},
+  {id:'psychiatrist',title:'Psychiatrist',         salary:265000, minSmarts:78, ico:'🛋️'},
+  {id:'anesthes',    title:'Anesthesiologist',     salary:415000, minSmarts:82, ico:'💉'},
+  {id:'radiologist', title:'Radiologist',          salary:438000, minSmarts:82, ico:'🖥️'},
+  {id:'dermat',      title:'Dermatologist',        salary:438000, minSmarts:82, ico:'🧴'},
+  {id:'er_doc',      title:'ER Physician',         salary:355000, minSmarts:80, ico:'🚨'},
+  // ── LEGAL SPECIALTIES ──
+  {id:'crim_lawyer', title:'Criminal Defense Lawyer',salary:185000,minSmarts:75,ico:'🛡️'},
+  {id:'da',          title:'District Attorney',    salary:185000, minSmarts:75, ico:'⚔️'},
+  {id:'corp_lawyer', title:'Corporate Lawyer',     salary:325000, minSmarts:78, ico:'💼'},
+  {id:'patent_atty', title:'Patent Attorney',      salary:285000, minSmarts:78, ico:'📜'},
+  {id:'family_law',  title:'Family Lawyer',        salary:165000, minSmarts:72, ico:'👨‍👩‍👧'},
+  {id:'imm_lawyer',  title:'Immigration Lawyer',   salary:135000, minSmarts:73, ico:'🛂'},
+  // ── TECH EXPANDED ──
+  {id:'ml_eng',      title:'ML Engineer',          salary:325000, minSmarts:80, ico:'🤖'},
+  {id:'devops',      title:'DevOps / SRE',         salary:225000, minSmarts:70, ico:'⚙️'},
+  {id:'security',    title:'Security Engineer',    salary:235000, minSmarts:75, ico:'🛡️'},
+  {id:'blockchain',  title:'Blockchain Dev',       salary:265000, minSmarts:72, ico:'⛓️'},
+  // ── FINANCE ──
+  {id:'hedge_fund',  title:'Hedge Fund Manager',   salary:680000, minSmarts:80, ico:'📈'},
+  {id:'vc',          title:'Venture Capitalist',   salary:485000, minSmarts:78, ico:'🚀'},
+  {id:'pe',          title:'Private Equity',       salary:425000, minSmarts:80, ico:'🏦'},
+  {id:'quant',       title:'Quantitative Trader',  salary:680000, minSmarts:88, ico:'📊'},
+  // ── ENTERTAINMENT ──
+  {id:'filmmaker',   title:'Filmmaker',            salary:85000,  minSmarts:65, ico:'🎬'},
+  {id:'screenwriter',title:'Screenwriter',         salary:125000, minSmarts:70, ico:'📝'},
+  {id:'pop_star',    title:'Pop Star',             salary:2400000,minSmarts:55, ico:'🎤'},
+  {id:'rapper',      title:'Rapper',               salary:285000, minSmarts:50, ico:'🎤'},
+  {id:'youtuber',    title:'YouTuber',             salary:115000, minSmarts:55, ico:'📹'},
+  {id:'podcaster',   title:'Podcaster',            salary:95000,  minSmarts:65, ico:'🎙️'},
+  {id:'streamer',    title:'Twitch Streamer',      salary:165000, minSmarts:60, ico:'🎮'},
+  {id:'reality_star',title:'Reality TV Star',      salary:485000, minSmarts:40, ico:'📺'},
+  // ── PUBLIC SERVICE ──
+  {id:'fbi',         title:'FBI Agent',            salary:88000,  minSmarts:75, ico:'🕵️'},
+  {id:'cia',         title:'CIA Officer',          salary:115000, minSmarts:80, ico:'🥷'},
+  {id:'secret_serv', title:'Secret Service',       salary:72000,  minSmarts:65, ico:'🕶️'},
+  {id:'diplomat',    title:'Diplomat',             salary:115000, minSmarts:75, ico:'🌐'},
+  {id:'un_official', title:'UN Official',          salary:95000,  minSmarts:78, ico:'🇺🇳'},
+  // ── AEROSPACE ──
+  {id:'test_pilot',  title:'Test Pilot',           salary:125000, minSmarts:72, ico:'🛩️'},
+  {id:'nasa_cmd',    title:'NASA Commander',       salary:285000, minSmarts:84, ico:'🚀'},
+  {id:'spacex_eng',  title:'SpaceX Engineer',      salary:165000, minSmarts:80, ico:'🛰️'},
+  // ── TRADES ──
+  {id:'master_elec', title:'Master Electrician',   salary:115000, minSmarts:50, ico:'⚡'},
+  {id:'master_plumb',title:'Master Plumber',       salary:118000, minSmarts:50, ico:'🔧'},
+  {id:'hvac_tech',   title:'HVAC Technician',      salary:68000,  minSmarts:45, ico:'❄️'},
+  {id:'welder',      title:'Master Welder',        salary:88000,  minSmarts:50, ico:'🔥'},
+  // ── HOSPITALITY ──
+  {id:'sommelier',   title:'Master Sommelier',     salary:88000,  minSmarts:62, ico:'🍷'},
+  {id:'hotel_mgr',   title:'Hotel GM',             salary:115000, minSmarts:62, ico:'🏨'},
+  {id:'baker',       title:'Master Baker',         salary:62000,  minSmarts:45, ico:'🥐'},
+  // ── NICHE ──
+  {id:'farmer',      title:'Farmer',               salary:78000,  minSmarts:55, ico:'🚜'},
+  {id:'vineyard',    title:'Vineyard Owner',       salary:185000, minSmarts:62, ico:'🍇'},
+  {id:'ranger',      title:'Park Ranger',          salary:48000,  minSmarts:55, ico:'🌲'},
+  {id:'marine_bio',  title:'Marine Biologist',     salary:82000,  minSmarts:75, ico:'🐬'},
+  {id:'storm_chaser',title:'Storm Chaser',         salary:85000,  minSmarts:68, ico:'⛈️'},
+  {id:'bomb_disp',   title:'Bomb Disposal',        salary:125000, minSmarts:75, ico:'💣'},
+  {id:'treasure',    title:'Treasure Hunter',      salary:38000,  minSmarts:60, ico:'💎'},
+  {id:'pi',          title:'Private Investigator', salary:78000,  minSmarts:65, ico:'🔍'},
+  // ── RELIGIOUS ──
+  {id:'priest',      title:'Catholic Priest',      salary:48000,  minSmarts:62, ico:'✝️'},
+  {id:'imam',        title:'Imam',                 salary:58000,  minSmarts:65, ico:'☪️'},
+  {id:'rabbi',       title:'Rabbi',                salary:88000,  minSmarts:72, ico:'✡️'},
+  {id:'monk',        title:'Buddhist Monk',        salary:5000,   minSmarts:65, ico:'☸️'}
+);
+
+// ── RELIGIOUS LAWS (Islamic, Canon, Judaic, Hindu, Buddhist, Secular Civil) ──
+const RELIGIOUS_LAWS = {
+  islamic: {
+    name:'Islamic Law (Shariah)', ico:'☪️', religion:'islam',
+    rituals:{
+      nikkah:   {name:'Nikkah (Marriage Contract)', ico:'💍', cost:5000,  effect:{happy:18, karma:5}},
+      walima:   {name:'Walima (Wedding Feast)',     ico:'🍽️', cost:18000, effect:{happy:15, karma:6}},
+      aqiqah:   {name:'Aqiqah (Newborn Ceremony)',  ico:'👶', cost:2500,  effect:{karma:8}},
+      talaq:    {name:'Talaq (Divorce)',            ico:'💔', cost:8000,  effect:{happy:-15, karma:-3}},
+      hajj:     {name:'Hajj Pilgrimage',            ico:'🕋', cost:8500,  effect:{happy:18, karma:12}},
+    },
+    rules:[
+      'Mahr (dowry) paid by groom to bride',
+      'Husband legally provides nafaqah (financial support)',
+      'Inheritance follows Quranic shares',
+      'No alcohol, no pork, no interest (riba)',
+      'Five Pillars: prayer, fasting, zakat, hajj, shahada',
+    ],
+  },
+  canon: {
+    name:'Canon Law (Catholic)', ico:'✝️', religion:'christian',
+    rituals:{
+      baptism:      {name:'Baptism',              ico:'💧', cost:200,    effect:{karma:3}},
+      confirmation: {name:'Confirmation',         ico:'🕊️', cost:280,    effect:{happy:5}},
+      cat_wedding:  {name:'Catholic Wedding',     ico:'⛪', cost:22000,  effect:{happy:20, karma:8}},
+      annulment:    {name:'Annulment',            ico:'📜', cost:8500,   effect:{happy:-10, karma:-2}},
+      confession:   {name:'Confession',           ico:'🙏', cost:0,      effect:{karma:12, happy:4}},
+      last_rites:   {name:'Last Rites',           ico:'🕯️', cost:0,      effect:{happy:5}},
+    },
+    rules:[
+      'Marriage indissoluble (annulment, not divorce)',
+      'Open to children (no contraception)',
+      'Sunday Mass obligation',
+      'Confession to a priest',
+      'Catholic upbringing for children',
+    ],
+  },
+  judaic: {
+    name:'Judaic Law (Halakha)', ico:'✡️', religion:'jewish',
+    rituals:{
+      bris:         {name:'Brit Milah',           ico:'👶', cost:850,    effect:{karma:3}},
+      bar_mitzvah:  {name:'Bar/Bat Mitzvah',      ico:'📖', cost:18000,  effect:{smarts:5, happy:12}},
+      ketubah:      {name:'Ketubah (Contract)',   ico:'📜', cost:6500,   effect:{happy:15, karma:5}},
+      jew_wedding:  {name:'Jewish Wedding',       ico:'⛺', cost:28000,  effect:{happy:20, karma:8}},
+      get_div:      {name:'Get (Religious Divorce)',ico:'💔',cost:4500,   effect:{happy:-12, karma:-3}},
+      shiva:        {name:'Shiva (Mourning)',     ico:'🕯️', cost:0,      effect:{happy:-15, karma:5}},
+    },
+    rules:[
+      'Kosher dietary laws',
+      'Shabbat observance (Fri sunset to Sat sunset)',
+      'Jewish status passes through mother',
+      'Get required for religious divorce',
+      '613 mitzvot structure daily life',
+    ],
+  },
+  hindu: {
+    name:'Hindu Law (Dharmashastra)', ico:'🕉️', religion:'hindu',
+    rituals:{
+      namkaran:     {name:'Namkaran (Naming)',    ico:'👶', cost:480,    effect:{karma:5}},
+      upanayana:    {name:'Upanayana (Sacred Thread)',ico:'🪡',cost:1200, effect:{smarts:3}},
+      hin_wedding:  {name:'Hindu Wedding (Saptapadi)',ico:'🔥',cost:35000,effect:{happy:22, karma:8}},
+      grihaprav:    {name:'Griha Pravesh',        ico:'🏠', cost:1800,   effect:{happy:8}},
+      antyesti:     {name:'Antyesti (Last Rites)',ico:'🕯️', cost:3500,   effect:{karma:8}},
+      char_dham:    {name:'Char Dham Yatra',      ico:'🛕', cost:4500,   effect:{happy:18, karma:15}},
+    },
+    rules:[
+      'Marriage typically arranged by parents',
+      'Dharma · Artha · Kama · Moksha',
+      'Caste considerations historically',
+      'Personal ishta-devata + family deities',
+      'Karma and reincarnation',
+    ],
+  },
+  buddhist_law: {
+    name:'Buddhist Precepts', ico:'☸️', religion:'buddhist',
+    rituals:{
+      shinbyu:      {name:'Novice Ordination',    ico:'🪔', cost:1200,   effect:{smarts:3}},
+      bud_wedding:  {name:'Buddhist Blessing',    ico:'🪷', cost:4500,   effect:{happy:15}},
+      vesak:        {name:'Vesak Ceremony',       ico:'🕯️', cost:0,      effect:{happy:8, karma:5}},
+      vipassana:    {name:'Vipassana Retreat (10d)',ico:'🧘',cost:280,    effect:{happy:15, smarts:5}},
+      bud_funeral:  {name:'Buddhist Funeral',     ico:'🕊️', cost:2800,   effect:{karma:10}},
+    },
+    rules:[
+      'Five Precepts (no kill/steal/sexual misconduct/lying/intoxicants)',
+      'Eightfold Path',
+      'Karma and rebirth',
+      'Marriage is civil, not sacred',
+      'Monks observe additional vinaya rules',
+    ],
+  },
+  secular_civil: {
+    name:'Secular Civil Law', ico:'⚖️', religion:'secular',
+    rituals:{
+      civil_mar:    {name:'Civil Marriage',       ico:'📋', cost:200,    effect:{happy:15}},
+      dom_part:     {name:'Domestic Partnership', ico:'🤝', cost:150,    effect:{happy:10}},
+      civil_div:    {name:'Civil Divorce',        ico:'📜', cost:18000,  effect:{happy:-12}},
+      prenup:       {name:'Prenuptial Agreement', ico:'📄', cost:8500,   effect:{}},
+      adoption:     {name:'Legal Adoption',       ico:'👶', cost:38000,  effect:{happy:25, karma:10}},
+    },
+    rules:[
+      'Marriage is a civil contract',
+      'No-fault divorce in most jurisdictions',
+      'Property division per state',
+      'Inheritance by probate or will',
+      'Child custody by best interests',
+    ],
+  },
+};
+
 const WORLDS = {
   home: {
     w: 22, h: 14,

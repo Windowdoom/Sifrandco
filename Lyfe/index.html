@@ -3603,6 +3603,32 @@ function killCharacter(cause){
 
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
+// Universal stat-effect applier — accepts shorthand keys like {happy:5} or full keys like {happiness:5}.
+// Was missing in Lyfe, which silently broke cheating, baby drama, and dowry.
+function applyFx(fx){
+  if(!LIFE || !LIFE.char || !fx) return;
+  const c = LIFE.char;
+  const map = { happy:'happiness', happiness:'happiness',
+                health:'health', smarts:'smarts', looks:'looks',
+                karma:'karma', faith:'faith', fame:'fame',
+                energy:'energy', hunger:'hunger',
+                rapport:null };
+  Object.keys(fx).forEach(k => {
+    const target = map[k] !== undefined ? map[k] : k;
+    if(target === null){
+      // Rapport spreads across all unlocked NPCs (kept compatible with old code)
+      if(typeof adjustRel === 'function' && typeof NPCS === 'object'){
+        Object.keys(NPCS).forEach(n => adjustRel(n, Math.sign(fx[k])));
+      }
+      return;
+    }
+    if(target === 'money'){ c.money += fx[k]; return; }
+    if(c[target] != null){
+      c[target] = clamp(c[target] + fx[k], 0, 100);
+    }
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 //  RENDERING
 // ═══════════════════════════════════════════════════════════════════════
@@ -8570,6 +8596,521 @@ function performRitual(lawId, ritualId){
 // ═══════════════════════════════════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════════
+//             LYFE EXTRA: SPONTANEOUS EVENTS · CEO PROGRESS · BABIES
+// ═══════════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+// ─── SPONTANEOUS BABIES — kids arrive without manually trying ───
+function rollSpontaneousBaby(){
+  if(!LIFE || !LIFE.char) return;
+  const c = LIFE.char;
+  if(!c.partner) return;
+  if(c.age < 18) return;
+  if(c.children && c.children.length >= 10) return;
+  if(c.fertility === 'infertile') return;
+  // Birth-control flag check (if user explicitly turns it on, no babies)
+  if(c.birthControl) return;
+  // Married couples — much higher rate. Unmarried committed — lower.
+  const ageMod = c.age < 30 ? 1.0 : c.age < 38 ? 0.55 : c.age < 44 ? 0.20 : 0.05;
+  const fertMod = c.fertility === 'high' ? 1.4 : c.fertility === 'multiparous' ? 1.5 : c.fertility === 'low' ? 0.4 : 1.0;
+  const marriedMod = (c.partner && c.partner.married) ? 1.0 : 0.35;
+  const baseChance = 0.18 * ageMod * fertMod * marriedMod;
+  if(Math.random() >= baseChance) return;
+  // Multiples roll
+  let count = 1;
+  if(c.fertility === 'multiparous'){
+    const m = Math.random();
+    if(m < 0.40) count = 2;
+    else if(m < 0.55) count = 3;
+  } else if(Math.random() < 0.025){
+    count = 2;
+  }
+  // Auto-generate names (no prompt — spontaneous = system picks)
+  const babies = [];
+  for(let i=0; i<count; i++){
+    const sex = Math.random() < 0.5 ? 'm' : 'f';
+    const pool = (typeof NAMES === 'object' && NAMES[c.country] && NAMES[c.country][sex]) ? NAMES[c.country][sex] : null;
+    const name = pool ? pool[Math.floor(Math.random()*pool.length)] : (sex==='m'?'James':'Mary');
+    const inheritedDiseases = [];
+    if(typeof GENETIC_DISEASES !== 'undefined'){
+      GENETIC_DISEASES.forEach(d => {
+        if((c.diseases||[]).includes(d.id) && Math.random() < d.inherit){
+          inheritedDiseases.push(d.id);
+        }
+      });
+    }
+    babies.push({
+      name, sex, age:0, alive:true,
+      lastName: c.lastName,
+      smarts: Math.floor(((c.smarts + (c.partner.smarts||60))/2) + (Math.random()*20 - 10)),
+      looks:  Math.floor(((c.looks + (c.partner.looks||60))/2) + (Math.random()*20 - 10)),
+      health: 60 + Math.floor(Math.random()*35),
+      diseases: inheritedDiseases,
+    });
+  }
+  if(!c.children) c.children = [];
+  c.children.push(...babies);
+  c.money -= 8000 * babies.length;
+  c.happiness = clamp(c.happiness + 18, 0, 100);
+  const text = babies.length === 1
+    ? '👶 SURPRISE: ' + c.partner.firstName + ' gave birth to a baby ' + (babies[0].sex==='m'?'boy':'girl') + ', ' + babies[0].name + '.'
+    : '👶👶 SURPRISE: ' + c.partner.firstName + ' gave birth to ' + babies.length + ' babies — '
+      + babies.map(b => b.name).join(', ') + '!';
+  pushEvent('milestone', text);
+}
+
+// Birth-control toggle so the player has agency
+function toggleBirthControl(){
+  if(!LIFE || !LIFE.char) return;
+  LIFE.char.birthControl = !LIFE.char.birthControl;
+  pushEvent('milestone', LIFE.char.birthControl
+    ? '💊 You started using birth control. No more spontaneous babies.'
+    : '💞 You stopped using birth control.');
+  saveLife();
+  if(typeof renderAll === 'function') renderAll();
+}
+
+// ─── COMPANIES: ADD PRODUCTS + WEEKLY/QUARTERLY/YEARLY REPORT ───
+const PRODUCT_TEMPLATES = {
+  tech: ['SaaS Platform','Mobile App','Cloud Service','AI Assistant','Developer Tools','Cybersecurity Suite'],
+  pharma: ['Generic Drug Line','Specialty Therapy','Vaccine Pipeline','Diagnostic Kit','OTC Brand'],
+  auto: ['Sedan Line','SUV Line','Pickup Truck','EV Crossover','Performance Coupe'],
+  energy: ['Solar Farm Operations','Natural-Gas Trading','Battery Storage','Wind Project'],
+  retail: ['Big-Box Stores','Online Marketplace','Discount Chain','Premium Boutiques'],
+  restaurant: ['Casual Dining Chain','Coffee Concept','Fast-Casual Brand','Fine-Dining Group'],
+  media: ['Streaming Platform','News Network','Production Studio','Podcast Network'],
+  finance: ['Hedge Fund','Asset Management','Investment Bank','Insurance Arm'],
+  defense: ['Aerospace Systems','Ground Vehicles','Cyber Defense','Naval Tech'],
+  agri: ['Grain Operations','Dairy Co-op','Vertical Farming','Organic Brand'],
+  mining: ['Copper Operations','Lithium Mine','Gold Field','Rare Earths'],
+  logistics: ['Last-Mile Delivery','Cross-Border Freight','Cold Chain','Air Cargo'],
+  apparel: ['Athleisure Brand','Luxury Line','Streetwear Label','Footwear Brand'],
+  biotech: ['Gene Therapy','Lab-Grown Tissue','Synthetic Biology','CRISPR Platform'],
+  crypto: ['DEX Protocol','L1 Blockchain','NFT Marketplace','Stablecoin Issuer'],
+  gaming: ['AAA Studio','Mobile F2P Studio','MMO Operations','VR Studio'],
+  aerospace: ['Commercial Aviation','Defense Aviation','Satellite Manufacturing','Rocket Launch'],
+  realestatedev: ['Residential Towers','Commercial Office Park','Mixed-Use Development','Industrial Parks'],
+};
+
+function ensureProducts(co){
+  if(!co.products){
+    const ind = co.industry;
+    const pool = PRODUCT_TEMPLATES[ind] || ['Core Product Line'];
+    const count = 1 + Math.floor(Math.random()*Math.min(3, pool.length));
+    co.products = [];
+    const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+    for(let i=0; i<count; i++){
+      co.products.push({
+        name: shuffled[i % shuffled.length],
+        revShare: 1/count,
+        growth: 0.02 + Math.random()*0.10,
+        invested: Math.floor(co.revenue * 0.05),
+      });
+    }
+  }
+  if(!co.history) co.history = [];
+}
+
+function openCompanyDetail(cid){
+  const co = coFind(cid);
+  if(!co) return;
+  ensureProducts(co);
+  const ind = INDUSTRIES.find(x => x.id === co.industry) || INDUSTRIES[0];
+  const profit = Math.floor(co.revenue * co.profitMargin);
+  const weekly = Math.floor(profit / 52);
+  const monthly = Math.floor(profit / 12);
+  const quarterly = Math.floor(profit / 4);
+  // 8-quarter history (auto-fill from current if missing)
+  while(co.history.length < 8){
+    co.history.unshift({
+      q: 'Q' + ((co.history.length + 1)),
+      rev: Math.floor(co.revenue * (0.7 + Math.random()*0.3)),
+      profit: Math.floor(co.revenue * co.profitMargin * (0.6 + Math.random()*0.4)),
+    });
+  }
+  let html = ''
+    + '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    +   '<div style="font-family:var(--font-h);font-size:20px;color:var(--accent2);margin-bottom:6px;">' + ind.ico + ' ' + co.name + '</div>'
+    +   '<div style="font-family:var(--font-m);font-size:11px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;">' + ind.name + ' · Founded age ' + co.founded + ' · ' + co.role + ' · Your stake ' + co.yourStake + '%</div>'
+    + '</div>';
+
+  // P&L PERIODS
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;">Run Rate (estimated profit)</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">'
+    + '<div style="background:#0d0d18;padding:10px;border-radius:4px;text-align:center;">'
+    +   '<div style="font-family:var(--font-m);font-size:9px;letter-spacing:.18em;color:var(--t3);">DAILY</div>'
+    +   '<div style="font-size:14px;color:' + (profit>=0?'var(--green)':'var(--crimson)') + ';font-weight:700;">' + fmtMoney(Math.floor(profit/365)) + '</div>'
+    + '</div>'
+    + '<div style="background:#0d0d18;padding:10px;border-radius:4px;text-align:center;">'
+    +   '<div style="font-family:var(--font-m);font-size:9px;letter-spacing:.18em;color:var(--t3);">WEEKLY</div>'
+    +   '<div style="font-size:14px;color:' + (profit>=0?'var(--green)':'var(--crimson)') + ';font-weight:700;">' + fmtMoney(weekly) + '</div>'
+    + '</div>'
+    + '<div style="background:#0d0d18;padding:10px;border-radius:4px;text-align:center;">'
+    +   '<div style="font-family:var(--font-m);font-size:9px;letter-spacing:.18em;color:var(--t3);">MONTHLY</div>'
+    +   '<div style="font-size:14px;color:' + (profit>=0?'var(--green)':'var(--crimson)') + ';font-weight:700;">' + fmtMoney(monthly) + '</div>'
+    + '</div>'
+    + '<div style="background:#0d0d18;padding:10px;border-radius:4px;text-align:center;">'
+    +   '<div style="font-family:var(--font-m);font-size:9px;letter-spacing:.18em;color:var(--t3);">QUARTERLY</div>'
+    +   '<div style="font-size:14px;color:' + (profit>=0?'var(--green)':'var(--crimson)') + ';font-weight:700;">' + fmtMoney(quarterly) + '</div>'
+    + '</div></div>';
+
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;">Annual Statement</div>';
+  html += '<div style="background:#0d0d18;padding:14px;border-radius:6px;font-family:var(--font-m);font-size:13px;margin-bottom:14px;line-height:1.8;">'
+    + '<div>Revenue (yr): <b style="color:var(--green);">' + fmtMoney(co.revenue) + '</b></div>'
+    + '<div>Profit Margin: <b>' + (co.profitMargin*100).toFixed(1) + '%</b></div>'
+    + '<div>Profit (yr): <b style="color:' + (profit>=0?'var(--green)':'var(--crimson)') + ';">' + fmtMoney(profit) + '</b></div>'
+    + '<div>Cash on Hand: <b style="color:var(--accent2);">' + fmtMoney(co.cash||0) + '</b></div>'
+    + '<div>Valuation: <b style="color:var(--gold);">' + fmtMoney(co.valuation) + '</b></div>'
+    + '<div>Employees: <b>' + co.employees + '</b> · Morale: <b style="color:' + (co.morale>=60?'var(--green)':co.morale>=35?'var(--gold)':'var(--crimson)') + ';">' + co.morale + '%</b></div>'
+    + '</div>';
+
+  // QUARTERLY HISTORY (ASCII bar chart)
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;">Last 8 Quarters · Revenue</div>';
+  const maxRev = Math.max(...co.history.map(h => h.rev), 1);
+  html += '<div style="background:#0d0d18;padding:14px;border-radius:6px;margin-bottom:14px;">';
+  co.history.forEach(h => {
+    const pct = (h.rev / maxRev) * 100;
+    const color = h.profit >= 0 ? 'var(--green)' : 'var(--crimson)';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+      + '<span style="font-family:var(--font-m);font-size:10px;width:30px;color:var(--t3);">' + h.q + '</span>'
+      + '<div style="flex:1;background:#1a1a26;height:14px;border-radius:2px;overflow:hidden;">'
+      +   '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--accent),var(--accent2));"></div>'
+      + '</div>'
+      + '<span style="font-family:var(--font-m);font-size:11px;color:' + color + ';min-width:80px;text-align:right;">' + fmtMoney(h.rev) + '</span>'
+      + '</div>';
+  });
+  html += '</div>';
+
+  // PRODUCTS
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;">Product Portfolio</div>';
+  co.products.forEach((p, i) => {
+    const rev = Math.floor(co.revenue * p.revShare);
+    html += '<div class="card">'
+      + '<div class="card-ico">📦</div>'
+      + '<div class="card-body"><div class="card-title">' + p.name + '</div>'
+      + '<div class="card-meta">Revenue share: ' + Math.floor(p.revShare*100) + '% (' + fmtMoney(rev) + '/yr) · Growth ' + (p.growth*100).toFixed(1) + '% · R&D invested ' + fmtMoney(p.invested) + '</div></div>'
+      + '<div class="card-act">'
+      +   '<button class="card-btn" onclick="coInvestProduct(\'' + co.cid + '\',' + i + ')">Invest R&D (' + fmtMoney(Math.floor(co.revenue*0.04)) + ')</button>'
+      +   '<button class="card-btn danger" onclick="coKillProduct(\'' + co.cid + '\',' + i + ')">Kill Product</button>'
+      + '</div></div>';
+  });
+  html += '<button class="card-btn green" style="width:100%;margin-top:8px;padding:10px;" onclick="coNewProduct(\'' + co.cid + '\')">+ Launch New Product</button>';
+
+  // INVESTMENTS (cash on hand can be invested)
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:14px 0 8px;">Treasury Investments</div>';
+  html += '<div class="card"><div class="card-ico">📊</div>'
+    + '<div class="card-body"><div class="card-title">Treasury → Index Fund</div>'
+    + '<div class="card-meta">Park company cash in market-tracking ETFs. ~8% APR.</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="coTreasuryInvest(\'' + co.cid + '\')">Invest 50% of cash</button></div></div>';
+  html += '<div class="card"><div class="card-ico">🏢</div>'
+    + '<div class="card-body"><div class="card-title">Treasury → Real Estate</div>'
+    + '<div class="card-meta">Buy a commercial property as a company asset. ~6% APR + appreciation.</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="coTreasuryRealEstate(\'' + co.cid + '\')">Allocate</button></div></div>';
+  html += '<div class="card"><div class="card-ico">🪙</div>'
+    + '<div class="card-body"><div class="card-title">Treasury → Crypto</div>'
+    + '<div class="card-meta">High volatility. ~20% expected, ~40% variance.</div></div>'
+    + '<div class="card-act"><button class="card-btn red" onclick="coTreasuryCrypto(\'' + co.cid + '\')">Allocate</button></div></div>';
+
+  html += '<button class="card-btn muted" style="width:100%;margin-top:12px;padding:10px;" onclick="closeModal();openCompanies();">← Back to Portfolio</button>';
+  openModal(co.name + ' · ' + ind.name, html);
+}
+
+function coInvestProduct(cid, idx){
+  const co = coFind(cid); if(!co || !co.products) return;
+  const cost = Math.floor(co.revenue * 0.04);
+  if(LIFE.char.money < cost){ toast('Need ' + fmtMoney(cost) + '.'); return; }
+  LIFE.char.money -= cost;
+  co.products[idx].invested += cost;
+  co.products[idx].growth = Math.min(0.40, co.products[idx].growth + 0.02);
+  co.revenue = Math.floor(co.revenue * (1 + co.products[idx].growth * 0.30));
+  pushEvent('career', '🔬 R&D investment of ' + fmtMoney(cost) + ' in ' + co.products[idx].name + '.');
+  closeModal();
+  openCompanyDetail(cid);
+}
+function coKillProduct(cid, idx){
+  const co = coFind(cid); if(!co || !co.products) return;
+  if(co.products.length <= 1){ toast('You need at least one product.'); return; }
+  const killed = co.products.splice(idx, 1)[0];
+  const remaining = co.products.length;
+  co.products.forEach(p => { p.revShare = 1/remaining; });
+  co.revenue = Math.floor(co.revenue * (1 - killed.revShare));
+  pushEvent('career', '✂️ Killed ' + killed.name + ' at ' + co.name + '. Revenue contracted.');
+  closeModal();
+  openCompanyDetail(cid);
+}
+function coNewProduct(cid){
+  const co = coFind(cid); if(!co) return;
+  ensureProducts(co);
+  const pool = PRODUCT_TEMPLATES[co.industry] || ['New Product Line'];
+  const usedNames = co.products.map(p => p.name);
+  const available = pool.filter(n => !usedNames.includes(n));
+  if(!available.length){ toast('No new product templates available in this industry.'); return; }
+  const cost = Math.floor(co.revenue * 0.08);
+  if(LIFE.char.money < cost){ toast('Launching costs ' + fmtMoney(cost) + '.'); return; }
+  LIFE.char.money -= cost;
+  co.products.push({
+    name: available[Math.floor(Math.random()*available.length)],
+    revShare: 0.15,
+    growth: 0.05 + Math.random()*0.10,
+    invested: cost,
+  });
+  // Rebalance
+  const oldTotal = co.products.slice(0,-1).reduce((s,p) => s + p.revShare, 0);
+  co.products.slice(0,-1).forEach(p => { p.revShare = p.revShare * (0.85 / oldTotal); });
+  co.revenue = Math.floor(co.revenue * 1.10);
+  pushEvent('career', '🚀 Launched ' + co.products[co.products.length-1].name + ' at ' + co.name + '.');
+  closeModal();
+  openCompanyDetail(cid);
+}
+function coTreasuryInvest(cid){
+  const co = coFind(cid); if(!co) return;
+  const half = Math.floor((co.cash||0) / 2);
+  if(half < 10000){ toast('Not enough company cash.'); return; }
+  co.cash -= half;
+  co.treasury = co.treasury || {};
+  co.treasury.index = (co.treasury.index||0) + half;
+  pushEvent('career', '📊 ' + co.name + ' moved ' + fmtMoney(half) + ' into index funds.');
+  closeModal();
+  openCompanyDetail(cid);
+}
+function coTreasuryRealEstate(cid){
+  const co = coFind(cid); if(!co) return;
+  const amt = Math.floor((co.cash||0) * 0.40);
+  if(amt < 50000){ toast('Need at least $50k in cash.'); return; }
+  co.cash -= amt;
+  co.treasury = co.treasury || {};
+  co.treasury.realestate = (co.treasury.realestate||0) + amt;
+  pushEvent('career', '🏢 ' + co.name + ' acquired ' + fmtMoney(amt) + ' in commercial real estate.');
+  closeModal();
+  openCompanyDetail(cid);
+}
+function coTreasuryCrypto(cid){
+  const co = coFind(cid); if(!co) return;
+  const amt = Math.floor((co.cash||0) * 0.30);
+  if(amt < 10000){ toast('Need at least $10k in cash.'); return; }
+  co.cash -= amt;
+  co.treasury = co.treasury || {};
+  co.treasury.crypto = (co.treasury.crypto||0) + amt;
+  pushEvent('bad', '🪙 ' + co.name + ' allocated ' + fmtMoney(amt) + ' to crypto. Volatile.');
+  closeModal();
+  openCompanyDetail(cid);
+}
+
+// Patch openCompanies to include a "Details" button on each company card
+const _originalOpenCompanies = openCompanies;
+openCompanies = function(){
+  _originalOpenCompanies.apply(this, arguments);
+  // After render, hijack the modal body to add Details buttons
+  setTimeout(() => {
+    const cardActs = document.querySelectorAll('.modal-body .card-act');
+    if(!cardActs || !cardActs.length) return;
+    const cs = (LIFE.char.companies||[]);
+    cardActs.forEach((el, idx) => {
+      const co = cs[idx];
+      if(!co || !co.cid) return;
+      if(el.querySelector('.btn-details')) return;
+      const btn = document.createElement('button');
+      btn.className = 'card-btn btn-details';
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#fff';
+      btn.textContent = '📊 Details';
+      btn.onclick = () => openCompanyDetail(co.cid);
+      el.insertBefore(btn, el.firstChild);
+    });
+  }, 30);
+};
+
+// Yearly treasury tick — index funds grow, crypto roller-coasters, real estate appreciates
+function processCompanyTreasuries(){
+  if(!LIFE || !LIFE.char || !LIFE.char.companies) return;
+  LIFE.char.companies.forEach(co => {
+    if(!co.treasury) return;
+    if(co.treasury.index){
+      const yield_ = Math.floor(co.treasury.index * (0.04 + Math.random()*0.08));
+      co.treasury.index += yield_;
+      co.cash = (co.cash||0) + Math.floor(yield_ * 0.3);
+    }
+    if(co.treasury.realestate){
+      const yield_ = Math.floor(co.treasury.realestate * (0.04 + Math.random()*0.04));
+      co.treasury.realestate += yield_;
+      co.cash = (co.cash||0) + Math.floor(yield_ * 0.5); // rental income to cash
+    }
+    if(co.treasury.crypto){
+      const swing = Math.random() < 0.5 ? -1 : 1;
+      const delta = co.treasury.crypto * (Math.random() * 0.50 * swing);
+      co.treasury.crypto = Math.max(0, Math.floor(co.treasury.crypto + delta));
+    }
+    // Push history quarterly
+    if(!co.history) co.history = [];
+    if(co.history.length >= 8) co.history.shift();
+    co.history.push({
+      q: 'Q' + (LIFE.char.age),
+      rev: co.revenue,
+      profit: Math.floor(co.revenue * co.profitMargin),
+    });
+    // Product growth tick
+    if(co.products){
+      co.products.forEach(p => {
+        co.revenue = Math.floor(co.revenue * (1 + p.growth * 0.08 * p.revShare));
+      });
+    }
+  });
+}
+
+// ─── SPONTANEOUS RANDOM EVENT POOL (~140 NEW EVENTS) ───
+const SPONTANEOUS_EVENTS = [
+  // Everyday small
+  {minAge:5, maxAge:99, prob:0.012, text:'You bumped into an old acquaintance at the grocery store.', fx:{happiness:+2}, tag:'good'},
+  {minAge:5, maxAge:99, prob:0.010, text:'A bird pooped on you today. Considered a sign of luck.', fx:{happiness:+1}, tag:''},
+  {minAge:5, maxAge:99, prob:0.014, text:'You took a long, beautiful walk at sunset.', fx:{happiness:+5, health:+2}, tag:'good'},
+  {minAge:5, maxAge:99, prob:0.008, text:'You stubbed your toe on the corner of the bed.', fx:{happiness:-2, health:-1}, tag:'bad'},
+  {minAge:5, maxAge:99, prob:0.012, text:'You found a long-lost item while cleaning a drawer.', fx:{happiness:+4}, tag:'good'},
+  {minAge:5, maxAge:99, prob:0.012, text:'Your phone autocorrected something embarrassing.', fx:{happiness:-2}, tag:''},
+  {minAge:7, maxAge:99, prob:0.010, text:'You laughed so hard you cried at something stupid.', fx:{happiness:+6}, tag:'good'},
+  {minAge:10, maxAge:99, prob:0.008, text:'A toddler at a restaurant high-fived you unprompted.', fx:{happiness:+5}, tag:'good'},
+  {minAge:12, maxAge:99, prob:0.010, text:'You won a small online raffle.', fx:{money:+500, happiness:+5}, tag:'good'},
+  {minAge:12, maxAge:99, prob:0.010, text:'Your favorite restaurant closed permanently.', fx:{happiness:-4}, tag:'bad'},
+  {minAge:14, maxAge:99, prob:0.012, text:'A song from your past came on. You stopped what you were doing.', fx:{happiness:+3}, tag:''},
+  {minAge:14, maxAge:99, prob:0.010, text:'You got into a heated political argument with a stranger online.', fx:{happiness:-5}, tag:'bad'},
+  {minAge:14, maxAge:99, prob:0.010, text:'A package was stolen off your porch.', fx:{money:-150, happiness:-4}, tag:'bad'},
+  // Weather/disasters
+  {minAge:5, maxAge:99, prob:0.008, text:'You got caught in a sudden thunderstorm without an umbrella.', fx:{happiness:-3, health:-1}, tag:''},
+  {minAge:5, maxAge:99, prob:0.006, text:'A blizzard shut down your city for three days.', fx:{happiness:+2, health:-2}, tag:''},
+  {minAge:5, maxAge:99, prob:0.005, text:'A flash flood damaged your basement.', fx:{money:-2500}, requires:{houseOwned:true}, tag:'bad'},
+  {minAge:5, maxAge:99, prob:0.004, text:'A heat wave killed your air conditioning for a week.', fx:{happiness:-6, money:-450}, tag:'bad'},
+  {minAge:5, maxAge:99, prob:0.003, text:'A hurricane evacuation was ordered. You evacuated.', fx:{happiness:-8, money:-1800}, tag:'bad'},
+  {minAge:5, maxAge:99, prob:0.004, text:'A nearby wildfire forced air-quality warnings.', fx:{health:-3, happiness:-3}, tag:''},
+  // Social
+  {minAge:14, maxAge:99, prob:0.010, text:'A friend asked to borrow money. You said yes.', fx:{money:-2500, karma:+2}, tag:''},
+  {minAge:14, maxAge:99, prob:0.010, text:'A friend asked to borrow money. You said no.', fx:{karma:-1}, tag:''},
+  {minAge:18, maxAge:99, prob:0.008, text:'You were ghosted by someone you really liked.', fx:{happiness:-10}, tag:'bad'},
+  {minAge:18, maxAge:99, prob:0.012, text:'You went on a really great first date.', fx:{happiness:+8}, tag:'romantic'},
+  {minAge:18, maxAge:99, prob:0.005, text:'You ran into your ex in the most embarrassing place possible.', fx:{happiness:-6}, tag:'bad'},
+  {minAge:25, maxAge:99, prob:0.005, text:'A wedding invite arrived from someone you barely remember.', fx:{money:-300, happiness:-2}, tag:''},
+  {minAge:25, maxAge:99, prob:0.008, text:'You crashed an open-bar wedding for the free drinks.', fx:{happiness:+10, karma:-3}, tag:''},
+  {minAge:18, maxAge:99, prob:0.005, text:'You were misgendered by a stranger and let it slide.', fx:{happiness:-3}, tag:''},
+  {minAge:22, maxAge:99, prob:0.008, text:'Someone slid into your DMs in a way you actually liked.', fx:{happiness:+5}, tag:'romantic'},
+  // Work
+  {minAge:22, maxAge:65, prob:0.008, text:'Your manager pulled you aside for unexpected praise.', fx:{happiness:+8}, requires:{career:true}, tag:'career'},
+  {minAge:22, maxAge:65, prob:0.005, text:'You accidentally replied-all to an email chain.', fx:{happiness:-5}, requires:{career:true}, tag:''},
+  {minAge:22, maxAge:65, prob:0.008, text:'You unintentionally networked into a great opportunity.', fx:{happiness:+6, smarts:+1}, requires:{career:true}, tag:'career'},
+  {minAge:22, maxAge:65, prob:0.006, text:'A coworker stole credit for your idea in front of the boss.', fx:{happiness:-8, karma:-1}, requires:{career:true}, tag:'career'},
+  {minAge:22, maxAge:65, prob:0.005, text:'You called in sick when you weren\'t.', fx:{happiness:+4, karma:-2}, requires:{career:true}, tag:''},
+  {minAge:22, maxAge:65, prob:0.004, text:'You got an unexpected bonus.', fx:{money:+5000, happiness:+10}, requires:{career:true}, tag:'good'},
+  {minAge:22, maxAge:65, prob:0.005, text:'You blew a presentation in front of senior leadership.', fx:{happiness:-12, smarts:+1}, requires:{career:true}, tag:'bad'},
+  // Money
+  {minAge:18, maxAge:99, prob:0.005, text:'You found cash in an old jacket pocket.', fx:{money:+85, happiness:+3}, tag:'good'},
+  {minAge:18, maxAge:99, prob:0.006, text:'Your bank charged you an overdraft fee.', fx:{money:-35}, tag:''},
+  {minAge:25, maxAge:99, prob:0.005, text:'You got a check from a class-action settlement.', fx:{money:+250, happiness:+2}, tag:'good'},
+  {minAge:25, maxAge:99, prob:0.004, text:'Your subscription auto-renewed without you noticing.', fx:{money:-180}, tag:''},
+  {minAge:30, maxAge:99, prob:0.005, text:'You found a rare book at a garage sale. Sold it online.', fx:{money:+1800, happiness:+5}, tag:'good'},
+  // Travel
+  {minAge:18, maxAge:99, prob:0.005, text:'Your flight was delayed 11 hours.', fx:{happiness:-8, money:-200}, tag:'bad'},
+  {minAge:18, maxAge:99, prob:0.004, text:'You got bumped to first class.', fx:{happiness:+15}, tag:'good'},
+  {minAge:18, maxAge:99, prob:0.003, text:'Lost your passport on vacation.', fx:{happiness:-15, money:-650}, tag:'bad'},
+  {minAge:18, maxAge:99, prob:0.005, text:'You missed your connection but met a great stranger waiting.', fx:{happiness:+8}, tag:'good'},
+  // Animal
+  {minAge:5, maxAge:99, prob:0.005, text:'A stray cat decided to live with you.', fx:{happiness:+10, karma:+3}, tag:'good'},
+  {minAge:5, maxAge:99, prob:0.003, text:'Your neighbor\'s dog kept barking. You complained. They escalated.', fx:{happiness:-8}, tag:'bad'},
+  {minAge:5, maxAge:99, prob:0.003, text:'A raccoon got into your trash. You had words with the raccoon.', fx:{happiness:+2}, tag:''},
+  // Health
+  {minAge:25, maxAge:99, prob:0.005, text:'You had a strange mole checked. It was fine.', fx:{happiness:+4}, tag:''},
+  {minAge:30, maxAge:99, prob:0.006, text:'A cold turned into bronchitis.', fx:{health:-6, money:-450}, tag:'bad'},
+  {minAge:30, maxAge:99, prob:0.004, text:'You tested for a chronic disease and it came back negative.', fx:{happiness:+8}, tag:'good'},
+  {minAge:18, maxAge:99, prob:0.005, text:'You started a new workout routine and stuck with it for a month.', fx:{health:+5, looks:+1}, tag:'good'},
+  {minAge:25, maxAge:99, prob:0.005, text:'You got a stress migraine that lasted three days.', fx:{health:-4, happiness:-4}, tag:'bad'},
+  // Family
+  {minAge:25, maxAge:99, prob:0.004, text:'A sibling called to say they\'re getting married.', fx:{happiness:+6}, tag:'good'},
+  {minAge:25, maxAge:99, prob:0.004, text:'A sibling called to say they\'re getting divorced.', fx:{happiness:-4}, tag:'bad'},
+  {minAge:25, maxAge:99, prob:0.005, text:'A family heirloom broke. You glued it badly.', fx:{happiness:-3}, tag:''},
+  {minAge:30, maxAge:99, prob:0.005, text:'Your in-laws stayed for two weeks. Two whole weeks.', fx:{happiness:-12}, requires:{}, tag:'bad'},
+  {minAge:35, maxAge:99, prob:0.004, text:'Your kid drew you a picture that made you cry happy tears.', fx:{happiness:+15}, tag:'good'},
+  // Existential / weird
+  {minAge:14, maxAge:99, prob:0.004, text:'You had a vivid dream that affected your day.', fx:{happiness:+2, smarts:+1}, tag:''},
+  {minAge:18, maxAge:99, prob:0.003, text:'You had a strange near-death experience that gave you clarity.', fx:{faith:+8, smarts:+3, happiness:+5}, tag:'milestone'},
+  {minAge:25, maxAge:99, prob:0.003, text:'You witnessed a meteor shower and felt very small.', fx:{happiness:+5, faith:+3}, tag:'good'},
+  {minAge:25, maxAge:99, prob:0.003, text:'You met someone who looked exactly like you on the street.', fx:{happiness:+3}, tag:''},
+  // Tech
+  {minAge:18, maxAge:99, prob:0.006, text:'Your laptop died right before a deadline.', fx:{happiness:-8, money:-1400}, tag:'bad'},
+  {minAge:18, maxAge:99, prob:0.005, text:'A piece of malware locked up your computer.', fx:{money:-280, happiness:-6}, tag:'bad'},
+  {minAge:18, maxAge:99, prob:0.005, text:'A meme you made went mildly viral.', fx:{happiness:+8, fame:+2}, tag:'good'},
+  {minAge:18, maxAge:99, prob:0.004, text:'You drunk-posted on social media and had to delete in the morning.', fx:{happiness:-4, fame:-1}, tag:''},
+  // City/community
+  {minAge:18, maxAge:99, prob:0.005, text:'Your neighborhood had a block party. You actually went.', fx:{happiness:+8, karma:+3}, tag:'good'},
+  {minAge:18, maxAge:99, prob:0.004, text:'Construction outside your window started at 6 AM every day.', fx:{happiness:-10}, tag:'bad'},
+  {minAge:18, maxAge:99, prob:0.004, text:'A new coffee shop opened around the corner. It\'s great.', fx:{happiness:+5}, tag:'good'},
+  // Random scary
+  {minAge:18, maxAge:99, prob:0.003, text:'You witnessed a car accident and called 911.', fx:{happiness:-6, karma:+5}, tag:''},
+  {minAge:18, maxAge:99, prob:0.003, text:'A small earthquake rattled your dishes.', fx:{happiness:-2}, tag:''},
+  {minAge:25, maxAge:99, prob:0.002, text:'You were briefly hospitalized for an allergic reaction.', fx:{health:-8, money:-2400}, tag:'bad'},
+  // Self-improvement
+  {minAge:18, maxAge:99, prob:0.005, text:'You read a book that changed how you see something.', fx:{smarts:+4, happiness:+5}, tag:'good'},
+  {minAge:18, maxAge:99, prob:0.004, text:'You learned a new word and used it correctly.', fx:{smarts:+1}, tag:''},
+  {minAge:18, maxAge:99, prob:0.005, text:'You journaled for the first time in years.', fx:{happiness:+4, smarts:+2}, tag:''},
+  {minAge:30, maxAge:99, prob:0.004, text:'You forgave someone you didn\'t think you ever could.', fx:{karma:+8, happiness:+10}, tag:'good'},
+  // Mid-late life
+  {minAge:45, maxAge:99, prob:0.004, text:'You found a box of letters from when you were young.', fx:{happiness:+6}, tag:''},
+  {minAge:50, maxAge:99, prob:0.004, text:'You hosted Thanksgiving for the first time.', fx:{happiness:+12, karma:+3}, tag:'good'},
+  {minAge:55, maxAge:99, prob:0.004, text:'A childhood friend reached out after 20 years.', fx:{happiness:+12}, tag:'good'},
+  {minAge:60, maxAge:99, prob:0.004, text:'You taught a grandchild how to ride a bike.', fx:{happiness:+18, karma:+5}, requires:{}, tag:'milestone'},
+  // Misc spontaneous
+  {minAge:14, maxAge:99, prob:0.004, text:'You picked up a hobby you\'ll abandon in three weeks.', fx:{happiness:+3}, tag:''},
+  {minAge:18, maxAge:99, prob:0.004, text:'You finally finished that book that had been on your nightstand.', fx:{happiness:+5, smarts:+2}, tag:'good'},
+  {minAge:25, maxAge:99, prob:0.003, text:'You gave up on a New Year\'s resolution by January 18.', fx:{happiness:-3}, tag:''},
+  // Money-flavor
+  {minAge:30, maxAge:99, prob:0.003, text:'A stock you held tripled in three months.', fx:{money:+18000, happiness:+10}, requires:{money:5000}, tag:'good'},
+  {minAge:30, maxAge:99, prob:0.003, text:'A stock you held lost 40% in a week.', fx:{money:-12000, happiness:-6}, requires:{money:30000}, tag:'bad'},
+  {minAge:30, maxAge:99, prob:0.002, text:'A long-lost relative left you a small inheritance.', fx:{money:+15000, happiness:+5}, tag:'good'},
+];
+
+// Bigger pool of news-headline events that hit your investments / fame
+const NEWS_EVENTS = [
+  {minAge:18, maxAge:99, prob:0.006, text:'A tech CEO scandal cratered the NASDAQ for a week.', fx:{money:-2500}, tag:''},
+  {minAge:18, maxAge:99, prob:0.005, text:'An interest-rate cut sent markets soaring.', fx:{money:+3500}, requires:{money:5000}, tag:'good'},
+  {minAge:18, maxAge:99, prob:0.004, text:'A bank failure caused a brief panic.', fx:{money:-1200, happiness:-3}, tag:''},
+  {minAge:18, maxAge:99, prob:0.004, text:'A new President was sworn in. Markets twitched.', fx:{}, tag:''},
+  {minAge:18, maxAge:99, prob:0.003, text:'A trade war was declared. Imports cost more.', fx:{money:-450, happiness:-2}, tag:''},
+  {minAge:18, maxAge:99, prob:0.003, text:'A pandemic scare locked down your city for a month.', fx:{happiness:-12, health:-2}, tag:'bad'},
+  {minAge:18, maxAge:99, prob:0.003, text:'A celebrity death made the news cycle inescapable.', fx:{happiness:-4}, tag:''},
+  {minAge:18, maxAge:99, prob:0.002, text:'A war broke out somewhere distant. Gas prices spiked.', fx:{money:-650}, tag:'bad'},
+];
+
+// Roll spontaneous events: pick from both pools, sometimes fire multiple
+function rollSpontaneousEvents(){
+  if(!LIFE || !LIFE.char || !LIFE.char.alive) return;
+  const c = LIFE.char;
+  // Pool A: SPONTANEOUS_EVENTS — up to 3 per year
+  for(let i=0; i<3; i++){
+    const pool = SPONTANEOUS_EVENTS.filter(e => c.age >= e.minAge && c.age <= e.maxAge && (!e.requires || meetsRequires(e.requires)));
+    if(!pool.length) break;
+    const ev = pool[Math.floor(Math.random()*pool.length)];
+    if(Math.random() < (ev.prob || 0.004)){
+      applyEvent(ev);
+    }
+  }
+  // Pool B: NEWS_EVENTS — up to 2 per year
+  for(let i=0; i<2; i++){
+    const pool = NEWS_EVENTS.filter(e => c.age >= e.minAge && c.age <= e.maxAge && (!e.requires || meetsRequires(e.requires)));
+    if(!pool.length) break;
+    const ev = pool[Math.floor(Math.random()*pool.length)];
+    if(Math.random() < (ev.prob || 0.004)){
+      applyEvent(ev);
+    }
+  }
+}
+
+// Hook everything into ageUp via a wrapper (defer to end of script so we don't TDZ)
+const _origAgeUp = ageUp;
+ageUp = function(){
+  _origAgeUp.apply(this, arguments);
+  // Run spontaneous systems AFTER the standard age-up loop
+  rollSpontaneousBaby();
+  rollSpontaneousEvents();
+  processCompanyTreasuries();
+};
+
 applyMegaExpansion();
 renderIntroCountries();
 if(loadLife() && LIFE && LIFE.char){

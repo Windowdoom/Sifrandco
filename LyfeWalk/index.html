@@ -58,7 +58,10 @@ button,input,select{font-family:inherit;cursor:pointer;}
   background-image:repeating-linear-gradient(0deg,transparent 0,transparent 14px,rgba(0,0,0,.08) 14px,rgba(0,0,0,.08) 16px),
                    repeating-linear-gradient(90deg,transparent 0,transparent 14px,rgba(0,0,0,.08) 14px,rgba(0,0,0,.08) 16px);}
 .tile.wall{background:linear-gradient(180deg,#3a2a18 0%,#2a1a10 100%);border-bottom:2px solid #1a0a04;}
-.tile.water{background:#2a4078;background-image:repeating-linear-gradient(45deg,transparent 0,transparent 5px,rgba(255,255,255,.06) 5px,rgba(255,255,255,.06) 10px);}
+.tile.water{background:#2a4078;background-image:repeating-linear-gradient(45deg,transparent 0,transparent 5px,rgba(255,255,255,.06) 5px,rgba(255,255,255,.06) 10px);
+  animation:water-wave 6s linear infinite;}
+@keyframes water-wave{from{background-position:0 0;}to{background-position:40px 20px;}}
+.tile.sand{background:#d4b878;background-image:radial-gradient(circle,#dcc080 0,#d4b878 60%);}
 .bldg{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;
   background:linear-gradient(180deg,#3a3a4a,#2a2a36);border:2px solid #4a4a5a;border-radius:4px;
   cursor:pointer;font-size:32px;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,.5);transition:filter .15s;}
@@ -236,6 +239,7 @@ button,input,select{font-family:inherit;cursor:pointer;}
   <div class="hud-chip age" id="hud-age">Age 18</div>
   <div class="hud-chip money" id="hud-money">$1,500</div>
   <button class="tb-btn" onclick="openStats()">Stats</button>
+  <button class="tb-btn" onclick="openAchievements()">🏆</button>
   <button class="tb-btn" onclick="openCharSheet()">📋</button>
   <button class="tb-btn" onclick="confirmRestart()">New</button>
 </div>
@@ -295,45 +299,257 @@ const SKIN_TONES = [
 ];
 
 const COUNTRIES = {
-  us: { name:'USA',     flag:'🇺🇸', cur:'$',  salaryMult:1.00, costMult:1.00, lifeExp:78 },
-  uk: { name:'UK',      flag:'🇬🇧', cur:'£',  salaryMult:0.85, costMult:0.95, lifeExp:81 },
-  jp: { name:'Japan',   flag:'🇯🇵', cur:'¥',  salaryMult:0.75, costMult:0.90, lifeExp:84 },
-  br: { name:'Brazil',  flag:'🇧🇷', cur:'R$', salaryMult:0.42, costMult:0.55, lifeExp:75 },
-  in: { name:'India',   flag:'🇮🇳', cur:'₹',  salaryMult:0.35, costMult:0.45, lifeExp:70 },
+  us: { name:'USA',     flag:'🇺🇸', cur:'$',  salaryMult:1.00, costMult:1.00, lifeExp:78, incomeTax:0.28, propertyTax:0.012, religion:'Christian'   },
+  uk: { name:'UK',      flag:'🇬🇧', cur:'£',  salaryMult:0.85, costMult:0.95, lifeExp:81, incomeTax:0.32, propertyTax:0.008, religion:'Anglican'    },
+  jp: { name:'Japan',   flag:'🇯🇵', cur:'¥',  salaryMult:0.75, costMult:0.90, lifeExp:84, incomeTax:0.33, propertyTax:0.014, religion:'Shinto'      },
+  br: { name:'Brazil',  flag:'🇧🇷', cur:'R$', salaryMult:0.42, costMult:0.55, lifeExp:75, incomeTax:0.27, propertyTax:0.006, religion:'Catholic'    },
+  in: { name:'India',   flag:'🇮🇳', cur:'₹',  salaryMult:0.35, costMult:0.45, lifeExp:70, incomeTax:0.30, propertyTax:0.005, religion:'Hindu'       },
+  fr: { name:'France',  flag:'🇫🇷', cur:'€',  salaryMult:0.78, costMult:0.92, lifeExp:82, incomeTax:0.41, propertyTax:0.015, religion:'Secular'     },
+  de: { name:'Germany', flag:'🇩🇪', cur:'€',  salaryMult:0.88, costMult:0.95, lifeExp:81, incomeTax:0.42, propertyTax:0.010, religion:'Mixed'       },
+  cn: { name:'China',   flag:'🇨🇳', cur:'¥',  salaryMult:0.55, costMult:0.55, lifeExp:77, incomeTax:0.35, propertyTax:0.012, religion:'Folk'        },
+  ca: { name:'Canada',  flag:'🇨🇦', cur:'C$', salaryMult:0.82, costMult:0.92, lifeExp:82, incomeTax:0.33, propertyTax:0.012, religion:'Mixed'       },
+  au: { name:'Australia',flag:'🇦🇺',cur:'A$', salaryMult:0.90, costMult:1.05, lifeExp:83, incomeTax:0.32, propertyTax:0.008, religion:'Secular'     },
+  ng: { name:'Nigeria', flag:'🇳🇬', cur:'₦',  salaryMult:0.18, costMult:0.30, lifeExp:55, incomeTax:0.24, propertyTax:0.003, religion:'Mixed'       },
+  mx: { name:'Mexico',  flag:'🇲🇽', cur:'$',  salaryMult:0.32, costMult:0.42, lifeExp:75, incomeTax:0.30, propertyTax:0.008, religion:'Catholic'    },
+  kr: { name:'S. Korea',flag:'🇰🇷', cur:'₩',  salaryMult:0.78, costMult:0.85, lifeExp:83, incomeTax:0.38, propertyTax:0.010, religion:'Mixed'       },
+  ru: { name:'Russia',  flag:'🇷🇺', cur:'₽',  salaryMult:0.34, costMult:0.50, lifeExp:73, incomeTax:0.13, propertyTax:0.005, religion:'Orthodox'    },
+  it: { name:'Italy',   flag:'🇮🇹', cur:'€',  salaryMult:0.65, costMult:0.85, lifeExp:83, incomeTax:0.43, propertyTax:0.011, religion:'Catholic'    },
 };
+
+const NAMES_M = ['James','John','Michael','David','Daniel','Matthew','Mark','Tyler','Robert','Joseph','Noah','Liam','Ethan','Lucas','Mason','Logan','Carter','Henry','Owen','Jack'];
+const NAMES_F = ['Mary','Emma','Olivia','Sarah','Jessica','Emily','Hannah','Amanda','Rachel','Sophia','Ava','Isabella','Mia','Charlotte','Grace','Lily','Chloe','Layla','Zoe','Aria'];
+const NAMES_L = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Wilson','Anderson','Taylor','Thomas','Moore','Jackson','Martin','Lee','Thompson','White','Harris','Clark'];
+
+// 12 personality traits, 2 random assigned at birth (mutually exclusive pairs excluded)
+const TRAITS = [
+  {id:'optimist',  name:'Optimist',     ico:'☀️', drift:{happiness:+1}},
+  {id:'pessimist', name:'Pessimist',    ico:'🌧️', drift:{happiness:-1}},
+  {id:'introvert', name:'Introvert',    ico:'📖', drift:{smarts:+1}},
+  {id:'extrovert', name:'Extrovert',    ico:'🎉', drift:{looks:+1}},
+  {id:'creative',  name:'Creative',     ico:'🎨', drift:{}},
+  {id:'athletic',  name:'Athletic',     ico:'💪', drift:{health:+1}},
+  {id:'brainy',    name:'Brainy',       ico:'🧠', drift:{smarts:+1}},
+  {id:'charismatic',name:'Charismatic', ico:'😎', drift:{looks:+1}},
+  {id:'stoic',     name:'Stoic',        ico:'🗿', drift:{}},
+  {id:'adventurous',name:'Adventurous', ico:'🧭', drift:{}},
+  {id:'generous',  name:'Generous',     ico:'💝', drift:{karma:+1}},
+  {id:'greedy',    name:'Greedy',       ico:'💰', drift:{karma:-1}},
+];
+const TRAIT_CONFLICTS = {optimist:'pessimist',pessimist:'optimist',introvert:'extrovert',extrovert:'introvert',generous:'greedy',greedy:'generous'};
+
+// 10 inheritable genetic conditions
+const DISEASES = [
+  {id:'diabetes',   name:'Type 1 Diabetes',     ico:'🩸', onset:8,  drift:{health:-1}},
+  {id:'heart',      name:'Heart Condition',     ico:'❤️', onset:35, drift:{health:-2}},
+  {id:'cancerProne',name:'Cancer-Prone',        ico:'🧬', onset:40, drift:{health:-1}},
+  {id:'depression', name:'Clinical Depression', ico:'🌧️', onset:14, drift:{happiness:-2}},
+  {id:'anxiety',    name:'Anxiety Disorder',    ico:'😰', onset:12, drift:{happiness:-1}},
+  {id:'autism',     name:'Autism Spectrum',     ico:'🧩', onset:3,  drift:{smarts:+1}},
+  {id:'longevity',  name:'Longevity Gene',      ico:'⏳', onset:0,  drift:{health:+1}, beneficial:true},
+  {id:'highIQ',     name:'High-IQ Genetics',    ico:'🧠', onset:0,  drift:{smarts:+1}, beneficial:true},
+  {id:'colorblind', name:'Colorblindness',      ico:'🌈', onset:5,  drift:{}},
+  {id:'celiac',     name:'Celiac Disease',      ico:'🌾', onset:10, drift:{health:-1}},
+];
+
+// 5 religions
+const RELIGIONS = {
+  christian:{name:'Christianity',ico:'✝️',perk:{happiness:+1,karma:+1}},
+  islam:    {name:'Islam',       ico:'☪️',perk:{karma:+2}},
+  hindu:    {name:'Hinduism',    ico:'🕉️',perk:{karma:+2,smarts:+1}},
+  buddhist: {name:'Buddhism',    ico:'☸️',perk:{happiness:+2,health:+1}},
+  jewish:   {name:'Judaism',     ico:'✡️',perk:{smarts:+1,karma:+1}},
+  secular:  {name:'Secular',     ico:'🌐',perk:{smarts:+1}},
+};
+
+// 5 alternate realities (chosen at age 16)
+const REALITIES = {
+  mundane:   {name:'Mundane',         ico:'🌍', desc:'The ordinary world.'},
+  magical:   {name:'Magical',         ico:'🧙', desc:'Magic is real. You have latent ability.'},
+  cyberpunk: {name:'Cyberpunk',       ico:'🤖', desc:'Mega-corps. Cybernetic augmentation everywhere.'},
+  apocalypse:{name:'Post-Apocalyptic',ico:'⚙️', desc:'Nuclear war ended civilization 15 years ago.'},
+  spaceage:  {name:'Space Age',       ico:'🚀', desc:'Mars colonies. Orbital elevators.'},
+};
+
+const PETS = [
+  {id:'fish',   name:'Goldfish',  ico:'🐠', price:12,    monthly:8,    happy:+1, span:5},
+  {id:'cat',    name:'Cat',       ico:'🐈', price:200,   monthly:80,   happy:+5, span:15},
+  {id:'dog',    name:'Dog',       ico:'🐕', price:600,   monthly:140,  happy:+8, span:13},
+  {id:'rabbit', name:'Rabbit',    ico:'🐇', price:65,    monthly:45,   happy:+3, span:8},
+  {id:'snake',  name:'Snake',     ico:'🐍', price:280,   monthly:35,   happy:+3, span:25},
+  {id:'horse',  name:'Horse',     ico:'🐎', price:8500,  monthly:1200, happy:+9, span:25, health:+2},
+];
+
+const ROOMS = [
+  {id:'kitchen',  name:'Gourmet Kitchen',   ico:'🍳', price:18000, passive:{health:+1}},
+  {id:'bedroom',  name:'Upgraded Bedroom',  ico:'🛏️', price:12000, passive:{happiness:+1}},
+  {id:'bathroom', name:'Luxury Bathroom',   ico:'🛁', price:22000, passive:{happiness:+1,looks:+1}},
+  {id:'garden',   name:'Backyard Garden',   ico:'🌷', price:8000,  passive:{happiness:+1,health:+1}},
+  {id:'gym',      name:'Home Gym',          ico:'🏋️', price:14000, passive:{health:+2}},
+  {id:'theater',  name:'Home Theater',      ico:'🎬', price:28000, passive:{happiness:+2}},
+  {id:'library',  name:'Library',           ico:'📚', price:32000, passive:{smarts:+2}},
+  {id:'pool',     name:'In-Ground Pool',    ico:'🏊', price:65000, passive:{happiness:+2,health:+1}},
+];
+
+const HOUSES = [
+  {id:'apt',     name:'Studio Apartment',    price:85000,    monthly:950,  status:1},
+  {id:'townhouse',name:'Townhouse',          price:320000,   monthly:2200, status:3},
+  {id:'house',   name:'Suburban House',      price:540000,   monthly:3400, status:5},
+  {id:'condo',   name:'Luxury Condo',        price:1250000,  monthly:7200, status:7},
+  {id:'mansion', name:'Mansion',             price:4800000,  monthly:18500,status:9},
+  {id:'estate',  name:'Country Estate',      price:18000000, monthly:62000,status:10},
+];
+
+const CARS = [
+  {id:'bike',    name:'Bicycle',         price:600,     status:1, mph:28},
+  {id:'used',    name:'Used Honda Civic',price:8000,    status:1, mph:115},
+  {id:'sedan',   name:'Toyota Camry',    price:28000,   status:3, mph:130},
+  {id:'suv',     name:'Honda Pilot SUV', price:42000,   status:4, mph:125},
+  {id:'tesla',   name:'Tesla Model S',   price:95000,   status:7, mph:165},
+  {id:'porsche', name:'Porsche 911',     price:225000,  status:8, mph:200},
+  {id:'lambo',   name:'Lamborghini',     price:280000,  status:9, mph:201},
+  {id:'bugatti', name:'Bugatti Chiron',  price:3200000, status:10,mph:261},
+];
+
+const SKILLS_LIST = [
+  {id:'painting', name:'Painting',   ico:'🖌️'},
+  {id:'music',    name:'Music',      ico:'🎵'},
+  {id:'writing',  name:'Writing',    ico:'✍️'},
+  {id:'cooking',  name:'Cooking',    ico:'🍳'},
+  {id:'photography',name:'Photography',ico:'📸'},
+  {id:'programming',name:'Programming',ico:'💻'},
+  {id:'martialarts',name:'Martial Arts',ico:'🥋'},
+  {id:'dancing',  name:'Dancing',    ico:'💃'},
+  {id:'meditation',name:'Meditation',ico:'🧘'},
+  {id:'languages',name:'Languages',  ico:'🗣️'},
+];
+
+const DESTINATIONS = [
+  {id:'paris',  name:'Paris, France',     ico:'🗼', cost:3800, happy:+18, smarts:+2},
+  {id:'tokyo',  name:'Tokyo, Japan',      ico:'🏯', cost:4200, happy:+20, smarts:+3},
+  {id:'bali',   name:'Bali, Indonesia',   ico:'🏝️', cost:2800, happy:+22, health:+3},
+  {id:'london', name:'London, UK',        ico:'🎡', cost:3400, happy:+14, smarts:+2},
+  {id:'safari', name:'African Safari',    ico:'🦁', cost:8500, happy:+25, karma:+3},
+  {id:'iceland',name:'Iceland',           ico:'❄️', cost:4800, happy:+22},
+  {id:'rio',    name:'Rio, Brazil',       ico:'🎭', cost:3200, happy:+20, looks:+1},
+  {id:'space',  name:'Suborbital Space',  ico:'🚀', cost:450000,happy:+40,smarts:+5},
+];
+
+const SUBSTANCES = [
+  {id:'alcohol', name:'Alcohol',   ico:'🍺', cost:25,  fx:{happiness:+6, health:-2},  addict:0.04},
+  {id:'tobacco', name:'Cigarettes',ico:'🚬', cost:15,  fx:{happiness:+3, health:-4},  addict:0.12},
+  {id:'caffeine',name:'Coffee',    ico:'☕', cost:6,   fx:{happiness:+2, smarts:+1, health:-1},addict:0.02},
+];
+
+const BODY_MODS = [
+  {id:'ear',    name:'Ear Piercing',     ico:'👂', cost:60,    looks:+1},
+  {id:'nose',   name:'Nose Piercing',    ico:'👃', cost:120,   looks:+2},
+  {id:'tattoo', name:'Small Tattoo',     ico:'🎯', cost:380,   looks:+2},
+  {id:'sleeve', name:'Sleeve Tattoo',    ico:'💪', cost:2400,  looks:+4},
+  {id:'back',   name:'Back Tattoo',      ico:'🦋', cost:6800,  looks:+5},
+];
+
+const SURGERIES = [
+  {id:'whitening',name:'Teeth Whitening', ico:'😁',cost:600,    looks:+2, risk:0.02},
+  {id:'rhino',    name:'Rhinoplasty',     ico:'👃',cost:8500,   looks:+8, risk:0.08},
+  {id:'lipo',     name:'Liposuction',     ico:'⚖️',cost:6500,   looks:+6, risk:0.10},
+  {id:'botox',    name:'Botox',           ico:'💉',cost:1200,   looks:+4, risk:0.05},
+  {id:'facelift', name:'Facelift',        ico:'🪞',cost:18000,  looks:+12,risk:0.12},
+];
+
+const HOUSING_DISASTERS = [
+  {id:'fire',     name:'🔥 House Fire',     prob:0.005, damage:[20000,150000]},
+  {id:'flood',    name:'🌊 Basement Flood', prob:0.010, damage:[6000,40000]},
+  {id:'burglary', name:'🚪 Burglary',       prob:0.012, damage:[2500,20000]},
+  {id:'plumbing', name:'💧 Plumbing Burst', prob:0.015, damage:[3500,25000]},
+  {id:'termites', name:'🐛 Termites',       prob:0.008, damage:[4500,30000]},
+];
 
 const JOBS = [
   {id:'cashier',   title:'Cashier',         salary:24000, minSmarts:30, ico:'🛒'},
   {id:'barista',   title:'Barista',         salary:28000, minSmarts:35, ico:'☕'},
+  {id:'waiter',    title:'Restaurant Server',salary:30000,minSmarts:30, ico:'🍽️'},
+  {id:'bartender', title:'Bartender',       salary:42000, minSmarts:35, ico:'🍸'},
   {id:'driver',    title:'Delivery Driver', salary:38000, minSmarts:35, ico:'📦'},
+  {id:'uber',      title:'Rideshare Driver',salary:35000, minSmarts:30, ico:'🚖'},
+  {id:'plumber',   title:'Plumber',         salary:62000, minSmarts:35, ico:'🔧'},
+  {id:'electrician',title:'Electrician',    salary:68000, minSmarts:40, ico:'💡'},
+  {id:'mechanic',  title:'Auto Mechanic',   salary:48000, minSmarts:40, ico:'🔩'},
+  {id:'trainer',   title:'Personal Trainer',salary:46000, minSmarts:40, ico:'💪'},
+  {id:'hairstylist',title:'Hairstylist',    salary:38000, minSmarts:35, ico:'💇'},
+  {id:'chef',      title:'Chef',            salary:62000, minSmarts:50, ico:'👨‍🍳'},
+  {id:'firefighter',title:'Firefighter',    salary:58000, minSmarts:45, ico:'🧑‍🚒'},
+  {id:'police',    title:'Police Officer',  salary:64000, minSmarts:50, ico:'👮'},
+  {id:'paramedic', title:'Paramedic',       salary:42000, minSmarts:50, ico:'🚑'},
+  {id:'teacher',   title:'Teacher',         salary:54000, minSmarts:55, ico:'📚'},
   {id:'office',    title:'Office Worker',   salary:52000, minSmarts:55, ico:'💼'},
+  {id:'accountant',title:'Accountant',      salary:65000, minSmarts:65, ico:'🧮'},
   {id:'nurse',     title:'Nurse',           salary:78000, minSmarts:65, ico:'💉'},
-  {id:'engineer',  title:'Engineer',        salary:95000, minSmarts:70, ico:'💻'},
+  {id:'realtor',   title:'Real Estate Agent',salary:62000,minSmarts:55, ico:'🏠'},
+  {id:'architect', title:'Architect',       salary:98000, minSmarts:70, ico:'📐'},
+  {id:'engineer',  title:'Software Engineer',salary:135000,minSmarts:70,ico:'💻'},
+  {id:'data',      title:'Data Scientist',  salary:140000,minSmarts:75, ico:'📊'},
+  {id:'cyber',     title:'Cybersecurity',   salary:115000,minSmarts:72, ico:'🛡️'},
+  {id:'product',   title:'Product Manager', salary:135000,minSmarts:68, ico:'📋'},
+  {id:'pilot',     title:'Commercial Pilot',salary:145000,minSmarts:62, ico:'✈️'},
+  {id:'dentist',   title:'Dentist',         salary:185000,minSmarts:75, ico:'🦷'},
+  {id:'pharmacist',title:'Pharmacist',      salary:135000,minSmarts:75, ico:'💊'},
   {id:'doctor',    title:'Doctor',          salary:280000,minSmarts:85, ico:'🩺'},
   {id:'lawyer',    title:'Lawyer',          salary:180000,minSmarts:78, ico:'⚖️'},
+  {id:'banker',    title:'Investment Banker',salary:265000,minSmarts:75,ico:'🏦'},
   {id:'ceo',       title:'Corporate Exec',  salary:450000,minSmarts:80, ico:'🏢'},
+  {id:'professor', title:'Professor',       salary:115000,minSmarts:80, ico:'🎓'},
+  {id:'scientist', title:'Scientist',       salary:125000,minSmarts:80, ico:'🔬'},
+  {id:'astronaut', title:'Astronaut',       salary:165000,minSmarts:80, ico:'🚀'},
   {id:'artist',    title:'Artist',          salary:42000, minSmarts:40, ico:'🎨'},
+  {id:'musician',  title:'Musician',        salary:48000, minSmarts:40, ico:'🎸'},
+  {id:'actor',     title:'Actor',           salary:78000, minSmarts:50, ico:'🎬'},
+  {id:'author',    title:'Author',          salary:52000, minSmarts:65, ico:'📖'},
+  {id:'journalist',title:'Journalist',      salary:48000, minSmarts:60, ico:'📰'},
+  {id:'influencer',title:'Influencer',      salary:65000, minSmarts:45, ico:'📱'},
+  {id:'athlete',   title:'Pro Athlete',     salary:680000,minSmarts:40, ico:'⚽'},
+  {id:'politician',title:'Politician',      salary:98000, minSmarts:60, ico:'🏛️'},
+  {id:'military',  title:'Military Officer',salary:58000, minSmarts:50, ico:'🪖'},
+  {id:'judge',     title:'Judge',           salary:225000,minSmarts:85, ico:'⚖️'},
+  {id:'president', title:'Head of State',   salary:400000,minSmarts:82, ico:'🎖️'},
+  {id:'criminal',  title:'Career Criminal', salary:78000, minSmarts:40, ico:'🦹', illegal:true},
 ];
 
 const SHOP_FOOD = [
   {id:'cheap',     name:'Fast Food Meal',   cost:8,   hunger:25, happy:2,  health:-2},
   {id:'home',      name:'Home Groceries',   cost:45,  hunger:45, happy:5,  health:2},
+  {id:'sushi',     name:'Sushi',            cost:32,  hunger:35, happy:6,  health:3},
+  {id:'pizza',     name:'Pizza',            cost:18,  hunger:40, happy:7,  health:-1},
+  {id:'salad',     name:'Healthy Salad',    cost:14,  hunger:25, happy:3,  health:4},
   {id:'restaurant',name:'Restaurant Meal',  cost:65,  hunger:50, happy:10, health:0},
   {id:'gourmet',   name:'Gourmet Dinner',   cost:180, hunger:50, happy:18, health:3},
+  {id:'street',    name:'Street Food',      cost:6,   hunger:20, happy:4,  health:-1},
 ];
 const SHOP_GOODS = [
-  {id:'shirt',  name:'New Shirt',         cost:35,  happy:3, looks:1, ico:'👕'},
-  {id:'shoes',  name:'New Shoes',         cost:120, happy:5, looks:2, ico:'👟'},
-  {id:'phone',  name:'Smartphone',        cost:800, happy:8, smarts:1,ico:'📱'},
-  {id:'laptop', name:'Laptop',            cost:1400,happy:6, smarts:3,ico:'💻'},
-  {id:'tv',     name:'TV',                cost:600, happy:8, ico:'📺'},
-  {id:'jewelry',name:'Necklace',          cost:1200,happy:5, looks:3, ico:'💎'},
+  {id:'shirt',   name:'New Shirt',         cost:35,  happy:3, looks:1, ico:'👕'},
+  {id:'jeans',   name:'Designer Jeans',    cost:120, happy:3, looks:2, ico:'👖'},
+  {id:'shoes',   name:'New Shoes',         cost:120, happy:5, looks:2, ico:'👟'},
+  {id:'designer',name:'Designer Bag',      cost:1800,happy:6, looks:4, ico:'👜'},
+  {id:'suit',    name:'Formal Suit',       cost:680, happy:3, looks:3, ico:'👔'},
+  {id:'phone',   name:'Smartphone',        cost:800, happy:8, smarts:1,ico:'📱'},
+  {id:'laptop',  name:'Laptop',            cost:1400,happy:6, smarts:3,ico:'💻'},
+  {id:'tablet',  name:'Tablet',            cost:600, happy:5, smarts:2,ico:'📱'},
+  {id:'tv',      name:'4K TV',             cost:600, happy:8, ico:'📺'},
+  {id:'console', name:'Game Console',      cost:500, happy:6, ico:'🎮'},
+  {id:'jewelry', name:'Necklace',          cost:1200,happy:5, looks:3, ico:'💎'},
+  {id:'watch',   name:'Luxury Watch',      cost:2400,happy:6, looks:4, ico:'⌚'},
+  {id:'sunglasses',name:'Sunglasses',      cost:140, happy:2, looks:2, ico:'🕶️'},
+  {id:'guitar',  name:'Guitar',            cost:380, happy:5, smarts:1,ico:'🎸'},
+  {id:'art',     name:'Art Print',         cost:400, happy:3, smarts:1,ico:'🖼️'},
 ];
 const MOVIES = [
-  {id:'action',     name:'Vendetta Velocity',  cost:14, happy:8},
-  {id:'romance',    name:'Two Hearts',         cost:14, happy:6, looks:1},
-  {id:'horror',     name:'The House at Bend',  cost:14, happy:5, health:-1},
-  {id:'documentary',name:'Inside the Genome',  cost:11, happy:3, smarts:3},
+  {id:'action',     name:'Vendetta Velocity 7',  cost:14, happy:8},
+  {id:'romance',    name:'Two Hearts, One Coffee',cost:14,happy:6, looks:1},
+  {id:'horror',     name:'The House at Bend',    cost:14, happy:5, health:-1},
+  {id:'documentary',name:'Inside the Genome',    cost:11, happy:3, smarts:3},
+  {id:'comedy',     name:'My Roommate Is a Goat',cost:14, happy:9},
+  {id:'sci',        name:'Helios: First Light',  cost:18, happy:6, smarts:2},
+  {id:'drama',      name:'The Silence Between Us',cost:14,happy:4, smarts:1},
+  {id:'animated',   name:'The Last Lighthouse',  cost:13, happy:7, smarts:1},
 ];
 
 const WORLDS = {
@@ -407,7 +623,7 @@ const WORLDS = {
     background:'#0c1e0e',
   },
   city: (() => {
-    const w = 36, h = 20;
+    const w = 56, h = 20;
     const rows = [];
     for(let y=0; y<h; y++){
       let row = '';
@@ -421,42 +637,106 @@ const WORLDS = {
     return {
       w, h, tiles: rows,
       buildings: [
-        {id:'shop',      icon:'🛍️', name:'Shopping Mall',  x:2,  y:2,  w:4, h:3, action:'openShop',       cls:'shop'},
-        {id:'cafe',      icon:'🍔', name:'Restaurant',     x:8,  y:2,  w:3, h:3, action:'openRestaurant', cls:'shop'},
-        {id:'cinema',    icon:'🎬', name:'Cinema',         x:13, y:2,  w:3, h:3, action:'openCinema',     cls:'entertainment'},
-        {id:'gym',       icon:'🏋️', name:'Gym',            x:18, y:2,  w:3, h:3, action:'openGym',        cls:'entertainment'},
-        {id:'bank',      icon:'🏦', name:'Bank',           x:23, y:2,  w:3, h:3, action:'openBank',       cls:'civic'},
-        {id:'hospital',  icon:'🏥', name:'Hospital',       x:28, y:2,  w:4, h:3, action:'openHospital',   cls:'medical'},
-        {id:'school',    icon:'🏫', name:'School',         x:2,  y:14, w:4, h:3, action:'openSchool',     cls:'school'},
-        {id:'university',icon:'🎓', name:'University',     x:8,  y:14, w:4, h:3, action:'openUniversity', cls:'school'},
-        {id:'jobcenter', icon:'💼', name:'Job Center',     x:14, y:14, w:4, h:3, action:'openJobCenter',  cls:'work'},
-        {id:'police',    icon:'🚓', name:'Police Station', x:20, y:14, w:3, h:3, action:'openPolice',     cls:'civic'},
-        {id:'cityhall',  icon:'🏛️', name:'City Hall',      x:25, y:14, w:3, h:3, action:'openCityHall',   cls:'civic'},
-        {id:'church',    icon:'⛪', name:'Worship Place',  x:30, y:14, w:3, h:3, action:'openChurch',     cls:'civic'},
+        // Top row (north of road)
+        {id:'shop',      icon:'🛍️', name:'Shopping Mall',     x:2,  y:2, w:4, h:3, action:'openShop',          cls:'shop'},
+        {id:'cafe',      icon:'🍔', name:'Restaurant',        x:8,  y:2, w:3, h:3, action:'openRestaurant',    cls:'shop'},
+        {id:'cinema',    icon:'🎬', name:'Cinema',            x:13, y:2, w:3, h:3, action:'openCinema',        cls:'entertainment'},
+        {id:'gym',       icon:'🏋️', name:'Gym',               x:18, y:2, w:3, h:3, action:'openGym',           cls:'entertainment'},
+        {id:'bank',      icon:'🏦', name:'Bank',              x:23, y:2, w:3, h:3, action:'openBank',          cls:'civic'},
+        {id:'hospital',  icon:'🏥', name:'Hospital',          x:28, y:2, w:4, h:3, action:'openHospital',      cls:'medical'},
+        {id:'petstore',  icon:'🐾', name:'Pet Store',         x:34, y:2, w:3, h:3, action:'openPetStore',      cls:'shop'},
+        {id:'spa',       icon:'💆', name:'Spa & Surgery',     x:39, y:2, w:3, h:3, action:'openSpa',           cls:'medical'},
+        {id:'tattoo',    icon:'🎨', name:'Tattoo Parlor',     x:44, y:2, w:3, h:3, action:'openTattoo',        cls:'entertainment'},
+        {id:'club',      icon:'🕺', name:'Nightclub',         x:49, y:2, w:3, h:3, action:'openNightclub',     cls:'entertainment'},
+        // Bottom row (south of road)
+        {id:'school',    icon:'🏫', name:'School',            x:2,  y:14, w:4, h:3, action:'openSchool',       cls:'school'},
+        {id:'university',icon:'🎓', name:'University',        x:8,  y:14, w:4, h:3, action:'openUniversity',   cls:'school'},
+        {id:'jobcenter', icon:'💼', name:'Job Center',        x:14, y:14, w:4, h:3, action:'openJobCenter',    cls:'work'},
+        {id:'police',    icon:'🚓', name:'Police Station',    x:20, y:14, w:3, h:3, action:'openPolice',       cls:'civic'},
+        {id:'cityhall',  icon:'🏛️', name:'City Hall',         x:25, y:14, w:3, h:3, action:'openCityHall',     cls:'civic'},
+        {id:'church',    icon:'⛪', name:'Worship Place',     x:30, y:14, w:3, h:3, action:'openChurch',       cls:'civic'},
+        {id:'cardealer', icon:'🚗', name:'Car Dealership',    x:35, y:14, w:4, h:3, action:'openCarDealer',    cls:'shop'},
+        {id:'realtor',   icon:'🏘️', name:'Real Estate',       x:41, y:14, w:4, h:3, action:'openRealtor',      cls:'shop'},
+        {id:'airport',   icon:'✈️', name:'Airport',           x:47, y:14, w:4, h:3, action:'openAirport',      cls:'civic'},
+        {id:'library',   icon:'📚', name:'Library',           x:52, y:14, w:3, h:3, action:'openLibrary',      cls:'school'},
       ],
       exits: [
         {x:0, y:9, w:1, h:2, target:'neighborhood', spawnX:27, spawnY:8},
+        {x:55, y:9, w:1, h:2, target:'beach', spawnX:2, spawnY:9},
       ],
       spawn:{ x:3, y:9 },
       background:'#0e1018',
     };
   })(),
+  beach: {
+    w: 30, h: 16,
+    tiles: (() => {
+      const w = 30, h = 16;
+      const rows = [];
+      for(let y=0; y<h; y++){
+        let row = '';
+        for(let x=0; x<w; x++){
+          if(y < 4)         row += '~'; // ocean
+          else if(y < 6)    row += 's'; // sand
+          else              row += '.'; // grass
+        }
+        rows.push(row);
+      }
+      return rows;
+    })(),
+    buildings: [
+      {id:'beachshop', icon:'🥥', name:'Beach Shack',    x:3,  y:7, w:3, h:2, action:'openBeachShop',    cls:'shop'},
+      {id:'lifeguard', icon:'🚨', name:'Lifeguard Hut',  x:14, y:6, w:2, h:2, action:'openLifeguard',    cls:'civic'},
+      {id:'travel',    icon:'🗺️', name:'Travel Agency',  x:20, y:7, w:3, h:3, action:'openTravelAgency', cls:'entertainment'},
+      {id:'park',      icon:'🌴', name:'Beach Park',     x:8,  y:11, w:4, h:3, action:'goBeachPark',     cls:'entertainment'},
+      {id:'pier',      icon:'🎣', name:'Fishing Pier',   x:24, y:12, w:3, h:3, action:'goFishing',        cls:'entertainment'},
+    ],
+    exits: [
+      {x:0, y:8, w:1, h:2, target:'city', spawnX:54, spawnY:9},
+    ],
+    spawn:{ x:14, y:10 },
+    background:'#1a3a5a',
+  },
 };
 
 let G = null;
 function defaultGame(name, sex, skinId, country){
+  // Roll 2 personality traits (no conflicts)
+  const traitPool = TRAITS.slice().sort(() => Math.random() - 0.5);
+  const traits = [];
+  for(const t of traitPool){
+    if(traits.length >= 2) break;
+    if(traits.some(p => TRAIT_CONFLICTS[p] === t.id)) continue;
+    traits.push(t.id);
+  }
+  // Roll inherited diseases (de novo chance 4% each, beneficial 10%)
+  const diseases = [];
+  for(const d of DISEASES){
+    const chance = d.beneficial ? 0.10 : 0.04;
+    if(Math.random() < chance) diseases.push(d.id);
+  }
+  // Fertility profile
+  const fertRoll = Math.random();
+  const fertility = fertRoll < 0.06 ? 'infertile'
+                  : fertRoll < 0.12 ? 'low'
+                  : fertRoll < 0.85 ? 'normal'
+                  : fertRoll < 0.95 ? 'high'
+                  : 'multiparous';
   return {
     char:{
       name, sex, skin:skinId, country,
       age:18, day:1, hour:9,
       happiness:60, health:80, smarts:55, looks:55, karma:60,
-      energy:80, hunger:80,
+      energy:80, hunger:80, faith:30, fame:0,
       money:1500, salary:0,
       job:null, jobYears:0,
       education:'High School', degrees:[],
       enrolled:null, enrolledYearsLeft:0,
       relationship:null, kids:[],
-      ownedItems:[],
+      ownedItems:[], owned:{ house:null, car:null, rooms:[] },
+      pets:[], bodyMods:[], addictions:[], placesVisited:[],
+      traits, diseases, fertility,
+      religion:null, reality:null,
       alive:true, cause:null,
     },
     zone:'home',
@@ -764,16 +1044,104 @@ function advanceDay(){
   if(G.char.day % 30 === 0){ ageUp(); }
 }
 function ageUp(){
-  G.char.age++;
-  miniMsg('🎂 You\'re now ' + G.char.age + ' years old.');
+  const c = G.char;
+  c.age++;
+  miniMsg('🎂 You\'re now ' + c.age + ' years old.');
+  // Trait drift each year
+  (c.traits || []).forEach(tid => {
+    const t = TRAITS.find(x => x.id === tid);
+    if(!t || !t.drift) return;
+    Object.keys(t.drift).forEach(k => {
+      if(c[k] != null) c[k] = clamp(c[k] + t.drift[k], 0, 100);
+    });
+  });
+  // Disease progression past onset
+  (c.diseases || []).forEach(did => {
+    const d = DISEASES.find(x => x.id === did);
+    if(!d || c.age < d.onset) return;
+    if(c.age === d.onset){
+      miniMsg((d.beneficial?'✨ ':'🩺 ') + 'Diagnosed: ' + d.name);
+    }
+    Object.keys(d.drift || {}).forEach(k => {
+      if(c[k] != null) c[k] = clamp(c[k] + d.drift[k], 0, 100);
+    });
+  });
+  // Religion perk
+  if(c.religion && RELIGIONS[c.religion]){
+    Object.keys(RELIGIONS[c.religion].perk).forEach(k => {
+      if(c[k] != null) c[k] = clamp(c[k] + RELIGIONS[c.religion].perk[k], 0, 100);
+    });
+  }
+  // Pets age + cost + bonus
+  (c.pets || []).forEach(pet => {
+    if(!pet.alive) return;
+    pet.age++;
+    const p = PETS.find(x => x.id === pet.id);
+    if(!p) return;
+    c.money -= p.monthly * 12;
+    c.happiness = clamp(c.happiness + p.happy, 0, 100);
+    if(p.health) c.health = clamp(c.health + p.health, 0, 100);
+    if(pet.age >= p.span){
+      pet.alive = false;
+      miniMsg('🕯️ Your ' + p.name.toLowerCase() + ' ' + pet.name + ' passed away.');
+      c.happiness = clamp(c.happiness - 8, 0, 100);
+    }
+  });
+  // Annual taxes
+  const country = COUNTRIES[c.country];
+  if(c.salary > 0){
+    const tax = Math.floor(c.salary * country.incomeTax);
+    if(c.money >= tax){ c.money -= tax; }
+    else { c.money -= tax; c.happiness = clamp(c.happiness - 4, 0, 100); }
+  }
+  if(c.owned && c.owned.house){
+    const h = HOUSES.find(x => x.id === c.owned.house);
+    if(h){ c.money -= Math.floor(h.price * country.propertyTax); }
+  }
+  // Housing disaster roll
+  if(c.owned && c.owned.house){
+    for(const d of HOUSING_DISASTERS){
+      if(Math.random() < d.prob){
+        const dmg = d.damage[0] + Math.floor(Math.random()*(d.damage[1]-d.damage[0]));
+        c.money -= dmg;
+        applyFx({happy:-6});
+        miniMsg(d.name + ' Cost: ' + fmt(dmg));
+        break;
+      }
+    }
+  }
+  // Addiction yearly cost
+  (c.addictions || []).forEach(aid => {
+    const s = SUBSTANCES.find(x => x.id === aid);
+    if(!s) return;
+    c.money -= s.cost * 30;
+    c.health = clamp(c.health + (s.fx.health||0) * 4, 0, 100);
+  });
   rollLifeEvent();
-  const country = COUNTRIES[G.char.country];
-  if(G.char.age >= country.lifeExp - 5){
-    const chance = 0.02 + Math.max(0, (G.char.age - country.lifeExp)) * 0.04;
+  if(c.age >= country.lifeExp - 5){
+    const chance = 0.02 + Math.max(0, (c.age - country.lifeExp)) * 0.04;
     if(Math.random() < chance){ killCharacter('old age'); return; }
   }
-  if(G.char.age >= 110){ killCharacter('extreme old age'); return; }
-  if(G.char.health <= 0){ killCharacter('failing health'); return; }
+  if(c.age >= 110){ killCharacter('extreme old age'); return; }
+  if(c.health <= 0){ killCharacter('failing health'); return; }
+}
+
+function openAchievements(){
+  const list = computeAchievements();
+  let html = '';
+  if(!list.length){
+    html = '<p style="text-align:center;color:var(--t3);padding:30px;">No achievements yet. Live your life. They\'ll come.</p>';
+  } else {
+    html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;">';
+    list.forEach(a => {
+      html += '<div style="padding:14px 12px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;text-align:center;">'
+        + '<div style="font-size:32px;line-height:1;margin-bottom:5px;">' + a.ico + '</div>'
+        + '<div style="font-size:12px;color:var(--accent2);font-weight:600;">' + a.label + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+  openMod('🏆 Achievements (' + list.length + ')', html);
 }
 
 function rollLifeEvent(){
@@ -1098,9 +1466,407 @@ function quitJob(){
   miniMsg('You quit your job.');
 }
 
-function openPolice(){ toast('Police station — quiet today.'); }
-function openCityHall(){ applyFx({karma:3}); toast('🗳️ Voted. +3 karma.'); }
-function openChurch(){ applyFx({happy:4, karma:3}); toast('⛪ Felt centered.'); }
+function openPolice(){
+  openMod('🚓 Police Station', '<p style="margin-bottom:10px;font-size:12px;">File a report or pay a fine.</p>'
+    + '<div class="btn-row">'
+    + '<button class="btn green" onclick="doPolice(\'report\')">File a Report (+5 karma)</button>'
+    + '<button class="btn" onclick="doPolice(\'volunteer\')">Volunteer Patrol (+8 karma)</button>'
+    + '</div>');
+}
+function doPolice(action){
+  if(action === 'report'){ applyFx({karma:5}); }
+  else { applyFx({karma:8, energy:-4}); advanceHours(2); }
+  closeModal();
+  miniMsg('Civic duty done.');
+}
+
+function openCityHall(){
+  const c = G.char;
+  const country = COUNTRIES[c.country];
+  let html = '<div style="padding:12px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:12px;">'
+    + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.18em;color:var(--accent2);text-transform:uppercase;margin-bottom:6px;">'
+    + country.flag + ' ' + country.name + ' · Tax Profile</div>'
+    + '<div style="font-size:12px;line-height:1.7;">Income tax: <b style="color:var(--crimson)">' + Math.floor(country.incomeTax*100) + '%</b><br>'
+    + 'Property tax: <b style="color:var(--crimson)">' + (country.propertyTax*100).toFixed(2) + '% / yr</b><br>'
+    + 'Religion (majority): <b>' + country.religion + '</b></div></div>';
+  html += '<div class="btn-row">';
+  html += '<button class="btn green" onclick="cityVote()">🗳️ Vote in Election (+3 karma)</button>';
+  html += '<button class="btn" onclick="payTaxes()">💸 Pay Taxes Now</button>';
+  html += '<button class="btn" onclick="openImmigration()">🛂 Immigration / Emigration</button>';
+  html += '</div>';
+  openMod('🏛️ City Hall', html);
+}
+function cityVote(){ applyFx({karma:3, happy:2}); closeModal(); miniMsg('🗳️ Voted.'); }
+function payTaxes(){
+  const c = G.char;
+  let owed = 0;
+  if(c.salary > 0) owed += Math.floor(c.salary * COUNTRIES[c.country].incomeTax);
+  if(c.owned && c.owned.house){
+    const h = HOUSES.find(x => x.id === c.owned.house);
+    if(h) owed += Math.floor(h.price * COUNTRIES[c.country].propertyTax);
+  }
+  if(owed === 0){ toast('Nothing owed.'); return; }
+  if(c.money < owed){ toast('Need ' + fmt(owed) + ' to pay taxes.'); return; }
+  c.money -= owed;
+  closeModal();
+  miniMsg('💸 Paid ' + fmt(owed) + ' in taxes.');
+}
+function openImmigration(){
+  const c = G.char;
+  let html = '<p style="margin-bottom:10px;font-size:12px;">Move to another country. $8k visa fee. Approval depends on smarts.</p>';
+  Object.keys(COUNTRIES).forEach(k => {
+    if(k === c.country) return;
+    const dst = COUNTRIES[k];
+    html += '<div class="shop-item" onclick="' + (c.money>=8000?'emigrateTo(\'' + k + '\')':'toast(\'Need $8,000\')') + '">'
+      + '<div class="shop-item-ico">' + dst.flag + '</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + dst.name + '</div>'
+      + '<div class="shop-item-desc">Income tax ' + Math.floor(dst.incomeTax*100) + '% · Life exp ' + dst.lifeExp + '</div></div>'
+      + '<div class="shop-item-pay neg">−$8k</div></div>';
+  });
+  openMod('🛂 Immigration', html);
+}
+function emigrateTo(k){
+  const c = G.char;
+  if(c.money < 8000){ toast('Not enough money.'); return; }
+  c.money -= 8000;
+  const approval = 0.2 + (c.smarts / 200);
+  if(Math.random() < approval){
+    c.country = k;
+    closeModal();
+    miniMsg('🛂 Visa approved. Welcome to ' + COUNTRIES[k].name + '.');
+  } else {
+    closeModal();
+    miniMsg('🛂 Visa denied. Lost $8k application fee.');
+    applyFx({happy:-6});
+  }
+}
+
+function openChurch(){
+  const c = G.char;
+  let html = '';
+  if(!c.religion){
+    html += '<p style="margin-bottom:10px;font-size:12px;">Pick a tradition to follow. Practicing your faith gives perks each year.</p>';
+    Object.keys(RELIGIONS).forEach(k => {
+      const r = RELIGIONS[k];
+      html += '<div class="shop-item" onclick="convertTo(\'' + k + '\')">'
+        + '<div class="shop-item-ico">' + r.ico + '</div>'
+        + '<div class="shop-item-info"><div class="shop-item-name">' + r.name + '</div>'
+        + '<div class="shop-item-desc">' + Object.keys(r.perk).map(p => '+' + r.perk[p] + ' ' + p).join(' · ') + '</div></div>'
+        + '<button class="btn">Convert</button></div>';
+    });
+  } else {
+    const r = RELIGIONS[c.religion];
+    html += '<div style="text-align:center;font-size:36px;margin-bottom:10px;">' + r.ico + '<br><span style="font-size:14px;font-family:var(--font-h);color:var(--accent2);">' + r.name + '</span></div>';
+    html += '<div class="btn-row">'
+      + '<button class="btn" onclick="faithPray()">🙏 Pray</button>'
+      + '<button class="btn green" onclick="faithService()">⛪ Attend Service ($30)</button>'
+      + '<button class="btn" onclick="faithCharity()">💝 Donate ($500)</button>'
+      + '<button class="btn red" onclick="leaveReligion()">Leave Faith</button>'
+      + '</div>';
+  }
+  openMod('⛪ ' + (c.religion ? RELIGIONS[c.religion].name : 'Faith & Religion'), html);
+}
+function convertTo(k){
+  G.char.religion = k;
+  closeModal();
+  miniMsg('🕊️ Converted to ' + RELIGIONS[k].name + '.');
+  applyFx({happy:6, karma:3});
+}
+function leaveReligion(){ G.char.religion = null; closeModal(); miniMsg('🌐 You\'re now secular.'); }
+function faithPray(){ applyFx({happy:3, karma:1}); advanceHours(0.5); closeModal(); miniMsg('🙏 Prayed.'); }
+function faithService(){ if(G.char.money<30){toast('Need $30');return;} G.char.money-=30; applyFx({happy:5, karma:3}); advanceHours(2); closeModal(); miniMsg('⛪ Attended service.'); }
+function faithCharity(){ if(G.char.money<500){toast('Need $500');return;} G.char.money-=500; applyFx({karma:10, happy:5}); closeModal(); miniMsg('💝 Donated to charity.'); }
+
+function openPetStore(){
+  let html = '<p style="margin-bottom:10px;font-size:12px;">Adopt a companion. Each pet provides happiness yearly and a monthly cost.</p>';
+  PETS.forEach(p => {
+    const can = G.char.money >= p.price;
+    html += '<div class="shop-item" onclick="' + (can?'adoptPet(\'' + p.id + '\')':'toast(\'Not enough money\')') + '">'
+      + '<div class="shop-item-ico">' + p.ico + '</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + p.name + '</div>'
+      + '<div class="shop-item-desc">+' + p.happy + ' happy / yr · ' + fmt(p.monthly) + '/mo upkeep · ~' + p.span + ' yr lifespan</div></div>'
+      + '<div class="shop-item-pay neg">−' + fmt(p.price) + '</div></div>';
+  });
+  openMod('🐾 Pet Store', html);
+}
+function adoptPet(id){
+  const p = PETS.find(x => x.id === id);
+  if(!p || G.char.money < p.price) return;
+  const name = prompt('Name your ' + p.name.toLowerCase() + ':', 'Buddy');
+  if(name === null) return;
+  G.char.money -= p.price;
+  if(!G.char.pets) G.char.pets = [];
+  G.char.pets.push({id:p.id, name:name||'Pet', age:0, alive:true});
+  applyFx({happy:10, karma:2});
+  closeModal();
+  miniMsg('🎉 Adopted ' + (name||'Pet') + '!');
+}
+
+function openSpa(){
+  let html = '<p style="margin-bottom:10px;font-size:12px;">Day spa or cosmetic surgery. Each surgery has a complication risk.</p>';
+  SURGERIES.forEach(s => {
+    const can = G.char.money >= s.cost;
+    html += '<div class="shop-item" onclick="' + (can?'doSurgery(\'' + s.id + '\')':'toast(\'Not enough money\')') + '">'
+      + '<div class="shop-item-ico">' + s.ico + '</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + s.name + '</div>'
+      + '<div class="shop-item-desc">+' + s.looks + ' looks · ' + Math.floor(s.risk*100) + '% complication risk</div></div>'
+      + '<div class="shop-item-pay neg">−' + fmt(s.cost) + '</div></div>';
+  });
+  openMod('💆 Spa & Surgery', html);
+}
+function doSurgery(id){
+  const s = SURGERIES.find(x => x.id === id);
+  if(!s || G.char.money < s.cost) return;
+  G.char.money -= s.cost;
+  if(Math.random() < s.risk){
+    applyFx({health:-10, looks:-2, happy:-6});
+    closeModal();
+    miniMsg('⚠️ Surgery had complications.');
+  } else {
+    applyFx({looks:s.looks});
+    closeModal();
+    miniMsg('💆 Surgery success. Looks +' + s.looks + '.');
+  }
+}
+
+function openTattoo(){
+  let html = '<p style="margin-bottom:10px;font-size:12px;">Body mods are permanent.</p>';
+  BODY_MODS.forEach(b => {
+    const can = G.char.money >= b.cost;
+    html += '<div class="shop-item" onclick="' + (can?'getBodyMod(\'' + b.id + '\')':'toast(\'Not enough money\')') + '">'
+      + '<div class="shop-item-ico">' + b.ico + '</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + b.name + '</div>'
+      + '<div class="shop-item-desc">+' + b.looks + ' looks</div></div>'
+      + '<div class="shop-item-pay neg">−' + fmt(b.cost) + '</div></div>';
+  });
+  openMod('🎨 Tattoo Parlor', html);
+}
+function getBodyMod(id){
+  const b = BODY_MODS.find(x => x.id === id);
+  if(!b || G.char.money < b.cost) return;
+  G.char.money -= b.cost;
+  if(!G.char.bodyMods) G.char.bodyMods = [];
+  G.char.bodyMods.push(id);
+  applyFx({looks:b.looks});
+  closeModal();
+  miniMsg('🎨 Got ' + b.name + '.');
+}
+
+function openNightclub(){
+  const c = G.char;
+  if(c.age < 18){ toast('Must be 18+ to enter.'); return; }
+  let html = '<p style="margin-bottom:10px;font-size:12px;">Cover charge $40. Live music, dancing, strangers.</p>'
+    + '<div class="btn-row">'
+    + '<button class="btn green" onclick="clubDance()">💃 Dance ($40 cover)</button>'
+    + '<button class="btn" onclick="clubMeet()">😍 Look for Romance ($40)</button>'
+    + '</div>';
+  // Substances bar
+  html += '<p style="margin:14px 0 6px;font-family:var(--font-m);font-size:10px;letter-spacing:.18em;color:var(--accent2);text-transform:uppercase;">At the Bar</p>';
+  SUBSTANCES.forEach(s => {
+    const can = c.money >= s.cost;
+    const fxText = Object.keys(s.fx).map(k => (s.fx[k]>0?'+':'') + s.fx[k] + ' ' + k).join(' · ');
+    html += '<div class="shop-item" onclick="' + (can?'useSubstance(\'' + s.id + '\')':'toast(\'Not enough money\')') + '">'
+      + '<div class="shop-item-ico">' + s.ico + '</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + s.name + '</div>'
+      + '<div class="shop-item-desc">' + fxText + ' · ' + Math.floor(s.addict*100) + '% addiction risk</div></div>'
+      + '<div class="shop-item-pay neg">−' + fmt(s.cost) + '</div></div>';
+  });
+  openMod('🕺 Nightclub', html);
+}
+function clubDance(){
+  if(G.char.money < 40){ toast('Need $40 cover.'); return; }
+  G.char.money -= 40;
+  applyFx({happy:12, energy:-4, health:-1});
+  advanceHours(3);
+  closeModal();
+  miniMsg('💃 Danced the night away.');
+}
+function clubMeet(){
+  const c = G.char;
+  if(c.money < 40){ toast('Need $40 cover.'); return; }
+  c.money -= 40;
+  if(c.relationship){
+    applyFx({happy:-4, karma:-2});
+    closeModal();
+    miniMsg('You\'re already in a relationship. Felt guilty.');
+    return;
+  }
+  // Generate a potential date
+  const sex = Math.random()<0.5?'m':'f';
+  const newDate = {
+    name: (sex==='m'?NAMES_M:NAMES_F)[Math.floor(Math.random()*20)] + ' ' + NAMES_L[Math.floor(Math.random()*20)],
+    sex, age: Math.max(18, c.age + Math.floor(Math.random()*10 - 5)),
+    looks: 30 + Math.floor(Math.random()*60),
+    smarts: 30 + Math.floor(Math.random()*60),
+    compat: 30 + Math.floor(Math.random()*60),
+  };
+  closeModal();
+  openMod('💕 You met someone',
+    '<div style="text-align:center;font-size:48px;margin-bottom:10px;">' + (sex==='m'?'🧑':'👩') + '</div>'
+    + '<div style="text-align:center;font-family:var(--font-h);font-size:18px;color:var(--accent2);margin-bottom:8px;">' + newDate.name + '</div>'
+    + '<div style="text-align:center;font-size:12px;color:var(--t3);font-family:var(--font-m);letter-spacing:.05em;margin-bottom:14px;">'
+    + 'Age ' + newDate.age + ' · Looks ' + newDate.looks + ' · Smarts ' + newDate.smarts + ' · Compatibility ' + newDate.compat + '%</div>'
+    + '<div class="btn-row">'
+    + '<button class="btn green" onclick="dateStart()">Start Dating</button>'
+    + '<button class="btn" onclick="closeModal()">Walk Away</button>'
+    + '</div>');
+  G._pendingDate = newDate;
+}
+function dateStart(){
+  const d = G._pendingDate;
+  if(!d) return;
+  G.char.relationship = { ...d, married:false, kids:[] };
+  G._pendingDate = null;
+  closeModal();
+  miniMsg('💕 Started dating ' + d.name + '.');
+  applyFx({happy:12});
+}
+function useSubstance(id){
+  const s = SUBSTANCES.find(x => x.id === id);
+  if(!s || G.char.money < s.cost) return;
+  G.char.money -= s.cost;
+  applyFx(s.fx);
+  if(!G.char.addictions) G.char.addictions = [];
+  if(!G.char.addictions.includes(id) && Math.random() < s.addict){
+    G.char.addictions.push(id);
+    miniMsg('🚨 You got addicted to ' + s.name + '.');
+  } else {
+    miniMsg('Used ' + s.name + '.');
+  }
+  closeModal();
+  openNightclub();
+}
+
+function openCarDealer(){
+  let html = '<p style="margin-bottom:10px;font-size:12px;">Buy a new ride. Faster vehicles let you move quicker on the map.</p>';
+  CARS.forEach(car => {
+    const can = G.char.money >= car.price;
+    const owned = G.char.owned && G.char.owned.car === car.id;
+    html += '<div class="shop-item" onclick="' + (can && !owned ? 'buyCar(\'' + car.id + '\')' : 'toast(\'' + (owned?'Already owned':'Not enough money') + '\')') + '">'
+      + '<div class="shop-item-ico">🚗</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + car.name + (owned?' · OWNED':'') + '</div>'
+      + '<div class="shop-item-desc">Status ' + car.status + '/10 · ' + car.mph + ' mph</div></div>'
+      + '<div class="shop-item-pay neg">−' + fmt(car.price) + '</div></div>';
+  });
+  openMod('🚗 Car Dealership', html);
+}
+function buyCar(id){
+  const car = CARS.find(x => x.id === id);
+  if(!car || G.char.money < car.price) return;
+  G.char.money -= car.price;
+  if(!G.char.owned) G.char.owned = {};
+  G.char.owned.car = id;
+  applyFx({happy:10, looks:1});
+  closeModal();
+  miniMsg('🚗 Bought a ' + car.name + '!');
+}
+
+function openRealtor(){
+  let html = '<p style="margin-bottom:10px;font-size:12px;">Buy a house. Bigger houses unlock more upgrade rooms at home.</p>';
+  HOUSES.forEach(h => {
+    const can = G.char.money >= h.price;
+    const owned = G.char.owned && G.char.owned.house === h.id;
+    html += '<div class="shop-item" onclick="' + (can && !owned ? 'buyHouse(\'' + h.id + '\')' : 'toast(\'' + (owned?'Already owned':'Not enough money') + '\')') + '">'
+      + '<div class="shop-item-ico">🏠</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + h.name + (owned?' · OWNED':'') + '</div>'
+      + '<div class="shop-item-desc">Status ' + h.status + '/10 · ' + fmt(h.monthly) + '/mo upkeep</div></div>'
+      + '<div class="shop-item-pay neg">−' + fmt(h.price) + '</div></div>';
+  });
+  openMod('🏘️ Real Estate', html);
+}
+function buyHouse(id){
+  const h = HOUSES.find(x => x.id === id);
+  if(!h || G.char.money < h.price) return;
+  G.char.money -= h.price;
+  if(!G.char.owned) G.char.owned = {};
+  G.char.owned.house = id;
+  applyFx({happy:18});
+  closeModal();
+  miniMsg('🏠 Bought a ' + h.name + '!');
+}
+
+function openAirport(){
+  let html = '<p style="margin-bottom:10px;font-size:12px;">Vacation destinations. Costs are flat in your local currency.</p>';
+  DESTINATIONS.forEach(d => {
+    const can = G.char.money >= d.cost;
+    const fxText = ['happy','smarts','health','karma','looks'].filter(k => d[k]).map(k => '+' + d[k] + ' ' + k).join(' · ');
+    html += '<div class="shop-item" onclick="' + (can?'bookTravel(\'' + d.id + '\')':'toast(\'Not enough money\')') + '">'
+      + '<div class="shop-item-ico">' + d.ico + '</div>'
+      + '<div class="shop-item-info"><div class="shop-item-name">' + d.name + '</div>'
+      + '<div class="shop-item-desc">' + fxText + '</div></div>'
+      + '<div class="shop-item-pay neg">−' + fmt(d.cost) + '</div></div>';
+  });
+  openMod('✈️ Airport — Vacations', html);
+}
+function bookTravel(id){
+  const d = DESTINATIONS.find(x => x.id === id);
+  if(!d || G.char.money < d.cost) return;
+  G.char.money -= d.cost;
+  ['happy','smarts','health','karma','looks'].forEach(k => { if(d[k]) applyFx({[k]:d[k]}); });
+  if(!G.char.placesVisited) G.char.placesVisited = [];
+  G.char.placesVisited.push(id);
+  advanceHours(8);
+  closeModal();
+  miniMsg('✈️ Vacationed in ' + d.name + '.');
+}
+
+function openLibrary(){
+  applyFx({smarts:3, energy:-3});
+  advanceHours(2);
+  toast('📚 Spent the afternoon at the library. +3 smarts.');
+}
+
+function openBeachShop(){
+  openMod('🥥 Beach Shack', '<p style="margin-bottom:10px;font-size:12px;">Refreshments and ice cream.</p>'
+    + '<div class="btn-row">'
+    + '<button class="btn green" onclick="beachIcecream()">🍦 Ice Cream ($8)</button>'
+    + '<button class="btn green" onclick="beachJuice()">🥥 Coconut ($12)</button>'
+    + '</div>');
+}
+function beachIcecream(){ if(G.char.money<8){toast('Need $8');return;} G.char.money-=8; applyFx({happy:5,hunger:10}); closeModal(); miniMsg('🍦 Refreshing.'); }
+function beachJuice(){ if(G.char.money<12){toast('Need $12');return;} G.char.money-=12; applyFx({happy:6,health:1,hunger:8}); closeModal(); miniMsg('🥥 Tropical.'); }
+function openLifeguard(){ toast('🚨 Stay safe out there.'); applyFx({karma:2}); }
+function openTravelAgency(){ openAirport(); }
+function goBeachPark(){ applyFx({happy:8, health:3, energy:-2}); advanceHours(2); miniMsg('🌴 Sunbathed at the beach.'); }
+function goFishing(){
+  if(Math.random() < 0.3){
+    const reward = 50 + Math.floor(Math.random()*120);
+    G.char.money += reward;
+    applyFx({happy:5});
+    miniMsg('🎣 Caught a nice one. +' + fmt(reward));
+  } else {
+    applyFx({happy:3, energy:-2});
+    miniMsg('🎣 Quiet on the pier. No bites.');
+  }
+  advanceHours(2);
+}
+
+// ───── ACHIEVEMENTS ─────
+function computeAchievements(){
+  const c = G.char;
+  const list = [];
+  if(c.degrees && c.degrees.includes('Medical School')) list.push({ico:'⚕️',label:'M.D.'});
+  if(c.degrees && c.degrees.includes('Law School (JD)')) list.push({ico:'⚖️',label:'JD'});
+  if(c.degrees && c.degrees.includes('M.B.A.')) list.push({ico:'💼',label:'MBA'});
+  if(c.relationship && c.relationship.married) list.push({ico:'💍',label:'Married'});
+  if(c.kids && c.kids.length) list.push({ico:'👶',label:c.kids.length + ' Kid(s)'});
+  if(c.money >= 1000000) list.push({ico:'💰',label:'Millionaire'});
+  if(c.money >= 10000000) list.push({ico:'💎',label:'Decamillionaire'});
+  if(c.owned && c.owned.house === 'mansion') list.push({ico:'🏰',label:'Mansion Owner'});
+  if(c.owned && c.owned.house === 'estate') list.push({ico:'🏝️',label:'Country Estate'});
+  if(c.owned && c.owned.car === 'bugatti') list.push({ico:'🏎️',label:'Bugatti Owner'});
+  if(c.placesVisited && c.placesVisited.includes('space')) list.push({ico:'🚀',label:'Went to Space'});
+  if(c.placesVisited && c.placesVisited.length >= 5) list.push({ico:'🌍',label:'World Traveler'});
+  if(c.karma >= 90) list.push({ico:'😇',label:'Saintly Karma'});
+  if(c.karma <= 10) list.push({ico:'😈',label:'Evil Reputation'});
+  if(c.pets && c.pets.length >= 3) list.push({ico:'🐾',label:'Pet Lover'});
+  if(c.religion && c.faith >= 80) list.push({ico:'🙏',label:'Devout'});
+  if(c.job === 'Head of State') list.push({ico:'🏛️',label:'Head of State'});
+  if(c.job === 'Doctor') list.push({ico:'⚕️',label:'Medical Professional'});
+  if(c.job === 'Lawyer') list.push({ico:'⚖️',label:'Lawyer'});
+  if(c.job === 'CEO' || c.job === 'Corporate Exec') list.push({ico:'🏢',label:'Corporate Exec'});
+  return list;
+}
 
 function openStats(){
   const c = G.char;

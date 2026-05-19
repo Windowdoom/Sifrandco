@@ -301,6 +301,53 @@ input,select{font-family:inherit;}
   .intro-title{font-size:54px;}
 }
 
+/* ─── Home Scene (Virtual Families-style visual house) ─── */
+#home-scene-wrap{position:relative;flex-shrink:0;background:#0a0a14;}
+#home-scene{position:relative;height:180px;overflow:hidden;
+  background:linear-gradient(180deg,#1a2540 0%,#2a3a5a 40%,#1a2030 55%,#0a0a14 100%);
+  border-bottom:1px solid var(--b1);transition:height .3s ease;}
+#home-scene.collapsed{height:0;border-bottom:none;}
+.hs-sky{position:absolute;left:0;right:0;top:0;height:55%;
+  background:radial-gradient(ellipse at 80% 0%, rgba(255,200,100,.18), transparent 50%),
+             linear-gradient(180deg,#1a2540,#2a3a5a);}
+.hs-sky::before{content:'⭐';position:absolute;top:12px;right:50px;font-size:8px;opacity:.5;}
+.hs-sky::after{content:'☁️';position:absolute;top:20px;left:30%;font-size:18px;opacity:.4;
+  animation:hs-cloud 80s linear infinite;}
+@keyframes hs-cloud{from{transform:translateX(0);}to{transform:translateX(120vw);}}
+.hs-house{position:absolute;left:0;right:0;bottom:30%;height:35%;
+  background:linear-gradient(180deg,#3a2818 0%,#4a3020 50%,#3a2820 100%);
+  border-top:6px solid #5a3018;border-image:linear-gradient(90deg,#3a2018,#7a4020,#3a2018) 1;}
+.hs-house::before{content:'';position:absolute;left:20%;top:-20px;width:30px;height:20px;
+  background:#1a1018;}
+.hs-house::after{content:'';position:absolute;left:60%;top:-30px;width:60px;height:30px;
+  background:#1a1018;border-radius:3px 3px 0 0;}
+.hs-floor{position:absolute;left:0;right:0;bottom:0;height:30%;
+  background:repeating-linear-gradient(90deg,#1a1a1f 0,#1a1a1f 40px,#22222a 40px,#22222a 80px);
+  border-top:1px solid #2a2a36;}
+.hs-actors,.hs-pets,.hs-decor{position:absolute;left:0;right:0;bottom:30%;height:50%;}
+.hs-actor{position:absolute;bottom:0;font-size:34px;line-height:1;cursor:pointer;
+  text-shadow:0 2px 6px rgba(0,0,0,.7);transition:left 3s linear;user-select:none;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));}
+.hs-actor.player{font-size:42px;}
+.hs-actor.player::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+  width:30px;height:6px;background:radial-gradient(ellipse,rgba(255,208,96,.45),transparent 70%);}
+.hs-actor:hover{filter:drop-shadow(0 0 8px var(--accent));}
+.hs-actor-label{position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-family:var(--font-m);font-size:8px;letter-spacing:.1em;color:var(--t2);
+  background:rgba(0,0,0,.7);padding:1px 5px;border-radius:2px;white-space:nowrap;
+  opacity:0;transition:opacity .2s;}
+.hs-actor:hover .hs-actor-label{opacity:1;}
+.hs-pet{position:absolute;bottom:0;font-size:22px;line-height:1;transition:left 1.5s linear;}
+.hs-pet.bouncing{animation:hs-bounce 1.2s infinite;}
+@keyframes hs-bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.hs-decor-item{position:absolute;bottom:0;font-size:24px;line-height:1;opacity:.85;
+  text-shadow:0 1px 3px rgba(0,0,0,.6);}
+.hs-toggle{position:absolute;top:6px;right:8px;width:22px;height:22px;
+  background:rgba(0,0,0,.5);border:1px solid var(--b2);border-radius:50%;
+  color:var(--t2);font-size:12px;text-align:center;line-height:20px;cursor:pointer;z-index:10;}
+.hs-toggle:hover{color:var(--t1);border-color:var(--accent);}
+#home-scene.collapsed + #timeline-wrap{height:100%;}
+
 /* Tiny scrollbar */
 ::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
@@ -369,9 +416,20 @@ input,select{font-family:inherit;}
     </div>
   </div>
 
-  <!-- CENTER: timeline + actions -->
+  <!-- CENTER: home scene + timeline + actions -->
   <div class="col col-c">
-    <div id="timeline-wrap" style="padding:18px;flex:1;">
+    <div id="home-scene-wrap">
+      <div id="home-scene">
+        <div class="hs-sky"></div>
+        <div class="hs-house" id="hs-house"></div>
+        <div class="hs-floor"></div>
+        <div class="hs-actors" id="hs-actors"></div>
+        <div class="hs-pets" id="hs-pets"></div>
+        <div class="hs-decor" id="hs-decor"></div>
+        <div class="hs-toggle" onclick="toggleHomeScene()" id="hs-toggle">▾</div>
+      </div>
+    </div>
+    <div id="timeline-wrap" style="padding:18px;flex:1;overflow-y:auto;">
       <div id="timeline"></div>
     </div>
     <div id="actions-bar">
@@ -1441,6 +1499,10 @@ function defaultChar(seed){
     traits:    [],           // assigned at birth
     surgeries: [],           // list of cosmetic procedures
     isVampire: false,
+    friends:   [],           // outside-family social network
+    placesVisited:[],        // vacation destinations
+    bodyMods:  [],           // tattoos/piercings
+    addictions:[],           // substance addictions
     career:    null,    // {key, rungIdx, yearsAtRung, totalYears, currentSalary}
     degree:    null,    // currently enrolled degree id
     degreeYearsLeft: 0,
@@ -1695,6 +1757,11 @@ function ageUp(){
   processRooms();
   // pets aging + cost + bonus
   processPets();
+  // friends: aging, friendship drift, occasional new friend
+  ageFriendsAndDrift();
+  generateFriendIfNeeded();
+  // addictions cost you money + health each year
+  processAddictionsYearly();
   // stat natural decay/growth
   applyAgeDrift();
   // Pad the year with a "quiet year" entry if nothing happened so every year is visible
@@ -2013,6 +2080,7 @@ function renderAll(){
   renderStats();
   renderTimeline();
   renderFamily();
+  renderHomeScene();
 }
 
 function renderTopbar(){
@@ -4076,14 +4144,20 @@ function tryBecomeVampire(){
 // ═══════════════════════════════════════════════════════════════════════
 function openMore(){
   const c = LIFE.char;
-  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Quick actions — lottery, gifts, skills, surgery, pets, rooms, vampire mode.</div>';
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Everything else a normal life has.</div>';
   const opts = [
+    {label:'🏆 Achievements',           fn:'openAchievements'},
+    {label:'👋 Friends',                fn:'openFriends'},
+    {label:'✈️ Travel & Vacations',      fn:'openTravel'},
     {label:'🏠 House Rooms & Upgrades', fn:'openRooms'},
-    {label:'🐾 Pets', fn:'openPets'},
-    {label:'🎯 Skills & Hobbies', fn:'openSkills'},
-    {label:'🎁 Buy a Gift', fn:'openGifts'},
-    {label:'💉 Cosmetic Surgery', fn:'openSurgery'},
-    {label:'🎟️ Buy Lottery Ticket ($5)', fn:'buyLottery'},
+    {label:'🐾 Pets',                   fn:'openPets'},
+    {label:'🎯 Skills & Hobbies',       fn:'openSkills'},
+    {label:'🎁 Buy a Gift',             fn:'openGifts'},
+    {label:'💉 Cosmetic Surgery',       fn:'openSurgery'},
+    {label:'🎨 Tattoos & Body Mods',    fn:'openBodyMods'},
+    {label:'🍷 Substances',             fn:'openSubstances'},
+    {label:'🛋️ Therapy Session ($180)', fn:'doTherapy'},
+    {label:'🎟️ Buy Lottery Ticket ($5)',fn:'buyLottery'},
   ];
   if(c.reality === 'magical' && !c.isVampire){
     opts.push({label:'🧛 Try to Become a Vampire', fn:'tryBecomeVampire'});
@@ -4095,6 +4169,534 @@ function openMore(){
     + '<div class="card-act"><button class="card-btn">Open</button></div></div>'
   )).join('');
   openModal('✨ More', html);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  HOME SCENE — Virtual Families style movable characters
+// ═══════════════════════════════════════════════════════════════════════
+let _wanderInterval = null;
+
+function avatarForChar(c){
+  if(c.isVampire) return '🧛';
+  let av = '👶';
+  if(c.age >= 3)  av = c.sex==='m' ? '👦' : '👧';
+  if(c.age >= 18) av = c.sex==='m' ? '🧑' : '👩';
+  if(c.age >= 40) av = c.sex==='m' ? '👨' : '👩';
+  if(c.age >= 60) av = c.sex==='m' ? '👴' : '👵';
+  return av;
+}
+
+function renderHomeScene(){
+  const c = LIFE.char;
+  const actors = document.getElementById('hs-actors');
+  const pets = document.getElementById('hs-pets');
+  const decor = document.getElementById('hs-decor');
+  if(!actors || !pets || !decor) return;
+
+  // House background changes with house tier
+  const house = HOUSES.find(h => h.id === c.houseId);
+  const houseStatus = house ? house.status : 0;
+  const hsHouse = document.getElementById('hs-house');
+  if(hsHouse){
+    if(houseStatus >= 9){
+      hsHouse.style.background = 'linear-gradient(180deg,#5a4828 0%,#7a6038 50%,#5a4828 100%)';
+      hsHouse.style.borderTopColor = '#a08a48';
+    } else if(houseStatus >= 6){
+      hsHouse.style.background = 'linear-gradient(180deg,#4a3828 0%,#6a5030 50%,#4a3828 100%)';
+      hsHouse.style.borderTopColor = '#8a6838';
+    } else {
+      hsHouse.style.background = 'linear-gradient(180deg,#3a2818 0%,#4a3020 50%,#3a2820 100%)';
+    }
+  }
+
+  // Actors: player + partner + kids + parents (if alive)
+  const all = [];
+  all.push({key:'player', emoji:avatarForChar(c), label:'You', isPlayer:true});
+  if(c.partner && c.partner.alive !== false){
+    const pAge = c.partner.age || 30;
+    let pe = c.partner.sex==='m' ? (pAge<25?'🧑':pAge<55?'👨':'👴') : (pAge<25?'👩':pAge<55?'👩':'👵');
+    all.push({key:'partner', emoji:pe, label:c.partner.firstName});
+  }
+  (c.children||[]).forEach(k => {
+    if(!k.alive) return;
+    let e = k.age<1?'👶':k.age<6?(k.sex==='m'?'👦':'👧'):k.age<18?(k.sex==='m'?'🧒':'🧒'):(k.sex==='m'?'🧑':'👩');
+    all.push({key:'kid_'+k.name, emoji:e, label:k.name});
+  });
+  if(c.parents){
+    ['mom','dad'].forEach(p => {
+      const par = c.parents[p];
+      if(par && par.alive){
+        all.push({key:'parent_'+p, emoji:p==='mom'?'👵':'👴', label:par.firstName});
+      }
+    });
+  }
+  actors.innerHTML = all.map((a,i) => {
+    const left = 8 + (i * (84 / Math.max(1, all.length-0.5))) + Math.random()*4;
+    return '<div class="hs-actor ' + (a.isPlayer?'player':'') + '" id="hs-actor-' + i + '" '
+      + 'style="left:' + left + '%;">'
+      + a.emoji
+      + '<div class="hs-actor-label">' + a.label + '</div>'
+      + '</div>';
+  }).join('');
+
+  // Pets — bouncing along the floor
+  const alivePets = (c.pets||[]).filter(p => p.alive);
+  pets.innerHTML = alivePets.map((pet,i) => {
+    const p = PETS.find(x => x.id === pet.id);
+    const left = 10 + Math.random()*78;
+    return '<div class="hs-pet bouncing" id="hs-pet-' + i + '" style="left:' + left + '%;animation-delay:' + (i*0.2) + 's;">'
+      + (p?p.ico:'🐾') + '</div>';
+  }).join('');
+
+  // Decor — owned house upgrades show as background items
+  const decorMap = {
+    kitchen:'🍳', bedroom:'🛏️', bathroom:'🛁', garden:'🌷', gym:'🏋️',
+    theater:'📺', gameroom:'🎮', library:'📚', pool:'🌊', office:'💻',
+    studio:'🎨', guesthouse:'🏡', wine:'🍷', meditation:'🧘', workshop:'🔨',
+  };
+  const ownedRooms = (c.rooms||[]).slice(0,8); // cap at 8 visible
+  decor.innerHTML = ownedRooms.map((rid,i) => {
+    const e = decorMap[rid] || '✨';
+    const top = -4 + Math.random()*8;
+    const left = 5 + (i*11) + Math.random()*3;
+    return '<div class="hs-decor-item" style="left:' + left + '%;bottom:' + top + 'px;">' + e + '</div>';
+  }).join('');
+
+  // Start wander animation
+  if(_wanderInterval) clearInterval(_wanderInterval);
+  _wanderInterval = setInterval(wanderActors, 3000);
+}
+
+function wanderActors(){
+  document.querySelectorAll('#hs-actors .hs-actor').forEach(el => {
+    const left = parseFloat(el.style.left) || 50;
+    const newLeft = clamp(left + (Math.random() - 0.5) * 20, 4, 88);
+    el.style.left = newLeft + '%';
+  });
+  document.querySelectorAll('#hs-pets .hs-pet').forEach(el => {
+    const left = parseFloat(el.style.left) || 50;
+    const newLeft = clamp(left + (Math.random() - 0.5) * 24, 4, 92);
+    el.style.left = newLeft + '%';
+  });
+}
+
+function toggleHomeScene(){
+  const el = document.getElementById('home-scene');
+  const t = document.getElementById('hs-toggle');
+  if(!el) return;
+  el.classList.toggle('collapsed');
+  if(t) t.textContent = el.classList.contains('collapsed') ? '▴' : '▾';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  FRIENDS — outside-family social network
+// ═══════════════════════════════════════════════════════════════════════
+function generateFriendIfNeeded(){
+  const c = LIFE.char;
+  if(!c.friends) c.friends = [];
+  // Build up to 5 close friends over time
+  if(c.friends.filter(f=>f.alive).length >= 5) return;
+  if(c.age < 6) return;
+  if(Math.random() > 0.25) return;
+  const sex = Math.random()<0.5?'m':'f';
+  const fname = pickRand(NAMES[c.country][sex]);
+  const lname = pickRand(NAMES[c.country].l);
+  const occ = c.age >= 22 ? pickRand(PARTNER_OCCUPATIONS).title : 'Student';
+  c.friends.push({
+    firstName: fname, lastName: lname, sex: sex,
+    age: c.age + rangeRand(-3, +3),
+    occupation: occ, friendship: rangeRand(40, 75),
+    metAt: c.age, alive: true,
+    nickname: pickRand(['college bestie','childhood friend','work friend','gym buddy','book club friend','neighbor']),
+  });
+  pushEvent('good', '👋 You made a new friend: ' + fname + ' (' + occ + '). Friendship at ' + c.friends[c.friends.length-1].friendship + '%.');
+}
+
+function ageFriendsAndDrift(){
+  const c = LIFE.char;
+  if(!c.friends) return;
+  c.friends.forEach(f => {
+    if(!f.alive) return;
+    f.age++;
+    // Friendships drift down without contact
+    if(Math.random() < 0.4){
+      f.friendship = clamp(f.friendship - 1, 0, 100);
+    }
+    // Friends can die in late life
+    if(f.age > 70 && Math.random() < 0.02){
+      f.alive = false;
+      pushEvent('death', '😔 Your ' + f.nickname + ' ' + f.firstName + ' passed away at age ' + f.age + '.');
+      c.happiness = clamp(c.happiness - 12, 0, 100);
+    }
+  });
+}
+
+function openFriends(){
+  const c = LIFE.char;
+  if(c.age < 6){ toast('Too young for friends outside the family.'); return; }
+  if(!c.friends) c.friends = [];
+  const alive = c.friends.filter(f => f.alive);
+  let html = '';
+  if(!alive.length){
+    html += '<div class="fam-empty">You haven\'t made any friends yet. Friends appear naturally as you age. Or try going to school / a club to speed it up.</div>';
+  } else {
+    alive.forEach((f,i) => {
+      const fIdx = c.friends.indexOf(f);
+      const compatCls = f.friendship >= 70 ? 'good' : f.friendship <= 30 ? 'bad' : '';
+      html += '<div class="card">'
+        + '<div class="card-ico">' + (f.sex==='m'?'🧑':'👩') + '</div>'
+        + '<div class="card-body"><div class="card-title">' + f.firstName + ' ' + f.lastName + '</div>'
+        + '<div class="card-meta">' + f.nickname + ' · Age ' + f.age + ' · ' + f.occupation + '</div>'
+        + '<div class="card-meta" style="color:' + (f.friendship>=60?'var(--green)':f.friendship>=40?'var(--gold)':'var(--crimson)') + ';">Friendship ' + f.friendship + '%</div></div>'
+        + '<div class="card-act">'
+        + '<button class="card-btn" onclick="hangOut(' + fIdx + ')">Hang Out</button>'
+        + '<button class="card-btn danger" onclick="cutOffFriend(' + fIdx + ')">Cut Off</button>'
+        + '</div></div>';
+    });
+  }
+  html += '<button class="card-btn green" style="width:100%;margin-top:12px;padding:10px;" onclick="meetSomeone()">🌟 Try to Make a New Friend</button>';
+  openModal('👋 Friends (' + alive.length + ')', html);
+}
+function hangOut(idx){
+  const c = LIFE.char;
+  const f = c.friends[idx];
+  if(!f) return;
+  c.money -= 40;
+  if(Math.random() < 0.7){
+    f.friendship = clamp(f.friendship + 12, 0, 100);
+    c.happiness = clamp(c.happiness + 6, 0, 100);
+    pushEvent('good', '🥂 Hung out with ' + f.firstName + '. Friendship +12.');
+  } else {
+    f.friendship = clamp(f.friendship - 6, 0, 100);
+    pushEvent('bad', '😬 Awkward hangout with ' + f.firstName + '. Friendship -6.');
+  }
+  closeModal();
+  openFriends();
+  renderAll();
+  saveLife();
+}
+function cutOffFriend(idx){
+  const c = LIFE.char;
+  const f = c.friends[idx];
+  if(!f) return;
+  if(!confirm('Cut off ' + f.firstName + '? They will disappear from your friends list.')) return;
+  f.alive = false;
+  pushEvent('bad', '✂️ You cut off ' + f.firstName + ' for good.');
+  c.karma = clamp(c.karma - 4, 0, 100);
+  closeModal();
+  openFriends();
+  renderAll();
+  saveLife();
+}
+function meetSomeone(){
+  const c = LIFE.char;
+  if(!c.friends) c.friends = [];
+  if(c.friends.filter(f=>f.alive).length >= 12){ toast('You already have a lot of friends.'); return; }
+  // Take a swing
+  if(Math.random() < 0.6){
+    const sex = Math.random()<0.5?'m':'f';
+    const fname = pickRand(NAMES[c.country][sex]);
+    const lname = pickRand(NAMES[c.country].l);
+    const occ = c.age >= 22 ? pickRand(PARTNER_OCCUPATIONS).title : 'Student';
+    c.friends.push({
+      firstName: fname, lastName: lname, sex: sex,
+      age: c.age + rangeRand(-3, +3),
+      occupation: occ, friendship: rangeRand(40, 70),
+      metAt: c.age, alive: true,
+      nickname: pickRand(['new acquaintance','gym buddy','co-worker','book club friend','neighbor','old school friend']),
+    });
+    pushEvent('good', '👋 Met ' + fname + ' at a social event. New friend.');
+  } else {
+    pushEvent('', 'You went out, but didn\'t connect with anyone tonight.');
+    c.happiness = clamp(c.happiness - 2, 0, 100);
+  }
+  closeModal();
+  openFriends();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TRAVEL — vacations to 12 destinations
+// ═══════════════════════════════════════════════════════════════════════
+const DESTINATIONS = [
+  {id:'paris',     name:'Paris, France',         ico:'🗼', cost:3800,  fx:{happiness:+18, looks:+1, smarts:+2}},
+  {id:'tokyo',     name:'Tokyo, Japan',          ico:'🏯', cost:4200,  fx:{happiness:+20, smarts:+3}},
+  {id:'bali',      name:'Bali, Indonesia',       ico:'🏝️', cost:2800,  fx:{happiness:+22, health:+3}},
+  {id:'london',    name:'London, England',       ico:'🎡', cost:3400,  fx:{happiness:+14, smarts:+2}},
+  {id:'newyork',   name:'New York City, USA',    ico:'🗽', cost:2400,  fx:{happiness:+16, fame:+2}},
+  {id:'sydney',    name:'Sydney, Australia',     ico:'🏖️', cost:5200,  fx:{happiness:+18, health:+3}},
+  {id:'safari',    name:'African Safari',        ico:'🦁', cost:8500,  fx:{happiness:+25, karma:+3}},
+  {id:'iceland',   name:'Iceland Northern Lights',ico:'❄️', cost:4800,  fx:{happiness:+22, faith:+3}},
+  {id:'rio',       name:'Rio de Janeiro, Brazil',ico:'🎭', cost:3200,  fx:{happiness:+20, looks:+1}},
+  {id:'machu',     name:'Machu Picchu, Peru',    ico:'⛰️', cost:3600,  fx:{happiness:+18, faith:+4, health:+2}},
+  {id:'maldives',  name:'Maldives Honeymoon',    ico:'🌴', cost:9500,  fx:{happiness:+28, looks:+2}},
+  {id:'space',     name:'Suborbital Space Trip', ico:'🚀', cost:450000, fx:{happiness:+40, fame:+15, smarts:+5}},
+];
+
+function openTravel(){
+  const c = LIFE.char;
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Book a vacation. Costs scale with destination. Returns boost happiness and other stats.</div>';
+  DESTINATIONS.forEach(d => {
+    const country = COUNTRIES[c.country];
+    const price = Math.floor(d.cost * country.costMult);
+    const can = c.money >= price;
+    const fxParts = Object.keys(d.fx).map(k => '+' + d.fx[k] + ' ' + k).join(' · ');
+    html += '<div class="card">'
+      + '<div class="card-ico">' + d.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + d.name + '</div>'
+      + '<div class="card-meta">' + fxParts + '</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(price) + '</div>'
+      + '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="bookTravel(\'' + d.id + '\')">Book</button></div></div>';
+  });
+  openModal('✈️ Travel & Vacations', html);
+}
+function bookTravel(id){
+  const c = LIFE.char;
+  const d = DESTINATIONS.find(x => x.id === id);
+  if(!d) return;
+  const country = COUNTRIES[c.country];
+  const price = Math.floor(d.cost * country.costMult);
+  if(c.money < price){ toast('Not enough money.'); return; }
+  c.money -= price;
+  const fx = d.fx;
+  Object.keys(fx).forEach(k => {
+    if(k === 'happiness') c.happiness = clamp(c.happiness + fx[k], 0, 100);
+    if(k === 'smarts')    c.smarts    = clamp(c.smarts + fx[k], 0, 100);
+    if(k === 'looks')     c.looks     = clamp(c.looks + fx[k], 0, 100);
+    if(k === 'karma')     c.karma     = clamp(c.karma + fx[k], 0, 100);
+    if(k === 'health')    c.health    = clamp(c.health + fx[k], 0, 100);
+    if(k === 'faith')     c.faith     = clamp(c.faith + fx[k], 0, 100);
+    if(k === 'fame')      c.fame      = clamp((c.fame||0) + fx[k], 0, 100);
+  });
+  if(!c.placesVisited) c.placesVisited = [];
+  c.placesVisited.push(d.id);
+  pushEvent('good', '✈️ You vacationed in ' + d.name + '.');
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SUBSTANCES — drinking, smoking, weed, etc.
+// ═══════════════════════════════════════════════════════════════════════
+const SUBSTANCES = [
+  {id:'alcohol',  name:'Alcohol',           ico:'🍺', cost:25,  fx:{happiness:+6, health:-2}, addict:0.04},
+  {id:'tobacco',  name:'Cigarettes',        ico:'🚬', cost:15,  fx:{happiness:+3, health:-4, looks:-1}, addict:0.12},
+  {id:'weed',     name:'Marijuana',         ico:'🌿', cost:40,  fx:{happiness:+10, smarts:-1, health:-1}, addict:0.05, illegalIn:['us','sg']},
+  {id:'cocaine',  name:'Cocaine',           ico:'❄️', cost:180, fx:{happiness:+18, health:-8, karma:-3}, addict:0.20, illegal:true},
+  {id:'mdma',     name:'MDMA / Ecstasy',    ico:'💊', cost:60,  fx:{happiness:+22, health:-6, karma:-2}, addict:0.10, illegal:true},
+  {id:'heroin',   name:'Heroin',            ico:'🩸', cost:120, fx:{happiness:+30, health:-15, karma:-8}, addict:0.45, illegal:true},
+  {id:'caffeine', name:'Lots of Coffee',    ico:'☕', cost:8,   fx:{happiness:+3, smarts:+1, health:-1}, addict:0.02},
+];
+
+function openSubstances(){
+  const c = LIFE.char;
+  if(c.age < 14){ toast('Too young.'); return; }
+  let html = '<div style="color:var(--crimson);font-family:var(--font-m);font-size:10px;letter-spacing:.16em;margin-bottom:14px;text-align:center;text-transform:uppercase;">⚠ Recurring use can lead to addiction</div>';
+  if(c.addictions && c.addictions.length){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--crimson);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;">Active Addictions</div>';
+    c.addictions.forEach(a => {
+      const s = SUBSTANCES.find(x => x.id === a);
+      if(s) html += '<div class="card" style="border-color:var(--crimson);"><div class="card-ico">' + s.ico + '</div>'
+        + '<div class="card-body"><div class="card-title">' + s.name + ' Addiction</div>'
+        + '<div class="card-meta">Costs you money + health every year</div></div>'
+        + '<div class="card-act"><button class="card-btn green" onclick="rehab(\'' + a + '\')">Rehab (−$8k)</button></div></div>';
+    });
+  }
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:18px 0 10px;">Try / Use</div>';
+  SUBSTANCES.forEach(s => {
+    const fxParts = [];
+    Object.keys(s.fx).forEach(k => fxParts.push((s.fx[k]>0?'+':'') + s.fx[k] + ' ' + k));
+    const illTag = s.illegal ? ' <span class="card-tag illegal">ILLEGAL</span>' : '';
+    html += '<div class="card">'
+      + '<div class="card-ico">' + s.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + s.name + illTag + '</div>'
+      + '<div class="card-meta">' + fxParts.join(' · ') + ' · ' + Math.floor(s.addict*100) + '% addiction risk</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(s.cost) + '</div>'
+      + '<button class="card-btn" onclick="useSubstance(\'' + s.id + '\')">Use</button></div></div>';
+  });
+  openModal('🍷 Substances', html);
+}
+function useSubstance(id){
+  const c = LIFE.char;
+  const s = SUBSTANCES.find(x => x.id === id);
+  if(!s) return;
+  if(c.money < s.cost){ toast('Not enough money.'); return; }
+  c.money -= s.cost;
+  const fx = s.fx;
+  Object.keys(fx).forEach(k => {
+    if(c[k] != null) c[k] = clamp(c[k] + fx[k], 0, 100);
+  });
+  // Addiction roll
+  if(!c.addictions) c.addictions = [];
+  if(!c.addictions.includes(s.id) && Math.random() < s.addict){
+    c.addictions.push(s.id);
+    pushEvent('bad', '🚨 You got addicted to ' + s.name + '. You will lose health and money each year until you go to rehab.');
+  } else {
+    pushEvent('', '💊 Used ' + s.name + '.');
+  }
+  // Illegal: chance of arrest
+  if(s.illegal && Math.random() < 0.06){
+    pushEvent('bad', '🚓 You were caught with ' + s.name + ' on you.');
+    goToJail(rangeRand(1,3), s.name.toLowerCase() + ' possession');
+  }
+  closeModal();
+  openSubstances();
+  renderAll();
+  saveLife();
+}
+function rehab(id){
+  const c = LIFE.char;
+  if(c.money < 8000){ toast('Rehab costs $8,000.'); return; }
+  c.money -= 8000;
+  c.addictions = (c.addictions||[]).filter(x => x !== id);
+  c.health = clamp(c.health + 8, 0, 100);
+  c.happiness = clamp(c.happiness + 12, 0, 100);
+  pushEvent('milestone', '🌅 You completed rehab for ' + (SUBSTANCES.find(s=>s.id===id)||{}).name + '. Health and happiness recovering.');
+  closeModal();
+  openSubstances();
+  renderAll();
+  saveLife();
+}
+function processAddictionsYearly(){
+  const c = LIFE.char;
+  if(!c.addictions || !c.addictions.length) return;
+  c.addictions.forEach(id => {
+    const s = SUBSTANCES.find(x => x.id === id);
+    if(!s) return;
+    c.money -= s.cost * 50; // chronic use
+    c.health = clamp(c.health + (s.fx.health||0) * 4, 0, 100);
+    c.happiness = clamp(c.happiness - 2, 0, 100);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  BODY MODS — tattoos & piercings
+// ═══════════════════════════════════════════════════════════════════════
+const BODY_MODS = [
+  {id:'ear_pierce',  name:'Ear Piercing',         ico:'👂', cost:60,    looks:+1},
+  {id:'nose_pierce', name:'Nose Piercing',        ico:'👃', cost:120,   looks:+2},
+  {id:'small_tat',   name:'Small Tattoo',         ico:'🎯', cost:380,   looks:+2},
+  {id:'sleeve_tat',  name:'Sleeve Tattoo',        ico:'💪', cost:2400,  looks:+4},
+  {id:'back_tat',    name:'Full Back Tattoo',     ico:'🦋', cost:6800,  looks:+5},
+  {id:'tongue',      name:'Tongue Piercing',      ico:'👅', cost:140,   looks:+1},
+  {id:'septum',      name:'Septum Piercing',      ico:'🔗', cost:160,   looks:+1},
+  {id:'face_tat',    name:'Face Tattoo',          ico:'😈', cost:1200,  looks:-3, fame:+3},
+];
+
+function openBodyMods(){
+  const c = LIFE.char;
+  if(c.age < 16){ toast('Most places require you to be 16+.'); return; }
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Pick a body modification. They\'re permanent (unless you pay to remove).</div>';
+  BODY_MODS.forEach(b => {
+    const owned = (c.bodyMods||[]).includes(b.id);
+    const can = c.money >= b.cost && !owned;
+    html += '<div class="card" style="' + (owned?'border-color:var(--accent);background:#1a1428;':'') + '">'
+      + '<div class="card-ico">' + b.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + b.name + (owned?' · OWNED':'') + '</div>'
+      + '<div class="card-meta">Looks ' + (b.looks>0?'+':'') + b.looks + (b.fame ? ' · Fame +' + b.fame : '') + '</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(b.cost) + '</div>'
+      + (owned ? '<span class="card-tag">OWNED</span>'
+              : '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="getBodyMod(\'' + b.id + '\')">Get</button>')
+      + '</div></div>';
+  });
+  openModal('🎨 Body Mods', html);
+}
+function getBodyMod(id){
+  const c = LIFE.char;
+  const b = BODY_MODS.find(x => x.id === id);
+  if(!b) return;
+  if(c.money < b.cost){ toast('Not enough money.'); return; }
+  c.money -= b.cost;
+  if(!c.bodyMods) c.bodyMods = [];
+  c.bodyMods.push(b.id);
+  c.looks = clamp(c.looks + b.looks, 0, 100);
+  if(b.fame) c.fame = clamp((c.fame||0) + b.fame, 0, 100);
+  pushEvent('good', '🎨 You got a ' + b.name + '. ' + (b.looks>0?'+':'') + b.looks + ' looks.');
+  closeModal();
+  openBodyMods();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  THERAPY — mental health sessions
+// ═══════════════════════════════════════════════════════════════════════
+function doTherapy(){
+  const c = LIFE.char;
+  if(c.money < 180){ toast('A session costs $180.'); return; }
+  c.money -= 180;
+  const gain = rangeRand(4, 12);
+  c.happiness = clamp(c.happiness + gain, 0, 100);
+  c.smarts = clamp(c.smarts + 1, 0, 100);
+  pushEvent('good', '🛋️ Therapy session. Happiness +' + gain + '.');
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ACHIEVEMENTS — lifetime accomplishments tracker
+// ═══════════════════════════════════════════════════════════════════════
+function computeAchievements(){
+  const c = LIFE.char;
+  const list = [];
+  if(c.age >= 18) list.push({ico:'🎓', label:'Reached Adulthood'});
+  if(c.degrees && c.degrees.includes('medical')) list.push({ico:'⚕️', label:'Graduated Medical School'});
+  if(c.degrees && c.degrees.includes('law')) list.push({ico:'⚖️', label:'Graduated Law School'});
+  if(c.degrees && c.degrees.includes('phd')) list.push({ico:'🔬', label:'Earned a PhD'});
+  if(c.degrees && c.degrees.includes('business')) list.push({ico:'💼', label:'Earned an M.B.A.'});
+  if(c.college) list.push({ico:'🏫', label:'Attended ' + (COLLEGES.find(x=>x.id===c.college)||{name:'College'}).name});
+  if(c.partner && c.partner.married) list.push({ico:'💍', label:'Got Married'});
+  if(c.children && c.children.length) list.push({ico:'👶', label:'Had ' + c.children.length + ' Child' + (c.children.length>1?'ren':'')});
+  if(c.career && c.career.totalYears >= 20) list.push({ico:'🏆', label:'20+ Years in a Career'});
+  if((c.money + (c.savings||0) + (c.investments||0)) >= 1000000) list.push({ico:'💰', label:'Millionaire'});
+  if((c.money + (c.savings||0) + (c.investments||0)) >= 10000000) list.push({ico:'💎', label:'Decamillionaire'});
+  if((c.money + (c.savings||0) + (c.investments||0)) >= 100000000) list.push({ico:'🌟', label:'Centimillionaire'});
+  if(c.houseId === 'mansion') list.push({ico:'🏰', label:'Owned a Mansion'});
+  if(c.houseId === 'island')  list.push({ico:'🏝️', label:'Owned a Private Island'});
+  if(c.fame >= 80) list.push({ico:'⭐', label:'Famous'});
+  if(c.fame >= 95) list.push({ico:'🌟', label:'Global Celebrity'});
+  if(c.karma >= 90) list.push({ico:'😇', label:'Saintly Karma'});
+  if(c.karma <= 10) list.push({ico:'😈', label:'Evil Reputation'});
+  if(c.faith >= 90) list.push({ico:'🕊️', label:'Devout'});
+  if(c.placesVisited && c.placesVisited.length >= 6) list.push({ico:'🌍', label:'World Traveler'});
+  if(c.placesVisited && c.placesVisited.includes('space')) list.push({ico:'🚀', label:'Went to Space'});
+  if(c.isVampire) list.push({ico:'🧛', label:'Vampire'});
+  if(c.career && c.career.key === 'politician' && c.career.rungIdx >= 4) list.push({ico:'🏛️', label:'Head of State'});
+  if(c.career && c.career.key === 'lawyer' && c.career.rungIdx >= 5) list.push({ico:'⚖️', label:'Supreme Court Justice'});
+  if(c.career && c.career.key === 'doctor' && c.career.rungIdx >= 3) list.push({ico:'⚕️', label:'White House Physician'});
+  if(c.career && c.career.key === 'ceo' && c.career.rungIdx >= 4) list.push({ico:'🏢', label:'Fortune 500 CEO'});
+  if(c.skills){
+    Object.keys(c.skills).forEach(s => {
+      if(c.skills[s] >= 100){
+        const sk = SKILLS.find(x => x.id === s);
+        if(sk) list.push({ico:sk.ico, label:'Mastered ' + sk.name});
+      }
+    });
+  }
+  if(c.children && c.children.some(k => !k.alive)) list.push({ico:'🕯️', label:'Lost a Child'});
+  if(c.addictions && c.addictions.length === 0 && c.flags && c.flags.recoveredAddiction) list.push({ico:'🌅', label:'Survived Addiction'});
+  return list;
+}
+function openAchievements(){
+  const c = LIFE.char;
+  const list = computeAchievements();
+  let html = '';
+  if(!list.length){
+    html += '<div class="fam-empty">No achievements yet. Live your life. They\'ll come.</div>';
+  } else {
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;">';
+    list.forEach(a => {
+      html += '<div style="padding:14px 12px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;text-align:center;">'
+        + '<div style="font-size:32px;line-height:1;margin-bottom:5px;">' + a.ico + '</div>'
+        + '<div style="font-size:12px;color:var(--accent2);font-weight:600;">' + a.label + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+  openModal('🏆 Achievements (' + list.length + ')', html);
 }
 
 // ═══════════════════════════════════════════════════════════════════════

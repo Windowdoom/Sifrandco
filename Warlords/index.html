@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warlords · The Strategy Simulation by WindowDoom</title>
+<!--
+  CHUNK 0 — PLACEHOLDER SHELL
+  See DESIGN.md for the full design document and chunk roadmap.
+
+  Next chunks will populate this file in the order documented in §10
+  of DESIGN.md. This stub exists so the file shows up in the repo
+  and so subsequent chunks have a target to write into.
+
+  Final target: ~1.5–2 MB single-file game.
+-->
+<style>
+:root{
+  --bg:#0a0612;
+  --accent:#a855f7;
+  --accent2:#d8b4fe;
+  --gold:#fbbf24;
+  --t1:#f5f0ff;
+  --t2:#c4b8e0;
+  --t3:#8a7ab8;
+  --font-h:'Georgia',serif;
+  --font-m:'Courier New',monospace;
+  --font-s:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:radial-gradient(ellipse at center,#1a0c2e 0%,#06030f 70%);
+  color:var(--t1);font-family:var(--font-s);overflow:hidden;}
+body{display:flex;align-items:center;justify-content:center;padding:30px;}
+.holding{text-align:center;max-width:720px;}
+.title{font-family:var(--font-h);font-size:96px;font-weight:900;letter-spacing:.04em;
+  background:linear-gradient(180deg,var(--accent2),var(--accent));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 60px rgba(168,85,247,.4);margin-bottom:6px;}
+.sub{font-family:var(--font-m);font-size:13px;letter-spacing:.4em;color:var(--gold);
+  text-transform:uppercase;margin-bottom:30px;}
+.body{font-family:var(--font-s);font-size:15px;line-height:1.6;color:var(--t2);
+  margin-bottom:24px;}
+.roadmap{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;
+  background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);
+  border-radius:8px;padding:18px 22px;text-align:left;
+  font-family:var(--font-m);font-size:12px;line-height:1.8;}
+.chunk-num{color:var(--accent2);font-weight:700;letter-spacing:.08em;}
+.chunk-name{color:var(--t1);}
+.chunk-num.done{color:var(--gold);}
+.tag{display:inline-block;margin-top:24px;padding:8px 18px;
+  border:1px solid var(--accent);border-radius:4px;font-family:var(--font-m);
+  font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent2);}
+.windowdoom{font-family:var(--font-m);font-size:10px;letter-spacing:.32em;color:var(--gold);
+  text-transform:uppercase;margin-top:20px;border:1px solid var(--gold);
+  display:inline-block;padding:4px 12px;border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="holding">
+  <div class="title">WARLORDS</div>
+  <div class="sub">The Strategy Simulation</div>
+  <div class="body">
+    The full game is being built in chunks. Chunk 0 — the design document —
+    is complete. See <code>DESIGN.md</code> in the same folder for the full
+    plan: 8 historical eras (3000 BC → 2100 AD), ~80 playable factions,
+    240+ unit types, 1,200+ events, 7 victory paths, 5 collapse paths.
+  </div>
+  <div class="roadmap">
+    <span class="chunk-num done">Chunk 0 ✓</span><span class="chunk-name">Design document &amp; roadmap</span>
+    <span class="chunk-num">Chunk 1</span><span class="chunk-name">HTML shell · era / faction / leader pickers</span>
+    <span class="chunk-num">Chunk 2</span><span class="chunk-name">Core game state · topbar · static map · End Turn loop</span>
+    <span class="chunk-num">Chunk 3</span><span class="chunk-name">Resource production / consumption · building system</span>
+    <span class="chunk-num">Chunk 4–11</span><span class="chunk-name">One era's full data per chunk (~5k lines each)</span>
+    <span class="chunk-num">Chunk 12</span><span class="chunk-name">Combat resolver · unit modifiers</span>
+    <span class="chunk-num">Chunk 13</span><span class="chunk-name">Diplomacy &amp; AI personalities</span>
+    <span class="chunk-num">Chunk 14</span><span class="chunk-name">Tech trees per era</span>
+    <span class="chunk-num">Chunk 15</span><span class="chunk-name">Event &amp; decision cascades</span>
+    <span class="chunk-num">Chunk 16</span><span class="chunk-name">Victory / defeat / dynasty scoring</span>
+    <span class="chunk-num">Chunk 17</span><span class="chunk-name">Save · load · settings · keyboard</span>
+    <span class="chunk-num">Chunk 18</span><span class="chunk-name">Balance · polish · content top-up</span>
+  </div>
+  <div class="tag">Awaiting Chunk 1</div>
+  <div class="windowdoom">by WindowDoom</div>
+</div>
+</body>
+</html>

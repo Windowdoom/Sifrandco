@@ -2347,25 +2347,32 @@ const MORE_LIFE_EVENTS = [
   {minAge:100, maxAge:115, prob:0.02, text:'You became a centenarian.', fx:{happy:+50, fame:+10}, tag:'milestone'},
 ];
 
-// Bundle all extensions into LIFE_EVENTS at runtime
-if(typeof LIFE_EVENTS !== 'undefined'){
-  LIFE_EVENTS.push(...LIFE_EVENTS_EXT, ...MORE_LIFE_EVENTS);
+// Bundle extensions DEFERRED — called at end of script after all const declarations
+function applyMegaExpansion(){
+  try { LIFE_EVENTS.push(...LIFE_EVENTS_EXT, ...MORE_LIFE_EVENTS); } catch(e){}
+  try { Object.assign(CAREERS, CAREERS_EXT); } catch(e){}
+  try { Object.assign(COUNTRIES, COUNTRIES_EXT); } catch(e){}
+  try { TRAITS.push(...TRAITS_EXT); } catch(e){}
+  try { SKILLS.push(...SKILLS_EXT); } catch(e){}
+  try { GIFTS.push(...GIFTS_EXT); } catch(e){}
+  try { SUBSTANCES.push(...SUBSTANCES_EXT); } catch(e){}
+  try { BODY_MODS.push(...BODY_MODS_EXT); } catch(e){}
+  try { SURGERIES.push(...SURGERIES_EXT); } catch(e){}
+  try { HOUSES.push(...HOUSES_EXT); } catch(e){}
+  try { CARS.push(...CARS_EXT); } catch(e){}
+  try { Object.assign(CULTURAL_EVENTS, CULTURAL_EVENTS_EXT); } catch(e){}
+  try { Object.assign(CITIES, _MEGA_CITIES); } catch(e){}
+  try {
+    NAMES.es = NAMES.mx; NAMES.nl = NAMES.de; NAMES.se = NAMES.de;
+    NAMES.no = NAMES.de; NAMES.ch = NAMES.de; NAMES.sg = NAMES.cn;
+    NAMES.ae = NAMES.in; NAMES.za = NAMES.uk; NAMES.eg = NAMES.in;
+    NAMES.th = NAMES.jp; NAMES.ar = NAMES.mx; NAMES.cl = NAMES.mx;
+    NAMES.vn = NAMES.jp; NAMES.ph = NAMES.us; NAMES.il = NAMES.de;
+    NAMES.tr = NAMES.in; NAMES.pl = NAMES.de;
+  } catch(e){}
 }
-// Bundle extensions into the main catalogs
-if(typeof CAREERS !== 'undefined'){ Object.assign(CAREERS, CAREERS_EXT); }
-if(typeof COUNTRIES !== 'undefined'){ Object.assign(COUNTRIES, COUNTRIES_EXT); }
-if(typeof TRAITS !== 'undefined'){ TRAITS.push(...TRAITS_EXT); }
-if(typeof SKILLS !== 'undefined'){ SKILLS.push(...SKILLS_EXT); }
-if(typeof GIFTS !== 'undefined'){ GIFTS.push(...GIFTS_EXT); }
-if(typeof SUBSTANCES !== 'undefined'){ SUBSTANCES.push(...SUBSTANCES_EXT); }
-if(typeof BODY_MODS !== 'undefined'){ BODY_MODS.push(...BODY_MODS_EXT); }
-if(typeof SURGERIES !== 'undefined'){ SURGERIES.push(...SURGERIES_EXT); }
-if(typeof HOUSES !== 'undefined'){ HOUSES.push(...HOUSES_EXT); }
-if(typeof CARS !== 'undefined'){ CARS.push(...CARS_EXT); }
-if(typeof CULTURAL_EVENTS !== 'undefined'){ Object.assign(CULTURAL_EVENTS, CULTURAL_EVENTS_EXT); }
-// Make CITIES entries for new countries (use first major city of each)
-if(typeof CITIES !== 'undefined'){
-  Object.assign(CITIES, {
+
+const _MEGA_CITIES = {
     es:['Madrid','Barcelona','Valencia','Seville','Bilbao','Málaga'],
     nl:['Amsterdam','Rotterdam','The Hague','Utrecht','Eindhoven'],
     se:['Stockholm','Gothenburg','Malmö','Uppsala','Linköping'],
@@ -2383,29 +2390,7 @@ if(typeof CITIES !== 'undefined'){
     il:['Tel Aviv','Jerusalem','Haifa','Eilat'],
     tr:['Istanbul','Ankara','Izmir','Antalya'],
     pl:['Warsaw','Krakow','Wroclaw','Gdansk'],
-  });
-}
-// Generate name pools for new countries (re-use closest match)
-if(typeof NAMES !== 'undefined'){
-  // For brevity, we re-use existing pools as approximations
-  NAMES.es = NAMES.mx;   // Spanish-speaking
-  NAMES.nl = NAMES.de;   // Germanic-similar
-  NAMES.se = NAMES.de;
-  NAMES.no = NAMES.de;
-  NAMES.ch = NAMES.de;
-  NAMES.sg = NAMES.cn;
-  NAMES.ae = NAMES.in;   // South-Asian/Arab approximation
-  NAMES.za = NAMES.uk;
-  NAMES.eg = NAMES.in;
-  NAMES.th = NAMES.jp;
-  NAMES.ar = NAMES.mx;
-  NAMES.cl = NAMES.mx;
-  NAMES.vn = NAMES.jp;
-  NAMES.ph = NAMES.us;
-  NAMES.il = NAMES.de;
-  NAMES.tr = NAMES.in;
-  NAMES.pl = NAMES.de;
-}
+};
 
 // ═══════════════════════════════════════════════════════════════════════
 //  EXTRA CAREERS — entry-level "quick jobs" that don't need full ladders
@@ -7597,6 +7582,7 @@ function performRitual(lawId, ritualId){
 // ═══════════════════════════════════════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════════════════════════════════════
+applyMegaExpansion();
 renderIntroCountries();
 if(loadLife() && LIFE && LIFE.char){
   if(LIFE.char.alive){

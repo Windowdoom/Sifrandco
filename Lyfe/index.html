@@ -502,6 +502,8 @@ input,select{font-family:inherit;}
       <button class="act-btn" onclick="openCrime()">🦹 Crime</button>
       <button class="act-btn" onclick="openCityMap()">🏙️ City</button>
       <button class="act-btn" onclick="openGovernment()">🏛️ Gov</button>
+      <button class="act-btn" onclick="openRealEstate()">🏘️ Real Estate</button>
+      <button class="act-btn" onclick="openCompanies()">🏢 Companies</button>
       <button class="act-btn" onclick="openDatingPrefs()">💞 Prefs</button>
       <button class="act-btn" onclick="openCheatMenu()">💋 Risky</button>
       <button class="act-btn" onclick="openBabyMamaDrama()">👶 Drama</button>
@@ -3053,6 +3055,8 @@ function loadLife(){
         if(c.savings == null) c.savings = 0;
         if(c.investments == null) c.investments = 0;
         if(!c.insurance) c.insurance = {home:false, health:false, life:false, auto:false};
+        if(!c.properties) c.properties = [];
+        if(!c.companies) c.companies = [];
       }
       return true;
     }
@@ -3219,6 +3223,10 @@ function ageUp(){
   // Both can be disabled via Safe Mode setting.
   rollForcedLaborEvent();
   rollTraffickingAdultEvent();
+  // Real-estate portfolio tick — appreciation, condition, rent income, maintenance
+  processRealEstate();
+  // Companies tick — revenue growth, dividends, market shifts
+  processCompanies();
   // child raising events
   rollChildEvents();
   // partner events
@@ -4395,11 +4403,722 @@ function buyHouse(id){
   const price = Math.floor(h.price * COUNTRIES[c.country].costMult);
   if(c.money < price){ toast('Not enough money.'); return; }
   c.money -= price;
-  c.houseId = id;
+  // Record into property portfolio
+  ensureProperties();
+  const wasFamily = (c.houseId === 'family');
+  const prop = {
+    pid: 'p' + Date.now() + '-' + Math.floor(Math.random()*9999),
+    houseId: id,
+    nickname: h.name,
+    purchasedAt: c.age,
+    purchasePrice: price,
+    currentValue: price,
+    isPrimary: wasFamily || c.properties.length === 0,
+    rentedOut: false,
+    monthlyRent: h.monthly ? Math.floor(h.monthly * COUNTRIES[c.country].costMult) : 0,
+    occupied: false,
+    tenant: null,
+    developments: [],
+    condition: 100,
+    mortgageBalance: 0,
+    mortgageMonthly: 0,
+  };
+  // First purchase becomes primary residence; older primary becomes investment
+  if(prop.isPrimary){
+    c.properties.forEach(p => { p.isPrimary = false; });
+  }
+  c.properties.push(prop);
+  c.houseId = id; // keep for compatibility
   pushEvent('milestone', '🏠 You bought a ' + h.name + ' for ' + fmtMoney(price) + '.');
   closeModal();
   renderAll();
   saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  REAL ESTATE PORTFOLIO — stackable assets, rent, development, sale
+// ═══════════════════════════════════════════════════════════════════════
+function ensureProperties(){
+  const c = LIFE.char;
+  if(!c) return;
+  if(!c.properties){
+    c.properties = [];
+    // Migrate the current single-house ownership into the portfolio
+    if(c.houseId && c.houseId !== 'family'){
+      const h = HOUSES.find(x => x.id === c.houseId);
+      if(h){
+        c.properties.push({
+          pid:'p-legacy-' + Date.now(),
+          houseId:c.houseId,
+          nickname:h.name,
+          purchasedAt: Math.max(18, c.age - 1),
+          purchasePrice: Math.floor(h.price * (COUNTRIES[c.country]||COUNTRIES.us).costMult),
+          currentValue: Math.floor(h.price * (COUNTRIES[c.country]||COUNTRIES.us).costMult),
+          isPrimary:true,
+          rentedOut:false,
+          monthlyRent: h.monthly ? Math.floor(h.monthly * (COUNTRIES[c.country]||COUNTRIES.us).costMult) : 0,
+          occupied:false, tenant:null,
+          developments:[], condition:90,
+          mortgageBalance:0, mortgageMonthly:0,
+        });
+      }
+    }
+  }
+}
+
+// Developments — renovations and upgrades that raise rent + value
+const DEVELOPMENTS = [
+  {id:'kitchen_reno',  name:'Kitchen Renovation',     ico:'🍳', cost:35000,  valueBoost:0.08, rentBoost:0.05, condition:+15},
+  {id:'bathroom_reno', name:'Bathroom Renovation',    ico:'🛁', cost:22000,  valueBoost:0.06, rentBoost:0.04, condition:+12},
+  {id:'add_bedroom',   name:'Add a Bedroom',          ico:'🛏️', cost:65000,  valueBoost:0.18, rentBoost:0.18, condition:+10},
+  {id:'pool',          name:'In-Ground Pool',         ico:'🏊', cost:75000,  valueBoost:0.12, rentBoost:0.10, condition:+8},
+  {id:'solar',         name:'Solar Panels',           ico:'☀️', cost:28000,  valueBoost:0.08, rentBoost:0.06, condition:+5},
+  {id:'landscape',     name:'Landscaping',            ico:'🌳', cost:12000,  valueBoost:0.04, rentBoost:0.02, condition:+8},
+  {id:'paint',         name:'Full Paint + Floors',    ico:'🎨', cost:8500,   valueBoost:0.03, rentBoost:0.02, condition:+20},
+  {id:'smart_home',    name:'Smart-Home Wiring',      ico:'📡', cost:18000,  valueBoost:0.05, rentBoost:0.05, condition:+5},
+  {id:'roof',          name:'New Roof',               ico:'🏠', cost:32000,  valueBoost:0.05, rentBoost:0.02, condition:+25},
+  {id:'hvac',          name:'New HVAC System',        ico:'❄️', cost:18000,  valueBoost:0.04, rentBoost:0.03, condition:+20},
+  {id:'finished_basement',name:'Finish Basement',     ico:'🪜', cost:48000,  valueBoost:0.12, rentBoost:0.12, condition:+10},
+  {id:'addition',      name:'Build an Addition (+ADU)',ico:'🏘️', cost:135000, valueBoost:0.25, rentBoost:0.30, condition:+15},
+];
+
+// Open the real-estate portfolio modal
+function openRealEstate(){
+  ensureProperties();
+  const c = LIFE.char;
+  let html = '';
+  // Portfolio summary
+  const totalValue = c.properties.reduce((s,p) => s + (p.currentValue||0), 0);
+  const monthlyIncome = c.properties.reduce((s,p) => s + ((p.rentedOut && p.occupied) ? (p.monthlyRent||0) : 0), 0);
+  const annualIncome = monthlyIncome * 12;
+  html += '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;font-family:var(--font-m);font-size:11px;">'
+    + '<div><span style="color:var(--t3);letter-spacing:.1em;">PROPERTIES</span><br><span style="font-size:18px;color:var(--accent2);font-weight:900;">' + c.properties.length + '</span></div>'
+    + '<div><span style="color:var(--t3);letter-spacing:.1em;">PORTFOLIO VALUE</span><br><span style="font-size:18px;color:var(--green);font-weight:900;">' + fmtMoney(totalValue) + '</span></div>'
+    + '<div><span style="color:var(--t3);letter-spacing:.1em;">RENT INCOME</span><br><span style="font-size:18px;color:var(--green);font-weight:900;">' + fmtMoney(annualIncome) + '/yr</span></div>'
+    + '</div></div>';
+  // Properties list
+  if(!c.properties.length){
+    html += '<p style="text-align:center;color:var(--t3);padding:20px;font-style:italic;">You don\'t own any properties yet. Buy your first one from the Real Estate office in the city, or via 🏠 Assets.</p>';
+  } else {
+    c.properties.forEach((p, idx) => {
+      const h = HOUSES.find(x => x.id === p.houseId) || {name:'Property', status:1};
+      const tags = [];
+      if(p.isPrimary) tags.push('<span class="card-tag" style="color:var(--gold);background:rgba(251,191,36,.18)">PRIMARY</span>');
+      if(p.rentedOut && p.occupied) tags.push('<span class="card-tag" style="color:var(--green);background:rgba(34,197,94,.15)">RENTED</span>');
+      else if(p.rentedOut) tags.push('<span class="card-tag" style="color:var(--gold);background:rgba(251,191,36,.12)">VACANT</span>');
+      if(p.condition < 50) tags.push('<span class="card-tag" style="color:var(--crimson);background:rgba(239,68,68,.18)">DISREPAIR</span>');
+      if(p.developments.length) tags.push('<span class="card-tag" style="color:var(--cyan)">+' + p.developments.length + ' upgrades</span>');
+      html += '<div class="card" style="display:grid;grid-template-columns:auto 1fr;gap:10px;">'
+        + '<div class="card-ico">🏠</div>'
+        + '<div class="card-body">'
+        +   '<div class="card-title">' + p.nickname + '</div>'
+        +   '<div class="card-meta">Bought age ' + p.purchasedAt + ' for ' + fmtMoney(p.purchasePrice) + ' · now ' + fmtMoney(p.currentValue) + '</div>'
+        +   '<div class="card-meta">Condition ' + Math.floor(p.condition) + '/100 · Status ' + (h.status||1) + '/10 · Rent ' + fmtMoney(p.monthlyRent) + '/mo</div>'
+        +   (tags.length ? '<div style="margin-top:5px;">' + tags.join(' ') + '</div>' : '')
+        + '</div>'
+        + '<div class="card-act" style="grid-column:1 / -1;display:flex;gap:5px;flex-wrap:wrap;">'
+        +   (!p.isPrimary ? '<button class="card-btn" onclick="reMakePrimary(\'' + p.pid + '\')">Make Primary</button>' : '')
+        +   (p.isPrimary ? '<span class="card-tag">Can\'t rent your home</span>'
+                        : (!p.rentedOut ? '<button class="card-btn green" onclick="reRentOut(\'' + p.pid + '\')">List for Rent</button>'
+                                        : '<button class="card-btn" onclick="reUnlist(\'' + p.pid + '\')">Stop Renting</button>'))
+        +   '<button class="card-btn" onclick="reDevelop(\'' + p.pid + '\')">Develop / Renovate</button>'
+        +   '<button class="card-btn" onclick="reRepair(\'' + p.pid + '\')">Repair (' + fmtMoney(Math.floor((100 - p.condition) * 240)) + ')</button>'
+        +   '<button class="card-btn danger" onclick="reSell(\'' + p.pid + '\')">Sell · ' + fmtMoney(Math.floor(p.currentValue * 0.95)) + '</button>'
+        + '</div>'
+        + '</div>';
+    });
+  }
+  html += '<div style="margin-top:14px;font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;">Buy More Properties</div>';
+  HOUSES.forEach(h => {
+    if(h.id === 'family') return;
+    const price = Math.floor(h.price * COUNTRIES[c.country].costMult);
+    const can = c.money >= price;
+    const rent = Math.floor((h.monthly || 0) * COUNTRIES[c.country].costMult);
+    const annualRent = rent * 12;
+    const cap = price > 0 ? (annualRent / price * 100).toFixed(1) : '—';
+    html += '<div class="card">'
+      + '<div class="card-ico">🏠</div>'
+      + '<div class="card-body"><div class="card-title">' + h.name + '</div>'
+      + '<div class="card-meta">Status ' + h.status + '/10 · ' + h.rooms + ' rooms</div>'
+      + '<div class="card-meta">Potential rent: ' + fmtMoney(rent) + '/mo · Cap rate ' + cap + '%</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(price) + '</div>'
+      + '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="buyHouse(\'' + h.id + '\')">Buy</button></div></div>';
+  });
+  openModal('🏘️ Real Estate Portfolio', html);
+}
+
+function reFind(pid){
+  ensureProperties();
+  return LIFE.char.properties.find(p => p.pid === pid);
+}
+
+function reMakePrimary(pid){
+  const c = LIFE.char;
+  const target = reFind(pid);
+  if(!target) return;
+  c.properties.forEach(p => { p.isPrimary = (p.pid === pid); if(p.pid === pid){ p.rentedOut = false; p.occupied = false; p.tenant = null; } });
+  c.houseId = target.houseId;
+  pushEvent('milestone', '🏠 You moved into ' + target.nickname + '. It is now your primary residence.');
+  closeModal();
+  openRealEstate();
+  saveLife();
+}
+
+function reRentOut(pid){
+  const p = reFind(pid);
+  if(!p) return;
+  if(p.isPrimary){ toast('Can\'t rent out your primary residence.'); return; }
+  p.rentedOut = true;
+  // Find a tenant — 70% chance on listing
+  if(Math.random() < 0.70){
+    p.occupied = true;
+    p.tenant = {
+      name: pickRand(['Alex Patel','Maria Garcia','James Smith','Yuki Tanaka','Hans Schmidt','Priya Kumar','Carlos Lopez','Emma Wilson']),
+      leaseEnd: LIFE.char.age + 1 + Math.floor(Math.random()*3),
+    };
+    pushEvent('career', '🏠 You listed ' + p.nickname + ' for rent — tenant ' + p.tenant.name + ' signed a lease.');
+  } else {
+    p.occupied = false;
+    p.tenant = null;
+    pushEvent('career', '🏠 You listed ' + p.nickname + ' for rent — no takers yet.');
+  }
+  closeModal();
+  openRealEstate();
+  saveLife();
+}
+
+function reUnlist(pid){
+  const p = reFind(pid);
+  if(!p) return;
+  p.rentedOut = false;
+  if(p.tenant){
+    // Break lease — pay tenant out
+    LIFE.char.money -= Math.floor((p.monthlyRent||0) * 2);
+    pushEvent('career', '📜 You broke ' + p.tenant.name + '\'s lease on ' + p.nickname + ' and paid 2 months\' relocation.');
+  }
+  p.occupied = false;
+  p.tenant = null;
+  closeModal();
+  openRealEstate();
+  saveLife();
+}
+
+function reDevelop(pid){
+  const p = reFind(pid);
+  if(!p) return;
+  let html = '<p style="font-family:var(--font-s);font-size:13px;color:var(--t3);font-style:italic;margin-bottom:14px;">'
+    + 'Renovations boost property value, rentability, and condition. Each one is a permanent upgrade.</p>';
+  DEVELOPMENTS.forEach(d => {
+    const already = p.developments.includes(d.id);
+    const can = LIFE.char.money >= d.cost && !already;
+    html += '<div class="card">'
+      + '<div class="card-ico">' + d.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + d.name + (already?' · DONE':'') + '</div>'
+      + '<div class="card-meta">+' + Math.floor(d.valueBoost*100) + '% value · +' + Math.floor(d.rentBoost*100) + '% rent · +' + d.condition + ' condition</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(d.cost) + '</div>'
+      + (already
+          ? '<span class="card-tag">COMPLETED</span>'
+          : '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="reDoDevelopment(\'' + pid + '\',\'' + d.id + '\')">Build</button>')
+      + '</div></div>';
+  });
+  openModal('🛠️ Develop: ' + p.nickname, html);
+}
+
+function reDoDevelopment(pid, devId){
+  const p = reFind(pid);
+  const d = DEVELOPMENTS.find(x => x.id === devId);
+  if(!p || !d) return;
+  if(LIFE.char.money < d.cost){ toast('Not enough money.'); return; }
+  LIFE.char.money -= d.cost;
+  p.developments.push(d.id);
+  p.currentValue = Math.floor(p.currentValue * (1 + d.valueBoost));
+  p.monthlyRent  = Math.floor(p.monthlyRent  * (1 + d.rentBoost));
+  p.condition    = clamp(p.condition + d.condition, 0, 100);
+  pushEvent('career', '🛠️ ' + d.name + ' done on ' + p.nickname + '. Value now ' + fmtMoney(p.currentValue) + '.');
+  closeModal();
+  reDevelop(pid);
+  saveLife();
+}
+
+function reRepair(pid){
+  const p = reFind(pid);
+  if(!p) return;
+  const cost = Math.floor((100 - p.condition) * 240);
+  if(LIFE.char.money < cost){ toast('Repair would cost ' + fmtMoney(cost) + ' — not enough money.'); return; }
+  LIFE.char.money -= cost;
+  p.condition = 100;
+  pushEvent('career', '🔧 You restored ' + p.nickname + ' to perfect condition for ' + fmtMoney(cost) + '.');
+  closeModal();
+  openRealEstate();
+  saveLife();
+}
+
+function reSell(pid){
+  const p = reFind(pid);
+  if(!p) return;
+  const salePrice = Math.floor(p.currentValue * 0.95); // 5% closing costs
+  const gain = salePrice - p.purchasePrice;
+  if(p.isPrimary && LIFE.char.properties.length === 1){
+    // Selling your only home — back to "living with family"
+    LIFE.char.houseId = 'family';
+  } else if(p.isPrimary && LIFE.char.properties.length > 1){
+    // Promote the next property to primary
+    const next = LIFE.char.properties.find(x => x.pid !== p.pid && !x.rentedOut) || LIFE.char.properties.find(x => x.pid !== p.pid);
+    if(next){ next.isPrimary = true; LIFE.char.houseId = next.houseId; }
+  }
+  LIFE.char.properties = LIFE.char.properties.filter(x => x.pid !== p.pid);
+  LIFE.char.money += salePrice;
+  const gainText = gain >= 0 ? 'capital gain ' + fmtMoney(gain) : 'loss ' + fmtMoney(Math.abs(gain));
+  pushEvent('career', '💰 You sold ' + p.nickname + ' for ' + fmtMoney(salePrice) + ' — ' + gainText + '.');
+  closeModal();
+  openRealEstate();
+  saveLife();
+}
+
+// Yearly tick — appreciation + condition decay + rent income + maintenance + tenant churn
+function processRealEstate(){
+  ensureProperties();
+  const c = LIFE.char;
+  if(!c.properties || !c.properties.length) return;
+  const country = COUNTRIES[c.country];
+  let totalRent = 0;
+  let totalMaint = 0;
+  c.properties.forEach(p => {
+    // Appreciation: 2-6% per year + 1% per development tier
+    const baseAppr = 0.02 + Math.random() * 0.04 + p.developments.length * 0.01;
+    // High status properties appreciate slightly more, low-status less
+    const h = HOUSES.find(x => x.id === p.houseId);
+    const statusMod = ((h && h.status) || 1) * 0.002;
+    p.currentValue = Math.floor(p.currentValue * (1 + baseAppr + statusMod));
+    // Condition decay: 2-4 points per year
+    p.condition = clamp(p.condition - (2 + Math.random()*2), 0, 100);
+    // Maintenance scales with condition damage and house tier
+    const annualMaint = Math.floor((h ? h.monthly : 800) * 12 * 0.04 * country.costMult);
+    totalMaint += annualMaint;
+    // Rent collection — only if rented + occupied
+    if(p.rentedOut && p.occupied){
+      // Vacancy/missed-rent rolls
+      const skipRoll = Math.random();
+      let collected = p.monthlyRent * 12;
+      if(skipRoll < 0.05){
+        collected = Math.floor(collected * 0.5);
+        pushEvent('bad', '⚠️ Tenant ' + (p.tenant?p.tenant.name:'') + ' fell behind on rent at ' + p.nickname + '. Lost half-year of rent.');
+      }
+      totalRent += collected;
+      // Lease expiry / tenant churn
+      if(p.tenant && p.tenant.leaseEnd <= c.age){
+        // Re-list — 80% find a new tenant
+        if(Math.random() < 0.80){
+          p.tenant = {
+            name: pickRand(['Alex Patel','Maria Garcia','James Smith','Yuki Tanaka','Hans Schmidt','Priya Kumar','Carlos Lopez','Emma Wilson','Liam Chen','Sofia Reyes']),
+            leaseEnd: c.age + 1 + Math.floor(Math.random()*3),
+          };
+        } else {
+          p.occupied = false;
+          p.tenant = null;
+        }
+      }
+    } else if(p.rentedOut && !p.occupied){
+      // Try to fill vacancy
+      if(Math.random() < 0.55){
+        p.occupied = true;
+        p.tenant = {
+          name: pickRand(['Alex Patel','Maria Garcia','James Smith','Yuki Tanaka','Hans Schmidt','Priya Kumar']),
+          leaseEnd: c.age + 1 + Math.floor(Math.random()*3),
+        };
+        pushEvent('career', '🏠 Tenant ' + p.tenant.name + ' signed a lease at ' + p.nickname + '.');
+      }
+    }
+    // Disrepair penalty: if condition drops below 35, value drops and rent suffers
+    if(p.condition < 35){
+      p.currentValue = Math.floor(p.currentValue * 0.99);
+      if(p.rentedOut && p.occupied && Math.random() < 0.20){
+        p.occupied = false;
+        pushEvent('bad', '😡 Tenant moved out of ' + p.nickname + ' citing poor condition.');
+        p.tenant = null;
+      }
+    }
+  });
+  c.money += totalRent - totalMaint;
+  if(totalRent > 0){
+    pushEvent('career', '💰 Rental income this year: ' + fmtMoney(totalRent) + ' (maintenance −' + fmtMoney(totalMaint) + ').');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  COMPANIES — found / buy / sell / hire / fire / embezzle / IPO
+// ═══════════════════════════════════════════════════════════════════════
+const INDUSTRIES = [
+  {id:'tech',     name:'Tech',         ico:'💻', revMult:1.3, marginRange:[0.12,0.30], foundingCost:50000,  riskMult:1.4},
+  {id:'pharma',   name:'Pharmaceuticals',ico:'💊',revMult:1.2,marginRange:[0.18,0.32], foundingCost:280000, riskMult:1.0},
+  {id:'auto',     name:'Auto Manufacturing',ico:'🚗',revMult:0.9,marginRange:[0.05,0.10],foundingCost:185000,riskMult:1.0},
+  {id:'energy',   name:'Energy',       ico:'⚡', revMult:1.1, marginRange:[0.08,0.22], foundingCost:220000, riskMult:1.0},
+  {id:'retail',   name:'Retail Chain', ico:'🛍️', revMult:0.8, marginRange:[0.04,0.10], foundingCost:120000, riskMult:1.1},
+  {id:'restaurant',name:'Restaurant Group',ico:'🍽️',revMult:0.7,marginRange:[0.04,0.14],foundingCost:75000, riskMult:1.3},
+  {id:'media',    name:'Media',        ico:'📺', revMult:0.9, marginRange:[0.08,0.18], foundingCost:95000,  riskMult:1.2},
+  {id:'finance',  name:'Financial Services',ico:'🏦',revMult:1.4,marginRange:[0.15,0.35],foundingCost:320000,riskMult:1.0},
+  {id:'defense',  name:'Defense Contractor',ico:'🪖',revMult:1.2,marginRange:[0.10,0.20],foundingCost:480000,riskMult:0.8},
+  {id:'agri',     name:'Agriculture',  ico:'🌾', revMult:0.7, marginRange:[0.04,0.12], foundingCost:140000, riskMult:0.9},
+  {id:'mining',   name:'Mining',       ico:'⛏️', revMult:1.0, marginRange:[0.10,0.22], foundingCost:250000, riskMult:1.1},
+  {id:'logistics',name:'Logistics',    ico:'🚚', revMult:0.9, marginRange:[0.04,0.10], foundingCost:165000, riskMult:1.0},
+  {id:'apparel',  name:'Apparel & Fashion',ico:'👗',revMult:0.8,marginRange:[0.06,0.18],foundingCost:65000, riskMult:1.2},
+  {id:'biotech',  name:'Biotech',      ico:'🧬', revMult:1.2, marginRange:[0.20,0.35], foundingCost:340000, riskMult:1.4},
+  {id:'crypto',   name:'Crypto / Web3',ico:'⛓️', revMult:1.5, marginRange:[0.10,0.50], foundingCost:80000,  riskMult:2.0},
+  {id:'gaming',   name:'Gaming Studio',ico:'🎮', revMult:1.1, marginRange:[0.10,0.30], foundingCost:120000, riskMult:1.3},
+  {id:'aerospace',name:'Aerospace',    ico:'🚀', revMult:1.0, marginRange:[0.08,0.18], foundingCost:680000, riskMult:1.1},
+  {id:'realestatedev',name:'Real Estate Development',ico:'🏗️',revMult:1.0,marginRange:[0.08,0.22],foundingCost:380000,riskMult:1.0},
+];
+
+function ensureCompanies(){
+  const c = LIFE.char;
+  if(!c) return;
+  if(!c.companies) c.companies = [];
+}
+
+function makeCompanyName(industry){
+  const ind = INDUSTRIES.find(x => x.id === industry) || INDUSTRIES[0];
+  const prefixes = ['Apex','Vertex','Helix','Pinnacle','Strata','Cipher','Nexus','Orion','Atlas','Zenith','Polaris','Solstice','Catalyst','Vanguard','Meridian'];
+  const suffixes = {
+    tech:['Labs','Systems','Dynamics','AI','Tech','Logic'],
+    pharma:['Pharma','Therapeutics','BioSciences','Health'],
+    auto:['Motors','Auto','Vehicles','Drivetrain'],
+    energy:['Energy','Power','Resources','Fuels'],
+    retail:['Group','Retail','Stores','Commerce'],
+    restaurant:['Hospitality','Restaurants','Foods','Kitchens'],
+    media:['Media','Networks','Studios','Productions'],
+    finance:['Capital','Partners','Holdings','Financial'],
+    defense:['Defense','Aerospace','Systems','Industries'],
+    agri:['Farms','Agricultural','Foods'],
+    mining:['Mining','Resources','Metals','Minerals'],
+    logistics:['Logistics','Freight','Express','Cargo'],
+    apparel:['Apparel','Brands','Fashion','Couture'],
+    biotech:['Bio','Genomics','BioPharma','Therapeutics'],
+    crypto:['Chain','Protocol','Network','DAO','Capital'],
+    gaming:['Games','Studios','Interactive','Worlds'],
+    aerospace:['Aerospace','Dynamics','Propulsion','Space'],
+    realestatedev:['Development','Properties','Realty','Estates'],
+  };
+  const p = pickRand(prefixes);
+  const s = pickRand(suffixes[industry] || ['Group','Inc','Holdings']);
+  return p + ' ' + s;
+}
+
+function openCompanies(){
+  ensureCompanies();
+  const c = LIFE.char;
+  if(c.age < 18){ toast('You must be 18+ to incorporate or invest.'); return; }
+  let html = '';
+  // Portfolio summary
+  const ownedVal = c.companies.reduce((s,co) => s + Math.floor((co.valuation||0) * (co.yourStake||0)/100), 0);
+  const yearlyEarn = c.companies.reduce((s,co) => s + Math.floor((co.revenue||0) * (co.profitMargin||0) * (co.yourStake||0)/100), 0);
+  html += '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;font-family:var(--font-m);font-size:11px;">'
+    + '<div><span style="color:var(--t3);letter-spacing:.1em;">COMPANIES</span><br><span style="font-size:18px;color:var(--accent2);font-weight:900;">' + c.companies.length + '</span></div>'
+    + '<div><span style="color:var(--t3);letter-spacing:.1em;">YOUR EQUITY</span><br><span style="font-size:18px;color:var(--green);font-weight:900;">' + fmtMoney(ownedVal) + '</span></div>'
+    + '<div><span style="color:var(--t3);letter-spacing:.1em;">EARNINGS / YR</span><br><span style="font-size:18px;color:var(--green);font-weight:900;">' + fmtMoney(yearlyEarn) + '</span></div>'
+    + '</div></div>';
+  // Owned companies
+  if(c.companies.length){
+    c.companies.forEach(co => {
+      const ind = INDUSTRIES.find(x => x.id === co.industry) || INDUSTRIES[0];
+      const tags = [];
+      if(co.publiclyTraded) tags.push('<span class="card-tag" style="color:var(--cyan)">PUBLIC</span>');
+      if(co.role === 'Founder') tags.push('<span class="card-tag" style="color:var(--gold)">FOUNDER</span>');
+      if(co.role === 'CEO') tags.push('<span class="card-tag" style="color:var(--accent2)">CEO</span>');
+      if(co.investigation) tags.push('<span class="card-tag" style="color:var(--crimson)">UNDER INVESTIGATION</span>');
+      const profit = Math.floor((co.revenue||0) * (co.profitMargin||0));
+      html += '<div class="card" style="display:grid;grid-template-columns:auto 1fr;gap:10px;">'
+        + '<div class="card-ico">' + ind.ico + '</div>'
+        + '<div class="card-body">'
+        +   '<div class="card-title">' + co.name + '</div>'
+        +   '<div class="card-meta">' + ind.name + ' · Your stake: ' + (co.yourStake||0) + '% · ' + (co.role||'Investor') + '</div>'
+        +   '<div class="card-meta">Valuation ' + fmtMoney(co.valuation) + ' · Revenue ' + fmtMoney(co.revenue) + ' · Profit ' + fmtMoney(profit) + '</div>'
+        +   '<div class="card-meta">Employees ' + co.employees + ' · Morale ' + co.morale + '%</div>'
+        +   (tags.length ? '<div style="margin-top:5px;">' + tags.join(' ') + '</div>' : '')
+        + '</div>'
+        + '<div class="card-act" style="grid-column:1 / -1;display:flex;gap:5px;flex-wrap:wrap;">'
+        +   '<button class="card-btn" onclick="coHire(\'' + co.cid + '\')">Hire (+5)</button>'
+        +   '<button class="card-btn" onclick="coFire(\'' + co.cid + '\')">Fire 10%</button>'
+        +   '<button class="card-btn" onclick="coBonus(\'' + co.cid + '\')">Pay Bonuses</button>'
+        +   '<button class="card-btn" onclick="coAcquire(\'' + co.cid + '\')">Acquire</button>'
+        +   (co.publiclyTraded ? '' : '<button class="card-btn green" onclick="coIPO(\'' + co.cid + '\')">IPO</button>')
+        +   '<button class="card-btn" onclick="coEmbezzle(\'' + co.cid + '\')">Embezzle</button>'
+        +   '<button class="card-btn danger" onclick="coSellCompany(\'' + co.cid + '\')">Sell · ' + fmtMoney(Math.floor(co.valuation * (co.yourStake||0)/100 * 0.92)) + '</button>'
+        + '</div>'
+        + '</div>';
+    });
+  } else {
+    html += '<p style="text-align:center;color:var(--t3);padding:14px;font-style:italic;">No companies yet. Found one below or buy an existing business.</p>';
+  }
+  // Found new
+  html += '<div style="margin-top:14px;font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;">Found a Company</div>';
+  INDUSTRIES.forEach(ind => {
+    const cost = Math.floor(ind.foundingCost * (COUNTRIES[c.country].costMult || 1));
+    const can = c.money >= cost;
+    html += '<div class="card">'
+      + '<div class="card-ico">' + ind.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">Start a ' + ind.name + ' Company</div>'
+      + '<div class="card-meta">Margin range ' + Math.floor(ind.marginRange[0]*100) + '-' + Math.floor(ind.marginRange[1]*100) + '% · Risk ' + ind.riskMult.toFixed(1) + 'x</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(cost) + '</div>'
+      + '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="foundCompany(\'' + ind.id + '\')">Found</button></div></div>';
+  });
+  // Buy an existing — generate 3 random offers
+  html += '<div style="margin-top:14px;font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;">Buy an Existing Company</div>';
+  if(!c._marketCompanies || c._marketCompanies.length === 0 || (c._marketRefreshedAt||0) + 5 < c.age){
+    c._marketCompanies = [];
+    c._marketRefreshedAt = c.age;
+    for(let i=0; i<3; i++){
+      const ind = INDUSTRIES[Math.floor(Math.random()*INDUSTRIES.length)];
+      const valuation = Math.floor((400000 + Math.random()*8000000) * (COUNTRIES[c.country].costMult||1));
+      const stake = Math.random() < 0.4 ? 100 : (Math.random() < 0.5 ? 51 : 30);
+      const revenue = Math.floor(valuation / (3 + Math.random()*8));
+      const margin = ind.marginRange[0] + Math.random()*(ind.marginRange[1]-ind.marginRange[0]);
+      c._marketCompanies.push({
+        name: makeCompanyName(ind.id), industry: ind.id,
+        valuation, stake, revenue, margin, employees: 5 + Math.floor(Math.random()*200),
+      });
+    }
+  }
+  c._marketCompanies.forEach((m,i) => {
+    const ind = INDUSTRIES.find(x => x.id === m.industry) || INDUSTRIES[0];
+    const price = Math.floor(m.valuation * m.stake/100);
+    const can = c.money >= price;
+    html += '<div class="card">'
+      + '<div class="card-ico">' + ind.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + m.name + '</div>'
+      + '<div class="card-meta">' + ind.name + ' · ' + m.employees + ' employees</div>'
+      + '<div class="card-meta">Buy ' + m.stake + '% stake at ' + fmtMoney(m.valuation) + ' valuation</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(price) + '</div>'
+      + '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="buyExistingCompany(' + i + ')">Buy</button></div></div>';
+  });
+  // Insider-trading toggle
+  html += '<div style="margin-top:14px;font-family:var(--font-m);font-size:10px;color:var(--crimson);letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;">⚠ Illegal Plays</div>';
+  html += '<div class="card"><div class="card-ico">🕵️</div>'
+    + '<div class="card-body"><div class="card-title">Insider Trading</div>'
+    + '<div class="card-meta">Use non-public info to trade. High return, high SEC risk, big karma penalty.</div></div>'
+    + '<div class="card-act"><button class="card-btn danger" onclick="insiderTrade()">Try It</button></div></div>';
+  openModal('🏢 Companies & Investments', html);
+}
+
+function coFind(cid){
+  ensureCompanies();
+  return LIFE.char.companies.find(co => co.cid === cid);
+}
+
+function foundCompany(industryId){
+  const c = LIFE.char;
+  const ind = INDUSTRIES.find(x => x.id === industryId);
+  if(!ind) return;
+  const cost = Math.floor(ind.foundingCost * (COUNTRIES[c.country].costMult || 1));
+  if(c.money < cost){ toast('Not enough money.'); return; }
+  c.money -= cost;
+  ensureCompanies();
+  const margin = ind.marginRange[0] + Math.random()*(ind.marginRange[1]-ind.marginRange[0]);
+  const revenue = Math.floor(cost * 0.8 * ind.revMult);
+  c.companies.push({
+    cid:'c-' + Date.now() + '-' + Math.floor(Math.random()*9999),
+    name: makeCompanyName(industryId),
+    industry: industryId,
+    founded: c.age,
+    valuation: cost * 2,
+    revenue,
+    profitMargin: margin,
+    employees: 5,
+    morale: 70,
+    cash: Math.floor(cost * 0.2),
+    publiclyTraded: false,
+    yourStake: 100,
+    role: 'Founder',
+    investigation: false,
+    embezzledThisYear: 0,
+  });
+  pushEvent('milestone', '🏢 You founded ' + c.companies[c.companies.length-1].name + ' with ' + fmtMoney(cost) + '.');
+  closeModal();
+  openCompanies();
+  saveLife();
+}
+
+function buyExistingCompany(idx){
+  const c = LIFE.char;
+  if(!c._marketCompanies || !c._marketCompanies[idx]) return;
+  const m = c._marketCompanies[idx];
+  const price = Math.floor(m.valuation * m.stake/100);
+  if(c.money < price){ toast('Not enough money.'); return; }
+  c.money -= price;
+  ensureCompanies();
+  c.companies.push({
+    cid:'c-' + Date.now() + '-' + Math.floor(Math.random()*9999),
+    name: m.name, industry: m.industry, founded: c.age,
+    valuation: m.valuation, revenue: m.revenue, profitMargin: m.margin,
+    employees: m.employees, morale: 60, cash: Math.floor(m.valuation * 0.05),
+    publiclyTraded: false,
+    yourStake: m.stake,
+    role: m.stake >= 51 ? 'CEO' : 'Board Member',
+    investigation: false, embezzledThisYear: 0,
+  });
+  c._marketCompanies.splice(idx, 1);
+  pushEvent('career', '🏢 You bought ' + m.stake + '% of ' + m.name + ' for ' + fmtMoney(price) + '.');
+  closeModal();
+  openCompanies();
+  saveLife();
+}
+
+function coHire(cid){
+  const co = coFind(cid); if(!co) return;
+  if(LIFE.char.money < 150000){ toast('Need ' + fmtMoney(150000) + ' for onboarding + first-year salaries.'); return; }
+  LIFE.char.money -= 150000;
+  co.employees += 5;
+  co.revenue = Math.floor(co.revenue * 1.07);
+  co.profitMargin = Math.max(0.02, co.profitMargin - 0.005);
+  co.morale = clamp(co.morale + 5, 0, 100);
+  pushEvent('career', '👥 Hired 5 employees at ' + co.name + '. Revenue +7%.');
+  closeModal(); openCompanies(); saveLife();
+}
+function coFire(cid){
+  const co = coFind(cid); if(!co) return;
+  const cut = Math.floor(co.employees * 0.10);
+  co.employees -= cut;
+  co.morale = clamp(co.morale - 20, 0, 100);
+  co.profitMargin = Math.min(0.40, co.profitMargin + 0.02);
+  co.valuation = Math.floor(co.valuation * 1.03);
+  pushEvent('career', '✂️ Laid off ' + cut + ' employees at ' + co.name + '. Margin up, morale crashed.');
+  closeModal(); openCompanies(); saveLife();
+}
+function coBonus(cid){
+  const co = coFind(cid); if(!co) return;
+  const cost = Math.floor(co.employees * 8000);
+  if(LIFE.char.money < cost){ toast('Need ' + fmtMoney(cost) + ' for bonuses.'); return; }
+  LIFE.char.money -= cost;
+  co.morale = clamp(co.morale + 18, 0, 100);
+  co.profitMargin = Math.min(0.40, co.profitMargin + 0.006);
+  pushEvent('career', '🎁 Paid out ' + fmtMoney(cost) + ' in bonuses at ' + co.name + '. Morale soaring.');
+  closeModal(); openCompanies(); saveLife();
+}
+function coAcquire(cid){
+  const co = coFind(cid); if(!co) return;
+  const cost = Math.floor(co.valuation * 0.30);
+  if(LIFE.char.money < cost){ toast('Acquisition cost ' + fmtMoney(cost) + '. Not enough.'); return; }
+  LIFE.char.money -= cost;
+  co.revenue = Math.floor(co.revenue * 1.30);
+  co.employees += Math.floor(co.employees * 0.4);
+  co.valuation = Math.floor(co.valuation * 1.20);
+  co.morale = clamp(co.morale - 8, 0, 100);
+  pushEvent('career', '🤝 ' + co.name + ' acquired a smaller competitor. Revenue +30%.');
+  closeModal(); openCompanies(); saveLife();
+}
+function coIPO(cid){
+  const co = coFind(cid); if(!co) return;
+  if(co.publiclyTraded){ toast('Already public.'); return; }
+  if(co.revenue < 5000000){ toast('Need at least ' + fmtMoney(5000000) + ' annual revenue to go public.'); return; }
+  // IPO: raise capital, valuation jumps, your stake dilutes from 100 to 70 (or whatever your stake was * 0.7)
+  const raise = Math.floor(co.valuation * 0.25);
+  LIFE.char.money += Math.floor(raise * (co.yourStake/100) * 0.6); // 60% of your share's IPO proceeds go to you
+  co.publiclyTraded = true;
+  co.yourStake = Math.floor(co.yourStake * 0.7);
+  co.valuation = Math.floor(co.valuation * (1.5 + Math.random()*0.5));
+  pushEvent('milestone', '📈 ' + co.name + ' IPO\'d! Your stake diluted to ' + co.yourStake + '%; you took ' + fmtMoney(Math.floor(raise * (co.yourStake/100) * 0.6)) + ' off the table.');
+  closeModal(); openCompanies(); saveLife();
+}
+function coEmbezzle(cid){
+  const co = coFind(cid); if(!co) return;
+  if(co.investigation){ toast('Auditors are watching. Don\'t.'); return; }
+  // Amount = 5-15% of cash on hand
+  const stolen = Math.floor((co.cash || 100000) * (0.05 + Math.random()*0.10));
+  LIFE.char.money += stolen;
+  co.cash = Math.max(0, (co.cash||100000) - stolen);
+  co.embezzledThisYear = (co.embezzledThisYear||0) + stolen;
+  LIFE.char.karma = clamp(LIFE.char.karma - 25, 0, 100);
+  pushEvent('bad', '💼 You moved ' + fmtMoney(stolen) + ' from ' + co.name + ' to a personal account.');
+  // Detection chance scales with cumulative amount and morale
+  const detectChance = Math.min(0.65, 0.15 + (co.embezzledThisYear / 1000000) * 0.10 + (1 - co.morale/100) * 0.20);
+  if(Math.random() < detectChance){
+    co.investigation = true;
+    pushEvent('death', '🚨 The board hired auditors at ' + co.name + '. An investigation has begun.');
+    if(Math.random() < 0.55){
+      // Convicted
+      pushEvent('death', '⚖️ Convicted of embezzlement. Securities fraud charges. Forfeit your stake.');
+      LIFE.char.money -= Math.floor(stolen * 1.5); // restitution + fines
+      co.yourStake = 0;
+      // Jail
+      if(typeof goToJail === 'function') goToJail(rangeRand(3,8), 'embezzlement');
+    }
+  }
+  closeModal(); openCompanies(); saveLife();
+}
+function coSellCompany(cid){
+  const co = coFind(cid); if(!co) return;
+  const sale = Math.floor(co.valuation * (co.yourStake||0)/100 * 0.92);
+  LIFE.char.money += sale;
+  pushEvent('career', '💰 Sold your ' + co.yourStake + '% of ' + co.name + ' for ' + fmtMoney(sale) + '.');
+  LIFE.char.companies = LIFE.char.companies.filter(x => x.cid !== cid);
+  closeModal(); openCompanies(); saveLife();
+}
+
+function insiderTrade(){
+  const c = LIFE.char;
+  if(c.age < 18){ toast('Must be 18.'); return; }
+  // 60% win, 40% caught
+  if(c.money < 5000){ toast('Need at least ' + fmtMoney(5000) + ' to make a meaningful trade.'); return; }
+  const win = 30000 + Math.floor(Math.random()*220000);
+  if(Math.random() < 0.40){
+    pushEvent('death', '⚖️ SEC opened an investigation. Insider trading charges. Forfeit ' + fmtMoney(win) + ' plus fines.');
+    c.money -= win;
+    c.karma = clamp(c.karma - 30, 0, 100);
+    if(typeof goToJail === 'function') goToJail(rangeRand(2,6), 'insider trading');
+  } else {
+    c.money += win;
+    c.karma = clamp(c.karma - 12, 0, 100);
+    pushEvent('bad', '📈 Insider trade paid off — ' + fmtMoney(win) + '. Nobody noticed. Yet.');
+  }
+  closeModal(); openCompanies(); saveLife();
+}
+
+// Yearly tick — revenue growth, dividends, market shifts, investigation outcomes
+function processCompanies(){
+  ensureCompanies();
+  const c = LIFE.char;
+  if(!c.companies || !c.companies.length) return;
+  let totalDividends = 0;
+  c.companies.forEach(co => {
+    // Revenue drift +/- based on margin & morale
+    const drift = (co.morale/100) * 0.05 - 0.01 + (Math.random()*0.06 - 0.03);
+    co.revenue = Math.max(0, Math.floor(co.revenue * (1 + drift)));
+    // Margin small drift
+    co.profitMargin = clamp(co.profitMargin + (Math.random()*0.02 - 0.01), 0.01, 0.45);
+    // Valuation tracks revenue
+    co.valuation = Math.floor(co.revenue * (5 + co.profitMargin * 30));
+    // Profit + dividends
+    const profit = Math.floor(co.revenue * co.profitMargin);
+    if(profit > 0){
+      const div = Math.floor(profit * 0.40 * (co.yourStake||0)/100); // 40% payout
+      totalDividends += div;
+      co.cash = (co.cash||0) + Math.floor(profit * 0.60);
+    } else {
+      co.cash = (co.cash||0) + profit; // can go negative
+    }
+    // Cash crunch — if negative, company fails
+    if((co.cash||0) < -1000000){
+      pushEvent('death', '💀 ' + co.name + ' went bankrupt. Your stake is worthless.');
+      co.yourStake = 0;
+      co.investigation = false;
+    }
+    // Morale drift
+    co.morale = clamp(co.morale + (Math.random()*4 - 2), 0, 100);
+    co.embezzledThisYear = 0;
+    // Investigation outcome — eventual conviction window
+    if(co.investigation && Math.random() < 0.30){
+      pushEvent('death', '⚖️ ' + co.name + ' investigation closed — settlement reached. Your stake reduced.');
+      co.investigation = false;
+      co.yourStake = Math.max(0, co.yourStake - 20);
+    }
+  });
+  // Remove companies with 0 stake
+  c.companies = c.companies.filter(x => (x.yourStake||0) > 0);
+  if(totalDividends > 0){
+    c.money += totalDividends;
+    pushEvent('career', '💰 Dividend income from companies: ' + fmtMoney(totalDividends) + '.');
+  }
 }
 function buyCar(id){
   const c = LIFE.char;

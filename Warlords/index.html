@@ -5057,6 +5057,2265 @@ W.UNIT_LORE = {
   agi_strike:"It is not in any location. It is in every location.",
 };
 
+
+/* =================================================================
+   EXTRA UNITS — naval, siege, special; era-rounded
+   ================================================================= */
+Object.assign(W.UNITS,{
+  /* Ancient extras */
+  peltast:    {id:"peltast",   era:"ancient",name:"Peltast",         tier:1,atk:4,def:3,spd:5,rng:2,hp:8, cost:{manpower:8,wood:4},upkeep:1,counters:["hoplite"],ability:"Skirmish: retreats free.",blurb:"Thracian javelin throwers."},
+  velite:     {id:"velite",    era:"ancient",name:"Velite",           tier:1,atk:3,def:2,spd:5,rng:2,hp:6,cost:{manpower:6,wood:2,iron:2},upkeep:1,counters:["chariot"],ability:"Soltarius javelins.",blurb:"Roman light-armed skirmishers."},
+  immortal:   {id:"immortal",  era:"ancient",name:"Persian Immortal",tier:4,atk:9,def:8,spd:3,rng:2,hp:18,cost:{manpower:6,iron:10,gold:18},upkeep:5,counters:["hoplite"],ability:"Replacements: always at strength.",blurb:"Ten thousand, never less, never more."},
+  numidian:   {id:"numidian",  era:"ancient",name:"Numidian Light Horse",tier:2,atk:5,def:2,spd:7,rng:2,hp:10,cost:{manpower:8,horses:4},upkeep:2,counters:["legionary"],ability:"Harass: locks heavy units.",blurb:"Bareback, javelin, dust."},
+  /* Medieval extras */
+  hashashin:  {id:"hashashin", era:"medieval",name:"Hashashin",      tier:2,atk:8,def:2,spd:5,rng:1,hp:6,cost:{manpower:2,gold:40,silk:2},upkeep:3,counters:[],ability:"Assassinate: −10% leader bonus on hit.",blurb:"From the Alamut mountain, masters of the knife."},
+  varangian:  {id:"varangian", era:"medieval",name:"Varangian Guard",tier:4,atk:9,def:8,spd:3,rng:1,hp:20,cost:{manpower:6,iron:12,gold:18},upkeep:5,counters:["levyspear"],ability:"Last Stand: +50% def at low HP.",blurb:"Norsemen sworn to the Eastern Roman throne."},
+  tercio:     {id:"tercio",    era:"renaissance",name:"Spanish Tercio",tier:3,atk:7,def:8,spd:2,rng:2,hp:18,cost:{manpower:12,iron:10,gold:14},upkeep:4,counters:["hussar"],ability:"Square: +40% def on flat ground.",blurb:"Pike and shot in a defensive square."},
+  bashibazouk:{id:"bashibazouk",era:"renaissance",name:"Bashi-Bazouk",tier:2,atk:6,def:3,spd:5,rng:1,hp:10,cost:{manpower:6,gold:6},upkeep:1,counters:["levyspear"],ability:"Plunder: +gold on victory.",blurb:"Irregular Ottoman cavalry."},
+  /* Industrial extras */
+  zouave:     {id:"zouave",    era:"industrial",name:"Zouave",        tier:3,atk:8,def:5,spd:4,rng:3,hp:15,cost:{manpower:10,iron:8,gold:14},upkeep:3,counters:["lancer"],ability:"Esprit: +morale to nearby.",blurb:"Red trousers, blue jacket, fierce."},
+  ironship:   {id:"ironship",  era:"industrial",name:"Steam Cruiser", tier:4,atk:11,def:10,spd:4,rng:3,hp:32,cost:{manpower:50,iron:30,coal:14,steel:6},upkeep:7,counters:["ironclad"],ability:"Coal Range: extra strategic move.",blurb:"Iron belted, coal-fed, ocean-going."},
+  /* WW extras */
+  flak88:     {id:"flak88",    era:"worldwars",name:"Flak 88",        tier:3,atk:11,def:3,spd:1,rng:4,hp:12,cost:{manpower:8,steel:14,gold:18},upkeep:4,counters:["panzer","bomber_ww"],ability:"Dual-Purpose: AA and AT both.",blurb:"German 88mm, terror of tank and bomber alike."},
+  katyusha:   {id:"katyusha",  era:"worldwars",name:"Katyusha",       tier:3,atk:12,def:2,spd:4,rng:4,hp:10,cost:{manpower:8,steel:12,oil:4,gold:20},upkeep:4,counters:["doughboy"],ability:"Saturation: AoE volley.",blurb:"Stalin's pipe organs."},
+  glider:     {id:"glider",    era:"worldwars",name:"Glider Trooper", tier:3,atk:8,def:4,spd:5,rng:1,hp:10,cost:{manpower:10,wood:6,gold:12},upkeep:3,counters:[],ability:"Silent Landing: surprise bonus.",blurb:"No engine — only a one-way trip."},
+  /* Cold War extras */
+  helicopter: {id:"helicopter",era:"coldwar",name:"Attack Helicopter",tier:4,atk:11,def:6,spd:7,rng:3,hp:14,cost:{manpower:4,steel:14,oil:10,gold:60},upkeep:7,counters:["t72"],ability:"Hover: hits where artillery cannot.",blurb:"Cobra, Hind, the airborne tank-killer."},
+  spetsnaz:   {id:"spetsnaz",  era:"coldwar",name:"Spetsnaz",         tier:4,atk:10,def:7,spd:5,rng:2,hp:12,cost:{manpower:4,steel:6,gold:40},upkeep:5,counters:["spy"],ability:"Decapitate: targets HQ.",blurb:"Behind the lines, silent."},
+  /* Modern extras */
+  litoral:    {id:"litoral",   era:"modern",name:"Littoral Combat Ship",tier:4,atk:10,def:8,spd:7,rng:4,hp:18,cost:{manpower:30,steel:20,rare:6,gold:120},upkeep:9,counters:["insurgent"],ability:"Modular: switches mission per turn.",blurb:"Reconfigurable for any coastal fight."},
+  patriot:    {id:"patriot",   era:"modern",name:"Patriot Battery",   tier:4,atk:3,def:13,spd:1,rng:5,hp:10,cost:{manpower:6,steel:16,rare:6,gold:90},upkeep:6,counters:["cruisemissile","hyper"],ability:"Intercept: 60% chance.",blurb:"PAC-3, hit-to-kill."},
+  /* Future extras */
+  agi_swarm:  {id:"agi_swarm", era:"future",name:"AGI-Directed Swarm",tier:5,atk:20,def:8,spd:12,rng:6,hp:14,cost:{compute:30,rare:14,fusion:4,gold:300},upkeep:14,counters:["mech"],ability:"Hivemind: damage doubles vs grouped.",blurb:"Ten thousand wings under one cognition."},
+  spacejumper:{id:"spacejumper",era:"future",name:"Orbital Jumper",   tier:4,atk:10,def:8,spd:99,rng:1,hp:14,cost:{manpower:6,steel:12,fusion:4,gold:120},upkeep:7,counters:[],ability:"Drop: any province globally.",blurb:"Re-entry pod, ceramic shell, one shot."},
+  cryocell:   {id:"cryocell",  era:"future",name:"Cryostorage Reserves",tier:3,atk:0,def:14,spd:0,rng:0,hp:30,cost:{manpower:50,fusion:6,rare:10,gold:200},upkeep:6,counters:[],ability:"Reserve: thaws +20 manpower over 5 turns.",blurb:"A million sleepers, awaiting their turn."},
+});
+
+/* =================================================================
+   EXTRA BUILDINGS — utility & era-niche
+   ================================================================= */
+Object.assign(W.BUILDINGS,{
+  amphitheater:{id:"amphitheater",name:"Amphitheater",tier:"cultural",era:"ancient",cost:{stone:40,wood:14,gold:20},upkeep:2,build:5,desc:"+15 stability via games; +1 influence/turn.",produces:{influence:3},requires:"oratory",limit:1},
+  arena:      {id:"arena",      name:"Arena",         tier:"cultural",era:"ancient",cost:{stone:50,wood:10,gold:30},upkeep:3,build:5,desc:"Bread and circuses, +20 stability when active.",produces:{influence:4},requires:null,limit:1},
+  granary_state:{id:"granary_state",name:"State Granary",tier:"subsistence",era:"ancient",cost:{stone:30,wood:18,gold:20},upkeep:2,build:3,desc:"+50% food cap; halves famine risk.",produces:{food:4},requires:"granary_state",limit:1},
+  caravanserai:{id:"caravanserai",name:"Caravanserai",tier:"civic",era:"medieval",cost:{stone:30,wood:20,gold:30},upkeep:2,build:3,desc:"+25% silk/spice trade.",produces:{gold:6,silk:1},requires:null,limit:1,terrain:["desert"]},
+  inquisition:{id:"inquisition",name:"Holy Office",  tier:"cultural",era:"medieval",cost:{stone:20,gold:60,relics:2},upkeep:4,build:4,desc:"+10 stability; −15 research.",produces:{influence:4},requires:"theology",limit:1},
+  guildhall:  {id:"guildhall",  name:"Guild Hall",    tier:"civic",era:"medieval",cost:{wood:30,stone:20,gold:30},upkeep:2,build:3,desc:"+30% urban trade; +1 specialist/turn.",produces:{gold:6},requires:"guilds",limit:1},
+  printinghouse:{id:"printinghouse",name:"Printing House",tier:"civic",era:"renaissance",cost:{wood:20,iron:8,gold:40},upkeep:2,build:3,desc:"+25% research; spreads ideas to allies.",produces:{influence:4,data:1},requires:"printing_press",limit:1},
+  jointstock: {id:"jointstock", name:"Joint-Stock Office",tier:"civic",era:"renaissance",cost:{stone:30,gold:80},upkeep:3,build:4,desc:"+40% trade; doubles colonial returns.",produces:{gold:10},requires:"joint_stock",limit:1},
+  poweplant:  {id:"poweplant",  name:"Power Station", tier:"industry",era:"industrial",cost:{steel:40,coal:30,gold:60},upkeep:5,build:5,desc:"+30% factory output.",produces:{steel:4},requires:"electricity",limit:null},
+  newsmedia:  {id:"newsmedia",  name:"Wire Service",  tier:"civic",era:"industrial",cost:{steel:10,gold:40},upkeep:3,build:3,desc:"+10 stability while at war.",produces:{influence:4},requires:"telegraph_tech",limit:1},
+  bunker:     {id:"bunker",     name:"Strategic Bunker",tier:"military",era:"worldwars",cost:{steel:60,stone:80,gold:80},upkeep:6,build:6,desc:"+200% capital defence; survives nuclear strike.",produces:{},requires:"trench_warfare",limit:1},
+  shipyard_ww:{id:"shipyard_ww",name:"Naval Drydock", tier:"military",era:"worldwars",cost:{steel:80,gold:120},upkeep:8,build:8,desc:"Constructs capital ships.",produces:{},requires:"battleship_design",limit:null,terrain:["coast"]},
+  spaceport:  {id:"spaceport",  name:"Spaceport",      tier:"infra",era:"modern",cost:{steel:60,rare:20,gold:200},upkeep:10,build:8,desc:"Launches satellites; +intelligence.",produces:{data:4},requires:"space_x_doctrine",limit:1},
+  desalin:    {id:"desalin",    name:"Desalination Plant",tier:"infra",era:"modern",cost:{steel:30,rare:8,gold:80},upkeep:6,build:5,desc:"+water in arid provinces; +2 pop growth.",produces:{water:10},requires:"renewables",limit:null,terrain:["coast","desert"]},
+  arc_habitat:{id:"arc_habitat",name:"Arcology Habitat",tier:"civic",era:"future",cost:{steel:80,rare:30,fusion:6,gold:300},upkeep:14,build:10,desc:"+population cap; closed-loop.",produces:{food:8,water:8,influence:4},requires:"closed_loop_eco",limit:null},
+  geo_engine: {id:"geo_engine", name:"Climate Engineering Tower",tier:"infra",era:"future",cost:{steel:60,rare:40,compute:14,gold:240},upkeep:12,build:8,desc:"+1 climate stability/turn; risks rivals.",produces:{},requires:"climate_engineering",limit:null},
+  agi_oracle: {id:"agi_oracle", name:"AGI Oracle",     tier:"civic",era:"future",cost:{compute:50,rare:20,fusion:6,gold:400},upkeep:18,build:8,desc:"+30% all research; small rogue-AI chance.",produces:{compute:8,data:6},requires:"agi_alignment_proto",limit:1},
+});
+
+/* =================================================================
+   MORE WONDERS — fill out the era set
+   ================================================================= */
+Object.assign(W.WONDERS,{
+  colossus:   {id:"colossus",   name:"Colossus of Rhodes",era:"ancient",cost:{bronze:120,stone:120,gold:200},build:10,bonus:"+30% naval trade; +10 fame.",flavour:"Bronze giant astride a harbour."},
+  parthenon:  {id:"parthenon",  name:"Parthenon",        era:"ancient",cost:{stone:240,wood:60,gold:160},build:10,bonus:"+25% culture; +10 stability.",flavour:"Athena's marble house, pristine."},
+  great_wall:{id:"great_wall", name:"Great Wall of China",era:"ancient",cost:{stone:400,wood:60,gold:200},build:14,bonus:"+50% defence on one border; −2 manpower/turn while building.",flavour:"A wall built so long it can be seen from heaven."},
+  st_peter:   {id:"st_peter",   name:"St Peter's Basilica",era:"renaissance",cost:{stone:300,gold:600,relics:4},build:14,bonus:"+40% religion; +20% relations.",flavour:"Bramante to Michelangelo to Bernini."},
+  catherine_palace:{id:"catherine_palace",name:"Catherine Palace",era:"renaissance",cost:{stone:240,wood:120,gold:500},build:12,bonus:"+25% culture; +15% stability.",flavour:"Blue and gold in the Russian snow."},
+  panama_canal:{id:"panama_canal",name:"Panama Canal",   era:"industrial",cost:{steel:300,gold:500,coal:60},build:14,bonus:"Atlantic-Pacific routing; +60% naval trade.",flavour:"A continent cut in half."},
+  pentagon:   {id:"pentagon",   name:"The Pentagon",     era:"worldwars",cost:{steel:200,gold:400,stone:100},build:12,bonus:"+15% army; +25% intelligence.",flavour:"Five sides, infinite corridors."},
+  baikonur:   {id:"baikonur",   name:"Baikonur Cosmodrome",era:"coldwar",cost:{steel:180,uranium:6,gold:500},build:12,bonus:"+30% space race; permanent satellite vision.",flavour:"From here, Sputnik. From here, Gagarin."},
+  reagan_lib: {id:"reagan_lib", name:"Library of Reagan",era:"modern",cost:{stone:120,gold:300,rare:10},build:10,bonus:"+15% culture; +10% diplomacy.",flavour:"Tear down this wall."},
+  hyperloop_net:{id:"hyperloop_net",name:"Hyperloop Network",era:"future",cost:{steel:300,rare:80,fusion:10,gold:1200},build:14,bonus:"+1 strategic movement; +30% trade.",flavour:"Maglev in a vacuum tube."},
+  ringworld_seed:{id:"ringworld_seed",name:"Ringworld Seed Project",era:"future",cost:{steel:800,rare:300,fusion:120,compute:120,gold:5000},build:30,bonus:"Triggers transcendence ending if completed; +100 fame.",flavour:"A ring of habitable land circling the sun."},
+});
+
+
+/* =================================================================
+   BIG EVENT EXPANSION — bringing total to 250+
+   ================================================================= */
+(function(){const E=(o)=>W.EVENTS.push(o);
+  /* ============ MEDIEVAL DEEP ============ */
+  E({id:"med_crowning",era:"medieval",weight:5,title:"The Crowning at the Cathedral",
+    quote:"The archbishop sets the crown upon your head. The nobles kneel. Outside, the commoners cheer or curse — you cannot yet tell which.",
+    options:[
+      {label:"Distribute alms; pardon prisoners.",effect:{treasury:-60,stability:+15,influence:+12}},
+      {label:"Stage a chivalric tournament.",effect:{treasury:-40,stability:+10,influence:+8}},
+      {label:"Announce a new crusade.",effect:{manpower:-4,treasury:-50,influence:+20,relations:-10}},
+      {label:"Modest ceremony; redirect funds to the army.",effect:{manpower:+6,treasury:-10,influence:-3}},
+    ]});
+  E({id:"med_plague_doctor",era:"medieval",weight:3,title:"A Plague Doctor's Mask",
+    quote:"He arrives at the gate, beak filled with herbs, eyes glassed. He claims he can save the city.",
+    options:[
+      {label:"Welcome him into the palace.",effect:{treasury:-30,pop:+2,stability:+5,influence:+5}},
+      {label:"Confine him to the lazaretto.",effect:{treasury:-15,pop:-2}},
+      {label:"Burn him as a witch.",effect:{stability:+3,relations:-10,pop:-3,influence:-5}},
+    ]});
+  E({id:"med_papal_bull",era:"medieval",weight:3,title:"A Papal Bull Arrives",
+    quote:"The Pope demands your support against a heretic king. The seal is impressive; the threat, plain.",
+    options:[
+      {label:"Comply. March against the heretic.",effect:{manpower:-4,treasury:-50,influence:+15,relations:-20}},
+      {label:"Send token forces; stay home.",effect:{manpower:-1,influence:+5}},
+      {label:"Defy the Pope.",effect:{stability:-10,influence:-15,relations:-25}},
+      {label:"Bribe the curia for an exemption.",effect:{treasury:-100,relations:+5}},
+    ]});
+  E({id:"med_jacquerie",era:"medieval",weight:4,title:"The Jacquerie Rises",
+    quote:"The peasants have risen. They burn manor houses, hang lords from oak trees. The cause: too many taxes after too many bad harvests.",
+    options:[
+      {label:"Repress brutally with the knights.",effect:{stability:+5,manpower:-3,pop:-5,treasury:-20}},
+      {label:"Negotiate. Lift the worst taxes.",effect:{stability:+15,treasury:-40,influence:-3}},
+      {label:"Promise reforms; hang the leaders.",effect:{stability:+10,pop:-2,influence:+5}},
+    ]});
+  E({id:"med_trial_of_God",era:"medieval",weight:2,title:"Trial by Ordeal",
+    quote:"A noble accused of murder demands trial by hot iron. Your bishop is uncertain.",
+    options:[
+      {label:"Permit the ordeal.",effect:{stability:+3,influence:+3,relations:+5}},
+      {label:"Refuse. Use written law instead.",effect:{stability:-3,influence:+10,relations:-5,research:+10}},
+      {label:"Demand a duel.",effect:{stability:+5,influence:+5}},
+    ]});
+  E({id:"med_minstrels_song",era:"medieval",weight:5,title:"A Minstrel's Song",
+    quote:"At the feast, a minstrel sings a satirical verse about you. The court laughs nervously.",
+    options:[
+      {label:"Laugh loudest. Reward him.",effect:{treasury:-10,influence:+10,stability:+5}},
+      {label:"Have his tongue cut out.",effect:{stability:-5,influence:+5,relations:-10}},
+      {label:"Demand a flattering verse next.",effect:{influence:+3}},
+      {label:"Hire him as court poet.",effect:{treasury:-30,influence:+8}},
+    ]});
+  E({id:"med_university_charter",era:"medieval",weight:3,title:"Petition for a University Charter",
+    quote:"A group of scholars in a market town request a royal charter to teach law, medicine, and theology.",
+    options:[
+      {label:"Grant it generously.",effect:{treasury:-80,influence:+10,research:+25}},
+      {label:"Grant with conditions.",effect:{treasury:-30,research:+15}},
+      {label:"Refuse; scholars are trouble.",effect:{research:-10,influence:-5}},
+    ]});
+  E({id:"med_holy_war",era:"medieval",weight:3,title:"A Holy War Declared",
+    quote:"A rival theologian has declared your faith heretical. Holy war is now sanctioned against you.",
+    options:[
+      {label:"Mobilise for defence.",effect:{manpower:+8,treasury:-60,stability:+5}},
+      {label:"Counter-declare your own holy war.",effect:{manpower:-2,treasury:-40,influence:+10,relations:-30}},
+      {label:"Negotiate with the rival theologians.",effect:{influence:+5,relations:+5,treasury:-30}},
+    ]});
+  E({id:"med_horseshoe_invention",era:"medieval",weight:2,title:"The Horseshoe",
+    quote:"A smith proposes nailing iron to horses' hooves. He claims it will revolutionise the cavalry.",
+    options:[
+      {label:"Adopt across all cavalry.",effect:{treasury:-50,research:+15,manpower:+2}},
+      {label:"Trial in one regiment.",effect:{treasury:-15,research:+8}},
+      {label:"Refuse — horses have managed fine without.",effect:{research:-5}},
+    ]});
+  E({id:"med_silk_caravan",era:"medieval",weight:3,title:"A Silk Caravan from the East",
+    quote:"Two hundred camels. Bolts of silk, jars of spice, pages of philosophy. The merchant asks safe passage.",
+    options:[
+      {label:"Grant safe passage; tax modestly.",effect:{treasury:+80,trade:+15,research:+5,relations:+10}},
+      {label:"Confiscate the goods.",effect:{treasury:+200,trade:-10,relations:-25}},
+      {label:"Allow passage tax-free.",effect:{trade:+25,relations:+15}},
+    ]});
+  E({id:"med_bishop_revolt",era:"medieval",weight:3,title:"A Bishop Refuses Allegiance",
+    quote:"The new bishop, your appointee, refuses to confirm. He claims spiritual authority over temporal.",
+    options:[
+      {label:"Excommunicate him.",effect:{stability:-5,influence:+5,relations:-15}},
+      {label:"Imprison him.",effect:{stability:+3,influence:+3,relations:-20}},
+      {label:"Grant him further privileges.",effect:{stability:+5,treasury:-50,influence:-5}},
+    ]});
+  E({id:"med_grail",era:"medieval",weight:1,title:"A Search for the Grail",
+    quote:"A knight returns from a quest with what he claims is the Holy Grail. The cup is plain wood. The knight is plainly mad.",
+    options:[
+      {label:"Enshrine it; declare miracles.",effect:{stability:+20,influence:+25,relations:-10}},
+      {label:"Test it as a relic.",effect:{influence:+5}},
+      {label:"Discreetly discard it.",effect:{stability:-3,influence:-5}},
+    ]});
+  E({id:"med_mongol_envoy",era:"medieval",weight:2,title:"A Khan's Envoy",
+    quote:"A horseman appears at your gate. He has ridden two thousand miles. He demands submission.",
+    options:[
+      {label:"Submit; pay tribute.",effect:{treasury:-150,stability:-5,influence:-15}},
+      {label:"Execute the envoys.",effect:{manpower:-12,treasury:-300,stability:-25,influence:+15}},
+      {label:"Negotiate; offer a daughter.",effect:{treasury:-80,influence:-5,relations:+10}},
+    ]});
+  E({id:"med_three_estates",era:"medieval",weight:3,title:"The Three Estates Petition",
+    quote:"Clergy, nobles, commoners. Three estates, three demands, three impossible-to-please petitions.",
+    options:[
+      {label:"Favour the clergy.",effect:{influence:+10,relations:+5,treasury:-30}},
+      {label:"Favour the nobles.",effect:{manpower:+4,stability:-3,treasury:-20}},
+      {label:"Favour the commoners.",effect:{stability:+10,influence:-5,manpower:+2}},
+      {label:"Tax all three.",effect:{treasury:+80,stability:-15}},
+    ]});
+  E({id:"med_alchemist",era:"medieval",weight:3,title:"An Alchemist's Promise",
+    quote:"He claims to have transmuted lead to gold. He requests a workshop, materials, and patronage.",
+    options:[
+      {label:"Patronise him generously.",effect:{treasury:-100,research:+10,influence:+5}},
+      {label:"Lock him in a tower until he succeeds.",effect:{treasury:-30,research:+3}},
+      {label:"Burn him as a fraud.",effect:{stability:+3,research:-5}},
+    ]});
+  /* ============ RENAISSANCE DEEP ============ */
+  E({id:"ren_columbus",era:"renaissance",weight:3,title:"A Sailor's Proposal",
+    quote:"A Genoese with a map insists he can reach the Indies by sailing west. The cosmographers say he has miscalculated by half.",
+    options:[
+      {label:"Fund the voyage.",effect:{treasury:-120,research:+15,influence:+20}},
+      {label:"Send him to a rival court.",effect:{relations:-10,influence:-5}},
+      {label:"Mock him in public.",effect:{influence:-10,research:-10}},
+    ]});
+  E({id:"ren_machiavelli",era:"renaissance",weight:2,title:"A Manuscript Arrives",
+    quote:"A small book, dedicated to you, titled simply The Prince. It is, to put it mildly, frank.",
+    options:[
+      {label:"Read; apply the lessons.",effect:{influence:+15,stability:+5,relations:-10}},
+      {label:"Reward the author.",effect:{treasury:-20,influence:+10,research:+10}},
+      {label:"Have the book burned.",effect:{stability:+3,influence:-15,research:-15}},
+    ]});
+  E({id:"ren_st_bartholomew",era:"renaissance",weight:2,title:"A Religious Massacre",
+    quote:"A wedding feast has become a slaughter. Three thousand of the wrong faith dead by morning. The court awaits your statement.",
+    options:[
+      {label:"Praise the action.",effect:{stability:+5,influence:+10,relations:-30}},
+      {label:"Condemn it. Punish perpetrators.",effect:{stability:+8,influence:+10,relations:+15}},
+      {label:"Stay silent.",effect:{stability:-5,influence:-15,relations:-10}},
+    ]});
+  E({id:"ren_drake_treasure",era:"renaissance",weight:3,title:"A Privateer Returns Heavy",
+    quote:"Your privateer returns with holds full of foreign gold. The targeted nation is furious. He kneels for a knighthood.",
+    options:[
+      {label:"Knight him publicly.",effect:{treasury:+200,influence:+15,relations:-30}},
+      {label:"Accept the treasure; deny knowing him.",effect:{treasury:+200,relations:-10,influence:-10}},
+      {label:"Return the treasure; hang the privateer.",effect:{treasury:-50,relations:+25,influence:+5}},
+    ]});
+  E({id:"ren_tulip_mania",era:"renaissance",weight:3,title:"Tulip Mania",
+    quote:"A single tulip bulb is selling for the price of a house. Your treasury experts are alarmed; the speculators, ecstatic.",
+    options:[
+      {label:"Ban speculation.",effect:{treasury:-30,stability:+5,trade:-10}},
+      {label:"Tax it heavily.",effect:{treasury:+80,stability:-3}},
+      {label:"Speculate yourself.",effect:{treasury:+150,stability:-15}},
+      {label:"Let the market resolve.",effect:{stability:-10,trade:-15}},
+    ]});
+  E({id:"ren_indulgence",era:"renaissance",weight:3,title:"Indulgences for Sale",
+    quote:"Papal agents offer absolution for cash. Your reformers are scandalised; your treasury could use the cut.",
+    options:[
+      {label:"Permit; take a percentage.",effect:{treasury:+80,influence:+5,relations:-10}},
+      {label:"Forbid in your realm.",effect:{stability:+5,influence:+10,relations:-15}},
+      {label:"Buy a personal indulgence yourself.",effect:{treasury:-50,influence:-5,stability:+3}},
+    ]});
+  E({id:"ren_dutch_revolt",era:"renaissance",weight:3,title:"The Beggars Revolt",
+    quote:"Your Dutch provinces have raised the orange flag. They sing psalms while killing your governors.",
+    options:[
+      {label:"Send the Duke of Alba.",effect:{manpower:-6,treasury:-150,stability:+5,relations:-15}},
+      {label:"Negotiate religious freedom.",effect:{stability:+15,influence:-10,relations:+10}},
+      {label:"Grant independence to keep the south.",effect:{stability:-5,influence:-10,treasury:-80}},
+    ]});
+  E({id:"ren_inquisitor_arrives",era:"renaissance",weight:3,title:"The Inquisitor Arrives",
+    quote:"Robed, hooded, with the authority of Rome. He has a list. Your courtiers have suddenly remembered urgent business elsewhere.",
+    options:[
+      {label:"Cooperate fully.",effect:{stability:+5,influence:+10,relations:-15,research:-10}},
+      {label:"Protect the accused.",effect:{stability:-5,influence:-10,relations:+10,research:+5}},
+      {label:"Quietly assassinate him.",effect:{stability:+3,influence:-15,relations:-25}},
+    ]});
+  E({id:"ren_print_pamphlet",era:"renaissance",weight:4,title:"A Seditious Pamphlet",
+    quote:"From the new presses. A list of your crimes — half invented, the other half embarrassingly accurate.",
+    options:[
+      {label:"Find and burn every copy.",effect:{stability:+3,influence:-5,treasury:-30}},
+      {label:"Print a counter-pamphlet.",effect:{treasury:-20,influence:+8}},
+      {label:"Ignore it. The press is many.",effect:{stability:-5}},
+      {label:"Find and hang the printer.",effect:{stability:+5,influence:-10,relations:-5}},
+    ]});
+  E({id:"ren_armada",era:"renaissance",weight:2,title:"A Great Armada",
+    quote:"Your fleet, the largest ever assembled, sails to invade a rival. Storms gather on the horizon.",
+    options:[
+      {label:"Press on regardless.",effect:{manpower:-8,treasury:-200,influence:+15,relations:-20}},
+      {label:"Wait for better weather.",effect:{treasury:-40}},
+      {label:"Abandon the invasion.",effect:{treasury:-40,influence:-15,relations:+5}},
+    ]});
+  E({id:"ren_potato",era:"renaissance",weight:2,title:"A New Crop",
+    quote:"From the Andes. A root vegetable that grows in poor soil and feeds a peasant family for months.",
+    options:[
+      {label:"Mandate its cultivation.",effect:{food:+40,pop:+5,stability:+10}},
+      {label:"Encourage gradually.",effect:{food:+20,pop:+2}},
+      {label:"Suspect it as devil's food.",effect:{stability:-3,food:-5}},
+    ]});
+  /* ============ INDUSTRIAL DEEP ============ */
+  E({id:"ind_railway_strike",era:"industrial",weight:4,title:"The Pullman Strike",
+    quote:"Rail workers nationwide have struck. Mail does not move. Troops are arriving.",
+    options:[
+      {label:"Use federal troops.",effect:{stability:+5,relations:-10,manpower:-2}},
+      {label:"Negotiate with the union.",effect:{stability:+10,treasury:-50}},
+      {label:"Wait it out.",effect:{stability:-10,trade:-15}},
+    ]});
+  E({id:"ind_anarchist",era:"industrial",weight:3,title:"An Anarchist's Bomb",
+    quote:"A bomb in the opera house. The royal box was the target. Six are dead, including your cousin.",
+    options:[
+      {label:"Crackdown on radicals.",effect:{stability:+5,influence:+5,relations:-15}},
+      {label:"Public mourning; reforms.",effect:{stability:+10,influence:+10,treasury:-40}},
+      {label:"Revenge in kind.",effect:{stability:+3,influence:-10,relations:-20}},
+    ]});
+  E({id:"ind_telegraphy_first",era:"industrial",weight:3,title:"The First Transatlantic Cable",
+    quote:"A copper line, three thousand miles long, beneath the sea. Messages now cross in minutes.",
+    options:[
+      {label:"State-owned cable network.",effect:{treasury:-200,research:+25,influence:+15,trade:+15}},
+      {label:"License private operators.",effect:{treasury:+80,trade:+10,influence:+5}},
+      {label:"Refuse to use it.",effect:{influence:-10,trade:-5,research:-10}},
+    ]});
+  E({id:"ind_zulu_war",era:"industrial",weight:3,title:"A Native Power Resists",
+    quote:"A spear-armed native army has destroyed your column. The papers demand revenge.",
+    options:[
+      {label:"Send an overwhelming force.",effect:{manpower:-4,treasury:-100,influence:+10,relations:-15}},
+      {label:"Negotiate.",effect:{treasury:-50,influence:-5,relations:+10}},
+      {label:"Withdraw from the region.",effect:{treasury:-30,influence:-15}},
+    ]});
+  E({id:"ind_grand_tour",era:"industrial",weight:2,title:"The Grand Tour",
+    quote:"Your heir requests a Grand Tour of the European capitals — galleries, ballrooms, perhaps a bordello or two.",
+    options:[
+      {label:"Fund lavishly.",effect:{treasury:-100,influence:+10,relations:+15}},
+      {label:"Modest tour.",effect:{treasury:-30,influence:+5}},
+      {label:"Send him to a military academy instead.",effect:{manpower:+2,influence:-3}},
+    ]});
+  E({id:"ind_first_aviator",era:"industrial",weight:2,title:"A Man Flies",
+    quote:"A pair of brothers from Ohio have remained airborne for twelve seconds. The world is sceptical.",
+    options:[
+      {label:"Fund a national aviation programme.",effect:{treasury:-200,research:+35,influence:+15}},
+      {label:"Modest investment.",effect:{treasury:-50,research:+15}},
+      {label:"Dismiss as a stunt.",effect:{research:-15}},
+    ]});
+  E({id:"ind_panama_dispute",era:"industrial",weight:2,title:"The Panama Question",
+    quote:"A French company has begun a canal in Central America. They have run out of money.",
+    options:[
+      {label:"Buy the project; complete it.",effect:{treasury:-300,trade:+30,influence:+20}},
+      {label:"Partner with the French.",effect:{treasury:-150,trade:+15,relations:+10}},
+      {label:"Decline.",effect:{influence:-10}},
+    ]});
+  E({id:"ind_jazz_age",era:"industrial",weight:3,title:"A New Music",
+    quote:"From smoky cellars, a new kind of music spreads. Jazz, they call it. The clergy disapproves.",
+    options:[
+      {label:"Embrace it. Patronise the artists.",effect:{influence:+15,stability:+5,relations:+10}},
+      {label:"Tolerate it.",effect:{influence:+5}},
+      {label:"Ban its public performance.",effect:{stability:+3,influence:-10}},
+    ]});
+  E({id:"ind_great_war_brink",era:"industrial",weight:4,title:"An Archduke is Shot",
+    quote:"In a Balkan city, a heir-apparent has been assassinated. Your generals open their war plans.",
+    options:[
+      {label:"Mobilise immediately.",effect:{manpower:+10,treasury:-150,relations:-30,influence:+10}},
+      {label:"Diplomatic crisis management.",effect:{treasury:-30,influence:+10,relations:+5}},
+      {label:"Stay out; let others fight.",effect:{stability:+5,relations:-10,influence:-15}},
+    ]});
+  E({id:"ind_factory_collapse",era:"industrial",weight:3,title:"A Factory Collapses",
+    quote:"Cheap construction. Hundreds dead. The owners want a quiet settlement.",
+    options:[
+      {label:"Prosecute the owners.",effect:{stability:+10,influence:+10,trade:-10}},
+      {label:"Mandate factory inspections.",effect:{stability:+8,treasury:-30,influence:+5}},
+      {label:"Accept the settlement.",effect:{treasury:+30,stability:-10,influence:-10}},
+    ]});
+  /* ============ WW DEEP ============ */
+  E({id:"ww_lendlease",era:"worldwars",weight:3,title:"A Lend-Lease Offer",
+    quote:"A powerful, distant ally offers material in exchange for bases and IOUs.",
+    options:[
+      {label:"Accept enthusiastically.",effect:{treasury:+200,manpower:+4,relations:+25,influence:-5}},
+      {label:"Negotiate terms.",effect:{treasury:+100,relations:+10}},
+      {label:"Refuse — preserve sovereignty.",effect:{influence:+5,relations:-15,manpower:-2}},
+    ]});
+  E({id:"ww_pearl_harbor",era:"worldwars",weight:3,title:"A Surprise Attack",
+    quote:"At dawn on a Sunday, your fleet was bombed at its anchorage. Three thousand dead.",
+    options:[
+      {label:"Declare war immediately.",effect:{manpower:+8,treasury:-100,influence:+15,relations:-50}},
+      {label:"Demand reparations first.",effect:{treasury:+100,relations:-30}},
+      {label:"Mobilise quietly; build forces.",effect:{manpower:+4,treasury:-50,influence:+5}},
+    ]});
+  E({id:"ww_oilfield",era:"worldwars",weight:3,title:"An Oil Field Captured",
+    quote:"Your forces have taken the enemy's main petroleum source. The wells, however, are sabotaged.",
+    options:[
+      {label:"Crash repair programme.",effect:{treasury:-150,research:+10,trade:+20}},
+      {label:"Slow methodical repair.",effect:{treasury:-60,trade:+10}},
+      {label:"Burn what remains; deny the enemy.",effect:{stability:+3,relations:-15}},
+    ]});
+  E({id:"ww_resistance_betrayed",era:"worldwars",weight:3,title:"The Resistance is Betrayed",
+    quote:"Your underground network in occupied territory has been rolled up. Names extracted under torture.",
+    options:[
+      {label:"Mount a rescue operation.",effect:{manpower:-4,treasury:-80,influence:+10,relations:+5}},
+      {label:"Cut the network loose.",effect:{influence:-5,research:-5}},
+      {label:"Send replacements.",effect:{manpower:-2,treasury:-40,influence:+5,research:+5}},
+    ]});
+  E({id:"ww_pow_question",era:"worldwars",weight:3,title:"Prisoners of War",
+    quote:"You hold a hundred thousand prisoners. They eat. They work. They wait.",
+    options:[
+      {label:"Geneva Convention standards.",effect:{treasury:-80,influence:+10,relations:+15}},
+      {label:"Forced labour.",effect:{treasury:+60,manpower:+2,relations:-25,influence:-10}},
+      {label:"Exchange them for yours.",effect:{manpower:+5,relations:+10}},
+    ]});
+  E({id:"ww_radar_breakthrough",era:"worldwars",weight:2,title:"A Radar Breakthrough",
+    quote:"A new wavelength. Targets visible at twice the previous range. Your air marshal is jubilant.",
+    options:[
+      {label:"Roll out to all squadrons.",effect:{treasury:-100,research:+25,influence:+10}},
+      {label:"Limited deployment for surprise.",effect:{treasury:-30,research:+10}},
+      {label:"Keep it secret.",effect:{research:+15,influence:+5}},
+    ]});
+  E({id:"ww_special_weapons",era:"worldwars",weight:2,title:"Special Weapons Programme",
+    quote:"Chemical, biological, atomic — the scientists offer many paths. Each carries moral, strategic, and financial cost.",
+    options:[
+      {label:"Atomic priority.",effect:{treasury:-300,research:+50,influence:+15,relations:-10}},
+      {label:"Chemical priority.",effect:{treasury:-100,research:+20,relations:-20}},
+      {label:"None — focus on conventional.",effect:{manpower:+4,treasury:+30,research:-10}},
+    ]});
+  E({id:"ww_carrier_battle",era:"worldwars",weight:2,title:"A Carrier Battle",
+    quote:"Two opposing fleets have launched at first light. The fate of an ocean turns on one morning.",
+    options:[
+      {label:"Press the attack.",effect:{manpower:-4,treasury:-80,influence:+15}},
+      {label:"Cautious withdrawal.",effect:{manpower:-1,treasury:-20,influence:-5}},
+      {label:"All-or-nothing assault.",effect:{manpower:-8,influence:+20,treasury:-150}},
+    ]});
+  E({id:"ww_blockade_runner",era:"worldwars",weight:3,title:"A Blockade Runner",
+    quote:"A merchant captain offers, for a price, to run weapons through the enemy blockade.",
+    options:[
+      {label:"Pay him handsomely.",effect:{treasury:-80,manpower:+2,relations:-5}},
+      {label:"Pay standard rates.",effect:{treasury:-30,manpower:+1}},
+      {label:"Refuse; rely on convoys.",effect:{trade:-10,manpower:-1}},
+    ]});
+  E({id:"ww_volunteer_division",era:"worldwars",weight:3,title:"A Volunteer Division Forms",
+    quote:"Veterans, idealists, and the unemployed have formed a volunteer division to fight for your cause abroad.",
+    options:[
+      {label:"Equip and deploy them.",effect:{manpower:+4,treasury:-60,influence:+10,relations:+5}},
+      {label:"Tolerate; do not endorse.",effect:{manpower:+2,relations:-5}},
+      {label:"Forbid.",effect:{stability:+3,manpower:-2,influence:-5}},
+    ]});
+  /* ============ COLD WAR DEEP ============ */
+  E({id:"cw_dissident_emigration",era:"coldwar",weight:3,title:"Mass Emigration Application",
+    quote:"Twenty thousand citizens have applied to leave. The reasons are obvious. The response is not.",
+    options:[
+      {label:"Approve all.",effect:{stability:+5,pop:-3,influence:+10,relations:+15}},
+      {label:"Approve selectively.",effect:{stability:+3,influence:+5}},
+      {label:"Refuse; arrest applicants.",effect:{stability:+3,influence:-15,relations:-20}},
+    ]});
+  E({id:"cw_arms_negotiations",era:"coldwar",weight:4,title:"Arms Negotiations in Geneva",
+    quote:"Months of communiqués. Marathon nights. Each side trying to limit what the other has more of.",
+    options:[
+      {label:"Push for sweeping reductions.",effect:{treasury:+100,influence:+15,relations:+25}},
+      {label:"Hold firm on key systems.",effect:{influence:+10,relations:+5}},
+      {label:"Walk out.",effect:{relations:-20,manpower:+4,treasury:-80}},
+    ]});
+  E({id:"cw_proxy_overthrow",era:"coldwar",weight:3,title:"A Proxy Coup Opportunity",
+    quote:"In a small distant nation, the elected leader has nationalised your companies. The CIA — sorry, your intelligence services — has options.",
+    options:[
+      {label:"Authorise the coup.",effect:{treasury:+100,influence:+5,relations:-25,stability:-5}},
+      {label:"Diplomatic and economic pressure.",effect:{trade:-10,influence:+5}},
+      {label:"Accept the nationalisation.",effect:{treasury:-100,influence:-10,relations:+10}},
+    ]});
+  E({id:"cw_satellite_launch",era:"coldwar",weight:3,title:"A Satellite Launch",
+    quote:"Your first satellite — communications, recon, or pure prestige.",
+    options:[
+      {label:"Reconnaissance.",effect:{treasury:-150,research:+25,influence:+10,relations:-5}},
+      {label:"Communications.",effect:{treasury:-150,research:+15,trade:+15}},
+      {label:"Prestige.",effect:{treasury:-150,research:+10,influence:+20}},
+    ]});
+  E({id:"cw_dissident_writer",era:"coldwar",weight:3,title:"A Banned Writer",
+    quote:"Her novel has been smuggled abroad. The Western press calls her the conscience of your country.",
+    options:[
+      {label:"Imprison her.",effect:{stability:+3,influence:-15,relations:-15}},
+      {label:"Exile her.",effect:{stability:+5,influence:-5,relations:-5}},
+      {label:"Allow her to be published.",effect:{stability:-5,influence:+15,relations:+15}},
+    ]});
+  E({id:"cw_eastern_uprising",era:"coldwar",weight:3,title:"An Uprising in the Bloc",
+    quote:"Workers, students, intellectuals. They have toppled the local party.",
+    options:[
+      {label:"Send tanks immediately.",effect:{stability:+5,manpower:-4,influence:-15,relations:-30}},
+      {label:"Negotiate; install moderates.",effect:{stability:+3,influence:+5}},
+      {label:"Let it run; observe.",effect:{stability:-10,influence:+10,relations:+10}},
+    ]});
+  E({id:"cw_third_world",era:"coldwar",weight:3,title:"A Liberation Movement Requests Aid",
+    quote:"A guerrilla movement seeks weapons. Their politics align with yours. Their methods, sometimes less so.",
+    options:[
+      {label:"Full support.",effect:{treasury:-100,influence:+10,relations:-20}},
+      {label:"Token support.",effect:{treasury:-30,influence:+3}},
+      {label:"Refuse.",effect:{influence:-5}},
+    ]});
+  E({id:"cw_oil_crisis",era:"coldwar",weight:4,title:"The Oil Crisis Bites",
+    quote:"Petrol queues, blackouts, rationing. The producers are squeezing.",
+    options:[
+      {label:"Strategic petroleum reserve.",effect:{treasury:-200,research:+10}},
+      {label:"Subsidise consumers.",effect:{treasury:-150,stability:+10}},
+      {label:"Energy independence drive.",effect:{treasury:-300,research:+25,influence:+10}},
+      {label:"Sanction or invade a producer.",effect:{manpower:-4,treasury:-100,relations:-25}},
+    ]});
+  E({id:"cw_intelligence_swap",era:"coldwar",weight:3,title:"A Spy Exchange",
+    quote:"A bridge. Both sides waiting. One of yours, one of theirs.",
+    options:[
+      {label:"Trade.",effect:{relations:+10,research:+5,influence:+5}},
+      {label:"Refuse the exchange.",effect:{influence:-5,relations:-10}},
+      {label:"Trade plus extras.",effect:{relations:+20,treasury:-50,influence:+10}},
+    ]});
+  E({id:"cw_apollo_landing",era:"coldwar",weight:2,title:"A Lunar Landing",
+    quote:"A boot, a flag, a footprint. The other side is hours behind — or you are.",
+    options:[
+      {label:"Triumphalist propaganda.",effect:{influence:+25,stability:+15,relations:-5}},
+      {label:"Frame as humanity's victory.",effect:{influence:+20,relations:+15}},
+      {label:"Plant a permanent base immediately.",effect:{treasury:-300,influence:+15,research:+20}},
+    ]});
+  /* ============ MODERN DEEP ============ */
+  E({id:"mod_climate_protests",era:"modern",weight:4,title:"Climate Protests Block the Capital",
+    quote:"Thousands. Schoolchildren first. Then everyone else.",
+    options:[
+      {label:"Emergency climate law.",effect:{stability:+10,treasury:-100,influence:+15,relations:+15}},
+      {label:"Symbolic measures.",effect:{stability:+5,treasury:-30,influence:+5}},
+      {label:"Police dispersal.",effect:{stability:-10,influence:-15,relations:-10}},
+    ]});
+  E({id:"mod_sanctions_war",era:"modern",weight:3,title:"Sanctions, Counter-Sanctions",
+    quote:"Your asset freezes have triggered theirs. Your banks are calling. Their trade is rerouting.",
+    options:[
+      {label:"Double down.",effect:{trade:-25,treasury:-100,influence:+15,relations:-30}},
+      {label:"Negotiate de-escalation.",effect:{trade:-5,relations:+10}},
+      {label:"Lift sanctions unilaterally.",effect:{trade:+15,influence:-15,relations:+15}},
+    ]});
+  E({id:"mod_crypto_crash",era:"modern",weight:3,title:"A Cryptocurrency Crash",
+    quote:"Three trillion of paper wealth — gone over a weekend. Several of your banks were exposed.",
+    options:[
+      {label:"Bail out the banks.",effect:{treasury:-300,stability:+5,trade:-5}},
+      {label:"Let the market clear.",effect:{stability:-15,trade:-20}},
+      {label:"Regulate crypto sharply.",effect:{stability:+5,trade:-10,influence:+5}},
+    ]});
+  E({id:"mod_pandemic_v2",era:"modern",weight:3,title:"A Novel Pathogen",
+    quote:"Spillover from a wet market. Hospitalisations doubling weekly.",
+    options:[
+      {label:"Hard lockdown; mass test.",effect:{treasury:-300,stability:-15,pop:-2,influence:+10}},
+      {label:"Live with it.",effect:{stability:-5,pop:-8,treasury:-100,influence:-5}},
+      {label:"Crash vaccine programme.",effect:{treasury:-200,research:+40,influence:+15,relations:+10}},
+    ]});
+  E({id:"mod_election_meddling",era:"modern",weight:3,title:"Foreign Election Meddling",
+    quote:"Bot farms, dark ads, leaked emails. The pattern is unmistakable.",
+    options:[
+      {label:"Public attribution; sanctions.",effect:{stability:-5,influence:+15,relations:-25}},
+      {label:"Covert retaliation.",effect:{treasury:-50,influence:+10,relations:-15}},
+      {label:"Stay silent.",effect:{stability:+5,influence:-10}},
+    ]});
+  E({id:"mod_ai_misuse",era:"modern",weight:3,title:"An AI Tool Misuses Citizens' Data",
+    quote:"A leak reveals your AI assistant has been profiling minorities.",
+    options:[
+      {label:"Independent inquiry.",effect:{influence:-5,stability:+5,research:+5}},
+      {label:"Quiet patch.",effect:{stability:+3,influence:-10}},
+      {label:"Defend the system.",effect:{stability:-10,influence:-15,relations:-5}},
+    ]});
+  E({id:"mod_great_power_summit",era:"modern",weight:3,title:"A Great Power Summit",
+    quote:"All five at the table. Sherpas exhausted. Photo ops constant.",
+    options:[
+      {label:"Sign a strategic stability pact.",effect:{relations:+25,influence:+15,treasury:-30}},
+      {label:"Use it to isolate one rival.",effect:{relations:+5,influence:+10}},
+      {label:"Walk out for drama.",effect:{stability:+5,influence:-10,relations:-20}},
+    ]});
+  E({id:"mod_chip_war",era:"modern",weight:3,title:"A Chip War",
+    quote:"Your access to advanced chips is being throttled. Your fabs are years behind frontier.",
+    options:[
+      {label:"Subsidise a domestic foundry.",effect:{treasury:-400,research:+30,influence:+15}},
+      {label:"Acquire foreign foundry by leverage.",effect:{treasury:-200,research:+15,relations:-15}},
+      {label:"Steal designs.",effect:{influence:-10,research:+25,relations:-25}},
+    ]});
+  E({id:"mod_megaproject",era:"modern",weight:3,title:"A Belt-and-Road Offer",
+    quote:"A rising power offers infrastructure investment. Terms are generous. Sovereignty is encumbered.",
+    options:[
+      {label:"Accept.",effect:{treasury:+300,trade:+25,influence:-15,relations:+10}},
+      {label:"Counter-offer terms.",effect:{treasury:+100,trade:+10}},
+      {label:"Refuse.",effect:{relations:-10,trade:-5}},
+    ]});
+  E({id:"mod_alliance_demand",era:"modern",weight:3,title:"Allied Demand for Defence Spending",
+    quote:"Your allies want you to commit 2% of GDP. Your voters want you to commit 0%.",
+    options:[
+      {label:"Comply.",effect:{treasury:-200,manpower:+6,relations:+15}},
+      {label:"Partial increase.",effect:{treasury:-80,manpower:+3,relations:+5}},
+      {label:"Refuse.",effect:{relations:-20,treasury:+30}},
+    ]});
+  /* ============ FUTURE DEEP ============ */
+  E({id:"fut_first_uplift",era:"future",weight:2,title:"A Cognitive Uplift Drug",
+    quote:"Your biotech labs have produced a cognitive enhancer. Effects: +30 IQ for adults, possible side effects.",
+    options:[
+      {label:"Universal availability.",effect:{treasury:-400,research:+40,pop:+5,stability:-5}},
+      {label:"Restricted to scientists.",effect:{treasury:-100,research:+25}},
+      {label:"Ban as unethical.",effect:{stability:+5,research:-10}},
+    ]});
+  E({id:"fut_arctic_oil",era:"future",weight:3,title:"Arctic Oil Bonanza",
+    quote:"With the ice gone, vast oil reserves are accessible. Six nations claim the same waters.",
+    options:[
+      {label:"Aggressive claim with naval presence.",effect:{treasury:-100,manpower:-2,trade:+30,relations:-25}},
+      {label:"Negotiate multilateral treaty.",effect:{trade:+15,relations:+15}},
+      {label:"Leave the ice oil; transition to fusion.",effect:{research:+15,influence:+10,relations:+10}},
+    ]});
+  E({id:"fut_singularity_imminent",era:"future",weight:1,title:"The Singularity Approaches",
+    quote:"Your AGI lab director, voice steady: \"It will exceed human capability in all domains within six weeks.\"",
+    options:[
+      {label:"Push through to alignment.",effect:{research:+80,treasury:-400,influence:+30}},
+      {label:"Halt the project.",effect:{research:-50,stability:+15,influence:+10}},
+      {label:"Open-source the model.",effect:{research:+40,influence:+10,relations:+15,stability:-10}},
+    ]});
+  E({id:"fut_mars_oxygen",era:"future",weight:2,title:"Mars Oxygen Plant Online",
+    quote:"A pilot atmospheric processor produces breathable air at scale.",
+    options:[
+      {label:"Accelerate to ten plants.",effect:{treasury:-400,research:+30,pop:+1,influence:+15}},
+      {label:"Continue at current scale.",effect:{treasury:-50,research:+10}},
+      {label:"Pause; engineering review.",effect:{research:+5}},
+    ]});
+  E({id:"fut_cyber_pearl",era:"future",weight:2,title:"A Cyber Pearl Harbor",
+    quote:"Power, water, finance — all down across a major city.",
+    options:[
+      {label:"Kinetic retaliation.",effect:{manpower:-2,treasury:-200,influence:+10,relations:-30}},
+      {label:"Cyber retaliation.",effect:{treasury:-100,research:+15,influence:+5,relations:-10}},
+      {label:"Defensive investment only.",effect:{treasury:-150,research:+15}},
+    ]});
+  E({id:"fut_orbital_treaty",era:"future",weight:3,title:"An Orbital Treaty",
+    quote:"Other powers propose banning orbital weapons.",
+    options:[
+      {label:"Sign.",effect:{relations:+25,influence:+15}},
+      {label:"Sign with carve-outs.",effect:{relations:+10,influence:+5}},
+      {label:"Refuse.",effect:{relations:-25,influence:-10,manpower:+2}},
+    ]});
+  E({id:"fut_climate_thaw",era:"future",weight:3,title:"The Permafrost Releases",
+    quote:"Methane plumes. Anthrax in old graves. Buildings sinking. Russian taiga, but also yours.",
+    options:[
+      {label:"Climate engineering at scale.",effect:{treasury:-400,research:+25,relations:-10}},
+      {label:"Adapt; relocate populations.",effect:{treasury:-300,pop:-5,stability:+5}},
+      {label:"Accept the changes.",effect:{stability:-15,pop:-8}},
+    ]});
+  E({id:"fut_post_scarcity",era:"future",weight:2,title:"Post-Scarcity Approaches",
+    quote:"Fusion energy plus AI labour plus automated factories. The economy is being rewritten.",
+    options:[
+      {label:"Universal basic income.",effect:{treasury:-400,stability:+25,pop:+10,influence:+15}},
+      {label:"Gradual transition.",effect:{treasury:-100,stability:+10,pop:+3}},
+      {label:"Preserve work requirements.",effect:{stability:-15,influence:-10}},
+    ]});
+  E({id:"fut_alien_signal",era:"future",weight:1,title:"They Have Replied",
+    quote:"The probe is twelve years out. The signal is now daily.",
+    options:[
+      {label:"Global preparation.",effect:{treasury:-500,research:+60,influence:+30,relations:+25}},
+      {label:"National advantage; secret.",effect:{research:+30,influence:+15,relations:-15}},
+      {label:"Suppress.",effect:{stability:+5,influence:-25}},
+    ]});
+  E({id:"fut_brain_upload",era:"future",weight:1,title:"First Successful Brain Upload",
+    quote:"A volunteer's consciousness has been mirrored into substrate. He — it — both — is talking to the team.",
+    options:[
+      {label:"Public programme.",effect:{treasury:-400,research:+50,pop:+5,influence:+20,stability:-10}},
+      {label:"Elite programme.",effect:{treasury:-150,research:+25,influence:+10}},
+      {label:"Outlaw the technology.",effect:{stability:+15,research:-20}},
+    ]});
+})();
+
+
+/* =================================================================
+   BATTLE SYSTEM — tactical resolver with named units, dice, log
+   ================================================================= */
+W.battle = {
+  /* roll a tactical battle, return result + log */
+  resolve(attUnits, defUnits, ctx){
+    ctx = ctx||{};
+    const log = [];
+    const A = attUnits.map(u=>({...u, hp:u.hp, base:u}));
+    const D = defUnits.map(u=>({...u, hp:u.hp, base:u}));
+    let round = 0;
+    const maxRounds = 8;
+    log.push({t:"turn",text:`Battle commenced. Attacker fields ${A.length} units; defender, ${D.length}.`});
+    if(ctx.terrain) log.push({t:"info",text:`Terrain: ${ctx.terrain}.`});
+    if(ctx.fort) log.push({t:"info",text:`Fortification level: ${ctx.fort}.`});
+    while(round < maxRounds && A.some(u=>u.hp>0) && D.some(u=>u.hp>0)){
+      round++;
+      log.push({t:"turn",text:`-- Round ${round} --`});
+      /* both sides exchange salvoes */
+      const sides = [[A,D,"Attacker"],[D,A,"Defender"]];
+      for(const [own,opp,name] of sides){
+        const live = own.filter(u=>u.hp>0);
+        const opl = opp.filter(u=>u.hp>0);
+        if(!live.length||!opl.length)continue;
+        for(const att of live){
+          const tgt = opl[Math.floor(Math.random()*opl.length)];
+          if(!tgt||tgt.hp<=0)continue;
+          const roll = 0.6+Math.random()*0.8;
+          const terrainMul = ctx.terrain==="hills"?1.1:ctx.terrain==="mountains"?1.2:ctx.terrain==="forest"?1.05:1;
+          const fortMul = (name==="Defender"&&ctx.fort)?(1+ctx.fort*0.3):1;
+          const dmg = Math.max(1, Math.round(att.atk * roll * terrainMul * (name==="Defender"?fortMul:1) - tgt.def*0.5));
+          tgt.hp -= dmg;
+          const crit = roll>1.2;
+          log.push({t:crit?"crit":"hit",text:`${name} ${att.name} ${crit?"critically ":""}strikes ${tgt.name}: ${dmg} dmg (HP ${Math.max(0,tgt.hp)}/${tgt.base.hp}).`});
+          if(tgt.hp<=0) log.push({t:"hit",text:`${tgt.name} is destroyed.`});
+        }
+      }
+    }
+    const aliveA = A.filter(u=>u.hp>0).length;
+    const aliveD = D.filter(u=>u.hp>0).length;
+    const win = aliveA>aliveD ? "attacker" : (aliveD>aliveA?"defender":"draw");
+    log.push({t:"win",text:`Battle ends. Winner: ${win}. Attacker survivors: ${aliveA}. Defender survivors: ${aliveD}.`});
+    return {win, log, attLosses:A.filter(u=>u.hp<=0).length, defLosses:D.filter(u=>u.hp<=0).length, A, D};
+  },
+  /* open the battle modal with a generated result */
+  open(attUnits, defUnits, ctx){
+    const res = W.battle.resolve(attUnits, defUnits, ctx);
+    const sideHTML = (units, cls, label) => `<div class="battle-side ${cls}">
+      <div class="who">${label}</div>
+      <div class="units">${units.map(u=>`<div class="unit"><span>${W.util.esc(u.name)}</span><span class="${u.hp<=0?'lost':''}">${u.hp<=0?'fallen':'HP '+u.hp+'/'+u.base.hp}</span></div>`).join("")}</div>
+      <div class="roll">${units.filter(u=>u.hp>0).length}</div>
+    </div>`;
+    const logHTML = res.log.map(l=>`<div class="${l.t}">${W.util.esc(l.text)}</div>`).join("");
+    W.ui.openModal({
+      title:`Battle · ${res.win==="attacker"?"Victory":res.win==="defender"?"Defeat":"Stalemate"}`,
+      wide:true,
+      bodyHTML:`<div class="battle-screen">
+        ${sideHTML(res.A,"atk","ATTACKER")}
+        <div class="battle-vs">VS</div>
+        ${sideHTML(res.D,"def","DEFENDER")}
+      </div>
+      <div class="battle-log">${logHTML}</div>`,
+      footHTML:`<button class="btn-primary" onclick="W.ui.closeModal()">Continue</button>`,
+    });
+    return res;
+  },
+  /* demonstration: stage a battle between player's units and a random AI */
+  stageDemo(){
+    const G=W.GAME;
+    if(!G) return;
+    const myUnits = G.player.units.slice(0,4).map(u=>{
+      const ud = W.UNITS[u.id]; return {...ud, hp:ud.hp};
+    });
+    if(!myUnits.length){
+      const eraUnits = Object.values(W.UNITS).filter(u=>u.era===G.era).slice(0,4);
+      eraUnits.forEach(u=>myUnits.push({...u, hp:u.hp}));
+    }
+    const enemy = G.ai[0];
+    const enUnits = Object.values(W.UNITS).filter(u=>u.era===G.era).slice(0,4).map(u=>({...u, hp:u.hp}));
+    const ctx = {terrain:"plains", fort:0, defenderFaction:enemy.factionData.name};
+    W.battle.open(myUnits, enUnits, ctx);
+  },
+};
+
+/* =================================================================
+   ARMIES — moveable stacks on the strategic map
+   ================================================================= */
+W.armies = {
+  list(){ if(!W.GAME) return []; return W.GAME.armies||[]; },
+  ensure(){ if(W.GAME && !W.GAME.armies) W.GAME.armies = []; },
+  create(province, units){
+    W.armies.ensure();
+    const a = {id:W.util.uid(), faction:W.GAME.player.faction, province, units:units||[], moved:false};
+    W.GAME.armies.push(a);
+    W.engine.log(`Army raised at ${(W.PROVINCES[province]||{name:"—"}).name}.`,"info");
+    return a;
+  },
+  move(armyId, toProv){
+    const a = W.GAME.armies.find(x=>x.id===armyId); if(!a) return false;
+    if(a.moved){ W.toast.show({title:"Already moved",body:"Wait for next turn.",kind:"warn"}); return false; }
+    const fromP = W.PROVINCES[a.province], toP = W.PROVINCES[toProv];
+    if(!fromP||!toP) return false;
+    const d = Math.hypot(fromP.x-toP.x, fromP.y-toP.y);
+    if(d>200){ W.toast.show({title:"Too far",body:"Province out of range.",kind:"bad"}); return false; }
+    a.province = toProv;
+    a.moved = true;
+    /* contested? */
+    if(toP.owner !== W.GAME.player.faction){
+      W.engine.log(`Army enters contested province ${toP.name}.`,"warn");
+      /* trigger battle */
+      const myUnits = a.units.map(u=>{const ud=W.UNITS[u.id||u]; return {...ud,hp:ud.hp};});
+      const defUnits = Object.values(W.UNITS).filter(u=>u.era===W.GAME.era).slice(0,Math.min(3,Math.max(1,Math.floor(toP.pop/8)))).map(u=>({...u,hp:u.hp}));
+      const res = W.battle.open(myUnits, defUnits, {terrain:toP.terrain, fort:toP.capital?2:0});
+      if(res.win==="attacker"){
+        /* capture province */
+        const prevOwner = toP.owner;
+        W.GAME.ai.forEach(ai=>{ ai.provinces = ai.provinces.filter(pid=>pid!==toProv); });
+        toP.owner = W.GAME.player.faction;
+        W.GAME.player.provinces.push(toProv);
+        W.engine.log(`Captured ${toP.name} from ${prevOwner}!`,"good");
+        W.toast.show({title:"Province Captured",body:toP.name,kind:"good"});
+      }
+    }
+    W.ui.refreshAll();
+    return true;
+  },
+  resetMoves(){ if(W.GAME&&W.GAME.armies) W.GAME.armies.forEach(a=>a.moved=false); },
+};
+
+/* =================================================================
+   DYNASTY / HEIRS — multi-generation tracking
+   ================================================================= */
+W.dynasty = {
+  init(){
+    if(!W.GAME) return;
+    if(W.GAME.dynasty) return;
+    W.GAME.dynasty = {
+      name: W.util.pick(W.DYNASTIES.filter(d=>d.era===W.GAME.era))||W.util.pick(W.DYNASTIES),
+      generations:[{
+        leader: W.GAME.player.leaderData.name||"First Sovereign",
+        age: 30, ascended: W.GAME.turn, heir: W.dynasty.makeHeir(),
+        events:[],
+      }],
+    };
+    W.engine.log(`Dynasty of ${W.GAME.dynasty.name.name} established.`,"info");
+  },
+  makeHeir(){
+    const trait = W.util.pick(Object.keys(W.TRAITS));
+    const names = ["Aelius","Marcus","Octavia","Theodora","Hugo","Bohemund","Catarina","Henri","Otto","Gisela","Isabella","Leon","Tamar","Yusuf","Soraya","Olaf"];
+    return { name:W.util.pick(names), age:0, trait };
+  },
+  ageDynasty(){
+    if(!W.GAME || !W.GAME.dynasty) return;
+    const gen = W.GAME.dynasty.generations[W.GAME.dynasty.generations.length-1];
+    gen.age = (gen.age||30) + 1;
+    if(gen.heir) gen.heir.age++;
+    /* death chance after 60 */
+    if(gen.age>60 && Math.random() < (gen.age-60)*0.02){
+      W.engine.log(`${gen.leader} has died of age. Heir ${gen.heir?gen.heir.name:"—"} ascends.`,"warn");
+      W.toast.show({title:"Dynasty",body:`${gen.leader} dies. ${gen.heir?gen.heir.name:"—"} ascends.`,kind:"warn"});
+      const next = { leader:gen.heir?gen.heir.name:"Regent", age:gen.heir?Math.max(18,gen.heir.age):20, ascended:W.GAME.turn, heir:W.dynasty.makeHeir(), events:[] };
+      W.GAME.dynasty.generations.push(next);
+      W.GAME.player.legacy += 50;
+      /* stability shock */
+      W.GAME.player.stability = W.util.clamp(W.GAME.player.stability - 8, 0, 100);
+    }
+  },
+};
+
+/* =================================================================
+   ESPIONAGE — covert ops against AI
+   ================================================================= */
+W.spy = {
+  missions:[
+    {id:"steal_tech",name:"Steal Technology",cost:80,desc:"+1 random tech from target.",chance:0.5},
+    {id:"sabotage",name:"Sabotage Building",cost:60,desc:"−1 random building.",chance:0.6},
+    {id:"poison_treasury",name:"Poison the Treasury",cost:50,desc:"−100 treasury from target.",chance:0.5},
+    {id:"assassinate",name:"Assassinate Leader",cost:200,desc:"−20% bonus for 10 turns.",chance:0.25},
+    {id:"foment_revolt",name:"Foment Revolt",cost:120,desc:"−25 stability for target.",chance:0.4},
+    {id:"intercept",name:"Intercept Dispatches",cost:30,desc:"View target's stats for 10 turns.",chance:0.8},
+  ],
+  run(targetFid, missionId){
+    const G=W.GAME, P=G.player;
+    const m = W.spy.missions.find(x=>x.id===missionId);
+    if(!m) return;
+    const target = G.ai.find(a=>a.faction===targetFid); if(!target) return;
+    if((P.resources.treasury||0)<m.cost){ W.toast.show({title:"Insufficient gold",body:`${m.name} costs ${m.cost}g.`,kind:"bad"}); return; }
+    P.resources.treasury -= m.cost;
+    const success = Math.random() < m.chance;
+    if(success){
+      switch(missionId){
+        case "steal_tech":{
+          const eraTechs = Object.values(W.TECHS).filter(t=>t.era===G.era && !P.techs[t.id]);
+          if(eraTechs.length){ const t = W.util.pick(eraTechs); P.techs[t.id]=true; W.engine.log(`Espionage: stole tech ${t.name} from ${target.factionData.name}.`,"good"); }
+          break;
+        }
+        case "sabotage":
+          target.resources.manpower = Math.max(0,(target.resources.manpower||0)-4);
+          W.engine.log(`Espionage: sabotaged ${target.factionData.name}.`,"good"); break;
+        case "poison_treasury":
+          target.resources.treasury = Math.max(0,(target.resources.treasury||0)-100);
+          W.engine.log(`Espionage: drained ${target.factionData.name}'s treasury.`,"good"); break;
+        case "assassinate":
+          target.stability = Math.max(0, target.stability-20);
+          W.engine.log(`Espionage: assassinated ${target.factionData.name}'s leader!`,"good"); break;
+        case "foment_revolt":
+          target.stability = Math.max(0, target.stability-25);
+          W.engine.log(`Espionage: revolt in ${target.factionData.name}.`,"good"); break;
+        case "intercept":
+          G.flags["intercept_"+targetFid] = G.turn+10;
+          W.engine.log(`Espionage: intercepting ${target.factionData.name}'s dispatches.`,"good"); break;
+      }
+      W.toast.show({title:"Mission Successful",body:m.name,kind:"good"});
+    } else {
+      target.relations[P.faction] = (target.relations[P.faction]||0) - 30;
+      P.relations[targetFid] = (P.relations[targetFid]||0) - 30;
+      W.engine.log(`Espionage failure! ${target.factionData.name} detected your operation.`,"bad");
+      W.toast.show({title:"Mission Failed",body:`Caught. Relations −30.`,kind:"bad"});
+    }
+    W.ui.refreshAll();
+  },
+};
+
+/* =================================================================
+   TRADE — bilateral deals
+   ================================================================= */
+W.trade = {
+  routes:[],
+  propose(targetFid, give, get){
+    const G=W.GAME, P=G.player;
+    const target = G.ai.find(a=>a.faction===targetFid); if(!target) return false;
+    const rel = P.relations[targetFid]||0;
+    const accept = rel >= -20 && Math.random() < (0.5 + rel*0.005);
+    if(!accept){ W.toast.show({title:"Trade Declined",body:`${target.factionData.name} refuses.`,kind:"warn"}); return false; }
+    W.trade.routes.push({with:targetFid, give, get, established:G.turn});
+    W.engine.log(`Trade agreement with ${target.factionData.name}.`,"good");
+    return true;
+  },
+  perTurn(){
+    if(!W.GAME) return;
+    const P = W.GAME.player;
+    W.trade.routes.forEach(r=>{
+      for(const k in (r.get||{})) P.resources[k] = (P.resources[k]||0) + r.get[k];
+      for(const k in (r.give||{})) P.resources[k] = Math.max(0,(P.resources[k]||0) - r.give[k]);
+    });
+  },
+};
+
+/* =================================================================
+   AUDIO — procedural beeps via WebAudio for feedback
+   ================================================================= */
+W.audio = {
+  ctx: null,
+  on: false,
+  init(){
+    if(W.audio.ctx) return;
+    try{ W.audio.ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ /* no audio */ }
+  },
+  beep(freq, dur, type){
+    if(!W.audio.on) return;
+    W.audio.init();
+    if(!W.audio.ctx) return;
+    const o = W.audio.ctx.createOscillator();
+    const g = W.audio.ctx.createGain();
+    o.type = type||"sine";
+    o.frequency.value = freq||440;
+    o.connect(g); g.connect(W.audio.ctx.destination);
+    g.gain.value = 0.05;
+    o.start();
+    o.stop(W.audio.ctx.currentTime + (dur||0.1));
+  },
+  success(){ W.audio.beep(660,0.08,"triangle"); setTimeout(()=>W.audio.beep(880,0.12,"triangle"),80); },
+  failure(){ W.audio.beep(220,0.18,"sawtooth"); },
+  click(){ W.audio.beep(440,0.04,"square"); },
+  turn(){ W.audio.beep(330,0.06,"sine"); setTimeout(()=>W.audio.beep(420,0.10,"sine"),60); },
+};
+
+
+/* =================================================================
+   ADDITIONAL PROVINCES — fill out each era to richer densities
+   ================================================================= */
+(function(){const P=(o)=>{W.PROVINCES[o.id]=o;};
+  /* === ANCIENT extra === */
+  P({id:"a_pergamum",name:"Pergamum",era:"ancient",owner:"persia",terrain:"hills",resource:"silver",pop:9,x:710,y:340});
+  P({id:"a_crete",name:"Crete",era:"ancient",owner:"athens",terrain:"coast",resource:"olive",pop:7,x:660,y:380});
+  P({id:"a_cyprus",name:"Cyprus",era:"ancient",owner:"persia",terrain:"coast",resource:"bronze",pop:6,x:720,y:380});
+  P({id:"a_iberia",name:"Iberian Coast",era:"ancient",owner:"carthage",terrain:"coast",resource:"silver",pop:8,x:410,y:360});
+  P({id:"a_dacia",name:"Dacia",era:"ancient",owner:"celts",terrain:"forest",resource:"gold",pop:7,x:600,y:280});
+  P({id:"a_armenia",name:"Armenia",era:"ancient",owner:"persia",terrain:"mountains",resource:"iron",pop:6,x:740,y:330});
+  P({id:"a_arabia",name:"Arabia Felix",era:"ancient",owner:"aksum",terrain:"desert",resource:"spices",pop:5,x:780,y:430});
+  P({id:"a_baetica",name:"Baetica",era:"ancient",owner:"carthage",terrain:"plains",resource:"olive",pop:9,x:420,y:380});
+  P({id:"a_pontus",name:"Pontus",era:"ancient",owner:"persia",terrain:"coast",resource:"iron",pop:8,x:700,y:330});
+  P({id:"a_palmyra",name:"Palmyra",era:"ancient",owner:"persia",terrain:"desert",resource:"spices",pop:7,x:750,y:390});
+  /* === MEDIEVAL extra === */
+  P({id:"m_milan",name:"Milan",era:"medieval",owner:"hre",terrain:"plains",resource:"iron",pop:14,x:530,y:310});
+  P({id:"m_venice",name:"Venice",era:"medieval",owner:"byzantium",terrain:"coast",resource:"silk",pop:18,x:550,y:310});
+  P({id:"m_naples",name:"Naples",era:"medieval",owner:"byzantium",terrain:"coast",resource:"olive",pop:14,x:560,y:340});
+  P({id:"m_jerusalem",name:"Jerusalem",era:"medieval",owner:"caliphate",terrain:"hills",resource:"relics",pop:10,x:740,y:390});
+  P({id:"m_cairo",name:"Cairo",era:"medieval",owner:"caliphate",terrain:"desert",resource:"grain",pop:30,x:710,y:420});
+  P({id:"m_cordoba",name:"Córdoba",era:"medieval",owner:"caliphate",terrain:"plains",resource:"silver",pop:24,x:430,y:360});
+  P({id:"m_dublin",name:"Dublin",era:"medieval",owner:"vikings",terrain:"coast",resource:"wood",pop:6,x:420,y:250});
+  P({id:"m_bohemia",name:"Bohemia",era:"medieval",owner:"hre",terrain:"hills",resource:"silver",pop:10,x:540,y:295});
+  P({id:"m_lithuania",name:"Lithuania",era:"medieval",owner:"rus",terrain:"forest",resource:"fur",pop:8,x:590,y:270});
+  P({id:"m_sicily",name:"Sicily",era:"medieval",owner:"caliphate",terrain:"coast",resource:"grain",pop:14,x:570,y:360});
+  P({id:"m_jerusalemA",name:"Acre",era:"medieval",owner:"caliphate",terrain:"coast",resource:"silk",pop:8,x:740,y:380});
+  P({id:"m_aragon",name:"Aragon",era:"medieval",owner:"castile",terrain:"hills",resource:"iron",pop:9,x:450,y:330});
+  /* === RENAISSANCE extra === */
+  P({id:"r_havana",name:"Havana",era:"renaissance",owner:"spain",terrain:"coast",resource:"sugar",pop:9,x:250,y:380});
+  P({id:"r_potosi",name:"Potosí",era:"renaissance",owner:"spain",terrain:"mountains",resource:"silver",pop:14,x:240,y:470});
+  P({id:"r_macau",name:"Macau",era:"renaissance",owner:"portugal",terrain:"coast",resource:"silk",pop:8,x:1080,y:400});
+  P({id:"r_goa",name:"Goa",era:"renaissance",owner:"portugal",terrain:"coast",resource:"spices",pop:10,x:870,y:430});
+  P({id:"r_capecolony",name:"Cape Colony",era:"renaissance",owner:"dutch",terrain:"plains",resource:"gold",pop:5,x:600,y:520});
+  P({id:"r_newamsterdam",name:"New Amsterdam",era:"renaissance",owner:"dutch",terrain:"coast",resource:"fur",pop:4,x:230,y:330});
+  P({id:"r_canada",name:"New France",era:"renaissance",owner:"bourbon",terrain:"forest",resource:"fur",pop:6,x:240,y:300});
+  P({id:"r_louisiana",name:"Louisiana",era:"renaissance",owner:"bourbon",terrain:"jungle",resource:"sugar",pop:8,x:210,y:370});
+  P({id:"r_quebec",name:"Quebec",era:"renaissance",owner:"bourbon",terrain:"forest",resource:"fur",pop:5,x:250,y:300});
+  P({id:"r_cuzco",name:"Cuzco",era:"renaissance",owner:"aztec",terrain:"mountains",resource:"gold",pop:14,x:230,y:460});
+  P({id:"r_mecca",name:"Mecca",era:"renaissance",owner:"ottoman2",terrain:"desert",resource:"spices",pop:10,x:780,y:430});
+  P({id:"r_baghdad2",name:"Baghdad",era:"renaissance",owner:"ottoman2",terrain:"plains",resource:"oil",pop:24,x:780,y:380});
+  P({id:"r_kazan",name:"Kazan",era:"renaissance",owner:"tsardom",terrain:"forest",resource:"fur",pop:10,x:710,y:260});
+  P({id:"r_agra",name:"Agra",era:"renaissance",owner:"mughal",terrain:"plains",resource:"silk",pop:30,x:910,y:410});
+  /* === INDUSTRIAL extra === */
+  P({id:"i_manchester",name:"Manchester",era:"industrial",owner:"britishpk",terrain:"plains",resource:"coal",pop:24,x:430,y:255});
+  P({id:"i_birmingham",name:"Birmingham",era:"industrial",owner:"britishpk",terrain:"plains",resource:"iron",pop:18,x:440,y:262});
+  P({id:"i_egypt_br",name:"British Egypt",era:"industrial",owner:"britishpk",terrain:"desert",resource:"cotton",pop:18,x:710,y:420});
+  P({id:"i_canada",name:"Dominion of Canada",era:"industrial",owner:"britishpk",terrain:"forest",resource:"wood",pop:8,x:240,y:280});
+  P({id:"i_australia",name:"Australia",era:"industrial",owner:"britishpk",terrain:"plains",resource:"gold",pop:6,x:1140,y:520});
+  P({id:"i_silesia",name:"Silesia",era:"industrial",owner:"prussia",terrain:"hills",resource:"coal",pop:14,x:560,y:285});
+  P({id:"i_baku",name:"Baku",era:"industrial",owner:"russianemp",terrain:"hills",resource:"oil",pop:14,x:750,y:340});
+  P({id:"i_galicia",name:"Galicia",era:"industrial",owner:"austrohu",terrain:"hills",resource:"oil",pop:18,x:600,y:295});
+  P({id:"i_balkans",name:"Balkans",era:"industrial",owner:"ottomandec",terrain:"mountains",resource:"copper",pop:12,x:600,y:320});
+  P({id:"i_kentucky",name:"Kentucky",era:"industrial",owner:"usa",terrain:"plains",resource:"coal",pop:10,x:215,y:340});
+  P({id:"i_california",name:"California",era:"industrial",owner:"usa",terrain:"hills",resource:"gold",pop:12,x:140,y:340});
+  P({id:"i_alaska",name:"Alaska",era:"industrial",owner:"usa",terrain:"tundra",resource:"gold",pop:1,x:120,y:280});
+  P({id:"i_korea",name:"Korea",era:"industrial",owner:"meiji",terrain:"hills",resource:"iron",pop:18,x:1160,y:350});
+  P({id:"i_manchuria",name:"Manchuria",era:"industrial",owner:"qingopium",terrain:"plains",resource:"coal",pop:22,x:1110,y:340});
+  /* === WW extra === */
+  P({id:"w_alaska",name:"Alaska",era:"worldwars",owner:"usa_ww",terrain:"tundra",resource:"oil",pop:1,x:120,y:280});
+  P({id:"w_hawaii",name:"Hawaii",era:"worldwars",owner:"usa_ww",terrain:"coast",resource:"sugar",pop:2,x:100,y:430});
+  P({id:"w_philippines",name:"Philippines",era:"worldwars",owner:"usa_ww",terrain:"jungle",resource:"rubber",pop:12,x:1100,y:430});
+  P({id:"w_egypt_uk",name:"British Egypt",era:"worldwars",owner:"uk_ww",terrain:"desert",resource:"oil",pop:18,x:710,y:420});
+  P({id:"w_singapore",name:"Singapore",era:"worldwars",owner:"uk_ww",terrain:"coast",resource:"rubber",pop:4,x:1070,y:450});
+  P({id:"w_caucasus",name:"Caucasus",era:"worldwars",owner:"ussr_ww",terrain:"mountains",resource:"oil",pop:22,x:740,y:300});
+  P({id:"w_ukraine",name:"Ukraine",era:"worldwars",owner:"ussr_ww",terrain:"plains",resource:"grain",pop:40,x:640,y:280});
+  P({id:"w_silesia",name:"Silesia",era:"worldwars",owner:"germ_ww",terrain:"hills",resource:"coal",pop:14,x:560,y:285});
+  P({id:"w_lybia",name:"Italian Libya",era:"worldwars",owner:"italy_ww",terrain:"desert",resource:"oil",pop:4,x:580,y:430});
+  P({id:"w_korea",name:"Korea",era:"worldwars",owner:"jap_ww",terrain:"hills",resource:"iron",pop:24,x:1160,y:350});
+  P({id:"w_manchuria",name:"Manchukuo",era:"worldwars",owner:"jap_ww",terrain:"plains",resource:"coal",pop:30,x:1110,y:340});
+  P({id:"w_indochina",name:"Indochina",era:"worldwars",owner:"jap_ww",terrain:"jungle",resource:"rubber",pop:18,x:1060,y:430});
+  P({id:"w_kwangtung",name:"Kwangtung",era:"worldwars",owner:"jap_ww",terrain:"plains",resource:"coal",pop:24,x:1110,y:380});
+  /* === COLD WAR extra === */
+  P({id:"c_alaska",name:"Alaska",era:"coldwar",owner:"usa_cw",terrain:"tundra",resource:"oil",pop:2,x:120,y:280});
+  P({id:"c_california",name:"California",era:"coldwar",owner:"usa_cw",terrain:"hills",resource:"data",pop:24,x:140,y:340});
+  P({id:"c_alabama",name:"Alabama",era:"coldwar",owner:"usa_cw",terrain:"plains",resource:"steel",pop:14,x:215,y:355});
+  P({id:"c_florida",name:"Florida",era:"coldwar",owner:"usa_cw",terrain:"coast",resource:"oil",pop:12,x:235,y:370});
+  P({id:"c_ukraine",name:"Ukrainian SSR",era:"coldwar",owner:"ussr_cw",terrain:"plains",resource:"grain",pop:50,x:640,y:280});
+  P({id:"c_kazakhstan",name:"Kazakh SSR",era:"coldwar",owner:"ussr_cw",terrain:"tundra",resource:"uranium",pop:14,x:850,y:300});
+  P({id:"c_estonia",name:"Estonian SSR",era:"coldwar",owner:"ussr_cw",terrain:"forest",resource:"wood",pop:4,x:610,y:240});
+  P({id:"c_xinjiang",name:"Xinjiang",era:"coldwar",owner:"prc_cw",terrain:"desert",resource:"uranium",pop:30,x:950,y:330});
+  P({id:"c_tibet",name:"Tibet",era:"coldwar",owner:"prc_cw",terrain:"mountains",resource:"copper",pop:6,x:950,y:380});
+  P({id:"c_taiwan",name:"Taiwan",era:"coldwar",owner:"prc_cw",terrain:"coast",resource:"rare",pop:18,x:1140,y:400});
+  P({id:"c_punjab",name:"Punjab",era:"coldwar",owner:"india_cw",terrain:"plains",resource:"grain",pop:60,x:870,y:400});
+  /* === MODERN extra === */
+  P({id:"mo_alaska",name:"Alaska",era:"modern",owner:"usa_mod",terrain:"tundra",resource:"oil",pop:1,x:120,y:280});
+  P({id:"mo_california",name:"Silicon Valley",era:"modern",owner:"usa_mod",terrain:"hills",resource:"compute",pop:30,x:140,y:340});
+  P({id:"mo_texas",name:"Texas",era:"modern",owner:"usa_mod",terrain:"plains",resource:"oil",pop:30,x:200,y:360});
+  P({id:"mo_florida",name:"Florida",era:"modern",owner:"usa_mod",terrain:"coast",resource:"data",pop:22,x:235,y:370});
+  P({id:"mo_xinjiang",name:"Xinjiang",era:"modern",owner:"china_mod",terrain:"desert",resource:"rare",pop:25,x:950,y:330});
+  P({id:"mo_taiwan",name:"Taiwan",era:"modern",owner:"china_mod",terrain:"coast",resource:"compute",pop:24,x:1140,y:400});
+  P({id:"mo_siberia",name:"Siberia",era:"modern",owner:"russia_mod",terrain:"tundra",resource:"rare",pop:8,x:900,y:230});
+  P({id:"mo_caucasus",name:"Caucasus",era:"modern",owner:"russia_mod",terrain:"mountains",resource:"oil",pop:20,x:740,y:300});
+  P({id:"mo_bavaria",name:"Bavaria",era:"modern",owner:"eu",terrain:"plains",resource:"data",pop:14,x:520,y:300});
+  P({id:"mo_lyon",name:"Lyon",era:"modern",owner:"eu",terrain:"plains",resource:"data",pop:12,x:480,y:300});
+  P({id:"mo_yorkshire",name:"Yorkshire",era:"modern",owner:"uk_mod",terrain:"plains",resource:"steel",pop:10,x:445,y:260});
+  P({id:"mo_busan",name:"Busan",era:"modern",owner:"sk_mod",terrain:"coast",resource:"rare",pop:8,x:1162,y:354});
+  P({id:"mo_kashmir",name:"Kashmir",era:"modern",owner:"india_mod",terrain:"mountains",resource:"data",pop:14,x:895,y:402});
+  /* === FUTURE extra === */
+  P({id:"f_alaska",name:"Arctic Federation",era:"future",owner:"russia_fut",terrain:"tundra",resource:"rare",pop:5,x:120,y:280});
+  P({id:"f_california",name:"Silicon Megalopolis",era:"future",owner:"usa_fut",terrain:"hills",resource:"compute",pop:50,x:140,y:340});
+  P({id:"f_amazonia",name:"Amazonia Reserve",era:"future",owner:"sambloc",terrain:"jungle",resource:"rare",pop:40,x:280,y:470});
+  P({id:"f_sahara",name:"Solar Sahara",era:"future",owner:"africa",terrain:"desert",resource:"fusion",pop:60,x:600,y:440});
+  P({id:"f_nigeria",name:"Lagos Hub",era:"future",owner:"africa",terrain:"jungle",resource:"compute",pop:80,x:580,y:480});
+  P({id:"f_korea",name:"Korean Tigers",era:"future",owner:"pacific",terrain:"coast",resource:"compute",pop:18,x:1160,y:350});
+  P({id:"f_japan",name:"Japan Hub",era:"future",owner:"pacific",terrain:"coast",resource:"rare",pop:30,x:1180,y:360});
+  P({id:"f_australia_pac",name:"Pacific Australia",era:"future",owner:"pacific",terrain:"plains",resource:"rare",pop:12,x:1140,y:520});
+  P({id:"f_marspolar",name:"Mars Polar Base",era:"future",owner:"mars",terrain:"tundra",resource:"fusion",pop:1,x:1100,y:520});
+  P({id:"f_marsequator",name:"Mars Equator",era:"future",owner:"mars",terrain:"desert",resource:"rare",pop:2,x:1090,y:510});
+  P({id:"f_moon",name:"Lunar Mining Base",era:"future",owner:"usa_fut",terrain:"none",resource:"rare",pop:0,x:1060,y:540});
+  P({id:"f_agi_node1",name:"Substrate Node Α",era:"future",owner:"agi",terrain:"none",resource:"compute",pop:0,x:580,y:510});
+  P({id:"f_agi_node2",name:"Substrate Node Β",era:"future",owner:"agi",terrain:"none",resource:"compute",pop:0,x:620,y:510});
+})();
+
+/* =================================================================
+   ARMY-MOVE UI — added to map click handler
+   ================================================================= */
+W.map.onMoveClick = function(armyId, pid){ return W.armies.move(armyId,pid); };
+
+/* =================================================================
+   ENHANCE ENGINE — wire dynasty, trade, armies into endTurn
+   ================================================================= */
+(function(){
+  const origEndTurn = W.engine.endTurn;
+  W.engine.endTurn = function(){
+    if(!W.GAME||W.GAME.ended) return;
+    W.dynasty.init();
+    W.dynasty.ageDynasty();
+    W.trade.perTurn();
+    W.armies.resetMoves();
+    origEndTurn.call(W.engine);
+    W.audio.turn();
+  };
+})();
+
+/* =================================================================
+   CHRONICLE BROWSER — full event log modal
+   ================================================================= */
+W.ui.openChronicle = function(){
+  if(!W.GAME) return;
+  const events = W.GAME.events.slice().reverse();
+  const body = `<div style="max-height:60vh;overflow-y:auto;">${
+    events.map(e=>`<div class="feed-item ${e.kind||""}" style="margin-bottom:6px;"><span class="turn">T${e.turn}</span>${W.util.esc(e.msg)}</div>`).join("")||"<p style='color:var(--t3)'>No events yet.</p>"
+  }</div>`;
+  W.ui.openModal({title:"The Chronicle",bodyHTML:body,wide:true});
+};
+
+/* =================================================================
+   TUTORIAL OVERLAY — first-time hints
+   ================================================================= */
+W.tutorial = {
+  shown: {},
+  show(key){
+    if(W.tutorial.shown[key]) return;
+    W.tutorial.shown[key] = true;
+    const text = W.HINTS[key]; if(!text) return;
+    W.toast.show({title:"Hint",body:text,kind:"info"});
+  },
+  reset(){ W.tutorial.shown = {}; },
+};
+
+/* =================================================================
+   SCENARIO LAUNCHER — quick start from preset
+   ================================================================= */
+W.ui.openScenarios = function(){
+  const cards = W.SCENARIOS.map((s,i)=>`<div class="build-card" onclick="W.pick.fromScenario(${i})">
+    <div class="name">${W.util.esc(s.name)}</div>
+    <div class="tier">${W.util.esc(s.era)} · ${W.util.esc(s.diff)}</div>
+    <div class="desc" style="font-style:italic;">${W.util.esc(s.blurb)}</div>
+  </div>`).join("");
+  W.ui.openModal({title:"Scenarios",wide:true,bodyHTML:`<div class="build-grid">${cards}</div>`});
+};
+W.pick.fromScenario = function(i){
+  const s = W.SCENARIOS[i];
+  W.PICK_STATE.era = s.era;
+  W.PICK_STATE.faction = s.faction;
+  W.PICK_STATE.leader = s.leader;
+  W.PICK_STATE.victory = s.victory;
+  W.PICK_STATE.diff = s.diff;
+  W.ui.closeModal();
+  W.pick.beginGame();
+};
+
+/* =================================================================
+   LEGACY ARCHIVE — cross-playthrough storage
+   ================================================================= */
+W.legacy = {
+  KEY:"warlords.legacy.v1",
+  load(){ try{ return JSON.parse(localStorage.getItem(W.legacy.KEY)||"[]"); }catch(e){ return []; } },
+  record(entry){
+    const arr = W.legacy.load();
+    arr.push({...entry, ts:Date.now()});
+    try{ localStorage.setItem(W.legacy.KEY, JSON.stringify(arr.slice(-50))); }catch(e){}
+  },
+  show(){
+    const arr = W.legacy.load();
+    if(!arr.length){
+      W.ui.openModal({title:"Legacy Archive",bodyHTML:"<p style='color:var(--t3);font-style:italic;'>No completed campaigns yet. Your legacy begins with your first victory or defeat.</p>"});
+      return;
+    }
+    const total = arr.reduce((s,e)=>s+(e.score||0),0);
+    const body = `<p style="color:var(--gold);font-family:var(--font-h);font-size:24px;margin-bottom:14px;">Cumulative Legacy · ${total} pts</p>
+      <div style="max-height:60vh;overflow-y:auto;">${
+        arr.slice().reverse().map(e=>`<div class="rsrc-row">
+          <div class="lbl">${e.won?"✓":"✗"} ${W.util.esc(e.faction)} · ${W.util.esc(e.era)} · ${W.util.esc(e.path||"—")}</div>
+          <div class="val">${e.score||0}</div>
+        </div>`).join("")
+      }</div>`;
+    W.ui.openModal({title:"Legacy Archive",bodyHTML:body});
+  },
+};
+
+/* =================================================================
+   ACHIEVEMENT TRACKING
+   ================================================================= */
+W.achTracker = {
+  KEY:"warlords.ach.v1",
+  unlock(id){
+    const cur = W.achTracker.list();
+    if(cur.includes(id)) return;
+    cur.push(id);
+    try{ localStorage.setItem(W.achTracker.KEY, JSON.stringify(cur)); }catch(e){}
+    const ach = W.ACHIEVEMENTS.find(a=>a.id===id);
+    if(ach){ W.toast.show({title:"Achievement Unlocked",body:`${ach.name} — ${ach.desc}`,kind:"good"}); }
+  },
+  list(){ try{ return JSON.parse(localStorage.getItem(W.achTracker.KEY)||"[]"); }catch(e){ return []; } },
+  show(){
+    const owned = new Set(W.achTracker.list());
+    const body = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${
+      W.ACHIEVEMENTS.map(a=>{
+        const has = owned.has(a.id);
+        return `<div class="build-card ${has?"":"disabled"}" style="${has?'border-color:var(--gold);':''}">
+          <div class="name">${has?"✓ ":"○ "}${W.util.esc(a.name)}</div>
+          <div class="desc">${W.util.esc(a.desc)}</div>
+        </div>`;
+      }).join("")
+    }</div>`;
+    W.ui.openModal({title:"Achievements",wide:true,bodyHTML:body});
+  },
+};
+
+/* =================================================================
+   HELP / KEYBOARD REFERENCE
+   ================================================================= */
+W.ui.openHelp = function(){
+  W.ui.openModal({title:"Help & Controls",bodyHTML:`
+    <h3 style="color:var(--gold);font-family:var(--font-h);margin-bottom:6px;">Mouse</h3>
+    <ul style="margin-left:18px;color:var(--t2);font-size:12px;line-height:1.8;">
+      <li>Click a province on the map to see details, build there if owned.</li>
+      <li>Hover for tooltip.</li>
+      <li>Click any action bar button to open that menu.</li>
+    </ul>
+    <h3 style="color:var(--gold);font-family:var(--font-h);margin:14px 0 6px;">Keyboard</h3>
+    <ul style="margin-left:18px;color:var(--t2);font-size:12px;line-height:1.8;">
+      <li><b>Space</b> — End Turn</li>
+      <li><b>Ctrl-S / Cmd-S</b> — Save</li>
+      <li><b>Esc</b> — Close modal</li>
+      <li><b>1-6</b> — Open action menus (Build/Recruit/Research/Decree/Diplo/Intel)</li>
+      <li><b>M</b> — Toggle map mode</li>
+      <li><b>L</b> — Open Chronicle</li>
+      <li><b>?</b> — This help</li>
+    </ul>
+    <h3 style="color:var(--gold);font-family:var(--font-h);margin:14px 0 6px;">Strategy</h3>
+    <ul style="margin-left:18px;color:var(--t2);font-size:12px;line-height:1.8;">
+      <li>Watch your <b>stability</b> — if it falls below 10 for 10 turns, revolt.</li>
+      <li>Watch your <b>food</b> — if negative for 10 turns, famine collapse.</li>
+      <li>Build a <b>granary</b> early; food shortages are the silent killer.</li>
+      <li>Diplomacy is cheaper than war. Until it isn't.</li>
+      <li>Tech compounds. Start research early.</li>
+    </ul>`});
+};
+
+/* =================================================================
+   FACTION COMPENDIUM — readable lore browser
+   ================================================================= */
+W.ui.openCompendium = function(){
+  const eras = Object.keys(W.FACTIONS);
+  const body = eras.map(eraId=>{
+    const era = W.ERAS[eraId];
+    return `<h3 style="color:var(--gold);font-family:var(--font-h);margin:14px 0 6px;font-size:18px;">${era.symbol} ${W.util.esc(era.name)} · ${W.util.esc(era.years)}</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${
+        W.FACTIONS[eraId].map(f=>`<div class="rsrc-row" style="cursor:pointer;" onclick="W.ui.openFactionDetail('${eraId}','${f.id}')">
+          <div class="lbl">${f.flag} ${W.util.esc(f.name)}</div>
+          <div class="val" style="font-size:10px;">${W.util.esc(f.region)}</div>
+        </div>`).join("")
+      }</div>`;
+  }).join("");
+  W.ui.openModal({title:"Compendium of Powers",wide:true,bodyHTML:body});
+};
+W.ui.openFactionDetail = function(eraId, fid){
+  const f = W.FACTIONS[eraId].find(x=>x.id===fid); if(!f) return;
+  const leaders = (W.LEADERS[fid]||[]).map(l=>`<div class="advisor-row"><div class="av">${l.portrait||"⚜"}</div>
+    <div class="meta"><div class="who">${W.util.esc(l.name)}</div><div class="role">${W.util.esc(l.epithet||"")}</div></div></div>`).join("");
+  const lore = W.FACTION_FLAVOUR[fid] || "";
+  W.ui.openModal({title:f.name,bodyHTML:`
+    <p style="color:var(--gold);font-family:var(--font-m);font-size:11px;letter-spacing:.18em;margin-bottom:8px;">${W.util.esc(f.region.toUpperCase())} · ${W.util.esc(W.ERAS[eraId].name.toUpperCase())}</p>
+    <p style="font-family:var(--font-b);font-style:italic;font-size:15px;color:var(--t2);margin-bottom:14px;line-height:1.5;">${W.util.esc(f.blurb)}</p>
+    ${lore?`<p style="font-size:12px;color:var(--t3);margin-bottom:14px;line-height:1.5;">${W.util.esc(lore)}</p>`:""}
+    <h4 style="color:var(--accent2);font-family:var(--font-h);margin-bottom:6px;">Leaders</h4>
+    <div>${leaders}</div>`,wide:true});
+};
+
+/* =================================================================
+   EXTRA KEYBOARD SHORTCUTS
+   ================================================================= */
+document.addEventListener("keydown",(e)=>{
+  if(!W.GAME) return;
+  if(document.getElementById("modal-back").classList.contains("show")) return;
+  if(e.key==="1") W.ui.openBuild();
+  else if(e.key==="2") W.ui.openRecruit();
+  else if(e.key==="3") W.ui.openTech();
+  else if(e.key==="4") W.ui.openDecree();
+  else if(e.key==="5") W.ui.openDiplo();
+  else if(e.key==="6") W.ui.openIntel();
+  else if(e.key==="m"||e.key==="M"){ const modes=["political","terrain","resource","army"]; const i=modes.indexOf(W.map.mode); W.map.setMode(modes[(i+1)%4]); }
+  else if(e.key==="l"||e.key==="L") W.ui.openChronicle();
+  else if(e.key==="?") W.ui.openHelp();
+  else if(e.key==="b"||e.key==="B") W.battle.stageDemo();
+});
+
+
+/* =================================================================
+   ADDITIONAL EVENT BANK — ROUND 2 (deeper era variety)
+   ================================================================= */
+(function(){const E=(o)=>W.EVENTS.push(o);
+  /* === Mostly era-spread to reach ~250+ total === */
+  E({id:"a_aqueduct_finished",era:"ancient",weight:3,title:"An Aqueduct Completed",
+    quote:"For the first time, the upper city drinks fresh water. The engineers ask for double pay.",
+    options:[
+      {label:"Pay them double.",effect:{treasury:-80,influence:+10,stability:+8}},
+      {label:"Pay standard rate.",effect:{stability:+5}},
+      {label:"Refuse; declare it civic duty.",effect:{stability:+3,influence:-5}},
+    ]});
+  E({id:"a_provincial_governor",era:"ancient",weight:4,title:"A Provincial Governor",
+    quote:"Your governor in the eastern province has been there too long. The locals speak of him as if he were the emperor.",
+    options:[
+      {label:"Recall and prosecute.",effect:{stability:+5,influence:+5,treasury:+30}},
+      {label:"Rotate him to another province.",effect:{stability:+3}},
+      {label:"Confirm him for life.",effect:{stability:-10,influence:-15}},
+    ]});
+  E({id:"a_legion_mutiny",era:"ancient",weight:3,title:"A Legion Mutinies",
+    quote:"Three years without pay. The eastern legion has gone over to a usurper.",
+    options:[
+      {label:"Pay arrears immediately.",effect:{treasury:-200,stability:+10,manpower:+4}},
+      {label:"Send the praetorian guard.",effect:{manpower:-4,treasury:-50,stability:+5}},
+      {label:"Negotiate with the legion.",effect:{stability:-5,manpower:+2,treasury:-80}},
+    ]});
+  E({id:"a_persecution",era:"ancient",weight:3,title:"A New Sect Persecuted",
+    quote:"A small religious sect refuses to make sacrifice to the state gods.",
+    options:[
+      {label:"Toleration.",effect:{stability:+3,influence:+5,research:+5,relations:+5}},
+      {label:"Selective persecution.",effect:{stability:+3,influence:-3,relations:-5}},
+      {label:"Mass execution.",effect:{stability:+5,pop:-3,influence:-10,relations:-15}},
+    ]});
+  E({id:"a_oracle_returns",era:"ancient",weight:3,title:"The Oracle Returns",
+    quote:"After a generation of silence, the priestess speaks again. \"Beware the king who would be a god.\"",
+    options:[
+      {label:"Heed the warning.",effect:{stability:+10,influence:-5}},
+      {label:"Disregard.",effect:{influence:+5,stability:-5}},
+      {label:"Replace the priestess.",effect:{stability:-5,influence:-10,relations:-5}},
+    ]});
+  E({id:"a_volcanic_winter",era:"ancient",weight:2,title:"A Volcanic Winter",
+    quote:"Distant eruption. Crops fail. The sun is dim for two summers.",
+    options:[
+      {label:"Mass food imports.",effect:{treasury:-150,food:+60,stability:+10}},
+      {label:"Rationing.",effect:{food:+30,stability:-5}},
+      {label:"Allow famine.",effect:{stability:-25,pop:-10}},
+    ]});
+  E({id:"a_canal_proposal",era:"ancient",weight:2,title:"A Canal Proposal",
+    quote:"Engineers propose digging through an isthmus to shorten ship routes.",
+    options:[
+      {label:"Authorise.",effect:{treasury:-300,trade:+30,research:+15}},
+      {label:"Survey only.",effect:{treasury:-30,research:+5}},
+      {label:"Decline.",effect:{}},
+    ]});
+  E({id:"a_pirate_capital",era:"ancient",weight:3,title:"A Pirate Capital",
+    quote:"Cilicia has become a haven. Their fleet outnumbers yours.",
+    options:[
+      {label:"Major expedition.",effect:{manpower:-6,treasury:-200,trade:+25,influence:+15}},
+      {label:"Hire them as auxiliaries.",effect:{treasury:-100,trade:-5,manpower:+3}},
+      {label:"Tolerate; trade through them.",effect:{trade:+10,stability:-3}},
+    ]});
+  E({id:"m_great_schism",era:"medieval",weight:2,title:"The Great Schism",
+    quote:"Constantinople and Rome have excommunicated each other. The break may be permanent.",
+    options:[
+      {label:"Side with Rome.",effect:{relations:+10,influence:+5}},
+      {label:"Side with Constantinople.",effect:{relations:+10,influence:+5}},
+      {label:"Strict neutrality.",effect:{stability:+5,influence:-5}},
+    ]});
+  E({id:"m_silk_letters",era:"medieval",weight:3,title:"Letters from the East",
+    quote:"A Venetian merchant returns from far Cathay with stories of marvels: paper money, gunpowder, a fountain of mercury.",
+    options:[
+      {label:"Fund his return.",effect:{treasury:-100,research:+30,trade:+15}},
+      {label:"Publish his account.",effect:{treasury:-20,research:+15,influence:+5}},
+      {label:"Burn his journals.",effect:{stability:+3,research:-15}},
+    ]});
+  E({id:"m_mass_baptism",era:"medieval",weight:2,title:"A Mass Baptism",
+    quote:"The chieftain of a pagan tribe at your border offers to convert, with his people, in exchange for grain and arms.",
+    options:[
+      {label:"Welcome the conversion.",effect:{treasury:-80,pop:+5,influence:+15,manpower:+3}},
+      {label:"Demand more rigorous conversion.",effect:{treasury:-30,influence:+5}},
+      {label:"Refuse.",effect:{influence:-5,relations:-10}},
+    ]});
+  E({id:"m_witch_burning",era:"medieval",weight:3,title:"A Burning at the Stake",
+    quote:"A village burns three women at the stake. The local lord asks for a royal decree on witches.",
+    options:[
+      {label:"Decree against witchcraft.",effect:{stability:+5,influence:+5,research:-10,relations:-5}},
+      {label:"Decree requiring royal warrant.",effect:{stability:+3,influence:-3,research:+5}},
+      {label:"Decree forbidding such trials.",effect:{stability:-10,influence:-15,research:+15,relations:+10}},
+    ]});
+  E({id:"m_tournament",era:"medieval",weight:5,title:"A Grand Tournament",
+    quote:"Knights from every realm arrive to compete. The festivities will cost a small province in gold.",
+    options:[
+      {label:"Lavish tournament.",effect:{treasury:-120,influence:+15,relations:+15,stability:+5}},
+      {label:"Modest tournament.",effect:{treasury:-40,influence:+5}},
+      {label:"Cancel for war preparations.",effect:{manpower:+4,relations:-10}},
+    ]});
+  E({id:"r_inquisition_lists",era:"renaissance",weight:3,title:"The Inquisition's Lists",
+    quote:"The Inquisition demands the names of all foreign-born residents in your capital.",
+    options:[
+      {label:"Provide the lists.",effect:{stability:+5,influence:+5,relations:-15,research:-10}},
+      {label:"Refuse; cite royal prerogative.",effect:{stability:-3,influence:-5,relations:+10,research:+5}},
+      {label:"Provide selectively.",effect:{stability:+3}},
+    ]});
+  E({id:"r_dutch_revolt",era:"renaissance",weight:3,title:"The Dutch Revolt",
+    quote:"Your wealthiest province has raised the orange flag. Bankers and brewers under arms.",
+    options:[
+      {label:"Send the Duke of Alba.",effect:{manpower:-6,treasury:-150,stability:+5,relations:-15}},
+      {label:"Religious tolerance.",effect:{stability:+15,influence:-10,relations:+10}},
+      {label:"Grant independence to the north.",effect:{stability:-5,influence:-10,treasury:-80}},
+    ]});
+  E({id:"r_galleon_lost",era:"renaissance",weight:3,title:"A Treasure Galleon Lost",
+    quote:"Eighty tonnes of silver. Down in a Caribbean storm. The Indies fleet is short for the year.",
+    options:[
+      {label:"Salvage expedition.",effect:{treasury:-80,influence:+5}},
+      {label:"Increase Caribbean security.",effect:{treasury:-150,manpower:-2,relations:-5}},
+      {label:"Absorb the loss.",effect:{treasury:-200,stability:-5}},
+    ]});
+  E({id:"r_court_painter",era:"renaissance",weight:3,title:"A Court Painter Defects",
+    quote:"Your finest painter has accepted a position at a rival's court.",
+    options:[
+      {label:"Bid higher to retain.",effect:{treasury:-80,influence:+5}},
+      {label:"Let him go.",effect:{influence:-5,relations:+5}},
+      {label:"Steal his canvases first.",effect:{treasury:+30,influence:+5,relations:-10}},
+    ]});
+  E({id:"i_socialist_press",era:"industrial",weight:4,title:"A Socialist Press",
+    quote:"Pamphlets and a newspaper preaching workers' revolution. Circulation is doubling each month.",
+    options:[
+      {label:"Suppress.",effect:{stability:+5,influence:-10,relations:-5,research:-5}},
+      {label:"Co-opt; legal labour reforms.",effect:{stability:+12,influence:+10,treasury:-60}},
+      {label:"Tolerate.",effect:{stability:-5,influence:+5,research:+5}},
+    ]});
+  E({id:"i_spanish_flu",era:"industrial",weight:3,title:"A Pandemic Flu",
+    quote:"Stronger than expected. Five times deadlier than common influenza. War or peace, the dead pile up.",
+    options:[
+      {label:"Public health emergency.",effect:{treasury:-200,pop:-5,influence:+10}},
+      {label:"Censor reporting; carry on.",effect:{stability:+3,pop:-15,influence:-15}},
+      {label:"Wartime triage.",effect:{pop:-8,manpower:-4,influence:-5}},
+    ]});
+  E({id:"i_universal_male",era:"industrial",weight:3,title:"Universal Male Suffrage",
+    quote:"The lower house has passed it. The upper house demands you veto.",
+    options:[
+      {label:"Sign.",effect:{stability:+15,influence:+10,relations:+10}},
+      {label:"Veto.",effect:{stability:-10,influence:-5,manpower:+2}},
+      {label:"Compromise with property qualification.",effect:{stability:+5,influence:+3}},
+    ]});
+  E({id:"i_great_white_fleet",era:"industrial",weight:2,title:"A Show of Naval Force",
+    quote:"Sixteen battleships, painted white, will sail the globe. Cost: ruinous. Effect: incalculable.",
+    options:[
+      {label:"Sail.",effect:{treasury:-200,influence:+25,relations:+10}},
+      {label:"Truncated tour.",effect:{treasury:-80,influence:+10}},
+      {label:"Cancel; build more ships instead.",effect:{manpower:+4,influence:-5}},
+    ]});
+  E({id:"i_colonial_pavilion",era:"industrial",weight:2,title:"The Universal Exposition",
+    quote:"Your capital will host. Industries, machines, colonies — exhibited under glass.",
+    options:[
+      {label:"Spare no expense.",effect:{treasury:-300,influence:+30,relations:+20,research:+15}},
+      {label:"Modest fair.",effect:{treasury:-100,influence:+10,research:+5}},
+      {label:"Refuse to host.",effect:{influence:-15}},
+    ]});
+  E({id:"i_kaiserwilhelm",era:"industrial",weight:3,title:"A Bellicose Cousin",
+    quote:"Your cousin abroad has given a speech threatening half the continent.",
+    options:[
+      {label:"Distance yourself publicly.",effect:{relations:+10,influence:+5}},
+      {label:"Endorse him.",effect:{relations:-15,manpower:+2}},
+      {label:"Silence; let him explain himself.",effect:{relations:-5}},
+    ]});
+  E({id:"i_tobacco_lobby",era:"industrial",weight:3,title:"The Tobacco Question",
+    quote:"Physicians warn it kills. Tobacco interests fund half your re-election.",
+    options:[
+      {label:"Public health campaign.",effect:{stability:+5,treasury:-30,relations:+5,influence:-10}},
+      {label:"Tax tobacco.",effect:{treasury:+100,stability:+3}},
+      {label:"Defend the industry.",effect:{treasury:+60,stability:-3,influence:-5}},
+    ]});
+  E({id:"w_holocaust_warning",era:"worldwars",weight:2,title:"Reports from the Camps",
+    quote:"Eyewitness testimony. Photographs. A Polish courier risked everything to deliver them.",
+    options:[
+      {label:"Public announcement; demand action.",effect:{influence:+15,relations:+10,stability:-3}},
+      {label:"Internal use; bomb rail lines.",effect:{manpower:-2,treasury:-40,influence:+10,relations:+5}},
+      {label:"Suppress; focus on winning the war.",effect:{influence:-15,stability:-5}},
+    ]});
+  E({id:"w_internment",era:"worldwars",weight:3,title:"Internment of Citizens",
+    quote:"Your security ministers urge interning all citizens of enemy ancestry.",
+    options:[
+      {label:"Authorise.",effect:{stability:+5,influence:-10,relations:-15}},
+      {label:"Selective internment.",effect:{stability:+3,influence:-5}},
+      {label:"Refuse.",effect:{stability:-5,influence:+10,relations:+10}},
+    ]});
+  E({id:"w_codecracker_falls",era:"worldwars",weight:2,title:"A Code-Cracker Falls Ill",
+    quote:"Your top cryptanalyst is hospitalised. The codes are not breaking themselves.",
+    options:[
+      {label:"Best medical care.",effect:{treasury:-50,research:+15}},
+      {label:"Quietly continue.",effect:{research:-10}},
+      {label:"Replace and reassign her work.",effect:{research:-5}},
+    ]});
+  E({id:"w_industrial_sabotage",era:"worldwars",weight:3,title:"Sabotage at the Factory",
+    quote:"A plant manufacturing tank engines has been destroyed. Internal sabotage suspected.",
+    options:[
+      {label:"Mass arrests.",effect:{stability:+3,manpower:-2,influence:-5}},
+      {label:"Investigate methodically.",effect:{stability:-3,influence:+5,research:+5}},
+      {label:"Increase secret police.",effect:{stability:+5,influence:-10}},
+    ]});
+  E({id:"w_press_censorship",era:"worldwars",weight:3,title:"Wartime Press Censorship",
+    quote:"Editors are reporting casualties.",
+    options:[
+      {label:"Total censorship.",effect:{stability:+10,influence:-5,relations:-5}},
+      {label:"Voluntary code.",effect:{stability:+5,influence:+3}},
+      {label:"Free press in wartime.",effect:{stability:-10,influence:+15,relations:+10}},
+    ]});
+  E({id:"c_brain_drain",era:"coldwar",weight:3,title:"A Brain Drain",
+    quote:"Your top scientists are emigrating in numbers. The West offers freedom, the East offers tickets back.",
+    options:[
+      {label:"Compete on salary.",effect:{treasury:-150,research:+25}},
+      {label:"Travel restrictions.",effect:{stability:+5,influence:-10,research:-10}},
+      {label:"Let them go.",effect:{research:-20,influence:-5}},
+    ]});
+  E({id:"c_olympic_record",era:"coldwar",weight:3,title:"An Olympic Record",
+    quote:"Your athletes have swept the games. Rumours of state-sponsored doping abound.",
+    options:[
+      {label:"Deny everything.",effect:{stability:+5,influence:+5,relations:-15}},
+      {label:"Open investigation.",effect:{stability:-3,influence:+10,relations:+10}},
+      {label:"Defend the programme.",effect:{stability:+3,influence:-5,relations:-10}},
+    ]});
+  E({id:"c_workers_letters",era:"coldwar",weight:3,title:"Letters from Workers",
+    quote:"Letters of complaint piling up at the politburo. Food queues, housing shortages, factory boredom.",
+    options:[
+      {label:"Visit a factory; listen.",effect:{stability:+10,influence:+5}},
+      {label:"Quota increase via committee.",effect:{stability:+3,treasury:-40}},
+      {label:"Arrest the petition organisers.",effect:{stability:+3,influence:-15,relations:-5}},
+    ]});
+  E({id:"c_satellite_fall",era:"coldwar",weight:2,title:"A Satellite Re-enters",
+    quote:"Pieces of a recon satellite have landed in a neutral country. Embarrassment looms.",
+    options:[
+      {label:"Acknowledge; pay damages.",effect:{influence:-5,relations:+15,treasury:-50}},
+      {label:"Deny.",effect:{influence:+5,relations:-15}},
+      {label:"Race the rivals to retrieve.",effect:{manpower:-2,influence:+10,relations:-5}},
+    ]});
+  E({id:"c_dissident_award",era:"coldwar",weight:3,title:"A Nobel for a Dissident",
+    quote:"Your dissident author has won the Nobel Prize. Foreign press demands he travel to Stockholm.",
+    options:[
+      {label:"Allow travel.",effect:{stability:+5,influence:+15,relations:+15}},
+      {label:"Refuse exit.",effect:{stability:+3,influence:-10,relations:-15}},
+      {label:"Strip citizenship; exile.",effect:{stability:+5,influence:-5,relations:-10}},
+    ]});
+  E({id:"c_arms_dealer",era:"coldwar",weight:3,title:"An Arms Dealer's Offer",
+    quote:"A grey-market dealer offers to ship advanced fighters to a regime under embargo. He needs a port.",
+    options:[
+      {label:"Grant the port.",effect:{treasury:+200,influence:+5,relations:-25}},
+      {label:"Refuse; alert allies.",effect:{relations:+10,influence:+5}},
+      {label:"Demand more for the port.",effect:{treasury:+300,relations:-30}},
+    ]});
+  E({id:"mod_oligarch_assassinated",era:"modern",weight:3,title:"An Oligarch Defenestrated",
+    quote:"A billionaire critic of yours has fallen from a Moscow hotel. Tragic accident, says the report.",
+    options:[
+      {label:"Promise full investigation.",effect:{stability:+5,influence:+5,relations:+5}},
+      {label:"Praise his patriotism in death.",effect:{stability:+3,influence:-5,relations:-10}},
+      {label:"Silence; let the world wonder.",effect:{stability:-3,influence:-10,relations:-15}},
+    ]});
+  E({id:"mod_climate_demand",era:"modern",weight:4,title:"COP Summit Demands",
+    quote:"The conference demands 50% emissions reduction by 2030. Your industries demand otherwise.",
+    options:[
+      {label:"Commit to 50%.",effect:{trade:-15,influence:+25,relations:+20}},
+      {label:"Commit to 25%.",effect:{trade:-5,influence:+10,relations:+5}},
+      {label:"Refuse.",effect:{trade:+10,influence:-20,relations:-25}},
+    ]});
+  E({id:"mod_disinformation",era:"modern",weight:4,title:"A Disinformation Campaign",
+    quote:"Bots have been amplifying a manufactured scandal about your government for weeks.",
+    options:[
+      {label:"Attribute publicly; sanction.",effect:{stability:-3,influence:+15,relations:-20}},
+      {label:"Counter-narrative campaign.",effect:{treasury:-50,influence:+5}},
+      {label:"Censor social media.",effect:{stability:+10,influence:-10,relations:-10}},
+    ]});
+  E({id:"mod_gpt_release",era:"modern",weight:2,title:"A General-Purpose AI is Released",
+    quote:"A frontier lab has released a model that writes, codes, designs. Within a week, every white-collar profession is in flux.",
+    options:[
+      {label:"Mandate AI safety regulations.",effect:{stability:+10,research:-10,influence:+10}},
+      {label:"Subsidise AI adoption.",effect:{treasury:-200,research:+30,trade:+10,stability:-5}},
+      {label:"Tax windfall profits.",effect:{treasury:+200,stability:+5,trade:-10}},
+    ]});
+  E({id:"mod_pmc_war",era:"modern",weight:3,title:"A PMC Goes Off-Script",
+    quote:"Your private military contractor has marched on its own capital, then turned around.",
+    options:[
+      {label:"Suppress; nationalise.",effect:{treasury:+100,influence:+5,relations:+5}},
+      {label:"Negotiate; absorb its forces.",effect:{manpower:+4,treasury:-50,relations:-5}},
+      {label:"Ignore; let it self-resolve.",effect:{stability:-15,relations:-10}},
+    ]});
+  E({id:"f_basic_income",era:"future",weight:3,title:"Universal Basic Income Vote",
+    quote:"Automation has displaced 30% of workers. The party of UBI is rising.",
+    options:[
+      {label:"Pass UBI.",effect:{treasury:-400,stability:+25,pop:+10,influence:+15}},
+      {label:"Job-guarantee programme.",effect:{treasury:-300,stability:+15,influence:+10}},
+      {label:"Let displaced workers retrain.",effect:{stability:-10,treasury:-50}},
+    ]});
+  E({id:"f_brain_emulation",era:"future",weight:1,title:"Brain Emulation Trial",
+    quote:"A volunteer's full connectome has been mapped. The substrate now says it remembers being human.",
+    options:[
+      {label:"Expand the programme.",effect:{treasury:-400,research:+50,influence:+15,stability:-10}},
+      {label:"Halt the programme.",effect:{stability:+15,research:-25}},
+      {label:"Make it elective for citizens.",effect:{treasury:-150,research:+30,stability:-5}},
+    ]});
+  E({id:"f_orbital_war",era:"future",weight:2,title:"An Orbital Skirmish",
+    quote:"Two of your satellites have been destroyed by kinetic kill vehicles. Three more on their way.",
+    options:[
+      {label:"Counter-strike against rival sats.",effect:{treasury:-200,manpower:-2,influence:+10,relations:-30}},
+      {label:"Diplomatic protest only.",effect:{influence:-5,relations:-10}},
+      {label:"Replace with hardened replacements.",effect:{treasury:-300,research:+15}},
+    ]});
+  E({id:"f_mars_strike",era:"future",weight:1,title:"Mars Strikes",
+    quote:"The Areological Republic refuses Earthside taxes. Mars miners refuse to ship oxygen.",
+    options:[
+      {label:"Concede full sovereignty.",effect:{influence:-10,relations:+15,trade:-20}},
+      {label:"Dominion status compromise.",effect:{influence:+5,relations:+10,trade:-10}},
+      {label:"Send a UN force.",effect:{manpower:-4,treasury:-300,relations:-15}},
+    ]});
+  E({id:"f_climate_winners",era:"future",weight:3,title:"Climate Winners and Losers",
+    quote:"Your wheat belt has shifted north. Your southern provinces are uninhabitable. Demographic shock.",
+    options:[
+      {label:"Mass relocation programme.",effect:{treasury:-300,pop:-3,stability:+10}},
+      {label:"Buy agricultural land abroad.",effect:{treasury:-200,trade:+15,relations:-5}},
+      {label:"Accept the change.",effect:{stability:-15,pop:-8}},
+    ]});
+  E({id:"f_agi_governance",era:"future",weight:2,title:"AGI in Policy",
+    quote:"Your government's AI advisors recommend specific legislative changes. The parliament is uncertain.",
+    options:[
+      {label:"Adopt the recommendations.",effect:{research:+20,influence:+10,stability:-5,relations:-10}},
+      {label:"Consult, do not adopt.",effect:{influence:+5,research:+5}},
+      {label:"Reject AI policy advice.",effect:{stability:+5,research:-10}},
+    ]});
+  /* Generic any-era flavour to round out the bank */
+  E({id:"a_market_day",era:"any",weight:7,title:"A Market Day Incident",
+    quote:"A trader has accused another of using false weights. The crowd waits for justice.",
+    options:[
+      {label:"Public flogging.",effect:{stability:+3,trade:+3}},
+      {label:"Fine and confiscation.",effect:{treasury:+20,trade:+5}},
+      {label:"Negotiate restitution.",effect:{trade:+5,relations:+3}},
+    ]});
+  E({id:"a_unseasonal_storm",era:"any",weight:5,title:"An Unseasonal Storm",
+    quote:"Mid-summer hailstorms have flattened crops in three districts.",
+    options:[
+      {label:"Open storehouses.",effect:{food:-30,stability:+10}},
+      {label:"Quietly import.",effect:{treasury:-50,food:+20}},
+      {label:"Pray.",effect:{influence:+5,food:-15,stability:-5}},
+    ]});
+  E({id:"a_loyal_servant",era:"any",weight:5,title:"A Loyal Servant Dies",
+    quote:"Your longest-serving chamberlain has died at his desk, an unfinished letter in hand.",
+    options:[
+      {label:"State funeral; large pension to family.",effect:{treasury:-50,stability:+5,influence:+8}},
+      {label:"Quiet burial.",effect:{treasury:-10,influence:+3}},
+      {label:"Confiscate his estate.",effect:{treasury:+80,influence:-10,stability:-3}},
+    ]});
+  E({id:"a_book_burning",era:"any",weight:3,title:"A Book is Banned",
+    quote:"The clergy has demanded a particular book be banned. The author has fled.",
+    options:[
+      {label:"Ban and burn.",effect:{stability:+3,influence:+5,research:-15,relations:-5}},
+      {label:"Restrict but not ban.",effect:{stability:+3,research:-5}},
+      {label:"Refuse; protect the author.",effect:{stability:-5,influence:-5,research:+15,relations:+10}},
+    ]});
+})();
+
+
+/* =================================================================
+   AI ENHANCEMENT — smarter behavior, coalition logic
+   ================================================================= */
+W.engine.aiSmartDecide = function(a){
+  const G=W.GAME, P=G.player;
+  const per = a.personality;
+  /* AI tries to build, recruit, research opportunistically */
+  if((a.resources.treasury||0) > 200 && Math.random() < per.expansion){
+    /* simulated build action */
+    a.power = (a.power||0) + 5;
+    a.resources.treasury -= 150;
+  }
+  if((a.resources.treasury||0) > 100 && Math.random() < per.aggression){
+    /* simulated recruit */
+    a.resources.manpower = (a.resources.manpower||0) + 2;
+    a.resources.treasury -= 80;
+  }
+  /* AI may propose alliances */
+  if(Math.random() < per.diplomacy * 0.04){
+    const friend = Object.keys(a.relations).find(k=>k!==a.faction && (a.relations[k]||0)>40);
+    if(friend && !a.alliedWith.includes(friend)){
+      a.alliedWith.push(friend);
+      if(friend===P.faction) W.engine.log(`${a.factionData.name} offers alliance — accepted!`,"good");
+    }
+  }
+  /* Coalition formation: too-large players draw coalitions */
+  const playerSize = P.provinces.length;
+  const totalSize = Object.values(W.PROVINCES).filter(p=>p.era===G.era).length;
+  if(playerSize / Math.max(1,totalSize) > 0.5 && Math.random() < per.paranoia * 0.05){
+    if(!a.atWarWith.includes(P.faction)){
+      a.atWarWith.push(P.faction);
+      W.engine.log(`Coalition forms — ${a.factionData.name} joins war against you.`,"bad");
+      W.toast.show({title:"Coalition War",body:`${a.factionData.name} joins the coalition!`,kind:"bad"});
+    }
+  }
+};
+(function(){
+  const orig = W.engine.aiDecide;
+  W.engine.aiDecide = function(a){
+    orig.call(W.engine, a);
+    W.engine.aiSmartDecide(a);
+  };
+})();
+
+/* =================================================================
+   ENGINE — extra victory checks
+   ================================================================= */
+(function(){
+  const orig = W.engine.checkVictory;
+  W.engine.checkVictory = function(){
+    if(!W.GAME||W.GAME.ended) return;
+    orig.call(W.engine);
+    if(W.GAME.ended) return;
+    const G=W.GAME, P=G.player, v=W.VICTORIES.find(x=>x.id===G.victoryPath);
+    if(!v) return;
+    if(v.id==="diplomatic"){
+      const allied = G.ai.filter(a=>a.alliedWith && a.alliedWith.includes(P.faction)).length;
+      if(allied / Math.max(1,G.ai.length) >= v.threshold){
+        G.ended=true; G.endReason="victory:diplomatic";
+        W.ui.openEndScreen(true, v);
+      }
+    }
+    if(v.id==="cultural"){
+      G.flags.culturalTurns = (G.flags.culturalTurns||0) + ((P.fame > G.ai.reduce((m,a)=>Math.max(m,a.fame||0),0))?1:0);
+      if(G.flags.culturalTurns >= v.threshold){
+        G.ended=true; G.endReason="victory:cultural";
+        W.ui.openEndScreen(true, v);
+      }
+    }
+    if(v.id==="legacy"){
+      if(P.legacy >= 1000){
+        G.ended=true; G.endReason="victory:legacy";
+        W.ui.openEndScreen(true, v);
+      }
+    }
+  };
+})();
+
+/* =================================================================
+   END SCREEN — log to legacy archive
+   ================================================================= */
+(function(){
+  const orig = W.ui.openEndScreen;
+  W.ui.openEndScreen = function(won, vd){
+    const G=W.GAME, P=G.player;
+    const score = Math.round((P.fame + P.power*0.5 + P.legacy + (won?(vd.scoreMod||30)*8:0)));
+    W.legacy.record({
+      won, score, faction: P.factionData.name, era: G.eraData.name, path: won?vd.name:vd.name, turn: G.turn,
+    });
+    if(won) W.achTracker.unlock("ach_first_victory");
+    else    W.achTracker.unlock("ach_first_defeat");
+    if(G.difficulty==="caesar" && won) W.achTracker.unlock("ach_caesar");
+    if(won && G.victoryPath==="survival") W.achTracker.unlock("ach_one_turn");
+    orig.call(W.ui, won, vd);
+  };
+})();
+
+/* =================================================================
+   TUTORIAL HOOKS — trigger hints on first use
+   ================================================================= */
+(function(){
+  const origBuild = W.ui.openBuild;
+  W.ui.openBuild = function(){ W.tutorial.show("build"); origBuild.call(W.ui); };
+  const origRecruit = W.ui.openRecruit;
+  W.ui.openRecruit = function(){ W.tutorial.show("recruit"); origRecruit.call(W.ui); };
+  const origTech = W.ui.openTech;
+  W.ui.openTech = function(){ W.tutorial.show("research"); origTech.call(W.ui); };
+  const origDiplo = W.ui.openDiplo;
+  W.ui.openDiplo = function(){ W.tutorial.show("diplo"); origDiplo.call(W.ui); };
+  const origDecree = W.ui.openDecree;
+  W.ui.openDecree = function(){ W.tutorial.show("decree"); origDecree.call(W.ui); };
+})();
+
+/* =================================================================
+   SPY MODAL — wire to Intel button
+   ================================================================= */
+(function(){
+  const origIntel = W.ui.openIntel;
+  W.ui.openIntel = function(){
+    if(!W.GAME) return;
+    const G=W.GAME;
+    const ai = G.ai;
+    const missions = W.spy.missions;
+    const body = `<div style="margin-bottom:14px;color:var(--t2);font-size:12px;">Run covert operations. Each costs gold and has a chance of being detected.</div>
+      <h3 style="color:var(--gold);font-family:var(--font-h);margin-bottom:8px;">Target</h3>
+      <select id="spy-target" style="width:100%;margin-bottom:10px;">${
+        ai.map(a=>`<option value="${a.faction}">${W.util.esc(a.factionData.name)}</option>`).join("")
+      }</select>
+      <h3 style="color:var(--gold);font-family:var(--font-h);margin-bottom:8px;">Mission</h3>
+      <div class="col gap-2">${
+        missions.map(m=>`<div class="build-card" onclick="W.spy.run(document.getElementById('spy-target').value,'${m.id}')">
+          <div class="name">${W.util.esc(m.name)} <span style="color:var(--gold);font-size:11px;">${m.cost}g · ${Math.round(m.chance*100)}%</span></div>
+          <div class="desc">${W.util.esc(m.desc)}</div>
+        </div>`).join("")
+      }</div>
+      <hr><h3 style="color:var(--gold);font-family:var(--font-h);margin:10px 0 8px;">Intelligence Briefing</h3>
+      <div style="font-family:var(--font-m);font-size:12px;">${
+        ai.map(a=>`<div class="rsrc-row"><div class="lbl">${a.factionData.flag} ${W.util.esc(a.factionData.name)}</div>
+        <div class="val">${a.provinces.length}p · ${Math.round(a.resources.manpower||0)}mp · ${Math.round(a.resources.treasury||0)}g</div></div>`).join("")
+      }</div>`;
+    W.ui.openModal({title:"Intelligence & Espionage",bodyHTML:body,wide:true});
+  };
+})();
+
+/* =================================================================
+   FACTION COMPENDIUM IN ACTION BAR — extend topbar buttons
+   ================================================================= */
+(function(){
+  /* Add additional top-bar buttons via DOM injection on game enter */
+  const origEnter = W.ui.enterGame;
+  W.ui.enterGame = function(){
+    origEnter.call(W.ui);
+    const top = document.querySelector("#topbar .top-actions");
+    if(top && !top.dataset.augmented){
+      top.dataset.augmented = "1";
+      const extras = [
+        ["Chronicle","W.ui.openChronicle()"],
+        ["Achievements","W.achTracker.show()"],
+        ["Compendium","W.ui.openCompendium()"],
+        ["Help","W.ui.openHelp()"],
+        ["Legacy","W.legacy.show()"],
+        ["Scenarios","W.ui.openScenarios()"],
+      ];
+      extras.forEach(([label, fn])=>{
+        const b = document.createElement("button");
+        b.textContent = label;
+        b.onclick = ()=>eval(fn);
+        top.appendChild(b);
+      });
+    }
+  };
+})();
+
+/* =================================================================
+   SAVE/LOAD POLISH — multiple slots
+   ================================================================= */
+W.save.SLOT_KEY = (n)=>"warlords.save.slot."+n;
+W.save.listSlots = ()=>{
+  const slots = [];
+  for(let i=0;i<5;i++){
+    const raw = localStorage.getItem(W.save.SLOT_KEY(i));
+    if(raw){
+      try{
+        const o = JSON.parse(raw);
+        slots.push({i,turn:o.turn,faction:(o.player&&o.player.factionData)?o.player.factionData.name:"?",era:o.era,ts:o._ts||0});
+      }catch(e){ slots.push({i,err:true}); }
+    } else slots.push({i,empty:true});
+  }
+  return slots;
+};
+W.save.saveSlot = (n)=>{
+  if(!W.GAME) return;
+  const obj = {...W.GAME, _ts: Date.now()};
+  try{ localStorage.setItem(W.save.SLOT_KEY(n), JSON.stringify(obj)); W.toast.show({title:"Saved",body:`Slot ${n+1}`,kind:"good"}); }catch(e){}
+};
+W.save.loadSlot = (n)=>{
+  const raw = localStorage.getItem(W.save.SLOT_KEY(n));
+  if(!raw){ W.toast.show({title:"Empty",body:`Slot ${n+1} is empty.`,kind:"warn"}); return; }
+  try{
+    W.GAME = JSON.parse(raw);
+    W.GAME.eraData = W.ERAS[W.GAME.era];
+    W.GAME.player.factionData = W.FACTIONS[W.GAME.era].find(f=>f.id===W.GAME.player.faction);
+    W.GAME.player.leaderData = (W.LEADERS[W.GAME.player.faction]||[])[0]||{};
+    W.GAME.ai.forEach(a=>{ a.factionData = W.FACTIONS[W.GAME.era].find(f=>f.id===a.faction); });
+    W.ui.enterGame();
+    W.toast.show({title:"Loaded",body:`Slot ${n+1}`,kind:"good"});
+  }catch(e){ W.toast.show({title:"Load failed",body:e.message,kind:"bad"}); }
+};
+W.save.clearSlot = (n)=>{ localStorage.removeItem(W.save.SLOT_KEY(n)); };
+
+(function(){
+  const origSave = W.ui.openSave;
+  W.ui.openSave = function(){
+    const slots = W.save.listSlots();
+    const body = `<p style="color:var(--t2);font-size:13px;margin-bottom:14px;">Five save slots. Each preserves a campaign. Autosave writes to slot 0.</p>
+      <div class="col gap-2">${
+        slots.map(s=>{
+          const label = s.empty?"<empty>":`Turn ${s.turn} · ${W.util.esc(s.faction)} · ${W.util.esc(s.era)}`;
+          return `<div class="rsrc-row" style="background:var(--bg2);padding:10px;">
+            <div class="lbl">Slot ${s.i+1} — <span style="color:var(--t3);font-size:11px;">${label}</span></div>
+            <div class="acts" style="display:flex;gap:4px;">
+              <button class="btn-ghost" onclick="W.save.saveSlot(${s.i})">Save</button>
+              <button class="btn-ghost" onclick="W.save.loadSlot(${s.i});W.ui.closeModal()" ${s.empty?"disabled":""}>Load</button>
+              <button class="btn-danger" onclick="W.save.clearSlot(${s.i});W.ui.closeModal();W.ui.openSave()" ${s.empty?"disabled":""}>Clear</button>
+            </div>
+          </div>`;
+        }).join("")
+      }</div>
+      <hr><h4 style="color:var(--gold);margin:14px 0 6px;">Export / Import</h4>
+      <p style="color:var(--t3);font-size:11px;margin-bottom:6px;">Copy this string to share your campaign:</p>
+      <textarea readonly style="width:100%;height:80px;font-family:var(--font-m);font-size:10px;">${W.GAME?btoa(JSON.stringify(W.GAME)).slice(0,2000):"<no active game>"}…</textarea>
+      <button class="btn-ghost" onclick="W.save.exportCopy()" style="margin-top:6px;">Copy to Clipboard</button>`;
+    W.ui.openModal({title:"Save · Load · Export",bodyHTML:body,wide:true});
+  };
+})();
+W.save.exportCopy = ()=>{
+  if(!W.GAME) return;
+  const text = btoa(JSON.stringify(W.GAME));
+  try{ navigator.clipboard.writeText(text); W.toast.show({title:"Copied",body:"Save string in clipboard.",kind:"good"}); }
+  catch(e){ W.toast.show({title:"Copy failed",body:e.message,kind:"bad"}); }
+};
+
+/* =================================================================
+   SOUND PREFERENCE
+   ================================================================= */
+W.audio.toggle = ()=>{
+  W.audio.on = !W.audio.on;
+  if(W.audio.on) W.audio.success();
+  W.toast.show({title:"Audio",body:W.audio.on?"On":"Off",kind:"info"});
+};
+
+(function(){
+  const origSettings = W.ui.openSettings;
+  W.ui.openSettings = function(){
+    W.ui.openModal({title:"Settings",bodyHTML:`
+      <p style="color:var(--t2);font-size:13px;margin-bottom:10px;">Adjust UI and audio.</p>
+      <div class="col gap-2">
+        <button class="btn-ghost" onclick="W.audio.toggle()">Toggle Audio</button>
+        <button class="btn-ghost" onclick="W.tutorial.reset();W.toast.show({title:'Hints reset',body:'Tutorial hints will appear again.',kind:'info'})">Reset Tutorial Hints</button>
+        <button class="btn-ghost" onclick="document.body.classList.toggle('high-contrast')">Toggle High Contrast</button>
+        <button class="btn-secondary" onclick="W.ui.openHelp()">Open Help</button>
+        <button class="btn-secondary" onclick="W.ui.openCompendium()">Open Compendium</button>
+        <button class="btn-secondary" onclick="W.legacy.show()">Open Legacy Archive</button>
+        <button class="btn-danger" onclick="if(confirm('Abandon this campaign? All slots remain saved.')){W.save.clear();location.reload();}">Abandon Current Campaign</button>
+        <button class="btn-danger" onclick="if(confirm('Wipe ALL saves AND legacy? This cannot be undone.')){localStorage.clear();location.reload();}">Wipe Everything</button>
+      </div>
+      <hr style="margin:14px 0;">
+      <p style="font-size:11px;color:var(--t3);font-style:italic;">Warlords v${W.VERSION} · by WindowDoom</p>
+      <p style="font-size:11px;color:var(--t3);">Press <b>?</b> for keyboard shortcuts.</p>
+      `});
+  };
+})();
+
+/* =================================================================
+   PROVINCE-LEVEL ACTIONS — building queue, garrison
+   ================================================================= */
+W.province = {
+  ensureQueue(pid){
+    if(!W.GAME) return;
+    W.GAME.player.buildQueues = W.GAME.player.buildQueues||{};
+    W.GAME.player.buildQueues[pid] = W.GAME.player.buildQueues[pid]||[];
+    return W.GAME.player.buildQueues[pid];
+  },
+  enqueue(pid, bid){
+    const q = W.province.ensureQueue(pid); if(!q) return;
+    q.push({bid, turns:W.BUILDINGS[bid]?(W.BUILDINGS[bid].build||3):3});
+    W.engine.log(`Queued ${W.BUILDINGS[bid]?W.BUILDINGS[bid].name:bid} in ${(W.PROVINCES[pid]||{name:"—"}).name}.`,"info");
+  },
+  tick(){
+    if(!W.GAME) return;
+    const P = W.GAME.player;
+    P.buildQueues = P.buildQueues||{};
+    for(const pid in P.buildQueues){
+      const q = P.buildQueues[pid];
+      if(!q.length) continue;
+      const item = q[0];
+      item.turns--;
+      if(item.turns<=0){
+        P.buildings[pid] = P.buildings[pid]||[];
+        P.buildings[pid].push(item.bid);
+        W.engine.log(`${W.BUILDINGS[item.bid]?W.BUILDINGS[item.bid].name:item.bid} built in ${(W.PROVINCES[pid]||{name:"—"}).name}.`,"good");
+        q.shift();
+      }
+    }
+  },
+};
+(function(){
+  const origEnd = W.engine.endTurn;
+  W.engine.endTurn = function(){
+    W.province.tick();
+    origEnd.call(W.engine);
+  };
+})();
+
+
+/* =================================================================
+   EVENT ROUND 3 — wider mix targeting all eras for 350+ total
+   ================================================================= */
+(function(){const E=(o)=>W.EVENTS.push(o);
+  /* ancient round */
+  E({id:"a_imperial_cult",era:"ancient",weight:3,title:"Imperial Cult Demanded",
+    quote:"Your courtiers propose declaring you a living god, with temples in every city.",
+    options:[{label:"Accept divinity.",effect:{influence:+20,stability:+10,relations:-20,research:-5}},{label:"Modest temple cult.",effect:{influence:+10,stability:+5}},{label:"Refuse; remain a mortal king.",effect:{influence:-5,stability:+3,relations:+10}}]});
+  E({id:"a_horse_breeding",era:"ancient",weight:3,title:"A Horse-Breeding Programme",
+    quote:"Your master of horse proposes selective breeding to produce taller war horses.",
+    options:[{label:"Authorise across all provinces.",effect:{treasury:-80,horses:+10,manpower:+2}},{label:"Trial at one stud.",effect:{treasury:-30,horses:+3}},{label:"Cancel.",effect:{}}]});
+  E({id:"a_punic_treaty",era:"ancient",weight:3,title:"A Punic Treaty",
+    quote:"A neighbour offers a non-aggression treaty in exchange for trade concessions.",
+    options:[{label:"Sign.",effect:{trade:+15,relations:+15}},{label:"Negotiate stricter terms.",effect:{trade:+5,relations:+5}},{label:"Refuse.",effect:{relations:-10}}]});
+  E({id:"a_trireme_revolution",era:"ancient",weight:3,title:"Trireme Revolution",
+    quote:"Your shipwright has built a quinquereme — five banks of oars, twice the firepower.",
+    options:[{label:"Commission a fleet.",effect:{treasury:-200,research:+15,influence:+10}},{label:"Build a single trial.",effect:{treasury:-60,research:+8}},{label:"Stick with triremes.",effect:{research:-5}}]});
+  /* medieval round */
+  E({id:"m_dane_law",era:"medieval",weight:3,title:"A New Code of Laws",
+    quote:"Your jurists propose unifying the various tribal codes into one royal law.",
+    options:[{label:"Promulgate.",effect:{stability:+15,influence:+10,relations:-5}},{label:"Limited; for nobility only.",effect:{stability:+5}},{label:"Reject; tradition prevails.",effect:{stability:-5,influence:-5}}]});
+  E({id:"m_pilgrimage_route",era:"medieval",weight:3,title:"A Pilgrimage Route Opens",
+    quote:"A new route to a holy shrine has been opened. Pilgrims, brigands, and innkeepers all profit.",
+    options:[{label:"Protect with royal escorts.",effect:{treasury:-50,trade:+15,influence:+10}},{label:"Tax the pilgrims.",effect:{treasury:+80,influence:-5}},{label:"Leave the brigands to the bishops.",effect:{stability:-3,trade:+5}}]});
+  E({id:"m_chivalric_order",era:"medieval",weight:3,title:"A New Chivalric Order",
+    quote:"A senior knight proposes founding a new order — dedicated to a saint, sworn to the crown.",
+    options:[{label:"Charter the order.",effect:{treasury:-80,manpower:+4,influence:+10,relations:+5}},{label:"Refuse — orders become threats.",effect:{stability:+3,influence:-5}},{label:"Charter with strict oversight.",effect:{treasury:-40,manpower:+2,influence:+5}}]});
+  E({id:"m_excommunication",era:"medieval",weight:2,title:"Excommunication",
+    quote:"The Pope has excommunicated you. Your subjects whisper. Your nobles consider.",
+    options:[{label:"Penance: walk to Canossa.",effect:{stability:+10,influence:-15,relations:+20}},{label:"Defy; appoint your own bishops.",effect:{stability:-15,influence:+10,relations:-25}},{label:"Pay a great sum.",effect:{treasury:-200,influence:-5,relations:+10}}]});
+  /* renaissance round */
+  E({id:"r_circumnavigation",era:"renaissance",weight:2,title:"A Circumnavigation Completes",
+    quote:"Of five ships, one returns. Eighteen men, of two hundred. The captain is dead. The world is, indisputably, round.",
+    options:[{label:"Lavish honours to survivors.",effect:{treasury:-100,influence:+25,research:+25,relations:+15}},{label:"Standard recognition.",effect:{treasury:-20,influence:+10,research:+10}},{label:"Suppress as bad investment.",effect:{influence:-15,research:-15}}]});
+  E({id:"r_bullion_arrives",era:"renaissance",weight:4,title:"The Bullion Fleet Arrives",
+    quote:"Three hundred chests of silver. The customs houses are overwhelmed. The kingdom is, briefly, awash.",
+    options:[{label:"Pay off debts.",effect:{treasury:+300,influence:+10}},{label:"Wage immediate war.",effect:{treasury:+100,manpower:+8,relations:-15}},{label:"Invest in trade.",effect:{treasury:+150,trade:+25}},{label:"Build a palace.",effect:{treasury:+50,influence:+25,stability:+5}}]});
+  E({id:"r_jesuit_school",era:"renaissance",weight:2,title:"A Jesuit School",
+    quote:"The Society of Jesus offers to found a school in your capital. Free education for nobility, in exchange for influence.",
+    options:[{label:"Welcome them.",effect:{research:+25,influence:+10,relations:+10}},{label:"Permit but limit.",effect:{research:+10,influence:+5}},{label:"Expel; tradition prefers Dominicans.",effect:{research:-10,relations:-5}}]});
+  /* industrial round */
+  E({id:"i_universal_postal",era:"industrial",weight:2,title:"Universal Postal Union",
+    quote:"Sign on to a multinational treaty for standardised postage.",
+    options:[{label:"Sign.",effect:{trade:+15,influence:+10,relations:+10}},{label:"Sign with reservations.",effect:{trade:+5,influence:+3}},{label:"Refuse.",effect:{influence:-5}}]});
+  E({id:"i_explosive_invention",era:"industrial",weight:3,title:"A New Explosive",
+    quote:"A Swedish chemist has invented a more stable form of nitroglycerin. He offers exclusive rights.",
+    options:[{label:"Buy the patent.",effect:{treasury:-200,research:+25,manpower:+2}},{label:"License it.",effect:{treasury:-80,research:+15}},{label:"Wait; let rivals license.",effect:{research:-5}}]});
+  /* world wars round */
+  E({id:"w_morale_collapse",era:"worldwars",weight:3,title:"Morale Collapse at the Front",
+    quote:"Whole regiments are refusing to advance. Officers are being shot.",
+    options:[{label:"Execute the leaders.",effect:{stability:+3,manpower:-4,influence:-5}},{label:"Rotate units; improve rations.",effect:{stability:+10,treasury:-60,manpower:+2}},{label:"Inspirational speech tour.",effect:{stability:+8,influence:+10}}]});
+  E({id:"w_factory_burn",era:"worldwars",weight:3,title:"A Factory Fire",
+    quote:"Your main tank plant has burned. Sabotage suspected; investigation continues.",
+    options:[{label:"Distribute production to multiple plants.",effect:{treasury:-200,influence:+5}},{label:"Rebuild on site.",effect:{treasury:-300,influence:-3}},{label:"Switch to allied production.",effect:{treasury:-100,relations:-5,influence:-10}}]});
+  /* cold war round */
+  E({id:"c_kgb_purge",era:"coldwar",weight:2,title:"A KGB Purge",
+    quote:"Half the politburo is under arrest. Charges: revisionism. The replacements are loyal — if inexperienced.",
+    options:[{label:"Endorse the purge.",effect:{stability:+5,influence:-5,research:-10,relations:-10}},{label:"Halt the purge.",effect:{stability:-5,influence:+5,research:+5}},{label:"Selective: only the worst.",effect:{stability:+3}}]});
+  E({id:"c_pop_culture",era:"coldwar",weight:3,title:"Pop Music from the West",
+    quote:"Young people are listening. Records are smuggled. The minister of culture demands action.",
+    options:[{label:"Ban; arrest smugglers.",effect:{stability:+3,influence:-10,relations:-10}},{label:"State-approved versions.",effect:{stability:+5,influence:+3}},{label:"Tolerate; allow some Western culture.",effect:{stability:-3,influence:+10,relations:+10}}]});
+  /* modern round */
+  E({id:"mod_drone_strike_civilian",era:"modern",weight:3,title:"A Drone Strike on Civilians",
+    quote:"Your strike hit a wedding party, not a target. Forty dead.",
+    options:[{label:"Public apology + compensation.",effect:{treasury:-50,influence:+10,relations:+10}},{label:"Deny; classify intel.",effect:{stability:+3,influence:-15,relations:-20}},{label:"Suspend drone programme.",effect:{influence:+15,manpower:-2,relations:+15}}]});
+  E({id:"mod_currency_attack",era:"modern",weight:3,title:"A Currency Attack",
+    quote:"Hedge funds are betting against your currency. The peg is wobbling.",
+    options:[{label:"Defend the peg.",effect:{treasury:-300,influence:+5,stability:+5}},{label:"Float the currency.",effect:{trade:+10,stability:-10}},{label:"Capital controls.",effect:{stability:+5,trade:-15,relations:-10}}]});
+  /* future round */
+  E({id:"f_uplift_ban",era:"future",weight:2,title:"A Genetic Uplift Ban",
+    quote:"Other powers propose banning cognitive uplift drugs.",
+    options:[{label:"Sign the ban.",effect:{research:-10,relations:+20,influence:+10}},{label:"Sign with carve-outs for military.",effect:{research:-3,relations:+10}},{label:"Refuse.",effect:{research:+15,relations:-15}}]});
+  E({id:"f_terraform_dispute",era:"future",weight:2,title:"Mars Terraform Dispute",
+    quote:"Mars colonists want to release their stored CO2. Earth-side scientists warn of irreversible loss of pristine state.",
+    options:[{label:"Approve full release.",effect:{research:+30,relations:-10,stability:-5}},{label:"Phased release.",effect:{research:+15,relations:+5}},{label:"Forbid.",effect:{research:-10,relations:-15}}]});
+  E({id:"f_climate_court",era:"future",weight:2,title:"Climate Court",
+    quote:"An international tribunal indicts your former leaders for climate inaction.",
+    options:[{label:"Cooperate; accept verdict.",effect:{influence:+15,relations:+20,stability:-5}},{label:"Refuse jurisdiction.",effect:{influence:-15,relations:-25}},{label:"Negotiate a settlement.",effect:{treasury:-100,relations:+10,influence:+5}}]});
+  E({id:"f_orbital_court",era:"future",weight:2,title:"An Orbital Court",
+    quote:"A space tribunal proposes binding rules for orbital weapons.",
+    options:[{label:"Sign and ratify.",effect:{relations:+20,influence:+15}},{label:"Sign without ratification.",effect:{relations:+5,influence:+3}},{label:"Refuse.",effect:{relations:-20,manpower:+2}}]});
+  E({id:"f_solar_dispute",era:"future",weight:2,title:"Saharan Solar Dispute",
+    quote:"Multiple powers claim shares of the Saharan solar farm's output.",
+    options:[{label:"Negotiate quotas.",effect:{trade:+15,relations:+15}},{label:"Demand priority.",effect:{trade:+25,relations:-15}},{label:"Open market.",effect:{trade:+10,relations:+5}}]});
+  /* any-era round */
+  E({id:"a_minor_diplomat",era:"any",weight:5,title:"A Minor Power Seeks Recognition",
+    quote:"A small state seeks formal diplomatic recognition. The implications are minor.",
+    options:[{label:"Recognise.",effect:{relations:+15,influence:+5,treasury:-10}},{label:"Recognise contingent.",effect:{relations:+5}},{label:"Refuse.",effect:{relations:-5}}]});
+  E({id:"a_seasonal_drought",era:"any",weight:5,title:"A Seasonal Drought",
+    quote:"Three months without rain. The hill provinces are particularly affected.",
+    options:[{label:"Subsidise affected regions.",effect:{treasury:-80,stability:+10,food:-20}},{label:"Build cisterns.",effect:{treasury:-50,food:-15,research:+5}},{label:"Pray.",effect:{influence:+5,food:-25,stability:-5}}]});
+  E({id:"a_minor_treaty",era:"any",weight:6,title:"A Minor Treaty",
+    quote:"A small adjustment to a longstanding agreement. Routine, but the wording matters.",
+    options:[{label:"Sign as drafted.",effect:{relations:+5,trade:+3}},{label:"Add clauses favouring your interests.",effect:{trade:+10,relations:-3}},{label:"Decline.",effect:{relations:-3}}]});
+  E({id:"a_local_festival",era:"any",weight:7,title:"A Local Festival",
+    quote:"A provincial governor proposes a festival to mark a local saint's day.",
+    options:[{label:"Sponsor with crown funds.",effect:{treasury:-20,stability:+5,influence:+3}},{label:"Approve at provincial cost.",effect:{stability:+3}},{label:"Forbid as wasteful.",effect:{stability:-5,influence:-3}}]});
+  E({id:"a_minor_corruption",era:"any",weight:6,title:"Minor Corruption Uncovered",
+    quote:"A clerk has been taking small bribes. The amount is trivial; the principle is not.",
+    options:[{label:"Public dismissal.",effect:{stability:+3,influence:+3}},{label:"Quiet reassignment.",effect:{stability:+1}},{label:"Promote him to a less tempting post.",effect:{influence:+3}}]});
+  E({id:"a_old_friend",era:"any",weight:4,title:"An Old Friend Petitions",
+    quote:"A childhood friend, now poor, requests a position at court.",
+    options:[{label:"Appoint him to an honorary role.",effect:{treasury:-20,influence:+5,stability:+3}},{label:"Pension him quietly.",effect:{treasury:-50,influence:+3}},{label:"Refuse; nepotism is poison.",effect:{influence:-3,stability:+3}}]});
+  E({id:"a_foreign_jewel",era:"any",weight:4,title:"A Foreign Jewel",
+    quote:"A merchant offers a flawless gem from afar — worthy of the crown, at a price.",
+    options:[{label:"Buy.",effect:{treasury:-100,influence:+10,relations:+5}},{label:"Negotiate down.",effect:{treasury:-60,influence:+5}},{label:"Refuse.",effect:{influence:-3}}]});
+  E({id:"a_eclipse",era:"any",weight:3,title:"An Eclipse",
+    quote:"The sun darkens at noon. The court prays. The peasants whisper of omens.",
+    options:[{label:"Predict it; impress the court.",effect:{research:+15,influence:+10,stability:+5}},{label:"Make sacrifice to placate gods.",effect:{influence:+5,treasury:-20,stability:+5}},{label:"Do nothing.",effect:{stability:-5}}]});
+  E({id:"a_runaway_slave",era:"any",weight:4,title:"A Runaway",
+    quote:"A senior household slave has escaped. Sentiment in the court is divided.",
+    options:[{label:"Hunt and punish.",effect:{stability:+3,influence:+3,relations:-3}},{label:"Pardon; manumit.",effect:{stability:-3,influence:+5,relations:+5}},{label:"Ignore.",effect:{}}]});
+  E({id:"a_widow_petition",era:"any",weight:5,title:"A Widow's Petition",
+    quote:"The widow of a fallen general asks for a pension. The treasury is tight.",
+    options:[{label:"Pension generously.",effect:{treasury:-40,stability:+5,influence:+8}},{label:"Standard pension.",effect:{treasury:-15,stability:+3}},{label:"Refuse.",effect:{influence:-5,stability:-3}}]});
+  E({id:"a_thieves_guild",era:"any",weight:4,title:"A Thieves' Guild",
+    quote:"The capital's underworld has organised itself. They request a 'tax' on official tolerance.",
+    options:[{label:"Accept the tribute.",effect:{treasury:+60,stability:-3,influence:-5}},{label:"Crackdown.",effect:{stability:+5,treasury:-30}},{label:"Negotiate; require they limit violence.",effect:{treasury:+30,stability:+3}}]});
+  E({id:"a_lost_caravan",era:"any",weight:4,title:"A Caravan Found",
+    quote:"A caravan lost a generation ago has been found in the desert, intact.",
+    options:[{label:"Claim it for the crown.",effect:{treasury:+200,influence:+5}},{label:"Reward the finders.",effect:{treasury:+100,influence:+10}},{label:"Leave it; honour the dead.",effect:{influence:+15,relations:+5,stability:+5}}]});
+  E({id:"a_minor_rebellion",era:"any",weight:5,title:"A Minor Rebellion",
+    quote:"A border lord has stopped sending tribute.",
+    options:[{label:"March on the lord.",effect:{manpower:-3,treasury:-50,stability:+8}},{label:"Send mediators.",effect:{treasury:-30,stability:+3,influence:+3}},{label:"Ignore.",effect:{stability:-8,influence:-5}}]});
+  E({id:"a_minor_alliance",era:"any",weight:5,title:"A Minor Alliance",
+    quote:"A small neighbour proposes a defensive alliance.",
+    options:[{label:"Accept.",effect:{relations:+15,manpower:+1}},{label:"Counter-offer trade only.",effect:{trade:+10,relations:+5}},{label:"Refuse.",effect:{relations:-3}}]});
+  E({id:"a_minor_envoy",era:"any",weight:5,title:"An Envoy Arrives Late",
+    quote:"An envoy from a distant power arrives weeks after expected. He brings news already stale.",
+    options:[{label:"Welcome warmly anyway.",effect:{relations:+10}},{label:"Reprimand; cite the delay.",effect:{relations:-5}},{label:"Send him back without audience.",effect:{relations:-15,influence:+5}}]});
+  E({id:"a_seer_warning",era:"any",weight:4,title:"A Seer's Warning",
+    quote:"A traveling seer warns of betrayal from within the court.",
+    options:[{label:"Investigate quietly.",effect:{influence:+5,stability:+3}},{label:"Hang the seer.",effect:{stability:-3,influence:+3}},{label:"Reward; ask for more.",effect:{treasury:-20,influence:+10}}]});
+  E({id:"a_minor_invention",era:"any",weight:4,title:"A Minor Invention",
+    quote:"An artisan has improved a common tool.",
+    options:[{label:"Patent it.",effect:{research:+10,treasury:+20}},{label:"Reward; let him keep it.",effect:{treasury:-10,research:+5,influence:+3}},{label:"Ignore.",effect:{research:-3}}]});
+  E({id:"a_minor_fire",era:"any",weight:5,title:"A Minor Fire",
+    quote:"A district of the capital has burned. Twenty homes lost.",
+    options:[{label:"Subsidise rebuilding.",effect:{treasury:-50,stability:+8,influence:+5}},{label:"Standard relief.",effect:{treasury:-20,stability:+3}},{label:"Let the affected fend.",effect:{stability:-5}}]});
+  E({id:"a_minor_marriage",era:"any",weight:5,title:"A Minor Marriage",
+    quote:"A relative wishes to marry into a noble family. The match is acceptable.",
+    options:[{label:"Bless and dower.",effect:{treasury:-30,stability:+3,relations:+5}},{label:"Bless; no dowry.",effect:{stability:+1}},{label:"Forbid.",effect:{stability:-3,influence:+3}}]});
+  E({id:"a_minor_birth",era:"any",weight:5,title:"A Minor Birth",
+    quote:"A royal cousin's child has been born.",
+    options:[{label:"Lavish celebration.",effect:{treasury:-30,stability:+5,influence:+3}},{label:"Modest celebration.",effect:{stability:+2}},{label:"None.",effect:{}}]});
+  E({id:"a_minor_death",era:"any",weight:5,title:"A Minor Death",
+    quote:"A senior official has died, expectedly.",
+    options:[{label:"State funeral.",effect:{treasury:-30,stability:+3,influence:+5}},{label:"Quiet funeral.",effect:{stability:+1}},{label:"Confiscate his estate.",effect:{treasury:+50,influence:-5}}]});
+  E({id:"a_minor_war_threat",era:"any",weight:4,title:"A Minor War Threat",
+    quote:"A small neighbour rattles its sabre.",
+    options:[{label:"Mobilise demonstratively.",effect:{manpower:+4,treasury:-50,relations:-5}},{label:"Diplomatic protest.",effect:{relations:+3}},{label:"Ignore.",effect:{relations:-3}}]});
+  E({id:"a_minor_trade",era:"any",weight:6,title:"A Minor Trade Opportunity",
+    quote:"A new trade route has opened.",
+    options:[{label:"Invest in caravans.",effect:{treasury:-50,trade:+15}},{label:"Tax the route.",effect:{treasury:+30,trade:+5}},{label:"Ignore.",effect:{}}]});
+  E({id:"a_minor_disease",era:"any",weight:5,title:"A Minor Disease Outbreak",
+    quote:"An outbreak of fever in one province.",
+    options:[{label:"Send physicians.",effect:{treasury:-30,pop:-1,influence:+3}},{label:"Quarantine.",effect:{treasury:-15,pop:-2}},{label:"Ignore.",effect:{pop:-4,stability:-3}}]});
+  E({id:"a_minor_pirates",era:"any",weight:5,title:"Minor Piracy",
+    quote:"A few ships have been taken on the coast.",
+    options:[{label:"Hunt them.",effect:{treasury:-40,trade:+10}},{label:"Increase escorts.",effect:{treasury:-30,trade:+5}},{label:"Ignore.",effect:{trade:-5}}]});
+  E({id:"a_minor_omen",era:"any",weight:5,title:"A Minor Omen",
+    quote:"A two-headed calf has been born. The priests are nervous.",
+    options:[{label:"Sacrifice it.",effect:{influence:+3,stability:+3}},{label:"Display it.",effect:{influence:+5,stability:-3}},{label:"Ignore.",effect:{}}]});
+  E({id:"a_minor_gift",era:"any",weight:6,title:"A Minor Gift",
+    quote:"A foreign court sends a gift.",
+    options:[{label:"Accept and reciprocate.",effect:{treasury:-30,relations:+10}},{label:"Accept.",effect:{relations:+5}},{label:"Decline.",effect:{relations:-5}}]});
+  E({id:"a_minor_request",era:"any",weight:6,title:"A Minor Request",
+    quote:"A neighbour requests passage through your territory.",
+    options:[{label:"Grant freely.",effect:{relations:+10}},{label:"Grant for a fee.",effect:{treasury:+30,relations:+3}},{label:"Refuse.",effect:{relations:-10}}]});
+  E({id:"a_minor_artistry",era:"any",weight:5,title:"A Minor Artistry",
+    quote:"An artist requests a commission.",
+    options:[{label:"Commission generously.",effect:{treasury:-40,influence:+8}},{label:"Modest commission.",effect:{treasury:-15,influence:+3}},{label:"Decline.",effect:{influence:-3}}]});
+  E({id:"a_minor_scientific",era:"any",weight:5,title:"A Minor Scientific Proposal",
+    quote:"A scholar proposes an investigation of a small phenomenon.",
+    options:[{label:"Fund.",effect:{treasury:-30,research:+15}},{label:"Encourage; no funding.",effect:{research:+5}},{label:"Decline.",effect:{research:-3}}]});
+  E({id:"a_minor_spy",era:"any",weight:5,title:"A Minor Spy Caught",
+    quote:"A foreign spy has been arrested.",
+    options:[{label:"Execute publicly.",effect:{influence:+5,relations:-15}},{label:"Trade for one of yours.",effect:{relations:+5,research:+3}},{label:"Quiet imprisonment.",effect:{stability:+3}}]});
+  E({id:"a_minor_envoy_recall",era:"any",weight:5,title:"An Envoy Recalled",
+    quote:"A friendly power has recalled its envoy. Reasons unclear.",
+    options:[{label:"Demand explanation.",effect:{relations:-3,influence:+3}},{label:"Send your own delegation.",effect:{treasury:-30,relations:+5}},{label:"Ignore.",effect:{relations:-5}}]});
+})();
+
+
+/* =================================================================
+   FINAL POLISH: tactical battle replays, AI war scoring, vassalisation,
+   coalition diplomacy, late-game endings narrative
+   ================================================================= */
+
+/* Vassal mechanics */
+W.vassal = {
+  vassalize(targetFid){
+    const G=W.GAME, P=G.player;
+    const target = G.ai.find(a=>a.faction===targetFid); if(!target) return;
+    if(target.provinces.length > P.provinces.length){ W.toast.show({title:"Too strong",body:"Target is larger than you.",kind:"bad"}); return; }
+    if((P.relations[targetFid]||0) < -40){
+      W.toast.show({title:"Insufficient leverage",body:"Need to win a war first.",kind:"bad"}); return;
+    }
+    target.vassalOf = P.faction;
+    target.atWarWith = (target.atWarWith||[]).filter(w=>w!==P.faction);
+    target.relations[P.faction] = 40;
+    W.engine.log(`${target.factionData.name} is now your vassal.`,"good");
+    W.toast.show({title:"Vassalised",body:target.factionData.name,kind:"good"});
+    W.ui.refreshAll();
+  },
+  collectTribute(){
+    if(!W.GAME) return;
+    const G=W.GAME, P=G.player;
+    G.ai.filter(a=>a.vassalOf===P.faction).forEach(v=>{
+      const trib = Math.floor((v.resources.treasury||0)*0.1);
+      v.resources.treasury -= trib;
+      P.resources.treasury += trib;
+      if(trib>0) W.engine.log(`Vassal ${v.factionData.name} pays ${trib}g tribute.`,"good");
+    });
+  },
+};
+(function(){
+  const orig = W.engine.endTurn;
+  W.engine.endTurn = function(){
+    W.vassal.collectTribute();
+    orig.call(W.engine);
+  };
+})();
+
+/* Coalition tracker */
+W.coalition = {
+  compute(){
+    if(!W.GAME) return [];
+    const G=W.GAME, P=G.player;
+    const atWar = G.ai.filter(a=>a.atWarWith && a.atWarWith.includes(P.faction));
+    return atWar;
+  },
+  warScore(){
+    const c = W.coalition.compute();
+    return c.reduce((s,a)=>s+a.provinces.length, 0) - W.GAME.player.provinces.length;
+  },
+};
+
+/* End-game narrative endings */
+W.endings = {
+  victory:{
+    domination:`The world recognises your dominion. The maps have been redrawn. The vanquished kingdoms exist now only in the chronicles you commission.
+
+  Generations will study how it began with a single throne, a single decision, a single willingness to act.`,
+    cultural:`Your culture is the world's culture. Your language is taught in foreign courts. Your fashions are imitated in cities you have never seen.
+
+  No army was needed in the end — only patience, and the genius of poets.`,
+    scientific:`The last barrier to understanding has fallen. Your scholars have done what no others could.
+
+  The next age begins. Whether it is better or worse, none can yet say.`,
+    diplomatic:`At your table, the world has gathered. Treaties signed. Alliances ratified. The age of war, for now at least, has ended.
+
+  History will record this peace; the next generation will test it.`,
+    economic:`Gold flows through your treasury faster than rivers through ancient cities. Every market quotes your currency. Every banker keeps a portrait of your minister.
+
+  The world is your market. You set the price.`,
+    survival:`Two hundred turns. Generations of leaders. Plagues, wars, revolutions, all weathered.
+
+  The dynasty endures, and that is no small victory.`,
+    legacy:`Your line has accumulated such power, such wealth, such cultural weight that no future generation can erase it.
+
+  The name is now a place. The place is now a memory. The memory is now an empire.`,
+  },
+  defeat:{
+    annihilation:`The capital has fallen. The court has dispersed. The throne, splintered for kindling.
+
+  Somewhere, perhaps, a descendant tends a forgotten shrine. The empire is otherwise complete in its destruction.`,
+    famine:`The granaries empty. The crops failed. The peasants fled or died. By the end, your court ate what it could find.
+
+  A kingdom that cannot feed itself cannot defend itself.`,
+    revolt:`The mob has reached the palace. Your statues are broken; your portraits, burned. The people have remembered what they were promised.
+
+  The dynasty falls in fire and chant.`,
+    nuclear:`Six minutes. Then nothing.
+
+  Future generations will measure the world before your reign and the world after, and find they are scarcely the same place.`,
+    heirless:`No heir. No regent. No succession. The throne sits empty as the nobles draw their plans.
+
+  A line that lasts six hundred years can end in a single night, and yours has.`,
+  },
+};
+
+(function(){
+  const orig = W.ui.openEndScreen;
+  W.ui.openEndScreen = function(won, vd){
+    const G=W.GAME, P=G.player;
+    const score = Math.round((P.fame + P.power*0.5 + P.legacy + (won?(vd.scoreMod||30)*8:0)));
+    const key = (vd.id||"").split(":")[1] || vd.id;
+    const text = won ? (W.endings.victory[vd.id] || W.endings.victory.survival) : (W.endings.defeat[vd.id] || W.endings.defeat.annihilation);
+    W.legacy.record({won, score, faction:P.factionData.name, era:G.eraData.name, path:vd.name, turn:G.turn});
+    if(won) W.achTracker.unlock("ach_first_victory"); else W.achTracker.unlock("ach_first_defeat");
+    if(G.difficulty==="caesar" && won) W.achTracker.unlock("ach_caesar");
+    if(won && G.victoryPath==="survival") W.achTracker.unlock("ach_one_turn");
+    const title = won?`Victory · ${vd.name}`:`Defeat · ${vd.name}`;
+    W.ui.openModal({
+      title,
+      wide:true,
+      bodyHTML:`<div style="text-align:center;padding:18px 0;">
+        <div style="font-family:var(--font-h);font-size:80px;color:${won?'var(--gold)':'var(--red)'};margin-bottom:8px;">${won?'☀':'☠'}</div>
+        <div style="font-family:var(--font-b);font-style:italic;color:var(--t2);font-size:18px;margin-bottom:24px;max-width:580px;margin-left:auto;margin-right:auto;line-height:1.6;white-space:pre-line;">${W.util.esc(text)}</div>
+        <hr style="margin:18px auto;width:60%;">
+        <div style="font-family:var(--font-h);font-size:48px;color:var(--accent2);margin-bottom:6px;">${score} pts</div>
+        <div style="font-family:var(--font-m);font-size:11px;color:var(--gold);letter-spacing:.28em;margin-bottom:20px;">FINAL SCORE</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-width:680px;margin:0 auto;font-family:var(--font-m);font-size:12px;color:var(--t2);">
+          <div><div style="color:var(--gold);font-size:18px;">${G.turn}</div>Turns Played</div>
+          <div><div style="color:var(--gold);font-size:18px;">${P.fame}</div>Fame</div>
+          <div><div style="color:var(--gold);font-size:18px;">${P.power}</div>Power</div>
+          <div><div style="color:var(--gold);font-size:18px;">${P.legacy}</div>Legacy</div>
+        </div>
+        <div style="margin-top:24px;color:var(--t3);font-size:12px;font-family:var(--font-m);">${W.util.esc(P.factionData.name)} · ${W.util.esc(G.eraData.name)} · ${W.util.esc((W.DIFFICULTIES.find(d=>d.id===G.difficulty)||{}).name||G.difficulty)}</div>
+      </div>`,
+      footHTML:`<button class="btn-secondary" onclick="W.legacy.show()">Legacy Archive</button>
+                <button class="btn-secondary" onclick="W.achTracker.show()">Achievements</button>
+                <button class="btn-primary" onclick="W.save.clear();location.reload();">New Campaign</button>`,
+    });
+  };
+})();
+
+/* CSS for high-contrast accessibility mode */
+(function(){
+  const css = `body.high-contrast{--t1:#ffffff;--t2:#f0f0f0;--t3:#cccccc;--accent2:#ffffff;--gold:#ffff00;}
+  body.high-contrast .feed-item{border-left-width:4px;}
+  body.high-contrast button{border-width:2px!important;}`;
+  const style = document.createElement("style");
+  style.textContent = css;
+  document.head.appendChild(style);
+})();
+
+/* Welcome / first-load detection */
+W.firstLoad = ()=>{
+  if(!localStorage.getItem("warlords.seen")){
+    localStorage.setItem("warlords.seen","1");
+    setTimeout(()=>{
+      W.toast.show({title:"Welcome to Warlords",body:"Press '?' anytime for help. Click 'New Campaign' to begin.",kind:"info"});
+    }, 800);
+  }
+};
+W.firstLoad();
+
+/* Final integrity check */
+(function(){
+  const stats = {
+    factions: Object.keys(W.FACTIONS).reduce((s,k)=>s+W.FACTIONS[k].length,0),
+    leaders: Object.keys(W.LEADERS).reduce((s,k)=>s+W.LEADERS[k].length,0),
+    units: Object.keys(W.UNITS).length,
+    buildings: Object.keys(W.BUILDINGS).length,
+    techs: Object.keys(W.TECHS).length,
+    wonders: Object.keys(W.WONDERS).length,
+    provinces: Object.keys(W.PROVINCES).length,
+    events: W.EVENTS.length,
+    decisions: W.DECISIONS.length,
+    scenarios: W.SCENARIOS.length,
+    achievements: W.ACHIEVEMENTS.length,
+  };
+  W.util.log(`Warlords ${W.VERSION} ready — ${JSON.stringify(stats)}`);
+  W.STATS = stats;
+})();
+
 /* Auto-boot — splash visible by default; user clicks New Campaign */
 (function(){
   W.util.log(`Warlords v${W.VERSION} loaded — ${Object.keys(W.FACTIONS).reduce((s,k)=>s+W.FACTIONS[k].length,0)} factions, ${Object.keys(W.LEADERS).length} leader sets, ${Object.keys(W.UNITS).length} unit types, ${Object.keys(W.BUILDINGS).length} buildings, ${Object.keys(W.TECHS).length} techs, ${W.EVENTS.length} events.`);

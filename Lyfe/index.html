@@ -491,6 +491,7 @@ input,select{font-family:inherit;}
       <button class="act-btn" onclick="openShop()">🏠 Assets</button>
       <button class="act-btn" onclick="openCrime()">🦹 Crime</button>
       <button class="act-btn" onclick="openCityMap()">🏙️ City</button>
+      <button class="act-btn" onclick="openGovernment()">🏛️ Gov</button>
       <button class="act-btn" onclick="openMore()">✨ More</button>
     </div>
   </div>
@@ -547,6 +548,28 @@ const COUNTRIES = {
   ru: { name:'Russia',        short:'RUS', flag:'🇷🇺', cur:'₽',  salaryMult:0.34, costMult:0.50, lifeExp:73, crimeChance:0.05,  divorceRate:0.55, religion:'Orthodox',  culture:'stoic' },
   it: { name:'Italy',         short:'ITA', flag:'🇮🇹', cur:'€',  salaryMult:0.65, costMult:0.85, lifeExp:83, crimeChance:0.03,  divorceRate:0.34, religion:'Catholic',  culture:'expressive' },
 };
+
+// ─── Country tax & immigration profile (separate table for clarity) ───
+const COUNTRY_FISCAL = {
+  us:{incomeTax:0.28, propertyTax:0.012, estateTax:0.40, estateExempt:13000000, immigrationDifficulty:0.40, language:'English'},
+  uk:{incomeTax:0.32, propertyTax:0.008, estateTax:0.40, estateExempt:325000,   immigrationDifficulty:0.55, language:'English'},
+  jp:{incomeTax:0.33, propertyTax:0.014, estateTax:0.55, estateExempt:30000000, immigrationDifficulty:0.85, language:'Japanese'},
+  br:{incomeTax:0.27, propertyTax:0.006, estateTax:0.08, estateExempt:0,        immigrationDifficulty:0.45, language:'Portuguese'},
+  in:{incomeTax:0.30, propertyTax:0.005, estateTax:0.00, estateExempt:0,        immigrationDifficulty:0.60, language:'Hindi / English'},
+  fr:{incomeTax:0.41, propertyTax:0.015, estateTax:0.45, estateExempt:100000,   immigrationDifficulty:0.70, language:'French'},
+  de:{incomeTax:0.42, propertyTax:0.010, estateTax:0.30, estateExempt:400000,   immigrationDifficulty:0.65, language:'German'},
+  cn:{incomeTax:0.35, propertyTax:0.012, estateTax:0.00, estateExempt:0,        immigrationDifficulty:0.95, language:'Mandarin'},
+  ca:{incomeTax:0.33, propertyTax:0.012, estateTax:0.00, estateExempt:0,        immigrationDifficulty:0.30, language:'English / French'},
+  au:{incomeTax:0.32, propertyTax:0.008, estateTax:0.00, estateExempt:0,        immigrationDifficulty:0.50, language:'English'},
+  ng:{incomeTax:0.24, propertyTax:0.003, estateTax:0.10, estateExempt:0,        immigrationDifficulty:0.40, language:'English / Yoruba'},
+  mx:{incomeTax:0.30, propertyTax:0.008, estateTax:0.00, estateExempt:0,        immigrationDifficulty:0.35, language:'Spanish'},
+  kr:{incomeTax:0.38, propertyTax:0.010, estateTax:0.50, estateExempt:500000,   immigrationDifficulty:0.85, language:'Korean'},
+  ru:{incomeTax:0.13, propertyTax:0.005, estateTax:0.00, estateExempt:0,        immigrationDifficulty:0.80, language:'Russian'},
+  it:{incomeTax:0.43, propertyTax:0.011, estateTax:0.08, estateExempt:1000000,  immigrationDifficulty:0.65, language:'Italian'},
+};
+function fiscal(country){
+  return COUNTRY_FISCAL[country] || COUNTRY_FISCAL.us;
+}
 
 const CITIES = {
   us: ['New York','Los Angeles','Chicago','Houston','Miami','Seattle','Boston','Atlanta','Denver','Austin'],
@@ -1818,6 +1841,18 @@ function ageUp(){
   processAddictionsYearly();
   // genetic diseases tick health/happiness drift after onset age
   processGeneticDiseases();
+  // annual taxes from the government
+  processTaxes();
+  // cultural festival / holiday flavor
+  rollCulturalEvent();
+  // residency counter for immigration
+  if(c.birthCountry && c.country !== c.birthCountry){
+    c.residencyYears = (c.residencyYears||0) + 1;
+    if(c.residencyYears === 5){
+      pushEvent('milestone', '🛂 You\'ve been in ' + COUNTRIES[c.country].name + ' for 5 years — now a naturalized citizen.');
+      c.happiness = clamp(c.happiness + 10, 0, 100);
+    }
+  }
   // stat natural decay/growth
   applyAgeDrift();
   // Pad the year with a "quiet year" entry if nothing happened so every year is visible
@@ -1903,6 +1938,11 @@ function processCareer(){
   if(c.career.quickJobId){
     c.career.totalYears++;
     c.career.yearsAtRung++;
+    // 20-year veteran bonus on the same quick job
+    if(c.career.totalYears === 20){
+      c.career.currentSalary = Math.floor(c.career.currentSalary * 1.25);
+      pushEvent('career', '🎖️ 20-year veteran bonus — +25% salary for sticking with it.');
+    }
     return;
   }
   const cr = CAREERS[c.career.key];
@@ -1910,19 +1950,36 @@ function processCareer(){
   const rung = cr.rungs[c.career.rungIdx];
   c.career.yearsAtRung++;
   c.career.totalYears++;
-  // performance ratings each year — chance of promotion based on smarts
+  // 20-year veteran bonus
+  if(c.career.totalYears === 20){
+    c.career.currentSalary = Math.floor(c.career.currentSalary * 1.25);
+    pushEvent('career', '🎖️ 20 years in the field — your salary jumped 25% for tenure.');
+  }
+  // performance ratings each year — promotion needs both years served AND stat thresholds
+  // Real-world promotions: harder. Only attempts after full rung.years served.
   if(c.career.yearsAtRung >= rung.years && c.career.rungIdx < cr.rungs.length - 1){
     const nextRung = cr.rungs[c.career.rungIdx + 1];
     const needS = nextRung.minSmarts || 0;
     const needL = nextRung.minLooks  || 0;
     const needH = nextRung.minHealth || 0;
-    if(c.smarts >= needS && c.looks >= needL && c.health >= needH){
+    // Roll a "performance review": only promotes if stats AND a luck roll succeed
+    const meetsStats = c.smarts >= needS && c.looks >= needL && c.health >= needH;
+    // Prestige careers (politician, judge, CEO) require harder rolls
+    const prestige = rung.prestige || 5;
+    const promoteChance = meetsStats ? Math.min(0.85, 0.35 + (c.smarts - needS)/60) : 0;
+    if(Math.random() < promoteChance){
       c.career.rungIdx++;
       c.career.yearsAtRung = 0;
       const newRung = cr.rungs[c.career.rungIdx];
       c.career.currentSalary = Math.floor(newRung.salary * COUNTRIES[c.country].salaryMult);
-      pushEvent('career', '🎉 You were promoted to ' + newRung.title + '! New salary: ' + fmtMoney(c.career.currentSalary) + '/yr');
+      pushEvent('career', '🎉 Promoted to ' + newRung.title + '! New salary: ' + fmtMoney(c.career.currentSalary) + '/yr');
       c.happiness = Math.min(100, c.happiness + 10);
+    } else if(c.career.yearsAtRung > rung.years + 4){
+      // Got passed over — small morale hit
+      if(c.career.yearsAtRung % 4 === 0){
+        pushEvent('career', '😤 Passed over for promotion again. Frustration mounts.');
+        c.happiness = Math.max(0, c.happiness - 4);
+      }
     }
   }
   // criminal career — risk of getting caught
@@ -4244,6 +4301,11 @@ function openMore(){
     {label:'🛋️ Therapy Session ($180)', fn:'doTherapy'},
     {label:'🎟️ Buy Lottery Ticket ($5)',fn:'buyLottery'},
   ];
+  // Trust fund only visible to the wealthy
+  const netWorth = c.money + (c.savings||0) + (c.investments||0);
+  if(netWorth >= 10000000 && !c.trust){
+    opts.push({label:'🏛️ Set Up Family Trust (' + fmtMoney(netWorth) + ' net worth)', fn:'setUpTrust'});
+  }
   if(c.reality === 'magical' && !c.isVampire){
     opts.push({label:'🧛 Try to Become a Vampire', fn:'tryBecomeVampire'});
   }
@@ -5369,6 +5431,428 @@ function buyItem(id){
   });
   pushEvent('good', '🛍️ Bought ' + item.name + ' for ' + fmtMoney(cost) + '.');
   closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TAXES — annual income, property, capital-gains
+// ═══════════════════════════════════════════════════════════════════════
+function processTaxes(){
+  const c = LIFE.char;
+  if(c.age < 18) return;
+  const fis = fiscal(c.country);
+  let taxes = 0;
+  let breakdown = [];
+  // Income tax on salary
+  if(c.career && c.career.currentSalary > 0){
+    const incomeT = Math.floor(c.career.currentSalary * fis.incomeTax);
+    taxes += incomeT;
+    breakdown.push('income ' + fmtMoney(incomeT));
+  }
+  // Property tax on owned home
+  const house = HOUSES.find(h => h.id === c.houseId);
+  if(house && house.price > 0){
+    const country = COUNTRIES[c.country];
+    const propT = Math.floor(house.price * country.costMult * fis.propertyTax);
+    taxes += propT;
+    breakdown.push('property ' + fmtMoney(propT));
+  }
+  // Capital-gains tax on investment growth (approximated yearly)
+  // Already-realized gains we don't track precisely; approximate by 15% of recent investment yield
+  if(c.investments > 0){
+    const capG = Math.floor(c.investments * 0.008); // light approximation
+    taxes += capG;
+    breakdown.push('cap gains ' + fmtMoney(capG));
+  }
+  // Tax evasion check — if not enough cash, government audits
+  if(taxes > 0){
+    if(c.money >= taxes){
+      c.money -= taxes;
+      if(taxes > 2000){
+        pushEvent('', '🏛️ Taxes paid: ' + fmtMoney(taxes) + ' (' + breakdown.join(' · ') + ').');
+      }
+    } else {
+      // Can't pay — IRS audit + penalty
+      const owed = taxes - Math.max(0, c.money);
+      c.money -= taxes;
+      c.happiness = Math.max(0, c.happiness - 6);
+      pushEvent('bad', '🚨 You couldn\'t pay your taxes. The government took everything in your account and you owe ' + fmtMoney(owed) + '.');
+      // Risk of jail for sustained tax evasion
+      if(Math.random() < 0.04){
+        pushEvent('bad', '⛓ You were convicted of tax evasion.');
+        goToJail(rangeRand(1,3), 'tax evasion');
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  GOVERNMENT MODAL — taxes overview, audit, citizenship, immigration
+// ═══════════════════════════════════════════════════════════════════════
+function openGovernment(){
+  const c = LIFE.char;
+  const fis = fiscal(c.country);
+  const country = COUNTRIES[c.country];
+  let html = '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.18em;color:var(--accent2);text-transform:uppercase;margin-bottom:8px;">' + country.flag + ' ' + country.name + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 14px;font-family:var(--font-m);font-size:11px;">'
+    + '<div><span style="color:var(--t3);">Income Tax</span><br><b style="color:var(--crimson);">' + Math.floor(fis.incomeTax*100) + '%</b></div>'
+    + '<div><span style="color:var(--t3);">Property Tax</span><br><b style="color:var(--crimson);">' + (fis.propertyTax*100).toFixed(2) + '% / yr</b></div>'
+    + '<div><span style="color:var(--t3);">Estate Tax (Inheritance)</span><br><b style="color:var(--crimson);">' + Math.floor(fis.estateTax*100) + '% over ' + fmtMoney(fis.estateExempt) + '</b></div>'
+    + '<div><span style="color:var(--t3);">Citizenship</span><br><b style="color:var(--gold);">' + (c.country === c.birthCountry || !c.birthCountry ? 'Native' : (c.residencyYears >= 5 ? 'Naturalized' : 'Resident (' + (c.residencyYears||0) + ' yrs)')) + '</b></div>'
+    + '<div><span style="color:var(--t3);">Official Language</span><br><b>' + fis.language + '</b></div>'
+    + '<div><span style="color:var(--t3);">Religion (Majority)</span><br><b>' + country.religion + '</b></div>'
+    + '<div><span style="color:var(--t3);">Culture</span><br><b>' + country.culture + '</b></div>'
+    + '<div><span style="color:var(--t3);">Life Expectancy</span><br><b>' + country.lifeExp + ' yrs</b></div>'
+    + '</div></div>';
+
+  // Civic options
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:14px 0 10px;">Civic Actions</div>';
+  html += '<div class="card"><div class="card-ico">🗳️</div>'
+    + '<div class="card-body"><div class="card-title">Vote in the Election</div>'
+    + '<div class="card-meta">Civic duty. +3 karma.</div></div>'
+    + '<div class="card-act"><button class="card-btn green" onclick="cityHall()">Vote</button></div></div>';
+  html += '<div class="card"><div class="card-ico">📊</div>'
+    + '<div class="card-body"><div class="card-title">View My Taxes (estimated for this year)</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="taxAdvice()">Estimate</button></div></div>';
+
+  // Immigration
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:14px 0 10px;">Immigration & Emigration</div>';
+  html += '<div style="font-size:12px;color:var(--t3);font-style:italic;margin-bottom:10px;line-height:1.5;">'
+    + 'Apply to move to another country. Difficulty depends on the destination. After 5 years of residency, you naturalize as a citizen.</div>';
+  if(c.age < 18){
+    html += '<div style="color:var(--t3);text-align:center;padding:10px;">Wait until adulthood.</div>';
+  } else {
+    Object.keys(COUNTRIES).forEach(k => {
+      if(k === c.country) return;
+      const dst = COUNTRIES[k];
+      const dstFis = fiscal(k);
+      const fee = 8000;
+      const difficulty = dstFis.immigrationDifficulty;
+      const can = c.money >= fee;
+      // Approval probability scales with smarts/money + drops with destination difficulty
+      const approvalPct = Math.max(2, Math.floor((c.smarts - 30) * (1 - difficulty)));
+      html += '<div class="card">'
+        + '<div class="card-ico">' + dst.flag + '</div>'
+        + '<div class="card-body"><div class="card-title">Move to ' + dst.name + '</div>'
+        + '<div class="card-meta">Language: ' + dstFis.language + ' · Income tax ' + Math.floor(dstFis.incomeTax*100) + '%</div>'
+        + '<div class="card-meta">Visa difficulty ' + Math.floor(difficulty*100) + '% · Est. approval ' + approvalPct + '%</div></div>'
+        + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(fee) + '</div>'
+        + '<button class="card-btn ' + (can?'':'muted') + '" ' + (can?'':'disabled') + ' onclick="emigrate(\'' + k + '\')">Apply</button></div></div>';
+    });
+  }
+
+  openModal('🏛️ Government & Country', html);
+}
+
+function taxAdvice(){
+  const c = LIFE.char;
+  const fis = fiscal(c.country);
+  const country = COUNTRIES[c.country];
+  let total = 0;
+  let detail = [];
+  if(c.career && c.career.currentSalary > 0){
+    const t = Math.floor(c.career.currentSalary * fis.incomeTax);
+    detail.push('Income tax on ' + fmtMoney(c.career.currentSalary) + ': ' + fmtMoney(t));
+    total += t;
+  }
+  const house = HOUSES.find(h => h.id === c.houseId);
+  if(house && house.price > 0){
+    const t = Math.floor(house.price * country.costMult * fis.propertyTax);
+    detail.push('Property tax on home: ' + fmtMoney(t));
+    total += t;
+  }
+  if(c.investments > 0){
+    const t = Math.floor(c.investments * 0.008);
+    detail.push('Capital gains (approx): ' + fmtMoney(t));
+    total += t;
+  }
+  toast('Estimated taxes this year: ' + fmtMoney(total));
+  pushEvent('', '📊 Your tax estimate: ' + fmtMoney(total) + ' (' + detail.join(' · ') + ').');
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+function emigrate(toCountry){
+  const c = LIFE.char;
+  const fee = 8000;
+  if(c.money < fee){ toast('Need ' + fmtMoney(fee) + ' for visa fees.'); return; }
+  const fis = fiscal(toCountry);
+  const dst = COUNTRIES[toCountry];
+  const difficulty = fis.immigrationDifficulty;
+  const approval = Math.max(0.02, (c.smarts - 30) / 100 * (1 - difficulty) + 0.1);
+  if(Math.random() < approval){
+    c.money -= fee;
+    c.birthCountry = c.birthCountry || c.country;
+    c.country = toCountry;
+    c.city = pickRand(CITIES[toCountry]);
+    c.residencyYears = 0;
+    pushEvent('milestone', '🛂 Visa approved. You emigrated to ' + dst.name + ' and settled in ' + c.city + '.');
+    c.happiness = clamp(c.happiness + 8, 0, 100);
+  } else {
+    c.money -= fee;
+    pushEvent('bad', '🛂 Visa denied for ' + dst.name + '. Lost the ' + fmtMoney(fee) + ' application fee.');
+    c.happiness = clamp(c.happiness - 6, 0, 100);
+  }
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  CULTURAL EVENTS — country-specific festivals & holidays
+// ═══════════════════════════════════════════════════════════════════════
+const CULTURAL_EVENTS = {
+  us: [{txt:'You celebrated July 4th with fireworks.', fx:{happiness:+6}},
+       {txt:'Thanksgiving dinner with the family.', fx:{happiness:+8, karma:+2}}],
+  uk: [{txt:'You went to Guy Fawkes Night.', fx:{happiness:+5}},
+       {txt:'Sunday roast with the family.', fx:{happiness:+6}}],
+  jp: [{txt:'Cherry blossom viewing (Hanami).', fx:{happiness:+10, faith:+2}},
+       {txt:'You wore a yukata to the summer festival.', fx:{happiness:+8}}],
+  br: [{txt:'You partied through Carnaval.', fx:{happiness:+15, looks:+1}},
+       {txt:'Festa Junina with the neighborhood.', fx:{happiness:+8}}],
+  in: [{txt:'You celebrated Diwali with the family.', fx:{happiness:+10, faith:+5}},
+       {txt:'You threw color powder at strangers during Holi.', fx:{happiness:+12}}],
+  fr: [{txt:'You watched the Bastille Day parade.', fx:{happiness:+6}},
+       {txt:'Long lunch with wine and friends.', fx:{happiness:+8}}],
+  de: [{txt:'You went to Oktoberfest.', fx:{happiness:+10, health:-2}},
+       {txt:'Christmas markets in the snow.', fx:{happiness:+8}}],
+  cn: [{txt:'Chinese New Year reunion dinner.', fx:{happiness:+10, faith:+3}},
+       {txt:'Mid-Autumn Festival with mooncakes.', fx:{happiness:+7}}],
+  ca: [{txt:'You celebrated Canada Day with neighbors.', fx:{happiness:+6}},
+       {txt:'Maple syrup festival in the woods.', fx:{happiness:+7}}],
+  au: [{txt:'You spent Australia Day at the beach.', fx:{happiness:+10}},
+       {txt:'Boxing Day cricket on TV.', fx:{happiness:+5}}],
+  ng: [{txt:'You attended a vibrant wedding ceremony.', fx:{happiness:+12, karma:+3}},
+       {txt:'Independence Day celebration.', fx:{happiness:+6}}],
+  mx: [{txt:'Día de los Muertos to honor the dead.', fx:{happiness:+6, faith:+5}},
+       {txt:'Quinceañera party for a niece.', fx:{happiness:+8}}],
+  kr: [{txt:'Chuseok harvest celebration with family.', fx:{happiness:+8, faith:+3}},
+       {txt:'You went to the noraebang (karaoke) all night.', fx:{happiness:+10}}],
+  ru: [{txt:'Maslenitsa pancake week.', fx:{happiness:+7}},
+       {txt:'A long banya (steam bath) afternoon.', fx:{happiness:+6, health:+2}}],
+  it: [{txt:'You celebrated Ferragosto on the coast.', fx:{happiness:+10}},
+       {txt:'Long Sunday lunch with extended family.', fx:{happiness:+8, karma:+2}}],
+};
+
+function rollCulturalEvent(){
+  const c = LIFE.char;
+  if(c.age < 6) return;
+  if(Math.random() > 0.08) return;
+  const pool = CULTURAL_EVENTS[c.country] || CULTURAL_EVENTS.us;
+  const ev = pickRand(pool);
+  const fx = ev.fx || {};
+  Object.keys(fx).forEach(k => {
+    if(c[k] != null) c[k] = clamp(c[k] + fx[k], 0, 100);
+  });
+  pushEvent('good', '🎊 ' + ev.txt);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TRUST FUND — $10M+ option to lock wealth for next 2 generations
+// ═══════════════════════════════════════════════════════════════════════
+function setUpTrust(){
+  const c = LIFE.char;
+  const totalNetWorth = c.money + (c.savings||0) + (c.investments||0);
+  if(totalNetWorth < 10000000){ toast('Trust funds require $10M+ in net worth.'); return; }
+  if(c.trust){ toast('You already have a trust set up.'); return; }
+  const fee = 50000;
+  if(c.money < fee){ toast('Trust setup costs ' + fmtMoney(fee) + '.'); return; }
+  c.money -= fee;
+  c.trust = {
+    amount: Math.floor((c.money + (c.savings||0) + (c.investments||0)) * 0.50),
+    generations: 2,
+    setUpAt: c.age,
+  };
+  // Move half the money into the trust (locked from taxes & creditors)
+  const move = c.trust.amount;
+  if(c.savings >= move){ c.savings -= move; }
+  else { const rem = move - c.savings; c.savings = 0; c.money -= rem; }
+  pushEvent('milestone', '🏛️ You set up a family trust with ' + fmtMoney(move) + '. It will pass tax-free to your descendants for 2 generations.');
+  c.karma = clamp(c.karma + 3, 0, 100);
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  INHERITANCE OVERHAUL — assets transfer, sibling distribution, court fights
+// ═══════════════════════════════════════════════════════════════════════
+function computeEstate(c){
+  const fis = fiscal(c.country);
+  const cash = c.money + (c.savings||0) + (c.investments||0);
+  const house = HOUSES.find(h => h.id === c.houseId);
+  const houseVal = (house && house.price > 0) ? Math.floor(house.price * (COUNTRIES[c.country].costMult||1) * 0.85) : 0;
+  const car = CARS.find(x => x.id === c.carId);
+  const carVal = (car && car.price > 0) ? Math.floor(car.price * 0.6) : 0;
+  const trustVal = (c.trust && c.trust.amount) ? c.trust.amount : 0;
+  // Estate tax only on non-trust assets
+  const taxable = Math.max(0, (cash + houseVal + carVal) - fis.estateExempt);
+  const tax = Math.floor(taxable * fis.estateTax);
+  return { cash, houseVal, carVal, trustVal, tax, totalAfterTax: cash + houseVal + carVal - tax + trustVal, houseId:c.houseId, carId:c.carId };
+}
+
+// When the player chooses a child to continue as, the prior version was: liquidate, split cash only.
+// New: enter inheritance decision flow with multiple living kids.
+let _pendingInheritance = null;
+function continueAs(kidName){
+  const oldChar = LIFE.char;
+  const liveKids = oldChar.children.filter(k => k.alive);
+  if(liveKids.length === 0){ restartFromBirth(); return; }
+  if(liveKids.length === 1){
+    // Single heir — gets everything directly
+    inheritAs(kidName, 'sole');
+    return;
+  }
+  // Multiple heirs — show decision modal
+  _pendingInheritance = { kidName: kidName };
+  const estate = computeEstate(oldChar);
+  let html = '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.18em;color:var(--accent2);text-transform:uppercase;margin-bottom:8px;">Estate Summary</div>'
+    + '<div style="font-size:13px;line-height:1.7;">'
+    + 'Cash + savings + investments: ' + fmtMoney(estate.cash) + '<br>'
+    + 'Home value: ' + fmtMoney(estate.houseVal) + '<br>'
+    + 'Vehicle value: ' + fmtMoney(estate.carVal) + '<br>'
+    + 'Trust (passes tax-free): ' + fmtMoney(estate.trustVal) + '<br>'
+    + 'Estate tax owed: −' + fmtMoney(estate.tax) + '<br>'
+    + '<b style="color:var(--green);">Total inheritable: ' + fmtMoney(estate.totalAfterTax) + '</b><br>'
+    + 'Living heirs: ' + liveKids.length + '<br>'
+    + '</div></div>'
+    + '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:14px 0 10px;">How should the estate be divided?</div>';
+  html += '<div class="card" onclick="finalizeInheritance(\'equal\')" style="cursor:pointer;">'
+    + '<div class="card-ico">🤝</div>'
+    + '<div class="card-body"><div class="card-title">Equal Split Between Heirs</div>'
+    + '<div class="card-meta">Each heir gets ' + fmtMoney(Math.floor(estate.totalAfterTax / liveKids.length)) + '. Clean. No litigation. Family stays intact.</div></div>'
+    + '<div class="card-act"><button class="card-btn green">Choose</button></div></div>';
+  html += '<div class="card" onclick="finalizeInheritance(\'court\')" style="cursor:pointer;">'
+    + '<div class="card-ico">⚖️</div>'
+    + '<div class="card-body"><div class="card-title">Court Fight Over the Estate</div>'
+    + '<div class="card-meta">Legal fees consume 30% of the estate. You (as the chosen heir) win 55% of what remains, others split the rest. Siblings may resent you for life.</div></div>'
+    + '<div class="card-act"><button class="card-btn danger">Fight</button></div></div>';
+  html += '<div class="card" onclick="finalizeInheritance(\'leave_all\')" style="cursor:pointer;">'
+    + '<div class="card-ico">📜</div>'
+    + '<div class="card-body"><div class="card-title">Will Left Everything to Chosen Heir</div>'
+    + '<div class="card-meta">Old character\'s will named ' + kidName + ' as sole heir. Other siblings get nothing. They will not forget.</div></div>'
+    + '<div class="card-act"><button class="card-btn">Choose</button></div></div>';
+  document.getElementById('death-screen').classList.remove('show');
+  openModal('🪦 Inheritance Decision', html);
+}
+
+function finalizeInheritance(mode){
+  if(!_pendingInheritance) return;
+  inheritAs(_pendingInheritance.kidName, mode);
+  _pendingInheritance = null;
+  closeModal();
+}
+
+function inheritAs(kidName, mode){
+  const oldChar = LIFE.char;
+  const kid = oldChar.children.find(k => k.name === kidName && k.alive);
+  if(!kid){ restartFromBirth(); return; }
+  const liveKids = oldChar.children.filter(k => k.alive);
+  const estate = computeEstate(oldChar);
+
+  let share = 0;
+  let inheritsHouse = false;
+  let inheritsCar = false;
+  let resentment = 0;
+
+  if(mode === 'sole' || liveKids.length === 1){
+    share = estate.totalAfterTax;
+    inheritsHouse = true;
+    inheritsCar = true;
+  } else if(mode === 'equal'){
+    share = Math.floor(estate.totalAfterTax / liveKids.length);
+    // Largest assets go to chosen heir, others get cash equivalent
+    inheritsHouse = true;
+    inheritsCar = true;
+  } else if(mode === 'court'){
+    const afterLegal = Math.floor(estate.totalAfterTax * 0.70);
+    share = Math.floor(afterLegal * 0.55);
+    inheritsHouse = true;
+    inheritsCar = true;
+    resentment = -25;
+  } else if(mode === 'leave_all'){
+    share = estate.totalAfterTax;
+    inheritsHouse = true;
+    inheritsCar = true;
+    resentment = -40;
+  }
+
+  // Build the next-gen character
+  const country = oldChar.country;
+  const newSeed = {
+    firstName: kid.name.split(' ')[0],
+    lastName: kid.lastName || oldChar.lastName,
+    sex: kid.sex,
+    country: country,
+    city: oldChar.city,
+    parents: {
+      mom: oldChar.sex==='f' ? {
+        firstName:oldChar.firstName, lastName:oldChar.lastName, sex:'f',
+        age:oldChar.age, occupation:'Deceased', alive:false,
+        diseases: oldChar.diseases||[],
+      } : (oldChar.partner ? {
+        firstName:oldChar.partner.firstName, lastName:oldChar.partner.lastName, sex:'f',
+        age:oldChar.partner.age, occupation:oldChar.partner.occupation, alive:!!oldChar.partner.alive,
+      } : makePerson(country,'f',[40,55])),
+      dad: oldChar.sex==='m' ? {
+        firstName:oldChar.firstName, lastName:oldChar.lastName, sex:'m',
+        age:oldChar.age, occupation:'Deceased', alive:false,
+        diseases: oldChar.diseases||[],
+      } : (oldChar.partner ? {
+        firstName:oldChar.partner.firstName, lastName:oldChar.partner.lastName, sex:'m',
+        age:oldChar.partner.age, occupation:oldChar.partner.occupation, alive:!!oldChar.partner.alive,
+      } : makePerson(country,'m',[40,55])),
+    },
+    siblings: oldChar.children.filter(k => k.name !== kidName).map(s => ({
+      firstName: s.name.split(' ')[0],
+      lastName:  s.lastName || oldChar.lastName,
+      sex: s.sex, age: s.age, occupation: 'Family',
+      alive: s.alive,
+      rapport: 50 + (resentment || 0),
+    })),
+    inheritance: share,
+  };
+  LIFE.generation++;
+  const ch = defaultChar(newSeed);
+  ch.age = kid.age;
+  ch.smarts = kid.smarts || ch.smarts;
+  ch.looks  = kid.looks  || ch.looks;
+  ch.health = kid.health || ch.health;
+  ch.money  = share;
+  ch.born   = (new Date().getFullYear()) - ch.age;
+  ch.diseases = kid.diseases || [];
+
+  // Inherit real assets
+  if(inheritsHouse && oldChar.houseId && oldChar.houseId !== 'family') ch.houseId = oldChar.houseId;
+  if(inheritsCar && oldChar.carId && oldChar.carId !== 'none') ch.carId = oldChar.carId;
+  // Trust pass-through
+  if(oldChar.trust && oldChar.trust.generations > 0){
+    ch.trust = {
+      amount: oldChar.trust.amount,
+      generations: oldChar.trust.generations - 1,
+      setUpAt: oldChar.trust.setUpAt,
+    };
+    ch.money += ch.trust.amount;
+  }
+  // Rooms transfer if inheriting house
+  if(inheritsHouse && oldChar.rooms){
+    ch.rooms = oldChar.rooms.slice();
+  }
+
+  LIFE.char = ch;
+  let modeText = '';
+  if(mode === 'equal'){ modeText = 'The family agreed to an equal split — peace was kept.'; }
+  else if(mode === 'court'){ modeText = 'The court fight cost the family 30% of the estate. Your siblings still aren\'t speaking to you.'; }
+  else if(mode === 'leave_all'){ modeText = 'The will left you everything. Your siblings vowed never to speak to you again.'; }
+  else { modeText = 'You inherited the estate as the only living heir.'; }
+  pushEvent('milestone', '👑 You inherited ' + fmtMoney(share) + ' from ' + oldChar.firstName + ' ' + oldChar.lastName + '. ' + modeText
+    + (inheritsHouse && oldChar.houseId !== 'family' ? ' You took over the family ' + (HOUSES.find(h=>h.id===oldChar.houseId)||{name:'home'}).name + '.' : '')
+    + (oldChar.trust && oldChar.trust.generations > 0 ? ' The family trust passed to you, ' + (oldChar.trust.generations-1) + ' generation(s) of tax shelter remaining.' : ''));
+  document.getElementById('death-screen').classList.remove('show');
   renderAll();
   saveLife();
 }

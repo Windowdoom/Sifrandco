@@ -348,6 +348,47 @@ input,select{font-family:inherit;}
 .hs-toggle:hover{color:var(--t1);border-color:var(--accent);}
 #home-scene.collapsed + #timeline-wrap{height:100%;}
 
+/* ─── City Mini-Map ─── */
+.city-modal{padding:0;}
+#city-map{position:relative;width:100%;height:480px;
+  background:
+    linear-gradient(180deg,#1a3a5a 0%,#2a4a6a 50%,#3a5a4a 70%,#2a4a3a 100%),
+    repeating-linear-gradient(0deg,transparent 0,transparent 40px,rgba(255,255,255,.02) 40px,rgba(255,255,255,.02) 41px),
+    repeating-linear-gradient(90deg,transparent 0,transparent 40px,rgba(255,255,255,.02) 40px,rgba(255,255,255,.02) 41px);
+  overflow:hidden;border:1px solid var(--b1);border-radius:6px;cursor:crosshair;}
+.cm-road-h{position:absolute;left:0;right:0;height:36px;background:#1a1a22;
+  border-top:2px dashed #4a4a3a;border-bottom:2px dashed #4a4a3a;}
+.cm-road-v{position:absolute;top:0;bottom:0;width:36px;background:#1a1a22;
+  border-left:2px dashed #4a4a3a;border-right:2px dashed #4a4a3a;}
+.cm-bldg{position:absolute;width:62px;height:62px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:linear-gradient(180deg,#3a3a4a,#2a2a36);
+  border:2px solid #4a4a5a;border-radius:6px;cursor:pointer;font-size:28px;line-height:1;
+  transition:all .15s;text-shadow:0 2px 4px rgba(0,0,0,.5);}
+.cm-bldg:hover{transform:scale(1.08);border-color:var(--accent);
+  box-shadow:0 0 12px rgba(157,107,255,.5);z-index:5;}
+.cm-bldg .cm-bldg-label{font-family:var(--font-m);font-size:7px;letter-spacing:.05em;
+  color:var(--t1);background:rgba(0,0,0,.7);padding:1px 4px;border-radius:2px;
+  margin-top:2px;white-space:nowrap;}
+.cm-bldg.home{background:linear-gradient(180deg,#5a4828,#4a3820);border-color:var(--gold);}
+.cm-bldg.shop{background:linear-gradient(180deg,#3a5a4a,#2a4a3a);border-color:var(--green);}
+.cm-bldg.school{background:linear-gradient(180deg,#3a4a5a,#2a3a4a);border-color:var(--teal);}
+.cm-bldg.medical{background:linear-gradient(180deg,#5a3a3a,#4a2a2a);border-color:var(--crimson);}
+.cm-bldg.entertainment{background:linear-gradient(180deg,#5a4a5a,#4a3a4a);border-color:var(--accent);}
+.cm-bldg.civic{background:linear-gradient(180deg,#5a5828,#4a4820);border-color:var(--gold);}
+.cm-bldg.neighbor{background:linear-gradient(180deg,#3a3a3a,#2a2a2a);}
+.cm-player{position:absolute;width:32px;height:32px;font-size:26px;line-height:32px;
+  text-align:center;z-index:6;transition:left .8s ease, top .8s ease;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));pointer-events:none;}
+.cm-player::after{content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
+  width:20px;height:4px;background:radial-gradient(ellipse,rgba(255,208,96,.6),transparent 70%);
+  border-radius:50%;}
+.cm-tree{position:absolute;font-size:22px;opacity:.7;}
+.cm-tree:after{content:'';}
+.cm-status{padding:8px 14px;font-family:var(--font-m);font-size:10px;color:var(--accent2);
+  letter-spacing:.16em;text-transform:uppercase;background:#0a0a14;border-top:1px solid var(--b1);}
+.cm-npc{position:absolute;font-size:18px;animation:cm-walk 6s linear infinite;}
+@keyframes cm-walk{0%{transform:translateX(0);}25%{transform:translateX(20px);}50%{transform:translateX(0);}75%{transform:translateX(-20px);}100%{transform:translateX(0);}}
+
 /* Tiny scrollbar */
 ::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
@@ -444,6 +485,7 @@ input,select{font-family:inherit;}
       <button class="act-btn" onclick="openBanking()">🏦 Bank</button>
       <button class="act-btn" onclick="openShop()">🏠 Assets</button>
       <button class="act-btn" onclick="openCrime()">🦹 Crime</button>
+      <button class="act-btn" onclick="openCityMap()">🏙️ City</button>
       <button class="act-btn" onclick="openMore()">✨ More</button>
     </div>
   </div>
@@ -1503,6 +1545,10 @@ function defaultChar(seed){
     placesVisited:[],        // vacation destinations
     bodyMods:  [],           // tattoos/piercings
     addictions:[],           // substance addictions
+    diseases:  [],           // inherited genetic conditions
+    fertility: 'normal',     // infertile / low / normal / high / multiparous
+    neighbors: {},           // n1..n4 procedurally generated
+    civicVotes: 0,
     career:    null,    // {key, rungIdx, yearsAtRung, totalYears, currentSalary}
     degree:    null,    // currently enrolled degree id
     degreeYearsLeft: 0,
@@ -1640,6 +1686,9 @@ function pushBirthEvents(){
     picked.push(t);
   }
   c.traits = picked.map(t => t.id);
+  // Assign fertility profile and inherited genetic diseases
+  assignFertilityProfile();
+  assignGeneticDiseases();
   pushEvent('milestone',
     'You were born in ' + c.city + ', ' + country.name + '. '
     + 'Your parents are ' + c.parents.mom.firstName + ' (' + c.parents.mom.occupation + ') '
@@ -1762,6 +1811,8 @@ function ageUp(){
   generateFriendIfNeeded();
   // addictions cost you money + health each year
   processAddictionsYearly();
+  // genetic diseases tick health/happiness drift after onset age
+  processGeneticDiseases();
   // stat natural decay/growth
   applyAgeDrift();
   // Pad the year with a "quiet year" entry if nothing happened so every year is visible
@@ -2254,6 +2305,35 @@ function renderFamily(){
         + '<div class="fam-meta">Immortal. Aging slows. Thirsts.</div></div></div>';
     }
     html += '</div>';
+  }
+  // Genetic conditions
+  if(c.diseases && c.diseases.length){
+    html += '<div class="fam-section"><div class="fam-section-h">Genetic Profile</div>';
+    c.diseases.forEach(did => {
+      const d = GENETIC_DISEASES.find(x => x.id === did);
+      if(!d) return;
+      const onset = c.age >= d.onset;
+      html += '<div class="fam-row"><div class="fam-emoji">' + d.ico + '</div>'
+        + '<div class="fam-info"><div class="fam-name">' + d.name + (d.beneficial?' ✨':'') + '</div>'
+        + '<div class="fam-meta">' + (onset?'Active':'Latent — onset at age '+d.onset) + '</div></div></div>';
+    });
+    html += '</div>';
+  }
+  // Fertility profile (only show once they're adult and partnered, or post-attempt)
+  if(c.age >= 18 && c.fertility){
+    const fertText = {
+      infertile:'Medically infertile',
+      low:'Low fertility',
+      normal:'Normal fertility',
+      high:'High fertility',
+      multiparous:'Multiparous — prone to multiples',
+    }[c.fertility] || 'Unknown';
+    if(c.fertility !== 'normal'){
+      html += '<div class="fam-section"><div class="fam-section-h">Fertility</div>'
+        + '<div class="fam-row"><div class="fam-emoji">🧬</div>'
+        + '<div class="fam-info"><div class="fam-name">' + fertText + '</div></div></div>'
+        + '</div>';
+    }
   }
   // Pets
   const alivePets = (c.pets || []).filter(p => p.alive);
@@ -4697,6 +4777,517 @@ function openAchievements(){
     html += '</div>';
   }
   openModal('🏆 Achievements (' + list.length + ')', html);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  CITY MINI-MAP — neighborhood with movable character
+// ═══════════════════════════════════════════════════════════════════════
+const CITY_LAYOUT = [
+  {id:'home',      name:'Your House',      icon:'🏠', x:46, y:36, type:'home',          action:'goHome'},
+  {id:'school',    name:'School',          icon:'🏫', x:12, y:18, type:'school',        action:'cityGoSchool'},
+  {id:'university',name:'University',      icon:'🎓', x:30, y:8,  type:'school',        action:'openColleges'},
+  {id:'hospital',  name:'Hospital',        icon:'🏥', x:78, y:18, type:'medical',       action:'cityGoHospital'},
+  {id:'church',    name:'Place of Worship',icon:'⛪', x:8,  y:60, type:'civic',         action:'openReligion'},
+  {id:'mall',      name:'Shopping Mall',   icon:'🛍️', x:62, y:62, type:'shop',          action:'openShops'},
+  {id:'cinema',    name:'Cinema',          icon:'🎬', x:78, y:78, type:'entertainment', action:'openMovies'},
+  {id:'club',      name:'Nightclub',       icon:'🕺', x:18, y:80, type:'entertainment', action:'cityNightclub'},
+  {id:'gym',       name:'Gym',             icon:'🏋️', x:60, y:18, type:'entertainment', action:'cityGym'},
+  {id:'bank',      name:'Bank',            icon:'🏦', x:88, y:46, type:'civic',         action:'openBanking'},
+  {id:'cityhall',  name:'City Hall',       icon:'🏛️', x:42, y:8,  type:'civic',         action:'cityHall'},
+  {id:'police',    name:'Police Station',  icon:'🚓', x:8,  y:36, type:'civic',         action:'cityPolice'},
+  {id:'restaurant',name:'Restaurant',      icon:'🍽️', x:30, y:62, type:'shop',          action:'cityRestaurant'},
+  {id:'park',      name:'Park',            icon:'🌳', x:50, y:78, type:'entertainment', action:'cityPark'},
+  {id:'library',   name:'Library',         icon:'📚', x:88, y:62, type:'civic',         action:'cityLibrary'},
+  {id:'neighbor1', name:'Smith Residence', icon:'🏡', x:22, y:46, type:'neighbor',      action:'visitNeighbor', npcKey:'n1'},
+  {id:'neighbor2', name:'Garcia Residence',icon:'🏡', x:70, y:46, type:'neighbor',      action:'visitNeighbor', npcKey:'n2'},
+  {id:'neighbor3', name:'Kim Residence',   icon:'🏡', x:62, y:36, type:'neighbor',      action:'visitNeighbor', npcKey:'n3'},
+  {id:'neighbor4', name:'Patel Residence', icon:'🏡', x:30, y:36, type:'neighbor',      action:'visitNeighbor', npcKey:'n4'},
+];
+
+let _cityPlayerPos = { x:46, y:36 }; // start at home
+
+function ensureNeighbors(){
+  const c = LIFE.char;
+  if(c.neighbors && Object.keys(c.neighbors).length >= 4) return;
+  if(!c.neighbors) c.neighbors = {};
+  ['n1','n2','n3','n4'].forEach(k => {
+    if(c.neighbors[k]) return;
+    const sex = Math.random()<0.5?'m':'f';
+    c.neighbors[k] = {
+      firstName: pickRand(NAMES[c.country][sex]),
+      lastName:  pickRand(NAMES[c.country].l),
+      sex: sex, age: rangeRand(22, 65),
+      occupation: pickRand(PARTNER_OCCUPATIONS).title,
+      rapport: rangeRand(40, 70),
+      trait: pickRand(['friendly','grumpy','nosy','quiet','outgoing','suspicious']),
+    };
+  });
+}
+
+function openCityMap(){
+  ensureNeighbors();
+  const c = LIFE.char;
+  const map = '<div id="city-map">'
+    + '<div class="cm-road-h" style="top:46%;"></div>'
+    + '<div class="cm-road-v" style="left:46%;"></div>'
+    + '<div class="cm-tree" style="left:18%;top:6%;">🌳</div>'
+    + '<div class="cm-tree" style="left:54%;top:30%;">🌲</div>'
+    + '<div class="cm-tree" style="left:84%;top:6%;">🌳</div>'
+    + '<div class="cm-tree" style="left:42%;top:54%;">🌲</div>'
+    + '<div class="cm-tree" style="left:6%;top:88%;">🌳</div>'
+    + '<div class="cm-tree" style="left:92%;top:88%;">🌳</div>'
+    + '<div class="cm-npc" style="left:38%;top:74%;">🚶</div>'
+    + '<div class="cm-npc" style="left:74%;top:30%;animation-delay:-2s;">🚶</div>'
+    + '<div class="cm-npc" style="left:14%;top:54%;animation-delay:-4s;">🚶‍♀️</div>'
+    + CITY_LAYOUT.map(b => (
+        '<div class="cm-bldg ' + b.type + '" '
+        + 'style="left:' + b.x + '%;top:' + b.y + '%;" '
+        + 'onclick="cityWalkTo(' + b.x + ',' + b.y + ',\'' + b.id + '\')">'
+        + '<div>' + b.icon + '</div>'
+        + '<div class="cm-bldg-label">' + b.name + '</div>'
+        + '</div>'
+      )).join('')
+    + '<div class="cm-player" id="cm-player" style="left:' + _cityPlayerPos.x + '%;top:' + _cityPlayerPos.y + '%;">'
+    + avatarForChar(c) + '</div>'
+    + '</div>'
+    + '<div class="cm-status" id="cm-status">Click a building to walk there and interact.</div>';
+  openModal('🏙️ Your Neighborhood — ' + c.city + ', ' + COUNTRIES[c.country].short, map);
+  // Make modal body roomier for the map
+  setTimeout(() => {
+    const body = document.getElementById('modal-body');
+    if(body) body.style.padding = '12px 14px';
+  }, 10);
+}
+
+function cityWalkTo(x, y, buildingId){
+  _cityPlayerPos = { x, y };
+  const p = document.getElementById('cm-player');
+  if(p){ p.style.left = x + '%'; p.style.top = y + '%'; }
+  const status = document.getElementById('cm-status');
+  const b = CITY_LAYOUT.find(x => x.id === buildingId);
+  if(b && status){
+    status.textContent = 'Walking to ' + b.name + '...';
+  }
+  // After walk animation, trigger interaction
+  setTimeout(() => {
+    if(b && b.action){
+      cityInteract(b);
+    }
+  }, 820);
+}
+
+function cityInteract(b){
+  closeModal();
+  const fn = window[b.action];
+  if(typeof fn === 'function'){
+    if(b.action === 'visitNeighbor'){ visitNeighbor(b.npcKey); }
+    else { fn(); }
+  } else {
+    toast(b.name + ' — nothing to do here right now.');
+  }
+}
+
+// ─── City building handlers ───
+function goHome(){ toast('You\'re already home.'); }
+function cityGoSchool(){ openColleges(); }
+function cityGoHospital(){
+  const c = LIFE.char;
+  if(c.money < 300){ toast('Hospital visit costs $300. Need more cash.'); return; }
+  c.money -= 300;
+  c.health = clamp(c.health + 15, 0, 100);
+  pushEvent('good', '🏥 Visited the hospital. +15 health, −$300.');
+  renderAll();
+  saveLife();
+}
+function cityNightclub(){
+  const c = LIFE.char;
+  if(c.age < 18){ toast('Need to be 18+.'); return; }
+  if(c.money < 80){ toast('Cover charge + drinks = $80.'); return; }
+  c.money -= 80;
+  const happy = rangeRand(4, 14);
+  c.happiness = clamp(c.happiness + happy, 0, 100);
+  c.health = clamp(c.health - 2, 0, 100);
+  if(Math.random() < 0.15){
+    // Meet a date
+    pushEvent('romantic', '💃 You met someone interesting at the club. Check Relationships to follow up.');
+  } else {
+    pushEvent('good', '🕺 Wild night at the club. Happiness +' + happy + '.');
+  }
+  renderAll();
+  saveLife();
+}
+function cityGym(){
+  const c = LIFE.char;
+  if(c.money < 50){ toast('Day pass is $50.'); return; }
+  c.money -= 50;
+  c.health = clamp(c.health + 6, 0, 100);
+  c.looks  = clamp(c.looks + 2, 0, 100);
+  pushEvent('good', '🏋️ Workout at the gym. +6 health, +2 looks.');
+  renderAll();
+  saveLife();
+}
+function cityHall(){
+  const c = LIFE.char;
+  if(c.age < 18){ toast('Adults only for civic affairs.'); return; }
+  // Voting / civic engagement
+  if(!c.civicVotes) c.civicVotes = 0;
+  c.civicVotes++;
+  c.karma = clamp(c.karma + 3, 0, 100);
+  pushEvent('milestone', '🗳️ You voted in the local election. Karma +3.');
+  renderAll();
+  saveLife();
+}
+function cityPolice(){
+  const c = LIFE.char;
+  // Report a crime, file a complaint
+  if(c.karma < 30){
+    pushEvent('bad', '🚓 You walked into the police station. They held you for questioning.');
+    c.happiness = clamp(c.happiness - 4, 0, 100);
+  } else {
+    pushEvent('good', '🚓 You filed a report at the police station. Felt civic-minded.');
+    c.karma = clamp(c.karma + 2, 0, 100);
+  }
+  renderAll();
+  saveLife();
+}
+function cityRestaurant(){
+  const c = LIFE.char;
+  const cost = rangeRand(35, 120);
+  if(c.money < cost){ toast('Need at least $' + cost + ' for the meal.'); return; }
+  c.money -= cost;
+  c.happiness = clamp(c.happiness + 4, 0, 100);
+  pushEvent('good', '🍽️ Nice meal out. −$' + cost + '.');
+  renderAll();
+  saveLife();
+}
+function cityPark(){
+  const c = LIFE.char;
+  c.happiness = clamp(c.happiness + 3, 0, 100);
+  c.health    = clamp(c.health + 1, 0, 100);
+  pushEvent('good', '🌳 Walked through the park. Felt at peace.');
+  renderAll();
+  saveLife();
+}
+function cityLibrary(){
+  const c = LIFE.char;
+  c.smarts = clamp(c.smarts + 2, 0, 100);
+  pushEvent('good', '📚 Spent the afternoon at the library. +2 smarts.');
+  renderAll();
+  saveLife();
+}
+
+function visitNeighbor(key){
+  const c = LIFE.char;
+  ensureNeighbors();
+  const n = c.neighbors[key];
+  if(!n) return;
+  let html = '<div class="card" style="border-color:var(--accent);background:#1a1428;">'
+    + '<div class="card-ico">' + (n.sex==='m'?'🧑':'👩') + '</div>'
+    + '<div class="card-body"><div class="card-title">' + n.firstName + ' ' + n.lastName + '</div>'
+    + '<div class="card-meta">Age ' + n.age + ' · ' + n.occupation + ' · Trait: ' + n.trait + '</div>'
+    + '<div class="card-meta">Rapport with you: ' + n.rapport + '%</div></div></div>';
+  html += '<div class="card"><div class="card-ico">🗣️</div>'
+    + '<div class="card-body"><div class="card-title">Chat with ' + n.firstName + '</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="neighborChat(\'' + key + '\')">Chat</button></div></div>';
+  html += '<div class="card"><div class="card-ico">🎁</div>'
+    + '<div class="card-body"><div class="card-title">Give a Gift ($40)</div></div>'
+    + '<div class="card-act"><button class="card-btn green" onclick="neighborGift(\'' + key + '\')">Give</button></div></div>';
+  if(n.rapport >= 60){
+    html += '<div class="card"><div class="card-ico">🤝</div>'
+      + '<div class="card-body"><div class="card-title">Ask to Be Friends</div></div>'
+      + '<div class="card-act"><button class="card-btn green" onclick="neighborFriend(\'' + key + '\')">Befriend</button></div></div>';
+  }
+  if(c.karma < 30){
+    html += '<div class="card"><div class="card-ico">😈</div>'
+      + '<div class="card-body"><div class="card-title">Prank Them</div></div>'
+      + '<div class="card-act"><button class="card-btn danger" onclick="neighborPrank(\'' + key + '\')">Prank</button></div></div>';
+  }
+  openModal('🏡 ' + n.lastName + ' Residence', html);
+}
+function neighborChat(key){
+  const c = LIFE.char;
+  const n = c.neighbors[key];
+  n.rapport = clamp(n.rapport + 4, 0, 100);
+  c.happiness = clamp(c.happiness + 2, 0, 100);
+  pushEvent('good', '🗣️ Chatted with neighbor ' + n.firstName + '. Rapport +4.');
+  closeModal();
+  visitNeighbor(key);
+  renderAll();
+  saveLife();
+}
+function neighborGift(key){
+  const c = LIFE.char;
+  if(c.money < 40){ toast('Not enough money.'); return; }
+  c.money -= 40;
+  const n = c.neighbors[key];
+  n.rapport = clamp(n.rapport + 10, 0, 100);
+  pushEvent('good', '🎁 Gave a gift to ' + n.firstName + '. Rapport +10.');
+  closeModal();
+  visitNeighbor(key);
+  renderAll();
+  saveLife();
+}
+function neighborFriend(key){
+  const c = LIFE.char;
+  const n = c.neighbors[key];
+  if(n.rapport < 60){ toast('They don\'t know you well enough yet.'); return; }
+  if(!c.friends) c.friends = [];
+  c.friends.push({
+    firstName:n.firstName, lastName:n.lastName, sex:n.sex, age:n.age,
+    occupation:n.occupation, friendship: n.rapport,
+    metAt:c.age, alive:true, nickname:'neighbor friend',
+  });
+  pushEvent('good', '👋 You and ' + n.firstName + ' are now official friends.');
+  closeModal();
+  renderAll();
+  saveLife();
+}
+function neighborPrank(key){
+  const c = LIFE.char;
+  const n = c.neighbors[key];
+  n.rapport = clamp(n.rapport - 25, 0, 100);
+  c.karma = clamp(c.karma - 4, 0, 100);
+  pushEvent('bad', '😈 You pranked ' + n.firstName + ' brutally. Rapport tanked.');
+  closeModal();
+  visitNeighbor(key);
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  GENETIC DISEASES — inherited at birth
+// ═══════════════════════════════════════════════════════════════════════
+const GENETIC_DISEASES = [
+  {id:'diabetes',  name:'Type 1 Diabetes',     ico:'🩸', healthDrift:-1, happyDrift:0,  inherit:0.18, onset:8},
+  {id:'cancerProne',name:'Cancer-Prone',       ico:'🧬', healthDrift:-1, happyDrift:0,  inherit:0.25, onset:40},
+  {id:'heart',     name:'Heart Condition',     ico:'❤️', healthDrift:-2, happyDrift:0,  inherit:0.22, onset:35},
+  {id:'depression',name:'Clinical Depression', ico:'🌧️', healthDrift:0,  happyDrift:-2, inherit:0.30, onset:14},
+  {id:'anxiety',   name:'Anxiety Disorder',    ico:'😰', healthDrift:0,  happyDrift:-1, inherit:0.32, onset:12},
+  {id:'autism',    name:'Autism Spectrum',     ico:'🧩', healthDrift:0,  happyDrift:0,  smartsDrift:+1, inherit:0.25, onset:3},
+  {id:'sicklecell',name:'Sickle Cell',         ico:'🩹', healthDrift:-2, happyDrift:-1, inherit:0.20, onset:1},
+  {id:'huntington',name:'Huntington\'s',       ico:'🧠', healthDrift:-3, happyDrift:-2, inherit:0.50, onset:38, dominant:true},
+  {id:'colorblind',name:'Colorblindness',      ico:'🌈', healthDrift:0,  happyDrift:0,  inherit:0.15, onset:5},
+  {id:'celiac',    name:'Celiac Disease',      ico:'🌾', healthDrift:-1, happyDrift:0,  inherit:0.18, onset:10},
+  {id:'longevity', name:'Longevity Gene',      ico:'⏳', healthDrift:+1, happyDrift:0,  inherit:0.20, onset:0, beneficial:true},
+  {id:'highIQ',    name:'High-IQ Genetics',    ico:'🧠', smartsDrift:+1, happyDrift:0,  inherit:0.20, onset:0, beneficial:true},
+];
+
+function assignGeneticDiseases(){
+  const c = LIFE.char;
+  if(!c.diseases) c.diseases = [];
+  const parentDiseases = (c.parents && c.parents.mom && c.parents.mom.diseases || [])
+    .concat(c.parents && c.parents.dad && c.parents.dad.diseases || []);
+  GENETIC_DISEASES.forEach(d => {
+    // Parents carry it -> higher inherit chance; otherwise base low chance for de novo
+    const parentHas = parentDiseases.includes(d.id);
+    const chance = parentHas ? d.inherit : (d.beneficial ? d.inherit * 0.5 : 0.04);
+    if(Math.random() < chance){
+      c.diseases.push(d.id);
+    }
+  });
+}
+
+function processGeneticDiseases(){
+  const c = LIFE.char;
+  if(!c.diseases || !c.diseases.length) return;
+  c.diseases.forEach(did => {
+    const d = GENETIC_DISEASES.find(x => x.id === did);
+    if(!d) return;
+    if(c.age < d.onset) return;
+    if(c.age === d.onset){
+      const verb = d.beneficial ? '✨' : '🩺';
+      pushEvent(d.beneficial?'good':'bad', verb + ' Diagnosed with ' + d.name + '.');
+    }
+    if(d.healthDrift) c.health    = clamp(c.health + d.healthDrift, 0, 100);
+    if(d.happyDrift)  c.happiness = clamp(c.happiness + d.happyDrift, 0, 100);
+    if(d.smartsDrift) c.smarts    = clamp(c.smarts + d.smartsDrift, 0, 100);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  FERTILITY — barren / multiparity / twins / triplets
+// ═══════════════════════════════════════════════════════════════════════
+function assignFertilityProfile(){
+  const c = LIFE.char;
+  // Default normal fertility
+  const roll = Math.random();
+  if(roll < 0.06){ c.fertility = 'infertile'; }    // 6% cannot conceive
+  else if(roll < 0.12){ c.fertility = 'low'; }     // 6% low fertility
+  else if(roll < 0.85){ c.fertility = 'normal'; }  // 73% normal
+  else if(roll < 0.95){ c.fertility = 'high'; }    // 10% high
+  else { c.fertility = 'multiparous'; }            // 5% prone to twins/triplets
+}
+
+function getBabyOutcome(c){
+  // Returns array of {sex} babies and odds/rolls
+  const ageMod = c.age < 28 ? 1.0 : c.age < 35 ? 0.7 : c.age < 42 ? 0.3 : 0.08;
+  const fert = c.fertility || 'normal';
+  if(fert === 'infertile') return { success:false, msg:'Medically infertile — no conception possible.' };
+  let conceiveChance =
+    fert === 'low'         ? 0.18 * ageMod :
+    fert === 'normal'      ? 0.45 * ageMod :
+    fert === 'high'        ? 0.70 * ageMod :
+    fert === 'multiparous' ? 0.55 * ageMod : 0.40;
+  if(Math.random() >= conceiveChance) return { success:false, msg:'No luck this year.' };
+  // Multiples?
+  let count = 1;
+  if(fert === 'multiparous'){
+    const m = Math.random();
+    if(m < 0.40) count = 2;
+    else if(m < 0.55) count = 3;
+    else if(m < 0.58) count = 4;
+  } else if(Math.random() < 0.025){
+    count = 2; // baseline twin rate
+  }
+  const babies = [];
+  for(let i = 0; i < count; i++){
+    babies.push({ sex: Math.random() < 0.5 ? 'm' : 'f' });
+  }
+  return { success:true, babies };
+}
+
+// Override tryForBaby to use new fertility outcomes
+function tryForBaby(){
+  const c = LIFE.char;
+  const p = c.partner;
+  if(!p){ toast('Need a partner first.'); return; }
+  if(c.children && c.children.length >= 10){ toast('Ten kids is a lot.'); return; }
+  const outcome = getBabyOutcome(c);
+  if(!outcome.success){
+    toast(outcome.msg);
+    pushEvent('', '👶 ' + outcome.msg);
+    closeModal();
+    renderAll();
+    saveLife();
+    return;
+  }
+  outcome.babies.forEach((b, idx) => {
+    const babyName = prompt('Baby ' + (idx+1) + '/' + outcome.babies.length + ' is a '
+      + (b.sex==='m'?'boy':'girl') + '! Name them:', pickRand(NAMES[c.country][b.sex]));
+    if(babyName === null) return;
+    const inheritedDiseases = [];
+    GENETIC_DISEASES.forEach(d => {
+      if((c.diseases||[]).includes(d.id) && Math.random() < d.inherit){
+        inheritedDiseases.push(d.id);
+      }
+    });
+    c.children.push({
+      name: babyName || pickRand(NAMES[c.country][b.sex]),
+      sex: b.sex,
+      age: 0,
+      alive: true,
+      lastName: c.lastName,
+      smarts: Math.floor(((c.smarts + (p.smarts||60))/2) + rangeRand(-10,10)),
+      looks:  Math.floor(((c.looks + (p.looks||60))/2) + rangeRand(-10,10)),
+      health: rangeRand(60, 95),
+      diseases: inheritedDiseases,
+    });
+  });
+  const text = outcome.babies.length === 1
+    ? '👶 ' + p.firstName + ' gave birth to a baby ' + (outcome.babies[0].sex==='m'?'boy':'girl') + '.'
+    : '👶 ' + p.firstName + ' gave birth to ' + outcome.babies.length + ' babies' + (outcome.babies.length===3?' — triplets!':outcome.babies.length===2?' — twins!':' — quads!');
+  pushEvent('milestone', text);
+  c.money -= 8000 * outcome.babies.length;
+  c.happiness = clamp(c.happiness + 22, 0, 100);
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  MOVIES & SHOPS — city life
+// ═══════════════════════════════════════════════════════════════════════
+const MOVIES = [
+  {id:'action1',  name:'Vendetta Velocity 7',        ico:'💥', cost:15, fx:{happiness:+5}},
+  {id:'drama1',   name:'The Silence Between Us',     ico:'🎭', cost:15, fx:{happiness:+4, smarts:+1}},
+  {id:'comedy1',  name:'My Roommate Is a Goat',      ico:'😂', cost:15, fx:{happiness:+8}},
+  {id:'horror1',  name:'The House at Crooked Bend',  ico:'👻', cost:15, fx:{happiness:+3, health:-1}},
+  {id:'sci1',     name:'Helios: First Light',        ico:'🚀', cost:18, fx:{happiness:+6, smarts:+2}},
+  {id:'doc1',     name:'Inside the Genome',          ico:'🎞️', cost:12, fx:{smarts:+3, happiness:+2}},
+  {id:'romance1', name:'Two Hearts, One Coffee',     ico:'💕', cost:15, fx:{happiness:+5}},
+  {id:'animated1',name:'The Last Lighthouse Keeper', ico:'🎨', cost:13, fx:{happiness:+7, smarts:+1}},
+];
+
+function openMovies(){
+  const c = LIFE.char;
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Pick a movie. Concession stand drains your wallet.</div>';
+  MOVIES.forEach(m => {
+    const cost = m.cost + Math.floor(Math.random()*8);
+    const can = c.money >= cost;
+    const fxParts = Object.keys(m.fx).map(k => '+' + m.fx[k] + ' ' + k).join(' · ');
+    html += '<div class="card">'
+      + '<div class="card-ico">' + m.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + m.name + '</div>'
+      + '<div class="card-meta">' + fxParts + '</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(cost) + '</div>'
+      + '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="watchMovie(\'' + m.id + '\',' + cost + ')">Watch</button></div></div>';
+  });
+  openModal('🎬 Now Playing', html);
+}
+function watchMovie(id, cost){
+  const c = LIFE.char;
+  const m = MOVIES.find(x => x.id === id);
+  if(!m) return;
+  c.money -= cost;
+  Object.keys(m.fx).forEach(k => {
+    if(k === 'happiness') c.happiness = clamp(c.happiness + m.fx[k], 0, 100);
+    if(k === 'smarts')    c.smarts    = clamp(c.smarts + m.fx[k], 0, 100);
+    if(k === 'health')    c.health    = clamp(c.health + m.fx[k], 0, 100);
+  });
+  pushEvent('good', '🎬 You saw ' + m.name + ' at the cinema.');
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+const SHOP_ITEMS = [
+  {id:'clothes_casual',name:'Casual Outfit',     ico:'👕', cost:80,   fx:{looks:+1, happiness:+2}},
+  {id:'clothes_formal',name:'Formal Suit/Dress', ico:'👔', cost:450,  fx:{looks:+3, happiness:+3}},
+  {id:'shoes',         name:'New Shoes',         ico:'👟', cost:120,  fx:{looks:+2, happiness:+2}},
+  {id:'designer',      name:'Designer Brand',    ico:'👜', cost:2800, fx:{looks:+5, happiness:+5}},
+  {id:'phone',         name:'New Smartphone',    ico:'📱', cost:1200, fx:{happiness:+5}},
+  {id:'laptop',        name:'Laptop',            ico:'💻', cost:1800, fx:{smarts:+2, happiness:+3}},
+  {id:'tv',            name:'4K Television',     ico:'📺', cost:1400, fx:{happiness:+5}},
+  {id:'console',       name:'Game Console',      ico:'🎮', cost:500,  fx:{happiness:+6}},
+  {id:'jewelry',       name:'Jewelry',           ico:'💍', cost:3500, fx:{looks:+3, happiness:+4}},
+  {id:'art',           name:'Art Print',         ico:'🖼️', cost:400,  fx:{happiness:+3, smarts:+1}},
+  {id:'wine',          name:'Vintage Wine',      ico:'🍷', cost:280,  fx:{happiness:+4}},
+  {id:'gourmet',       name:'Gourmet Meal Kit',  ico:'🍱', cost:180,  fx:{happiness:+3, health:+1}},
+];
+
+function openShops(){
+  const c = LIFE.char;
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Buy something nice for yourself.</div>';
+  SHOP_ITEMS.forEach(item => {
+    const cost = Math.floor(item.cost * COUNTRIES[c.country].costMult);
+    const can = c.money >= cost;
+    const fxParts = Object.keys(item.fx).map(k => '+' + item.fx[k] + ' ' + k).join(' · ');
+    html += '<div class="card">'
+      + '<div class="card-ico">' + item.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + item.name + '</div>'
+      + '<div class="card-meta">' + fxParts + '</div></div>'
+      + '<div class="card-act"><div class="card-pay neg">−' + fmtMoney(cost) + '</div>'
+      + '<button class="card-btn ' + (can?'green':'muted') + '" ' + (can?'':'disabled') + ' onclick="buyItem(\'' + item.id + '\')">Buy</button></div></div>';
+  });
+  openModal('🛍️ Shopping Mall', html);
+}
+function buyItem(id){
+  const c = LIFE.char;
+  const item = SHOP_ITEMS.find(x => x.id === id);
+  if(!item) return;
+  const cost = Math.floor(item.cost * COUNTRIES[c.country].costMult);
+  if(c.money < cost){ toast('Not enough money.'); return; }
+  c.money -= cost;
+  Object.keys(item.fx).forEach(k => {
+    if(k === 'happiness') c.happiness = clamp(c.happiness + item.fx[k], 0, 100);
+    if(k === 'looks')     c.looks     = clamp(c.looks + item.fx[k], 0, 100);
+    if(k === 'smarts')    c.smarts    = clamp(c.smarts + item.fx[k], 0, 100);
+    if(k === 'health')    c.health    = clamp(c.health + item.fx[k], 0, 100);
+  });
+  pushEvent('good', '🛍️ Bought ' + item.name + ' for ' + fmtMoney(cost) + '.');
+  closeModal();
+  renderAll();
+  saveLife();
 }
 
 // ═══════════════════════════════════════════════════════════════════════

@@ -6,19 +6,24 @@
 <title>Lyfe-Walk · A Walkable Life</title>
 <style>
 :root{
-  --bg:#06080f;
-  --s1:#0e121a;
-  --s2:#161a26;
-  --t1:#f0f0f5;
-  --t2:#a8a8c0;
-  --t3:#666688;
-  --accent:#9d6bff;
-  --accent2:#c898ff;
-  --teal:#1dd6c4;
-  --gold:#ffd060;
-  --crimson:#ff5e5e;
-  --green:#5ee27a;
-  --pink:#ff8db4;
+  --bg:#0a0614;
+  --s1:#15102a;
+  --s2:#1f1840;
+  --t1:#f5f0ff;
+  --t2:#c4b8e0;
+  --t3:#8a7ab8;
+  --accent:#a855f7;
+  --accent2:#d8b4fe;
+  --teal:#06d6a0;
+  --gold:#fbbf24;
+  --crimson:#ef4444;
+  --green:#22c55e;
+  --pink:#ec4899;
+  --blue:#3b82f6;
+  --cyan:#22d3ee;
+  --magenta:#d946ef;
+  --lime:#a3e635;
+  --orange:#fb923c;
   --font-h:'Georgia',serif;
   --font-m:'Courier New',monospace;
   --font-s:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
@@ -47,26 +52,38 @@ button,input,select{font-family:inherit;cursor:pointer;}
   font-family:var(--font-m);font-size:9px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;}
 .tb-btn:hover{color:var(--t1);border-color:var(--accent);}
 
-#game{position:relative;flex:1;overflow:hidden;background:#02060c;}
-#world{position:absolute;left:0;top:0;transform-origin:0 0;transition:transform .25s ease-out;}
+#game{position:relative;flex:1;overflow:hidden;
+  background:radial-gradient(ellipse at center, #1a0c2e 0%, #06030f 70%);}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;transition:transform .25s ease-out;
+  box-shadow:0 0 80px rgba(168,85,247,.15);}
 .tile{position:absolute;width:32px;height:32px;}
-.tile.grass{background:#2a4a30;background-image:radial-gradient(circle at 50% 50%,#2e5235 0,#2a4a30 40%);}
-.tile.path{background:#6a5a40;background-image:radial-gradient(circle,#7a6850 0,#6a5a40 60%);}
-.tile.road{background:#1a1a22;border-top:1px dashed #4a4a3a;border-bottom:1px dashed #4a4a3a;}
-.tile.sidewalk{background:#5a5a6a;}
-.tile.floor{background:#7a6248;
-  background-image:repeating-linear-gradient(0deg,transparent 0,transparent 14px,rgba(0,0,0,.08) 14px,rgba(0,0,0,.08) 16px),
-                   repeating-linear-gradient(90deg,transparent 0,transparent 14px,rgba(0,0,0,.08) 14px,rgba(0,0,0,.08) 16px);}
-.tile.wall{background:linear-gradient(180deg,#3a2a18 0%,#2a1a10 100%);border-bottom:2px solid #1a0a04;}
+.tile.grass{background:#2e8a3e;
+  background-image:radial-gradient(circle at 30% 30%,#3eaf52 0,#2e8a3e 60%);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);}
+.tile.path{background:#9d7d56;
+  background-image:radial-gradient(circle,#b3915f 0,#9d7d56 60%);}
+.tile.road{background:#222230;
+  background-image:repeating-linear-gradient(90deg,#222230 0,#222230 20px,#3a3a48 20px,#3a3a48 22px);
+  border-top:1px solid rgba(251,191,36,.4);border-bottom:1px solid rgba(251,191,36,.4);}
+.tile.sidewalk{background:#7a7a90;
+  background-image:radial-gradient(circle,#8a8aa0 0,#7a7a90 60%);}
+.tile.floor{background:#a47e58;
+  background-image:repeating-linear-gradient(0deg,transparent 0,transparent 14px,rgba(0,0,0,.10) 14px,rgba(0,0,0,.10) 16px),
+                   repeating-linear-gradient(90deg,transparent 0,transparent 14px,rgba(0,0,0,.10) 14px,rgba(0,0,0,.10) 16px);}
+.tile.wall{background:linear-gradient(180deg,#5a3e22 0%,#3e2810 100%);
+  border-bottom:2px solid #1a0a04;box-shadow:inset 0 -2px 0 rgba(0,0,0,.3);}
 .tile.water{background:#2a4078;background-image:repeating-linear-gradient(45deg,transparent 0,transparent 5px,rgba(255,255,255,.06) 5px,rgba(255,255,255,.06) 10px);
   animation:water-wave 6s linear infinite;}
 @keyframes water-wave{from{background-position:0 0;}to{background-position:40px 20px;}}
 .tile.sand{background:#d4b878;background-image:radial-gradient(circle,#dcc080 0,#d4b878 60%);}
 .bldg{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:linear-gradient(180deg,#3a3a4a,#2a2a36);border:2px solid #4a4a5a;border-radius:4px;
-  cursor:pointer;font-size:32px;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,.5);transition:filter .15s;}
-.bldg:hover{filter:brightness(1.2);box-shadow:0 0 12px rgba(157,107,255,.6);}
-.bldg.highlighted{border-color:var(--accent);box-shadow:0 0 14px var(--accent);}
+  background:linear-gradient(180deg,#4a4a5a,#2a2a36);border:2px solid #6a6a7a;border-radius:6px;
+  cursor:pointer;font-size:40px;line-height:1;text-shadow:0 2px 6px rgba(0,0,0,.7);
+  box-shadow:0 4px 8px rgba(0,0,0,.4);transition:all .15s;}
+.bldg:hover{filter:brightness(1.25);transform:translateY(-2px);
+  box-shadow:0 0 20px var(--accent), 0 6px 12px rgba(0,0,0,.5);}
+.bldg.highlighted{border-color:var(--accent);box-shadow:0 0 24px var(--accent);animation:bldgPulse 1.2s infinite;}
+@keyframes bldgPulse{0%,100%{box-shadow:0 0 16px var(--accent);}50%{box-shadow:0 0 28px var(--magenta);}}
 .bldg-label{font-family:var(--font-m);font-size:8px;letter-spacing:.05em;color:var(--t1);
   background:rgba(0,0,0,.7);padding:1px 5px;border-radius:2px;margin-top:2px;white-space:nowrap;}
 .bldg.home{background:linear-gradient(180deg,#5a4828,#4a3820);border-color:var(--gold);}
@@ -96,10 +113,13 @@ button,input,select{font-family:inherit;cursor:pointer;}
   border:4px solid transparent;border-top-color:rgba(157,107,255,.95);border-bottom:0;}
 @keyframes promptPulse{0%,100%{opacity:.95;}50%{opacity:1;}}
 
-#hud{position:absolute;top:8px;left:8px;z-index:100;display:flex;flex-direction:column;gap:6px;
-  pointer-events:none;}
-.hud-stat-row{display:flex;gap:6px;align-items:center;background:rgba(0,0,0,.65);padding:3px 8px;
-  border-radius:11px;border:1px solid #2a2a3a;font-family:var(--font-m);font-size:9px;letter-spacing:.1em;}
+#hud{position:absolute;top:8px;left:8px;z-index:100;display:flex;flex-direction:column;gap:4px;
+  pointer-events:none;
+  background:rgba(10,6,20,.85);padding:8px 10px;border-radius:8px;
+  border:1px solid rgba(168,85,247,.3);
+  backdrop-filter:blur(8px);}
+.hud-stat-row{display:flex;gap:6px;align-items:center;padding:2px 4px;
+  font-family:var(--font-m);font-size:9px;letter-spacing:.08em;}
 .hud-stat-row .hsr-l{color:var(--t3);text-transform:uppercase;}
 .hud-stat-row .hsr-v{color:var(--t1);font-weight:700;}
 .hud-bar{width:60px;height:5px;background:#1a1a26;border-radius:3px;overflow:hidden;}
@@ -1074,10 +1094,20 @@ function centerCameraOnPlayer(){
   if(!game || !world) return;
   const gw = game.clientWidth, gh = game.clientHeight;
   const ww = world.clientWidth, wh = world.clientHeight;
-  let dx = gw/2 - tileToPx(G.player.x + 0.5);
-  let dy = gh/2 - tileToPx(G.player.y + 0.5);
-  dx = Math.min(0, Math.max(gw - ww, dx));
-  dy = Math.min(0, Math.max(gh - wh, dy));
+  let dx, dy;
+  // If world fits entirely in the viewport, center it. Otherwise camera-follow.
+  if(ww <= gw){
+    dx = (gw - ww) / 2;
+  } else {
+    dx = gw/2 - tileToPx(G.player.x + 0.5);
+    dx = Math.min(0, Math.max(gw - ww, dx));
+  }
+  if(wh <= gh){
+    dy = (gh - wh) / 2;
+  } else {
+    dy = gh/2 - tileToPx(G.player.y + 0.5);
+    dy = Math.min(0, Math.max(gh - wh, dy));
+  }
   world.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
 }
 

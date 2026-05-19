@@ -346,6 +346,10 @@ input,select{font-family:inherit;}
   background:rgba(0,0,0,.5);border:1px solid var(--b2);border-radius:50%;
   color:var(--t2);font-size:12px;text-align:center;line-height:20px;cursor:pointer;z-index:10;}
 .hs-toggle:hover{color:var(--t1);border-color:var(--accent);}
+.hs-hint{position:absolute;top:6px;left:8px;font-family:var(--font-m);font-size:8px;
+  letter-spacing:.12em;color:var(--t3);background:rgba(0,0,0,.4);
+  padding:2px 6px;border-radius:2px;pointer-events:none;text-transform:uppercase;}
+#home-scene{cursor:pointer;}
 #home-scene.collapsed + #timeline-wrap{height:100%;}
 
 /* ─── City Mini-Map ─── */
@@ -460,14 +464,15 @@ input,select{font-family:inherit;}
   <!-- CENTER: home scene + timeline + actions -->
   <div class="col col-c">
     <div id="home-scene-wrap">
-      <div id="home-scene">
+      <div id="home-scene" onclick="homeSceneClick(event)">
         <div class="hs-sky"></div>
         <div class="hs-house" id="hs-house"></div>
         <div class="hs-floor"></div>
         <div class="hs-actors" id="hs-actors"></div>
         <div class="hs-pets" id="hs-pets"></div>
         <div class="hs-decor" id="hs-decor"></div>
-        <div class="hs-toggle" onclick="toggleHomeScene()" id="hs-toggle">▾</div>
+        <div class="hs-toggle" onclick="event.stopPropagation();toggleHomeScene()" id="hs-toggle">▾</div>
+        <div class="hs-hint">Click to send yourself there. Pets and family will follow.</div>
       </div>
     </div>
     <div id="timeline-wrap" style="padding:18px;flex:1;overflow-y:auto;">
@@ -4368,6 +4373,24 @@ function toggleHomeScene(){
   if(t) t.textContent = el.classList.contains('collapsed') ? '▴' : '▾';
 }
 
+function homeSceneClick(e){
+  const scene = document.getElementById('home-scene');
+  if(!scene) return;
+  const rect = scene.getBoundingClientRect();
+  const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+  // Move the player avatar (first .hs-actor.player) to the click x
+  const playerEl = scene.querySelector('.hs-actor.player');
+  if(playerEl){
+    playerEl.style.left = clamp(xPct, 4, 92) + '%';
+  }
+  // Also nudge other actors and pets toward the click for a "they follow you" effect
+  const drift = (Math.random() - 0.5) * 12;
+  scene.querySelectorAll('.hs-actor:not(.player), .hs-pet').forEach(el => {
+    const newLeft = clamp(xPct + drift + (Math.random()-0.5)*18, 4, 92);
+    el.style.left = newLeft + '%';
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 //  FRIENDS — outside-family social network
 // ═══════════════════════════════════════════════════════════════════════
@@ -4827,7 +4850,7 @@ function ensureNeighbors(){
 function openCityMap(){
   ensureNeighbors();
   const c = LIFE.char;
-  const map = '<div id="city-map">'
+  const map = '<div id="city-map" onclick="cityWalkAnywhere(event)">'
     + '<div class="cm-road-h" style="top:46%;"></div>'
     + '<div class="cm-road-v" style="left:46%;"></div>'
     + '<div class="cm-tree" style="left:18%;top:6%;">🌳</div>'
@@ -4842,7 +4865,7 @@ function openCityMap(){
     + CITY_LAYOUT.map(b => (
         '<div class="cm-bldg ' + b.type + '" '
         + 'style="left:' + b.x + '%;top:' + b.y + '%;" '
-        + 'onclick="cityWalkTo(' + b.x + ',' + b.y + ',\'' + b.id + '\')">'
+        + 'onclick="event.stopPropagation();cityWalkTo(' + b.x + ',' + b.y + ',\'' + b.id + '\')">'
         + '<div>' + b.icon + '</div>'
         + '<div class="cm-bldg-label">' + b.name + '</div>'
         + '</div>'
@@ -4850,7 +4873,7 @@ function openCityMap(){
     + '<div class="cm-player" id="cm-player" style="left:' + _cityPlayerPos.x + '%;top:' + _cityPlayerPos.y + '%;">'
     + avatarForChar(c) + '</div>'
     + '</div>'
-    + '<div class="cm-status" id="cm-status">Click a building to walk there and interact.</div>';
+    + '<div class="cm-status" id="cm-status">Click a building to walk there · click empty space to stroll · arrow keys / WASD to move · Enter to interact</div>';
   openModal('🏙️ Your Neighborhood — ' + c.city + ', ' + COUNTRIES[c.country].short, map);
   // Make modal body roomier for the map
   setTimeout(() => {
@@ -4875,6 +4898,66 @@ function cityWalkTo(x, y, buildingId){
     }
   }, 820);
 }
+
+function cityWalkAnywhere(e){
+  // Walk to a free spot on the map (not a building)
+  const map = document.getElementById('city-map');
+  if(!map) return;
+  const rect = map.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width)  * 100;
+  const y = ((e.clientY - rect.top)  / rect.height) * 100;
+  _cityPlayerPos = { x: clamp(x, 2, 96), y: clamp(y, 2, 92) };
+  const p = document.getElementById('cm-player');
+  if(p){ p.style.left = _cityPlayerPos.x + '%'; p.style.top = _cityPlayerPos.y + '%'; }
+  const status = document.getElementById('cm-status');
+  if(status) status.textContent = '🚶 Strolling around the neighborhood...';
+}
+
+// Arrow-key control for the city map and the home scene
+window.addEventListener('keydown', e => {
+  // Skip if typing
+  const tag = (e.target && e.target.tagName) || '';
+  if(tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  // Only when city map modal is open
+  const modal = document.getElementById('modal');
+  const onMap = modal && modal.classList.contains('show') && document.getElementById('city-map');
+  if(!onMap) return;
+  const step = 6;
+  let moved = false;
+  if(e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A'){
+    _cityPlayerPos.x = clamp(_cityPlayerPos.x - step, 2, 96); moved = true;
+  } else if(e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D'){
+    _cityPlayerPos.x = clamp(_cityPlayerPos.x + step, 2, 96); moved = true;
+  } else if(e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W'){
+    _cityPlayerPos.y = clamp(_cityPlayerPos.y - step, 2, 92); moved = true;
+  } else if(e.key === 'ArrowDown' || e.key === 's' || e.key === 'S'){
+    _cityPlayerPos.y = clamp(_cityPlayerPos.y + step, 2, 92); moved = true;
+  }
+  if(moved){
+    e.preventDefault();
+    const p = document.getElementById('cm-player');
+    if(p){ p.style.left = _cityPlayerPos.x + '%'; p.style.top = _cityPlayerPos.y + '%'; }
+    // Check if player walked onto a building
+    for(const b of CITY_LAYOUT){
+      if(Math.abs(b.x - _cityPlayerPos.x) < 5 && Math.abs(b.y - _cityPlayerPos.y) < 5){
+        const status = document.getElementById('cm-status');
+        if(status) status.textContent = '↩ Press [Enter] to enter ' + b.name;
+        if(e.key === 'Enter'){
+          cityInteract(b);
+        }
+        break;
+      }
+    }
+  } else if(e.key === 'Enter'){
+    // Enter triggers nearest building
+    let nearest = null, minDist = 999;
+    for(const b of CITY_LAYOUT){
+      const dist = Math.abs(b.x - _cityPlayerPos.x) + Math.abs(b.y - _cityPlayerPos.y);
+      if(dist < minDist){ minDist = dist; nearest = b; }
+    }
+    if(nearest && minDist < 10){ cityInteract(nearest); }
+  }
+});
 
 function cityInteract(b){
   closeModal();

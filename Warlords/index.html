@@ -7909,6 +7909,498 @@ W.ui.openConquest = function(pid){
 W.HINTS.dice = "DICE HINT: Each End Turn rolls 2d6. Provinces whose dice number matches yield bonus resources. Reroll for 50g.";
 W.HINTS.assault = "ASSAULT HINT: Click any foreign province to attack. Find hidden garrisons by clicking grid cells or rolling dice. Sink all → conquest!";
 
+
+/* =================================================================
+   MAP v3 — Realistic continent silhouettes (detailed polylines)
+   viewBox 1200×700, equirectangular projection
+   ================================================================= */
+W.CONTINENTS = {
+  /* AFRICA — Mediterranean top, Horn of Africa, Cape, Gulf of Guinea */
+  africa: "M 555,375 L 575,365 L 600,360 L 625,360 L 650,365 L 670,372 L 685,385 L 695,400 L 710,418 L 720,440 L 722,460 L 715,478 L 705,496 L 695,515 L 685,530 L 670,545 L 655,555 L 638,560 L 620,560 L 600,553 L 583,540 L 570,520 L 562,498 L 555,478 L 548,455 L 542,432 L 540,410 L 542,395 Z",
+
+  /* ARABIA */
+  arabia: "M 715,400 L 745,395 L 770,410 L 785,435 L 790,465 L 778,485 L 758,495 L 735,490 L 720,470 L 712,445 L 712,420 Z",
+
+  /* EUROPE — main mass + Iberia + Italy boot + Scandinavia */
+  europe: "M 425,255 L 450,245 L 478,238 L 505,235 L 530,238 L 555,245 L 575,260 L 580,280 L 575,295 L 558,305 L 540,310 L 522,313 L 502,315 L 482,313 L 462,308 L 445,300 L 430,288 L 422,272 Z",
+  scandinavia: "M 490,215 L 515,205 L 538,215 L 552,238 L 558,260 L 548,275 L 528,278 L 510,265 L 495,245 L 488,228 Z",
+  iberia: "M 408,310 L 432,308 L 452,315 L 462,330 L 462,348 L 452,360 L 432,365 L 412,358 L 402,342 L 402,325 Z",
+  italy: "M 528,310 L 540,318 L 548,335 L 555,355 L 558,378 L 552,388 L 545,378 L 540,360 L 532,338 L 528,322 Z",
+  britain: "M 420,238 L 438,232 L 452,242 L 458,260 L 452,278 L 438,285 L 425,278 L 418,262 L 418,248 Z",
+  ireland: "M 398,255 L 410,250 L 417,262 L 414,275 L 402,278 L 395,268 Z",
+  greece: "M 558,335 L 572,338 L 578,355 L 575,372 L 565,378 L 558,365 L 555,348 Z",
+
+  /* ASIA — vast eastward sweep, India peninsula, SE Asia, Korea, Kamchatka */
+  asia_main: "M 580,238 L 615,228 L 660,218 L 720,210 L 790,210 L 870,215 L 950,220 L 1030,228 L 1100,238 L 1150,255 L 1175,285 L 1180,318 L 1175,345 L 1155,360 L 1130,370 L 1100,375 L 1070,378 L 1035,378 L 1000,375 L 965,370 L 925,365 L 885,358 L 845,352 L 800,348 L 755,342 L 710,335 L 670,325 L 632,315 L 600,300 L 580,278 L 575,255 Z",
+
+  /* India peninsula */
+  india: "M 870,358 L 895,365 L 915,385 L 925,410 L 922,438 L 905,455 L 885,455 L 868,442 L 858,420 L 855,398 L 858,378 Z",
+
+  /* SE Asia mainland (Indochina) */
+  indochina: "M 1020,388 L 1045,388 L 1062,402 L 1070,425 L 1062,448 L 1042,460 L 1022,455 L 1015,432 L 1015,408 Z",
+
+  /* Indonesia / Malay arc */
+  indonesia: "M 1050,460 L 1075,455 L 1100,465 L 1115,478 L 1110,492 L 1085,498 L 1058,495 L 1040,485 L 1042,472 Z",
+  borneo: "M 1085,448 L 1108,448 L 1118,465 L 1112,480 L 1092,478 L 1080,465 Z",
+
+  /* Japan archipelago */
+  japan: "M 1158,310 L 1175,315 L 1185,330 L 1192,355 L 1195,378 L 1185,385 L 1170,375 L 1162,358 L 1158,338 Z",
+
+  /* Korean peninsula */
+  korea: "M 1135,320 L 1148,325 L 1152,348 L 1145,365 L 1132,365 L 1128,348 L 1130,330 Z",
+
+  /* Sri Lanka */
+  ceylon: "M 905,470 L 912,468 L 918,478 L 912,488 L 902,485 L 900,476 Z",
+
+  /* N. AMERICA — Greenland, Canada, Alaska, USA, Mexico */
+  n_america: "M 130,215 L 165,200 L 205,195 L 245,200 L 280,210 L 295,225 L 300,250 L 295,275 L 285,300 L 268,322 L 250,340 L 232,352 L 215,358 L 200,355 L 185,345 L 172,328 L 158,308 L 145,285 L 135,260 L 128,235 Z",
+  alaska: "M 95,225 L 125,215 L 138,230 L 132,250 L 115,255 L 95,245 Z",
+  greenland: "M 320,170 L 360,160 L 395,170 L 410,195 L 405,225 L 385,240 L 360,238 L 335,222 L 322,200 Z",
+  c_america: "M 215,358 L 240,365 L 260,385 L 268,408 L 250,420 L 228,415 L 212,398 L 208,378 Z",
+
+  /* S. AMERICA — Brazil bulge, Andes spine, Patagonia */
+  s_america: "M 245,408 L 268,418 L 290,432 L 310,455 L 322,480 L 325,505 L 318,528 L 305,548 L 285,558 L 265,558 L 245,545 L 230,520 L 222,490 L 220,460 L 225,432 L 235,418 Z",
+
+  /* OCEANIA — Australia + New Zealand + PNG */
+  australia: "M 1085,510 L 1115,500 L 1150,508 L 1180,520 L 1190,540 L 1182,560 L 1155,572 L 1118,572 L 1090,562 L 1078,540 L 1080,520 Z",
+  new_zealand: "M 1185,580 L 1195,585 L 1198,605 L 1188,615 L 1180,605 L 1180,590 Z",
+  png: "M 1100,478 L 1125,478 L 1140,492 L 1132,505 L 1108,505 L 1098,495 Z",
+
+  /* Islands / minor */
+  cuba: "M 240,355 L 258,355 L 265,365 L 258,372 L 240,370 L 235,362 Z",
+  madagascar: "M 720,490 L 730,490 L 738,510 L 735,535 L 725,545 L 720,530 L 718,510 Z",
+  iceland: "M 392,210 L 408,205 L 415,218 L 408,228 L 395,225 Z",
+  philippines: "M 1100,425 L 1115,425 L 1122,445 L 1115,455 L 1105,452 L 1100,438 Z",
+};
+
+/* Order of drawing so larger landmasses go first */
+W.MAP_BG_PATHS = [
+  "n_america","s_america","greenland","alaska","c_america","cuba",
+  "asia_main","europe","scandinavia","britain","ireland","iberia","italy","greece","arabia",
+  "india","ceylon","indochina","indonesia","borneo","philippines","japan","korea",
+  "africa","madagascar","australia","new_zealand","png","iceland",
+];
+
+/* =================================================================
+   REVAMPED COLOUR PALETTE — warmer, more variety
+   ================================================================= */
+(function(){
+  const style = document.createElement("style");
+  style.textContent = `
+  :root{
+    --bg0:#0f0a1d; --bg1:#1a1330; --bg2:#221a42; --bg3:#2d2350; --bg4:#3a2c66;
+    --panel:#1e1738; --panel2:#2a2050; --panel3:#352866;
+    --line:#4a3580; --line2:#5e44a0; --line3:#7a5fc2;
+    --accent:#c084fc; --accent2:#e9d5ff; --accent3:#9333ea; --accentDim:#7e22ce;
+    --gold:#facc15; --gold2:#fef08a; --goldDim:#a16207;
+    --coral:#fb7185; --coralDim:#9f1239;
+    --mint:#5eead4; --mintDim:#0f766e;
+    --peach:#fb923c; --peachDim:#9a3412;
+    --teal:#22d3ee; --tealDim:#0e7490;
+    --rose:#f472b6; --roseDim:#9d174d;
+    --lime:#bef264; --limeDim:#65a30d;
+    --sky:#7dd3fc; --skyDim:#0369a1;
+    --t0:#ffffff; --t1:#fdf9ff; --t2:#d8c8f0; --t3:#9d8bc9; --t4:#6b5897;
+  }
+  /* MAP background — warmer dawn ocean instead of cold navy */
+  #map-wrap{background:radial-gradient(ellipse at 50% 40%,#3d2b5c 0%,#1a0f30 70%,#08051a 100%)!important;}
+  /* PANELS — slightly more colour, more padding */
+  #left-panel,#right-panel{
+    background:linear-gradient(180deg,#231840 0%,#150c2e 100%)!important;
+    padding:18px 16px!important;
+  }
+  /* Resource rows — coloured accents */
+  .rsrc-row{
+    padding:7px 10px!important;
+    border-radius:6px!important;
+    margin-bottom:3px!important;
+  }
+  .rsrc-row:hover{
+    background:linear-gradient(90deg,rgba(192,132,252,.12),transparent)!important;
+  }
+  .rsrc-row .lbl{font-size:12.5px!important;}
+  .rsrc-row .val{font-size:13px!important;color:var(--gold2)!important;font-weight:600!important;}
+  .rsrc-row .ico{font-size:15px!important;}
+  /* Panel headers — coloured */
+  .panel-section .h{
+    font-family:var(--font-h)!important;
+    font-size:11px!important;
+    letter-spacing:.36em!important;
+    margin-bottom:10px!important;
+    padding-bottom:5px!important;
+    border-bottom:1px solid var(--line2)!important;
+    color:var(--coral)!important;
+  }
+  .panel-section:nth-child(2) .h{color:var(--mint)!important;}
+  .panel-section:nth-child(3) .h{color:var(--peach)!important;}
+  .panel-section:nth-child(4) .h{color:var(--gold)!important;}
+  .panel-section:nth-child(5) .h{color:var(--rose)!important;}
+  .panel-section{margin-bottom:22px!important;}
+  /* Topbar — colourful */
+  #topbar{
+    background:linear-gradient(90deg,#2d1a55 0%,#1f1240 50%,#2d1a55 100%)!important;
+    border-bottom:1px solid var(--accent)!important;
+    box-shadow:0 4px 18px rgba(192,132,252,.2)!important;
+    height:58px!important;
+    padding:0 22px!important;
+    gap:14px!important;
+  }
+  #topbar .brand{
+    background:linear-gradient(90deg,var(--gold),var(--coral),var(--accent2))!important;
+    -webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;
+    font-size:22px!important;letter-spacing:.2em!important;
+  }
+  #topbar .faction-tag{
+    background:linear-gradient(135deg,rgba(192,132,252,.15),rgba(94,234,212,.1))!important;
+    border:1px solid var(--accent)!important;
+  }
+  #topbar .faction-tag .name{color:var(--mint)!important;}
+  #topbar .faction-tag .leader{color:var(--peach)!important;}
+  #topbar .era-stamp{
+    background:linear-gradient(135deg,rgba(251,204,21,.15),rgba(251,113,133,.15))!important;
+    border:1px solid var(--gold)!important;
+    color:var(--gold)!important;
+  }
+  #topbar .turn-stamp{
+    background:linear-gradient(135deg,rgba(94,234,212,.15),rgba(125,211,252,.15))!important;
+    color:var(--mint)!important;
+    border:1px solid var(--mint)!important;
+  }
+  #topbar .top-actions button{
+    padding:7px 13px!important;
+    font-size:10px!important;
+    border:1px solid var(--line2)!important;
+    background:rgba(74,53,128,.2)!important;
+  }
+  #topbar .top-actions button:hover{
+    background:linear-gradient(135deg,rgba(251,113,133,.2),rgba(192,132,252,.2))!important;
+    color:var(--coral)!important;
+    border-color:var(--coral)!important;
+  }
+  /* Action bar — bigger, warmer */
+  #action-bar{
+    background:linear-gradient(180deg,#1f1240 0%,#2d1a55 100%)!important;
+    border-top:1px solid var(--accent)!important;
+    height:72px!important;
+    padding:0 22px!important;
+  }
+  .act-btn{
+    padding:9px 22px!important;
+    border:1px solid var(--line2)!important;
+    background:linear-gradient(180deg,rgba(74,53,128,.3),rgba(45,26,85,.5))!important;
+  }
+  .act-btn:hover{
+    transform:translateY(-3px)!important;
+    box-shadow:0 6px 18px rgba(192,132,252,.4)!important;
+  }
+  .act-btn:nth-child(1):hover{border-color:var(--coral)!important;color:var(--coral)!important;}
+  .act-btn:nth-child(2):hover{border-color:var(--peach)!important;color:var(--peach)!important;}
+  .act-btn:nth-child(3):hover{border-color:var(--mint)!important;color:var(--mint)!important;}
+  .act-btn:nth-child(4):hover{border-color:var(--gold)!important;color:var(--gold)!important;}
+  .act-btn:nth-child(5):hover{border-color:var(--sky)!important;color:var(--sky)!important;}
+  .act-btn:nth-child(6):hover{border-color:var(--rose)!important;color:var(--rose)!important;}
+  .act-btn .ico{font-size:22px!important;margin-bottom:1px!important;}
+  .end-turn{
+    padding:16px 36px!important;
+    background:linear-gradient(135deg,#fbbf24 0%,#fb923c 50%,#fb7185 100%)!important;
+    color:#1a0f30!important;
+    font-size:16px!important;
+    box-shadow:0 6px 24px rgba(251,113,133,.5)!important;
+  }
+  .end-turn:hover{
+    transform:scale(1.05)!important;
+    box-shadow:0 8px 32px rgba(251,113,133,.7)!important;
+  }
+  /* Diplomacy rows */
+  .diplo-row{
+    background:linear-gradient(90deg,rgba(74,53,128,.2) 0%,rgba(74,53,128,.05) 100%)!important;
+    padding:11px 14px!important;
+    margin-bottom:6px!important;
+  }
+  /* Map toolbar — cleaner */
+  .map-toolbar button{
+    background:rgba(30,15,50,.85)!important;
+    backdrop-filter:blur(8px)!important;
+    border:1px solid var(--line2)!important;
+    padding:7px 11px!important;
+    color:var(--accent2)!important;
+  }
+  .map-toolbar button:hover,.map-toolbar button.on{
+    background:linear-gradient(135deg,rgba(251,204,21,.25),rgba(251,113,133,.25))!important;
+    color:var(--gold)!important;
+    border-color:var(--gold)!important;
+  }
+  /* Stability bar — coloured */
+  .stat-bar{height:8px!important;}
+  .stat-bar .fill.stab-low{background:linear-gradient(90deg,#ef4444,#fb7185)!important;}
+  .stat-bar .fill.stab-mid{background:linear-gradient(90deg,#fb923c,#facc15)!important;}
+  .stat-bar .fill.stab-high{background:linear-gradient(90deg,#bef264,#5eead4)!important;}
+  /* Feed items */
+  .feed-item{
+    padding:10px 12px!important;
+    margin-bottom:5px!important;
+    background:rgba(192,132,252,.06)!important;
+    border-left-width:3px!important;
+  }
+  /* Reduce panel density */
+  #left-panel,#right-panel{scrollbar-width:thin;}
+  /* Section spacing */
+  .modal{
+    background:linear-gradient(180deg,#2a2050 0%,#1a1330 100%)!important;
+    border:1px solid var(--accent)!important;
+    box-shadow:0 24px 64px rgba(0,0,0,.7),0 0 64px rgba(192,132,252,.3)!important;
+  }
+  .modal-head h2{
+    background:linear-gradient(90deg,var(--gold),var(--coral))!important;
+    -webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;
+  }
+  /* Splash refresh */
+  #splash{
+    background:radial-gradient(ellipse at 30% 30%,#3d2b5c 0%,#1a0f30 60%,#08051a 100%)!important;
+  }
+  #splash .title{
+    background:linear-gradient(135deg,#facc15 0%,#fb7185 30%,#c084fc 70%,#5eead4 100%)!important;
+    -webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;
+    text-shadow:none!important;
+    filter:drop-shadow(0 0 40px rgba(192,132,252,.4)) drop-shadow(0 0 80px rgba(251,113,133,.3))!important;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,#facc15 0%,#fb7185 100%)!important;
+    color:#1a0f30!important;
+    box-shadow:0 8px 24px rgba(251,113,133,.4)!important;
+  }
+  .btn-primary:hover{box-shadow:0 12px 36px rgba(251,113,133,.6)!important;}
+  .btn-secondary{
+    border:1px solid var(--mint)!important;
+    color:var(--mint)!important;
+  }
+  .btn-secondary:hover{
+    background:rgba(94,234,212,.15)!important;
+    color:var(--gold)!important;
+    border-color:var(--gold)!important;
+  }
+  /* Picker screens — fresher */
+  .picker{
+    background:radial-gradient(ellipse at 30% 30%,#3d2b5c 0%,#1a0f30 70%,#08051a 100%)!important;
+  }
+  .era-card,.faction-card,.leader-card,.victory-card,.diff-card{
+    background:linear-gradient(180deg,#2a2050 0%,#1a1330 100%)!important;
+    border:1px solid var(--line2)!important;
+  }
+  .era-card:hover,.faction-card:hover,.leader-card:hover,.victory-card:hover,.diff-card:hover{
+    border-color:var(--coral)!important;
+    box-shadow:0 12px 36px rgba(251,113,133,.3)!important;
+  }
+  .era-card.selected,.faction-card.selected,.leader-card.selected,.victory-card.selected,.diff-card.selected{
+    border-color:var(--gold)!important;
+    background:linear-gradient(180deg,rgba(251,204,21,.1),#1a1330)!important;
+    box-shadow:0 12px 36px rgba(251,204,21,.4)!important;
+  }
+  /* Build cards */
+  .build-card,.unit-card{
+    background:linear-gradient(180deg,#2a2050 0%,#1f163d 100%)!important;
+  }
+  .build-card:hover,.unit-card:hover{
+    background:linear-gradient(180deg,rgba(192,132,252,.15),#1f163d)!important;
+    border-color:var(--coral)!important;
+  }
+  /* Sidebar widths a touch wider */
+  #main{grid-template-columns:300px 1fr 340px!important;}
+  /* Toast colours */
+  .toast{
+    background:linear-gradient(135deg,#2a2050 0%,#1f163d 100%)!important;
+    border:1px solid var(--coral)!important;
+    box-shadow:0 12px 24px rgba(0,0,0,.4)!important;
+  }
+  .toast.good{border-color:var(--mint)!important;}
+  .toast.bad{border-color:var(--coral)!important;}
+  .toast.warn{border-color:var(--gold)!important;}
+  /* Cabinet */
+  .advisor-row{padding:8px 10px!important;border-radius:8px!important;margin-bottom:4px!important;}
+  .advisor-row .av{
+    background:linear-gradient(135deg,var(--coral),var(--accent3))!important;
+    width:36px!important;height:36px!important;
+  }
+  `;
+  document.head.appendChild(style);
+})();
+
+/* =================================================================
+   MAP RENDERER v3 — proper realistic continents, cleaner labels
+   ================================================================= */
+W.map.render = function(){
+  if(!W.GAME) return;
+  const svg = document.getElementById("map-svg");
+  const G = W.GAME;
+  const provs = Object.values(W.PROVINCES).filter(p=>p.era===G.era);
+
+  let html = `<defs>
+    <radialGradient id="ocean-g" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#3d2b5c"/>
+      <stop offset="60%" stop-color="#1a0f30"/>
+      <stop offset="100%" stop-color="#08051a"/>
+    </radialGradient>
+    <linearGradient id="land-g" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d4a574" stop-opacity=".42"/>
+      <stop offset="60%" stop-color="#a07346" stop-opacity=".38"/>
+      <stop offset="100%" stop-color="#5a3d24" stop-opacity=".32"/>
+    </linearGradient>
+    <pattern id="sea-wave" x="0" y="0" width="60" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 0,15 Q 15,8 30,15 T 60,15" stroke="#5e44a0" stroke-width=".6" fill="none" opacity=".18"/>
+    </pattern>
+    <filter id="glow-soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+    <filter id="map-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="2" dy="3" result="offsetblur"/>
+      <feFlood flood-color="#000" flood-opacity=".5"/>
+      <feComposite in2="offsetblur" operator="in"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="700" fill="url(#ocean-g)"/>
+  <rect width="1200" height="700" fill="url(#sea-wave)"/>`;
+
+  /* Compass rose */
+  html += `<g transform="translate(60,640)" opacity=".7">
+    <circle cx="0" cy="0" r="28" fill="none" stroke="#facc15" stroke-width="1"/>
+    <circle cx="0" cy="0" r="22" fill="none" stroke="#facc15" stroke-width=".5" opacity=".6"/>
+    <path d="M 0,-26 L 4,0 L 0,26 L -4,0 Z" fill="#facc15" opacity=".8"/>
+    <path d="M -26,0 L 0,4 L 26,0 L 0,-4 Z" fill="#facc15" opacity=".5"/>
+    <text x="0" y="-32" text-anchor="middle" fill="#facc15" font-family="Cinzel,serif" font-size="10">N</text>
+    <text x="32" y="3" text-anchor="middle" fill="#facc15" font-family="Cinzel,serif" font-size="10">E</text>
+    <text x="0" y="38" text-anchor="middle" fill="#facc15" font-family="Cinzel,serif" font-size="10">S</text>
+    <text x="-32" y="3" text-anchor="middle" fill="#facc15" font-family="Cinzel,serif" font-size="10">W</text>
+  </g>`;
+
+  /* Latitude bands (faint) */
+  for(let lat=120;lat<=620;lat+=80){
+    html += `<line x1="0" y1="${lat}" x2="1200" y2="${lat}" stroke="#5e44a0" stroke-width=".4" stroke-dasharray="2 8" opacity=".25"/>`;
+  }
+
+  /* Draw continents with shadow filter */
+  html += `<g filter="url(#map-shadow)">`;
+  W.MAP_BG_PATHS.forEach(cid=>{
+    const d = W.CONTINENTS[cid]; if(!d) return;
+    html += `<path d="${d}" fill="url(#land-g)" stroke="#c084fc" stroke-opacity=".55" stroke-width="1.2"/>`;
+  });
+  html += `</g>`;
+
+  /* Faction territory tinting per province */
+  provs.forEach(p=>{
+    const c = W.map.colourFor(p);
+    html += `<circle cx="${p.x}" cy="${p.y}" r="22" fill="${c}" opacity=".18" filter="url(#glow-soft)"/>`;
+  });
+
+  /* Connection lines between same-faction provinces */
+  provs.forEach(p=>{
+    provs.forEach(q=>{
+      if(p.id>=q.id) return;
+      if(p.owner===q.owner){
+        const d = Math.hypot(p.x-q.x, p.y-q.y);
+        if(d<150){
+          html += `<line x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}" stroke="${W.map.colourFor(p)}" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>`;
+        }
+      }
+    });
+  });
+
+  /* Dice mapping */
+  G.diceMap = G.diceMap || {};
+  provs.forEach((p,i)=>{ if(!G.diceMap[p.id]) G.diceMap[p.id] = 2 + (i%11); });
+
+  /* Provinces — clean circles with dice number inside */
+  provs.forEach(p=>{
+    const fill = W.map.fillFor(p);
+    const stroke = W.map.strokeFor(p);
+    const r = p.capital ? 13 : 9;
+    const diceNum = G.diceMap[p.id] || 7;
+    const isLit = G.lastDiceTotal && G.lastDiceTotal === diceNum;
+    html += `<g class="province" data-id="${p.id}" onclick="W.map.click('${p.id}')" onmousemove="W.map.tip(event,'${p.id}')" onmouseleave="W.map.hideTip()" style="cursor:pointer;">
+      ${isLit?`<circle cx="${p.x}" cy="${p.y}" r="${r+8}" fill="${stroke}" opacity=".35" filter="url(#glow-soft)"><animate attributeName="r" values="${r+5};${r+10};${r+5}" dur="1.5s" repeatCount="indefinite"/></circle>`:""}
+      <circle cx="${p.x}" cy="${p.y+2}" r="${r}" fill="#000" opacity=".5"/>
+      <circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${p.capital?3:1.5}"/>
+      ${p.capital?`<circle cx="${p.x}" cy="${p.y}" r="${r-4}" fill="#facc15" opacity=".75"/>`:""}
+      <text x="${p.x}" y="${p.y+3}" text-anchor="middle" fill="#0f0a1d" font-family="JetBrains Mono,monospace" font-size="${p.capital?10:9}" font-weight="800" style="pointer-events:none;">${diceNum}</text>
+    </g>`;
+  });
+
+  /* Province labels — only on hover or for capitals */
+  provs.forEach(p=>{
+    if(!p.capital) return;
+    const r = 13;
+    html += `<g style="pointer-events:none;">
+      <rect x="${p.x-W.util.esc(p.name).length*3.2}" y="${p.y+r+5}" width="${W.util.esc(p.name).length*6.4}" height="14" rx="3" fill="#0f0a1d" opacity=".75"/>
+      <text x="${p.x}" y="${p.y+r+15}" text-anchor="middle" fill="#facc15" font-family="JetBrains Mono,monospace" font-size="9.5" font-weight="600">${W.util.esc(p.name)}</text>
+    </g>`;
+  });
+
+  /* Armies marker */
+  if(W.map.mode==="army" && G.armies){
+    G.armies.forEach(army=>{
+      const p = W.PROVINCES[army.province]; if(!p) return;
+      html += `<g transform="translate(${p.x+15},${p.y-14})">
+        <circle r="6" fill="#facc15" stroke="#1a0f30" stroke-width="2"/>
+        <text y="3" text-anchor="middle" fill="#1a0f30" font-size="8" font-weight="800">⚔</text>
+      </g>`;
+    });
+  }
+
+  /* Roll banner */
+  if(G.lastDice){
+    const d = G.lastDice;
+    html += `<g transform="translate(600,40)">
+      <rect x="-80" y="-22" width="160" height="44" rx="22" fill="#1a0f30" stroke="#facc15" stroke-width="2" opacity=".95"/>
+      <text x="-44" y="6" text-anchor="middle" fill="#fb7185" font-family="Cinzel,serif" font-size="22" font-weight="800">${d.d1}</text>
+      <text x="0" y="6" text-anchor="middle" fill="#c084fc" font-family="Cinzel,serif" font-size="22">+</text>
+      <text x="44" y="6" text-anchor="middle" fill="#5eead4" font-family="Cinzel,serif" font-size="22" font-weight="800">${d.d2}</text>
+    </g>
+    <text x="600" y="78" text-anchor="middle" fill="#facc15" font-family="JetBrains Mono,monospace" font-size="11" letter-spacing="3" opacity=".75">ROLL ${d.total}</text>`;
+  }
+
+  svg.innerHTML = html;
+};
+
+/* Override province dot colours with more vibrant palette */
+W.map.colourFor = function(p){
+  const G = W.GAME; if(!G) return "#9333ea";
+  if(p.owner === G.player.faction) return G.player.factionData.colour || "#facc15";
+  const a = G.ai.find(x=>x.faction===p.owner);
+  return a ? (a.factionData.colour || "#c084fc") : "#6b5897";
+};
+W.map.fillFor = function(p){
+  if(W.map.mode==="terrain"){
+    const map = {plains:"#7aa055",hills:"#a07346",mountains:"#888888",desert:"#e0b878",forest:"#3a6840",jungle:"#2a6048",tundra:"#9aa8b8",coast:"#5eb4d4",river:"#5eb4d4",none:"#444"};
+    return map[p.terrain]||"#9333ea";
+  }
+  if(W.map.mode==="resource"){
+    return (W.RESOURCES[p.resource]||{color:"#9333ea"}).color;
+  }
+  return W.map.colourFor(p);
+};
+W.map.strokeFor = function(p){
+  const G = W.GAME;
+  if(p.owner === G.player.faction) return "#facc15";
+  return "#fdf9ff";
+};
+
+/* Update tooltip to be more readable */
+W.map.tip = function(ev,pid){
+  const p = W.PROVINCES[pid]; if(!p) return;
+  const t = document.getElementById("prov-tip");
+  const G = W.GAME;
+  const ownerName = p.owner===G.player.faction ? G.player.factionData.name : (G.ai.find(a=>a.faction===p.owner)||{factionData:{name:p.owner}}).factionData.name;
+  const dn = G.diceMap[pid] || "?";
+  t.innerHTML = `<div class="pname">${W.util.esc(p.name)}</div>
+    <div class="powner">${W.util.esc(ownerName)}</div>
+    <div class="pmeta">Pop <b>${p.pop}k</b> · ${p.terrain} · ${(W.RESOURCES[p.resource]||{name:p.resource||"—"}).name}</div>
+    <div class="pmeta" style="color:#facc15;">⚂ Dice number: <b>${dn}</b></div>`;
+  t.style.left = (ev.clientX+14)+"px";
+  t.style.top = (ev.clientY+14)+"px";
+  t.classList.add("show");
+};
+
 /* Auto-boot — splash visible by default; user clicks New Campaign */
 (function(){
   W.util.log(`Warlords v${W.VERSION} loaded — ${Object.keys(W.FACTIONS).reduce((s,k)=>s+W.FACTIONS[k].length,0)} factions, ${Object.keys(W.LEADERS).length} leader sets, ${Object.keys(W.UNITS).length} unit types, ${Object.keys(W.BUILDINGS).length} buildings, ${Object.keys(W.TECHS).length} techs, ${W.EVENTS.length} events.`);

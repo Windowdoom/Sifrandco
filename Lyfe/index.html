@@ -5712,6 +5712,67 @@ function applyDynastyReputation(ch, oldChar){
     ch.happiness = clamp(ch.happiness + 4, 0, 100);
     pushEvent('good', '🌍 You were born into a world without sovereign debt. Your ancestor saw to it.');
   }
+  // Good legacies
+  if(w.diseaseFree){
+    ch.health = clamp(ch.health + 15, 0, 100);
+    ch.happiness = clamp(ch.happiness + 6, 0, 100);
+    pushEvent('good', '🧬 You were born into a world without chronic disease. Vaccines are named after your line.');
+  }
+  if(w.agingCured){
+    ch.health = clamp(ch.health + 20, 0, 100);
+    ch.flags = ch.flags || {}; ch.flags.agingCured = true;
+    pushEvent('good', '⏳ Aging is solved. You can expect to live 150 years if nothing else kills you.');
+  }
+  if(w.hungerEnded){
+    ch.happiness = clamp(ch.happiness + 6, 0, 100);
+    pushEvent('good', '🌾 Hunger ended in your great-grandparent\'s time. You have never known it.');
+  }
+  if(w.ubiActive){
+    ch.money += 12000;
+    pushEvent('good', '💵 Global UBI is active. Your first $12k arrives today.');
+  }
+  if(w.dysonSwarm){
+    ch.smarts = clamp(ch.smarts + 6, 0, 100);
+    ch.happiness = clamp(ch.happiness + 5, 0, 100);
+    pushEvent('good', '☀️ You grew up in a Type-II civilization. Energy is free. Your education was paid for in solar credits.');
+  }
+  // Bad / mixed legacies
+  if(w.mediaMonopoly){
+    ch.flags = ch.flags || {}; ch.flags.mediaInheritance = true;
+    pushEvent('milestone', '📰 Your family controls every screen. You will never see honest news about yourself.');
+  }
+  if(w.corporateNation){
+    ch.flags = ch.flags || {}; ch.flags.sovereignCEOLineage = true;
+    pushEvent('milestone', '🚩 You were born a shareholder of a sovereign nation. You vote with shares, not ballots.');
+  }
+  if(w.pandemic){
+    ch.health = clamp(ch.health - 8, 0, 100);
+    ch.happiness = clamp(ch.happiness - 8, 0, 100);
+    pushEvent('bad', '☣️ You grew up in the shadow of the engineered pandemic. Half your family was buried before you were born.');
+  }
+  if(w.orbitalWeapon){
+    ch.happiness = clamp(ch.happiness - 10, 0, 100);
+    pushEvent('bad', '🛰️ A weapon platform circles overhead. It never moves. You learned to look up before crossing a street.');
+  }
+  if(w.godKing){
+    ch.karma = clamp(ch.karma - 40, 0, 100);
+    ch.flags = ch.flags || {}; ch.flags.godKingLineage = true;
+    pushEvent('bad', '👑 Your bloodline ruled as gods. The cult you inherited still has chapters. So do the survivors.');
+  }
+  if(w.currencyCrash){
+    ch.happiness = clamp(ch.happiness - 12, 0, 100);
+    pushEvent('bad', '📉 You were born after the Crash. The currency they use barely works. Your trust fund still does.');
+  }
+  if(w.contactHostile){
+    ch.happiness = clamp(ch.happiness - 18, 0, 100);
+    ch.flags = ch.flags || {}; ch.flags.alienThreat = true;
+    pushEvent('bad', '🛸 You grew up looking at the sky differently. Something is on its way.');
+  }
+  if(w.contactPeaceful){
+    ch.smarts = clamp(ch.smarts + 10, 0, 100);
+    ch.happiness = clamp(ch.happiness + 5, 0, 100);
+    pushEvent('good', '🛸 Your textbooks are co-authored by a civilization three light-years away.');
+  }
   if(oldChar.foundation && (oldChar.foundation.totalGiven||0) > 5000000){
     ch.karma = clamp(ch.karma + 8, 0, 100);
     ch.fame  = clamp((ch.fame||0) + 6, 0, 100);
@@ -11104,6 +11165,213 @@ const POLITICAL_MOVES = [
       }
     },
   },
+  // ═══ TRILLIONAIRE-TIER GOOD ═══ (≥ $1T net worth)
+  {id:'cure_all_disease', label:'🧬 Fund the Cure for All Disease', cost:300000000000,
+    desc:'Pour $300B into a coordinated global biomedical moonshot. Cancer, Alzheimer\'s, MS, Type-1 diabetes, every major chronic disease — gone within a decade. Every human alive lives 20 years longer.',
+    requires: () => totalEstateValue(LIFE.char) >= 1000000000000,
+    exec: () => {
+      LIFE.world.diseaseFree = true;
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 15, 0, 100);
+      LIFE.world.techLevel = clamp(LIFE.world.techLevel + 20, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 50, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 60, 0, 100);
+      LIFE.char.happiness = clamp(LIFE.char.happiness + 30, 0, 100);
+      pushEvent('milestone', '🧬 The diseases of the body have been beaten. Human lifespan extends 20 years. They will name vaccines after you.');
+      recordLegacy('funded the cure for every major chronic disease');
+    },
+  },
+  {id:'end_hunger', label:'🌾 End World Hunger Forever', cost:200000000000,
+    desc:'Pre-purchase distribution rights for every grain field on Earth, hand them to a public commons, and underwrite a permanent global food grid. No human will starve again.',
+    requires: () => totalEstateValue(LIFE.char) >= 500000000000,
+    exec: () => {
+      LIFE.world.hungerEnded = true;
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 12, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 18, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 45, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 50, 0, 100);
+      pushEvent('milestone', '🌾 The last hunger statistic has been zeroed. Children eat. The world breathes.');
+      recordLegacy('ended world hunger');
+    },
+  },
+  {id:'cure_aging', label:'⏳ Cure Biological Aging', cost:800000000000,
+    desc:'Fund cellular-senescence reversal at the planetary scale. Every human gains 60 healthy years; many become functionally immortal. Power dynamics are about to get strange.',
+    requires: () => totalEstateValue(LIFE.char) >= 1000000000000 && LIFE.world.diseaseFree,
+    exec: () => {
+      LIFE.world.agingCured = true;
+      LIFE.world.techLevel = clamp(LIFE.world.techLevel + 25, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 6, 0, 100); // labor markets shocked
+      LIFE.char.karma = clamp(LIFE.char.karma + 35, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 70, 0, 100);
+      LIFE.char.health = clamp(LIFE.char.health + 40, 0, 100); // you benefit too
+      pushEvent('milestone', '⏳ Aging is no longer a fixed property of biology. The species enters a new era. You are first in line.');
+      recordLegacy('cured biological aging');
+    },
+  },
+  {id:'reforest_planet', label:'🌳 Reforest the Planet', cost:120000000000,
+    desc:'Plant 5 trillion trees, restore every degraded biome, fund permanent enforcement of forest commons. Climate stabilization in a generation.',
+    requires: () => totalEstateValue(LIFE.char) >= 200000000000,
+    exec: () => {
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore + 35, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 30, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 25, 0, 100);
+      pushEvent('milestone', '🌳 Five trillion trees in the ground. Carbon curves bend. The air smells different.');
+      recordLegacy('reforested the entire planet');
+    },
+  },
+  {id:'global_ubi', label:'💵 Fund Permanent Global UBI', cost:1000000000000,
+    desc:'$1T endowment funds an annual $12k stipend to every adult on Earth — forever. Poverty becomes a historical category. Work becomes optional.',
+    requires: () => totalEstateValue(LIFE.char) >= 2000000000000,
+    exec: () => {
+      LIFE.world.ubiActive = true;
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 20, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 12, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 45, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 55, 0, 100);
+      pushEvent('milestone', '💵 The global stipend went live this morning. Every adult on Earth received their first payment. The headlines are unanimous.');
+      recordLegacy('endowed permanent global universal basic income');
+    },
+  },
+  // ═══ TRILLIONAIRE-TIER EVIL ═══
+  {id:'buy_world_media', label:'📰 Buy Every Major Media Outlet', cost:400000000000,
+    desc:'Acquire every top-50 newspaper, network, streaming platform, and major social-media company. The news now says what you tell it to. Every campaign, every cause, every reputation — yours to shape.',
+    requires: () => totalEstateValue(LIFE.char) >= 600000000000,
+    exec: () => {
+      LIFE.world.mediaMonopoly = true;
+      LIFE.world.ideology = clamp(LIFE.world.ideology + 15, -100, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 50, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma - 25, 0, 100);
+      LIFE.char.corruption = clamp((LIFE.char.corruption||0) + 25, 0, 100);
+      pushEvent('bad', '📰 You own every screen, every front page, every algorithm. The world will hear what you decide it hears.');
+      recordLegacy('established a global media monopoly');
+    },
+  },
+  {id:'buy_country', label:'🚩 Buy a Sovereign Nation', cost:600000000000,
+    desc:'Quietly acquire every parcel of land and every public utility in a mid-sized country. Replace its government with a board you appoint. The first corporate nation-state.',
+    requires: () => totalEstateValue(LIFE.char) >= 1000000000000,
+    exec: () => {
+      LIFE.world.corporateNation = true;
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 20, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 8, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma - 35, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 40, 0, 100);
+      LIFE.char.corruption = clamp((LIFE.char.corruption||0) + 30, 0, 100);
+      pushEvent('bad', '🚩 You are now the sovereign of a country. Its citizens are now your employees.');
+      recordLegacy('bought a sovereign nation and replaced its government');
+    },
+  },
+  {id:'engineer_pandemic', label:'☣️ Engineer a Pandemic for Profit', cost:80000000000,
+    desc:'You fund a lab to engineer a transmissible illness and seed it in five continents. You also own the cure. Death toll: millions. Stock value of your pharma firms: incalculable. The gravest crime against humanity outside of nuclear war.',
+    requires: () => totalEstateValue(LIFE.char) >= 200000000000,
+    exec: () => {
+      LIFE.world.pandemic = true;
+      LIFE.world.warCriminal = true;
+      LIFE.world.iccIndictment = true;
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 25, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 30, 0, 100);
+      LIFE.char.karma = 0;
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 30, 0, 100);
+      // Pharma companies the player owns surge in valuation
+      (LIFE.char.companies||[]).forEach(co => {
+        if(co.industry === 'pharma' || co.industry === 'biotech'){
+          co.revenue = Math.floor(co.revenue * 5);
+          co.valuation = Math.floor(co.valuation * 8);
+          co.cash = (co.cash||0) + 80000000000;
+        }
+      });
+      pushEvent('death', '☣️ A novel pathogen has spread across five continents. Death toll mounts hourly. Your pharma valuation is going vertical.');
+      recordLegacy('engineered the pandemic of the century for personal profit');
+    },
+  },
+  {id:'crash_global_currency', label:'📉 Coordinate a Global Currency Crash', cost:0,
+    desc:'Use coordinated short positions, derivatives, and inside knowledge across every major exchange to crash the world\'s reserve currencies simultaneously. You walk away with a generational fortune. Billions of others lose everything they ever saved.',
+    requires: () => totalEstateValue(LIFE.char) >= 1000000000000,
+    exec: () => {
+      LIFE.world.currencyCrash = true;
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 45, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 20, 0, 100);
+      LIFE.char.money += 5000000000000; // 5T windfall
+      LIFE.char.karma = clamp(LIFE.char.karma - 50, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 35, 0, 100);
+      LIFE.char.corruption = 100;
+      pushEvent('bad', '📉 You crashed the dollar, euro, yen, and yuan in 90 minutes. Soup lines formed by lunch. Your offshore accounts now hold the largest fortune in history.');
+      recordLegacy('crashed the global currency system for personal gain');
+    },
+  },
+  {id:'orbital_death_satellite', label:'🛰️ Launch an Orbital Weapons Platform', cost:300000000000,
+    desc:'You put a kinetic-strike platform in low orbit, capable of obliterating any point on Earth on 90 seconds notice. The world\'s governments now negotiate with you. No one fires you. No one taxes you. You rule by veto.',
+    requires: () => totalEstateValue(LIFE.char) >= 500000000000 && LIFE.world.marsColonized,
+    exec: () => {
+      LIFE.world.orbitalWeapon = true;
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 35, 0, 100);
+      LIFE.world.authoritarian = true;
+      LIFE.char.karma = clamp(LIFE.char.karma - 40, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 60, 0, 100);
+      pushEvent('death', '🛰️ The platform is live and stationed. The world now lives at your discretion.');
+      recordLegacy('placed a kinetic orbital weapon in low Earth orbit');
+    },
+  },
+  {id:'force_worship', label:'👑 Declare Yourself God-King — Force Worship', cost:0,
+    desc:'You proclaim divinity, ban all other religions, and require every citizen in your sphere of influence to swear to you as a living god. Temples to you go up worldwide. This goes worse than Pharaoh.',
+    requires: () => LIFE.world.pharaohRule || LIFE.world.orbitalWeapon,
+    exec: () => {
+      LIFE.world.godKing = true;
+      LIFE.world.warCriminal = true;
+      LIFE.world.peaceIndex = 0;
+      LIFE.char.karma = 0;
+      LIFE.char.fame = 100;
+      LIFE.char.faith = 0;
+      LIFE.char.corruption = 100;
+      pushEvent('death', '👑 You declared yourself a god. The first temple opened on a Sunday. The first riot was on Monday.');
+      recordLegacy('declared themself a living god and forced worship across the world');
+      // Even higher overthrow rate than Pharaoh
+      if(Math.random() < 0.92){
+        setTimeout(() => {
+          if(LIFE && LIFE.char && LIFE.char.alive){
+            pushEvent('death', '⚔️ The temple was burned. Your statue was pulled down by a crowd. You were torn apart.');
+            LIFE.char.alive = false; LIFE.char.cause = 'killed as deposed god-king';
+          }
+        }, 250);
+      }
+    },
+  },
+  // ═══ COSMIC / MYTHOLOGICAL ═══
+  {id:'dyson_swarm', label:'☀️ Build a Dyson Swarm', cost:5000000000000,
+    desc:'Encircle the sun with mirrors and solar collectors. Power output: enough for ten thousand civilizations. Type-II on the Kardashev scale.',
+    requires: () => totalEstateValue(LIFE.char) >= 10000000000000 && LIFE.world.marsColonized,
+    exec: () => {
+      LIFE.world.dysonSwarm = true;
+      LIFE.world.techLevel = clamp(LIFE.world.techLevel + 30, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 40, 0, 100);
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore + 25, 0, 100);
+      LIFE.char.fame = 100;
+      LIFE.char.karma = clamp(LIFE.char.karma + 25, 0, 100);
+      pushEvent('milestone', '☀️ The Swarm closes around Sol. Humanity is now Type-II. Energy is no longer scarce, anywhere, ever.');
+      recordLegacy('built the Dyson Swarm around Sol');
+    },
+  },
+  {id:'first_contact', label:'🛸 Attempt First Contact', cost:50000000000,
+    desc:'Aim every powerful radio and laser array at promising exoplanets and broadcast humanity\'s coordinates with a primer in mathematics. Knock on the door.',
+    requires: () => totalEstateValue(LIFE.char) >= 100000000000,
+    exec: () => {
+      const reply = Math.random();
+      if(reply < 0.35){
+        LIFE.world.contactPeaceful = true;
+        LIFE.world.techLevel = clamp(LIFE.world.techLevel + 35, 0, 100);
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 15, 0, 100);
+        pushEvent('milestone', '🛸 A signal answered. The message was friendly. The schematics they sent were not from this century.');
+        recordLegacy('made successful first contact with a peaceful civilization');
+      } else if(reply < 0.55){
+        LIFE.world.contactHostile = true;
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 40, 0, 100);
+        pushEvent('death', '🛸 They answered. They are not friendly. Something is coming.');
+        recordLegacy('attracted hostile alien attention to Earth');
+      } else {
+        pushEvent('milestone', '🛸 The signal went out. Nothing answered. Yet.');
+        recordLegacy('attempted first contact with no response');
+      }
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 25, 0, 100);
+    },
+  },
   {id:'bargain_demon', label:'😈 Bargain With a Demon (Faustian Contract)', cost:0,
     desc:'In magical realities only. You go to a crossroads and sign in your own blood. The price is yours: years of life, your soul\'s peace, your descendants\' fortune. The reward: a corner of the world goes silent in your favor.',
     requires: () => LIFE.char.reality === 'magical',
@@ -11162,6 +11430,21 @@ function openOfficeOfPower(){
     + (w.stablecoinIssued ? '<div style="font-size:11px;color:var(--accent2);">💎 National stablecoin in circulation</div>' : '')
     + (w.authoritarian ? '<div style="font-size:11px;color:var(--crimson);">🔒 Under emergency rule</div>' : '')
     + (w.warCriminal   ? '<div style="font-size:11px;color:var(--crimson);">☠️ Indicted as a war criminal (ICC)</div>' : '')
+    + (w.pharaohRule   ? '<div style="font-size:11px;color:var(--crimson);">⛓️ Pharaoh rule declared</div>' : '')
+    + (w.godKing       ? '<div style="font-size:11px;color:var(--crimson);">👑 God-King rule</div>' : '')
+    + (w.debtFree      ? '<div style="font-size:11px;color:var(--green);">🌍 World sovereign debt cleared</div>' : '')
+    + (w.diseaseFree   ? '<div style="font-size:11px;color:var(--green);">🧬 All major disease cured</div>' : '')
+    + (w.agingCured    ? '<div style="font-size:11px;color:var(--green);">⏳ Biological aging cured</div>' : '')
+    + (w.hungerEnded   ? '<div style="font-size:11px;color:var(--green);">🌾 World hunger ended</div>' : '')
+    + (w.ubiActive     ? '<div style="font-size:11px;color:var(--green);">💵 Global UBI active</div>' : '')
+    + (w.dysonSwarm    ? '<div style="font-size:11px;color:var(--green);">☀️ Dyson Swarm operational</div>' : '')
+    + (w.mediaMonopoly ? '<div style="font-size:11px;color:var(--crimson);">📰 Media monopoly</div>' : '')
+    + (w.corporateNation ? '<div style="font-size:11px;color:var(--crimson);">🚩 Corporate-owned nation</div>' : '')
+    + (w.pandemic      ? '<div style="font-size:11px;color:var(--crimson);">☣️ Engineered pandemic ongoing</div>' : '')
+    + (w.orbitalWeapon ? '<div style="font-size:11px;color:var(--crimson);">🛰️ Orbital weapons platform deployed</div>' : '')
+    + (w.currencyCrash ? '<div style="font-size:11px;color:var(--crimson);">📉 Global currencies crashed</div>' : '')
+    + (w.contactPeaceful ? '<div style="font-size:11px;color:var(--green);">🛸 Peaceful first contact made</div>' : '')
+    + (w.contactHostile  ? '<div style="font-size:11px;color:var(--crimson);">🛸 Hostile alien contact</div>' : '')
     + '<div style="margin-top:10px;font-size:11px;color:var(--t3);">Corruption: <b style="color:'
     + ((c.corruption||0) >= 50 ? 'var(--crimson)' : (c.corruption||0) >= 25 ? 'var(--gold)' : 'var(--t2)') + ';">'
     + (c.corruption||0) + '/100</b></div>'
@@ -11453,7 +11736,10 @@ function executePoliticalMove(id){
   // The most consequential moves require explicit confirmation
   if(['order_genocide','authoritarian_turn','nuclear_test','launch_nuclear_war',
       'start_war_for_contracts','rig_election','embezzle_treasury',
-      'pharaoh_enslave','bargain_demon','summon_jinn','pay_world_debt'].includes(id)){
+      'pharaoh_enslave','bargain_demon','summon_jinn','pay_world_debt',
+      'engineer_pandemic','crash_global_currency','orbital_death_satellite',
+      'force_worship','buy_world_media','buy_country','first_contact',
+      'cure_aging','cure_all_disease','global_ubi','dyson_swarm'].includes(id)){
     const ok = confirm(m.label + '\n\n' + m.desc + '\n\nThis is irreversible. Continue?');
     if(!ok) return;
   }

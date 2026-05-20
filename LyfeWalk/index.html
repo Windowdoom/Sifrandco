@@ -283,12 +283,8 @@ button,input,select{font-family:inherit;cursor:pointer;}
   <div class="hud-chip time" id="hud-time">Day 1 · 9 AM</div>
   <div class="hud-chip age" id="hud-age">Age 18</div>
   <div class="hud-chip money" id="hud-money">$1,500</div>
+  <span id="topbar-actions"></span>
   <button class="tb-btn" onclick="openStats()">Stats</button>
-  <button class="tb-btn" onclick="openAchievements()">🏆</button>
-  <button class="tb-btn" onclick="openDatingPrefs()">💞 Prefs</button>
-  <button class="tb-btn" onclick="openAffairMenu()">💋 Risky</button>
-  <button class="tb-btn" onclick="openBabyDrama()">👶 Drama</button>
-  <button class="tb-btn" onclick="openDowry()">💍 Dowry</button>
   <button class="tb-btn" onclick="openCharSheet()">📋</button>
   <button class="tb-btn" onclick="confirmRestart()">New</button>
 </div>
@@ -806,6 +802,7 @@ const WORLDS = {
       {id:'tv',     icon:'📺', name:'TV — relax',        x:13, y:1, w:2, h:2, action:'watchTV',    cls:'entertainment'},
       {id:'shower', icon:'🚿', name:'Shower — refresh',  x:17, y:1, w:1, h:2, action:'shower',     cls:'medical'},
       {id:'desk',   icon:'📚', name:'Study Desk',        x:13, y:5, w:2, h:1, action:'studyDesk',  cls:'school'},
+      {id:'toys',   icon:'🧸', name:'Toy Chest — play',  x:5,  y:5, w:2, h:1, action:'playToys',   cls:'entertainment'},
     ],
     exits: [
       {x:10, y:13, w:2, h:1, target:'neighborhood', spawnX:14, spawnY:8},
@@ -1068,26 +1065,36 @@ function buildZoneDOM(zoneId){
       + '<div class="bldg-label">' + b.name + '</div>'
       + '</div>';
   });
+  G.npcs = [];
   if(zoneId === 'home'){
-    // Parents move around the home and help raise you when young
     const c = G.char;
     const momAlive = !c.mom || c.mom.alive !== false;
     const dadAlive = !c.dad || c.dad.alive !== false;
     if(momAlive){
+      G.npcs.push({id:'npc-mom', emoji:(c.age<1?'👩‍🍼':'👩'), label:'Mom', x:3, y:4, hx:3, hy:4});
       html += '<div class="actor npc" id="npc-mom" style="left:' + (3*TILE) + 'px;top:' + (4*TILE) + 'px;">'
         + (c.age < 1 ? '👩‍🍼' : '👩')
         + '<div class="actor-label">Mom</div><div class="actor-shadow"></div></div>';
     }
     if(dadAlive){
+      G.npcs.push({id:'npc-dad', emoji:(c.age<1?'👨‍🍼':'👨'), label:'Dad', x:15, y:4, hx:15, hy:4});
       html += '<div class="actor npc" id="npc-dad" style="left:' + (15*TILE) + 'px;top:' + (4*TILE) + 'px;">'
         + (c.age < 1 ? '👨‍🍼' : '👨')
         + '<div class="actor-label">Dad</div><div class="actor-shadow"></div></div>';
     }
   } else if(zoneId === 'neighborhood'){
+    G.npcs.push({id:'npc1',emoji:'👨',x:6,y:9,hx:6,hy:9});
+    G.npcs.push({id:'npc2',emoji:'👩',x:18,y:10,hx:18,hy:10});
+    G.npcs.push({id:'npc3',emoji:'🧒',x:24,y:13,hx:24,hy:13});
     html += npcHTML('npc1','👨', 6, 9);
     html += npcHTML('npc2','👩', 18, 10);
     html += npcHTML('npc3','🧒', 24, 13);
   } else if(zoneId === 'city'){
+    G.npcs.push({id:'npc1',emoji:'👨‍💼',x:12,y:9,hx:12,hy:9});
+    G.npcs.push({id:'npc2',emoji:'👩',x:20,y:8,hx:20,hy:8});
+    G.npcs.push({id:'npc3',emoji:'🧑',x:28,y:11,hx:28,hy:11});
+    G.npcs.push({id:'npc4',emoji:'🧒',x:6,y:12,hx:6,hy:12});
+    G.npcs.push({id:'npc5',emoji:'👮',x:22,y:11,hx:22,hy:11});
     html += npcHTML('npc1','👨‍💼', 12, 9);
     html += npcHTML('npc2','👩', 20, 8);
     html += npcHTML('npc3','🧑', 28, 11);
@@ -1242,7 +1249,32 @@ function gameLoop(now){
     checkZoneExits();
   }
   updateNearestBuilding();
+  tickNpcs(dt);
   requestAnimationFrame(gameLoop);
+}
+
+// Gentle NPC wander — picks a random spot within 2 tiles of home, lerps toward it.
+function tickNpcs(dt){
+  if(!G.npcs || !G.npcs.length) return;
+  G.npcs.forEach(n => {
+    if(n.tx === undefined || (Math.abs(n.x-n.tx) < 0.1 && Math.abs(n.y-n.ty) < 0.1)){
+      if(!n.wait){ n.wait = 1 + Math.random()*3; return; }
+      n.wait -= dt;
+      if(n.wait > 0) return;
+      n.wait = 0;
+      n.tx = n.hx + (Math.random()*4 - 2);
+      n.ty = n.hy + (Math.random()*4 - 2);
+    }
+    const dx = n.tx - n.x, dy = n.ty - n.y;
+    const d = Math.hypot(dx, dy);
+    if(d > 0.01){
+      const sp = 1.2 * dt;
+      n.x += (dx/d) * Math.min(sp, d);
+      n.y += (dy/d) * Math.min(sp, d);
+      const el = document.getElementById(n.id);
+      if(el){ el.style.left = (n.x*TILE) + 'px'; el.style.top = (n.y*TILE) + 'px'; }
+    }
+  });
 }
 
 function startLoop(){
@@ -1595,6 +1627,23 @@ function studyDesk(){
   applyFx({smarts:3, energy:-4, happy:-1});
   advanceHours(2);
   miniMsg('📚 Studied. Smarts up.');
+}
+// Childhood interactivity — toy chest is most fun when young, cringe by adulthood.
+function playToys(){
+  const c = G.char;
+  if(c.age <= 12){
+    applyFx({happy:8, smarts:1});
+    advanceHours(1);
+    miniMsg('🧸 Played make-believe with toys.');
+  } else if(c.age <= 17){
+    applyFx({happy:2});
+    advanceHours(1);
+    miniMsg('🧸 You sorted through old toys. Nostalgic.');
+  } else {
+    applyFx({happy:-1});
+    advanceHours(0.5);
+    miniMsg('🧸 You feel a bit silly playing with these now.');
+  }
 }
 function enterHome(){
   G._spawnAt = { x:11, y:11 };
@@ -2585,8 +2634,23 @@ function applyFx(fx){
   updateHud();
   save();
 }
+function renderTopbarActions(){
+  const c = G.char;
+  const wrap = document.getElementById('topbar-actions');
+  if(!wrap) return;
+  const a = c.age;
+  const btns = [];
+  btns.push({lbl:'🏆', fn:'openAchievements()'});
+  if(a >= 13) btns.push({lbl:'💞 Prefs', fn:'openDatingPrefs()'});
+  if(a >= 16) btns.push({lbl:'💋 Risky', fn:'openAffairMenu()'});
+  if(a >= 16) btns.push({lbl:'👶 Drama', fn:'openBabyDrama()'});
+  if(a >= 18) btns.push({lbl:'💍 Dowry', fn:'openDowry()'});
+  wrap.innerHTML = btns.map(b => '<button class="tb-btn" onclick="' + b.fn + '">' + b.lbl + '</button>').join('');
+}
+
 function updateHud(){
   const c = G.char;
+  renderTopbarActions();
   document.getElementById('hud-age').textContent = 'Age ' + c.age;
   const moneyEl = document.getElementById('hud-money');
   moneyEl.textContent = fmt(c.money);

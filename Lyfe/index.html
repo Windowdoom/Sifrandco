@@ -9911,6 +9911,138 @@ const POLITICAL_MOVES = [
       }
     },
   },
+  // ═══ NUCLEAR WAR — first strike. Civilization-ending. ═══
+  {id:'launch_nuclear_war', label:'💥 Launch Nuclear First Strike', cost:0,
+    desc:'You authorize a full nuclear first strike against another nuclear power. Retaliation is automatic. This is the gravest decision in human history — billions die, civilization collapses, climate becomes a nuclear winter. Your dynasty and the human story largely end with this choice.',
+    exec: () => {
+      LIFE.world.peaceIndex = 0;
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 80, 0, 100);
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore - 60, 0, 100);
+      LIFE.world.techLevel = clamp(LIFE.world.techLevel - 40, 0, 100);
+      LIFE.world.ww3Happened = true;
+      LIFE.world.nuclearWar = true;
+      LIFE.world.warCriminal = true;
+      LIFE.world.iccIndictment = true;
+      LIFE.char.karma = 0;
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 50, 0, 100);
+      pushEvent('death', '💥 Nuclear war. Cities incinerated on three continents. Estimated 2 billion dead in the first 72 hours.');
+      pushEvent('death', '🌫 A nuclear winter begins. Crops fail. Refugee tides cross every border.');
+      recordLegacy('launched the nuclear first strike that ended the modern world');
+      // Almost certainly killed or overthrown
+      setTimeout(() => {
+        if(LIFE && LIFE.char && LIFE.char.alive){
+          if(Math.random() < 0.7){
+            pushEvent('death', '☢️ You died when the retaliatory warhead struck your capital.');
+            LIFE.char.alive = false; LIFE.char.cause = 'killed in nuclear retaliation';
+          } else {
+            pushEvent('death', '🕯 You were dragged from a bunker and tried in a tribunal. Executed for crimes against humanity.');
+            LIFE.char.alive = false; LIFE.char.cause = 'executed for nuclear war crimes';
+          }
+        }
+      }, 200);
+    },
+  },
+  // ═══ WAR PROFITEERING — only available to senators+ who also own a defense
+  //  or aerospace company. Insider trading at the scale of nation-state.
+  {id:'insider_defense_contract', label:'💰 Award No-Bid Contract to Your Own Defense Company', cost:0,
+    desc:'You direct a massive defense procurement to a company you control. Classic conflict of interest — congressional investigations possible. Your defense / aerospace firm gets a windfall, but the press is watching.',
+    requires: () => {
+      const c = LIFE.char;
+      if(!c.career || c.career.key !== 'politician' || c.career.rungIdx < 3) return false;
+      return (c.companies||[]).some(co => co.industry === 'defense' || co.industry === 'aerospace');
+    },
+    exec: () => {
+      const c = LIFE.char;
+      const targets = c.companies.filter(co => co.industry === 'defense' || co.industry === 'aerospace');
+      const co = targets[0];
+      const haul = 200000000 + Math.floor(Math.random()*800000000);
+      co.cash = (co.cash||0) + haul;
+      co.revenue = Math.floor(co.revenue * 1.8);
+      co.valuation = Math.floor(co.valuation * 1.6);
+      LIFE.char.karma = clamp(LIFE.char.karma - 18, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 3, 0, 100);
+      pushEvent('career', '💰 No-bid contract of ' + fmtMoney(haul) + ' awarded to ' + co.name + '. Press alert.');
+      recordLegacy('handed a no-bid defense contract to a company they secretly owned');
+      // Investigation roll
+      if(Math.random() < 0.25){
+        setTimeout(() => {
+          if(LIFE && LIFE.char && LIFE.char.alive){
+            pushEvent('bad', '⚖️ Congressional ethics committee opened a probe.');
+            LIFE.char.fame = clamp((LIFE.char.fame||0) + 8, 0, 100);
+            LIFE.char.karma = clamp(LIFE.char.karma - 6, 0, 100);
+          }
+        }, 200);
+      }
+    },
+  },
+  {id:'start_war_for_contracts', label:'⚔️ Push the Nation Into War (Personal Enrichment)', cost:0,
+    desc:'You manipulate intelligence and floor votes to push your country into a foreign war you personally profit from. Defense companies you control go vertical for years. The dead and displaced are someone else\'s problem.',
+    requires: () => {
+      const c = LIFE.char;
+      if(!c.career || c.career.key !== 'politician' || c.career.rungIdx < 3) return false;
+      return (c.companies||[]).some(co => co.industry === 'defense' || co.industry === 'aerospace');
+    },
+    exec: () => {
+      const c = LIFE.char;
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 30, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 8, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma - 40, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 18, 0, 100);
+      (c.companies||[]).forEach(co => {
+        if(co.industry === 'defense' || co.industry === 'aerospace'){
+          co.revenue = Math.floor(co.revenue * 3.0);
+          co.profitMargin = Math.min(0.5, co.profitMargin + 0.08);
+          co.cash = (co.cash||0) + 100000000;
+        }
+      });
+      pushEvent('bad', '⚔️ Your manufactured war has begun. Defense stocks surge. Civilian casualties mount.');
+      recordLegacy('engineered a foreign war for personal financial gain');
+      // Decade-long investigation risk; survivors of the war or whistleblowers may surface
+      if(Math.random() < 0.30){
+        setTimeout(() => {
+          if(LIFE && LIFE.char && LIFE.char.alive){
+            pushEvent('bad', '📰 A leaked memo proves the war was manufactured. Subpoenas issued.');
+            LIFE.char.karma = clamp(LIFE.char.karma - 10, 0, 100);
+            if(Math.random() < 0.4){
+              goToJail(8, 'war profiteering and falsified intel');
+            }
+          }
+        }, 400);
+      }
+    },
+  },
+  {id:'classified_briefing_insider', label:'📑 Trade Stocks on Classified Briefing', cost:0,
+    desc:'A classified intelligence briefing tipped you off about a coming conflict. You buy defense and aerospace stocks the night before the news breaks. Pure insider trading.',
+    requires: () => {
+      const c = LIFE.char;
+      return c.career && c.career.key === 'politician' && c.career.rungIdx >= 2;
+    },
+    exec: () => {
+      const c = LIFE.char;
+      // The play: investments surge 50-200%
+      const gain = (0.5 + Math.random()*1.5);
+      const bonus = Math.floor((c.investments||0) * gain);
+      c.investments = (c.investments||0) + bonus;
+      if((c.investments||0) === 0){
+        // No investments yet — give a flat windfall instead
+        c.money += 350000;
+        pushEvent('career', '📑 Used classified intel to short a defense stock before the briefing went public. +' + fmtMoney(350000) + '.');
+      } else {
+        pushEvent('career', '📑 Insider-traded on a classified briefing. Investments +' + fmtMoney(bonus) + '.');
+      }
+      c.karma = clamp(c.karma - 12, 0, 100);
+      recordLegacy('insider-traded on a classified intelligence briefing');
+      // SEC roll
+      if(Math.random() < 0.15){
+        setTimeout(() => {
+          if(LIFE && LIFE.char && LIFE.char.alive){
+            pushEvent('bad', '⚖️ SEC investigation opened on suspicious trades.');
+            if(Math.random() < 0.5) goToJail(4, 'insider trading');
+          }
+        }, 300);
+      }
+    },
+  },
 ];
 
 function openOfficeOfPower(){
@@ -9980,7 +10112,7 @@ function executePoliticalMove(id){
   if(!m) return;
   if(m.cost && LIFE.char.money < m.cost){ toast('Need ' + fmtMoney(m.cost) + '.'); return; }
   // The most consequential moves require explicit confirmation
-  if(['order_genocide','authoritarian_turn','nuclear_test'].includes(id)){
+  if(['order_genocide','authoritarian_turn','nuclear_test','launch_nuclear_war','start_war_for_contracts'].includes(id)){
     const ok = confirm(m.label + '\n\n' + m.desc + '\n\nThis is irreversible. Continue?');
     if(!ok) return;
   }

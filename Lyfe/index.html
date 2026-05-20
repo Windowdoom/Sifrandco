@@ -3066,6 +3066,7 @@ function loadLife(){
         if(!c.insurance) c.insurance = {home:false, health:false, life:false, auto:false};
         if(!c.properties) c.properties = [];
         if(!c.companies) c.companies = [];
+        if(!c.hustles) c.hustles = {};
       }
       return true;
     }
@@ -3248,6 +3249,7 @@ function ageUp(){
   rollApocalypseEvent();
   // banking interest tick
   processBankingInterest();
+  processSideHustles();
   // faith decay/practice
   rollFaithEvent();
   // personality drift
@@ -6558,24 +6560,273 @@ function giveUpPet(idx){
 // ═══════════════════════════════════════════════════════════════════════
 //  SKILLS — practice and monetize
 // ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+//  SIDE HUSTLES + CELEBRITY TRACK
+//  Each skill, once monetized, can become a recurring side hustle. As
+//  the skill levels up the hustle tiers up (Side Hustle → Pro → Celebrity)
+//  unlocking bigger releases, more fame, automated royalty income, and
+//  crossover offers. Stardom comes with the counter: scandals, burnout,
+//  public cancellation. See processSideHustles().
+// ═══════════════════════════════════════════════════════════════════════
+const HUSTLE_TIERS = [
+  {id:'hustle',   label:'Side Hustle', minLevel:60, releasePay:[400,3500],     fameGain:[0,2],   monthlyMult:0.10},
+  {id:'pro',      label:'Pro',         minLevel:80, releasePay:[8000,90000],   fameGain:[2,8],   monthlyMult:0.35},
+  {id:'celeb',    label:'Celebrity',   minLevel:95, releasePay:[120000,3500000],fameGain:[6,20], monthlyMult:0.9},
+];
+
+// Per-skill product / release names, ascending tier order
+const HUSTLE_PRODUCTS = {
+  music:       ['Demo Track','Single','EP','Studio Album','World Tour','Greatest Hits'],
+  writing:     ['Short Story','Magazine Piece','Novel','Bestseller','Trilogy','Film Adaptation'],
+  painting:    ['Local Gallery Show','Group Exhibition','Solo Exhibition','Museum Retrospective','Biennial Feature','Auction Record'],
+  cooking:     ['Pop-Up Dinner','Catering Gig','Cookbook','TV Cooking Show','Restaurant Opening','Michelin Star'],
+  photography: ['Stock Portfolio','Magazine Cover','Photo Book','Solo Exhibition','Documentary','National Geographic Cover'],
+  programming: ['Indie App','Side-Project SaaS','Open-Source Hit','Funded Startup','Acquired Product','IPO'],
+  martialarts: ['Local Class','Dojo Series','Tournament Win','Champion Belt','Stunt Coordinator','Action-Film Lead'],
+  dancing:     ['Local Troupe','Broadway Ensemble','Tour Lead','Music-Video Choreo','World Tour','Awards Ceremony'],
+  meditation:  ['Weekend Retreat','Online Course','Best-Selling Book','TED Talk','Mindfulness App','Sold-Out Stadium Talk'],
+  investing:   ['Investment Newsletter','Managed Fund','Hedge Fund','Conference Keynote','Book of Insights','Documentary Subject'],
+  languages:   ['Freelance Translation','Diplomatic Interpreter','Published Translation','Lecture Tour','UN Contract','Linguistic Memoir'],
+  auto:        ['Garage Service','Restoration Channel','TV Custom-Build Show','Auction Restoration','Custom-Build Empire','Pebble Beach Win'],
+};
+
+// Crossover offers — only celebs see these (fame-driven side income)
+const CROSSOVERS = [
+  {id:'acting_role',  label:'🎬 Lead Role in a Studio Film',  fame:35, payRange:[600000,5000000], skillBoost:'looks'},
+  {id:'endorsement',  label:'💼 Major Brand Endorsement',     fame:40, payRange:[800000,4000000], skillBoost:null},
+  {id:'fragrance',    label:'🌸 Launch a Fragrance Line',     fame:55, payRange:[1500000,9000000], skillBoost:null},
+  {id:'reality_tv',   label:'📺 Reality TV Show',             fame:30, payRange:[400000,2500000], skillBoost:'fame', risk:'reality_fallout'},
+  {id:'memoir_deal',  label:'📖 Six-Figure Memoir Advance',   fame:25, payRange:[250000,1800000], skillBoost:'smarts'},
+  {id:'biopic',       label:'🎞️ Biopic Made About You',      fame:65, payRange:[2000000,12000000],skillBoost:'fame'},
+  {id:'speaking_tour',label:'🎤 World Speaking Tour',          fame:40, payRange:[800000,5500000], skillBoost:'fame'},
+  {id:'tech_advisor', label:'🤝 Tech Advisor / Board Seat',   fame:30, payRange:[300000,1500000], skillBoost:'smarts'},
+];
+
+// Scandal events — fire on celebs occasionally
+const SCANDALS = [
+  {id:'tabloid_affair',     desc:'A tabloid published your affair photos.',              fameHit:-15, karma:-6},
+  {id:'tax_audit',          desc:'A leaked audit shows you dodged taxes.',                fameHit:-20, karma:-10, moneyMult:0.85},
+  {id:'old_tweets',         desc:'Decade-old offensive posts resurfaced.',                fameHit:-25, karma:-12},
+  {id:'pr_disaster',        desc:'A live interview went disastrously wrong.',             fameHit:-10},
+  {id:'celebrity_feud',     desc:'You publicly feuded with another celeb.',               fameHit:-8},
+  {id:'cancelled',          desc:'A coordinated campaign called for your cancellation.',  fameHit:-35, karma:-5, hustleHalt:true},
+  {id:'plagiarism',         desc:'You were accused of plagiarism in your most recent release.', fameHit:-22, karma:-8},
+  {id:'rehab_stint',        desc:'You checked into rehab. The press will not let it go.', fameHit:-12, health:-5},
+];
+
+function tierForLevel(level){
+  let t = null;
+  HUSTLE_TIERS.forEach(x => { if(level >= x.minLevel) t = x; });
+  return t;
+}
+
 function openSkills(){
   const c = LIFE.char;
   if(!c.skills) c.skills = {};
-  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Practice to level up (0-100). Once at 60+ you can monetize the skill.</div>';
+  if(!c.hustles) c.hustles = {};
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Practice 0-100. Hit 60 → Side Hustle. Hit 80 → Pro. Hit 95 → Celebrity (auto-royalties + crossover offers, plus the counter: scandals + burnout).</div>';
   SKILLS.forEach(s => {
     const level = c.skills[s.id] || 0;
-    const monetizable = level >= 60;
+    const tier = tierForLevel(level);
+    const hustle = c.hustles[s.id];
+    const products = HUSTLE_PRODUCTS[s.id] || ['Release'];
+    const productIdx = tier ? Math.min(products.length-1, HUSTLE_TIERS.indexOf(tier) * 2) : 0;
     html += '<div class="card">'
       + '<div class="card-ico">' + s.ico + '</div>'
-      + '<div class="card-body"><div class="card-title">' + s.name + '</div>'
-      + '<div class="card-meta">Level ' + level + ' / 100 · Monetize: ' + s.monetize + '</div>'
-      + '<div class="stat-bar" style="margin-top:5px;"><div class="stat-fill smarts" style="width:' + level + '%"></div></div></div>'
+      + '<div class="card-body"><div class="card-title">' + s.name
+        + (tier ? ' <span style="color:var(--gold);font-size:10px;letter-spacing:.15em;">· ' + tier.label.toUpperCase() + '</span>' : '')
+        + '</div>'
+      + '<div class="card-meta">Level ' + level + ' / 100 · ' + s.monetize + '</div>'
+      + '<div class="stat-bar" style="margin-top:5px;"><div class="stat-fill smarts" style="width:' + level + '%"></div></div>'
+      + (hustle ?
+          '<div style="margin-top:6px;font-size:11px;color:var(--accent2);">'
+          + 'Royalties: ' + fmtMoney(Math.floor(hustle.monthlyIncome*12)) + '/yr · Releases: ' + (hustle.releases?hustle.releases.length:0)
+          + (hustle.automated ? ' · <span style="color:var(--green);">AUTO ON</span>' : ' · <span style="color:var(--t3);">manual</span>')
+          + '</div>' : '')
+      + '</div>'
       + '<div class="card-act">'
-      + '<button class="card-btn" onclick="practiceSkill(\'' + s.id + '\')">Practice</button>'
-      + (monetizable ? '<button class="card-btn green" onclick="monetizeSkill(\'' + s.id + '\')">Monetize</button>' : '')
-      + '</div></div>';
+      + '<button class="card-btn" onclick="practiceSkill(\'' + s.id + '\')">Practice</button>';
+    if(tier){
+      html += '<button class="card-btn green" onclick="releaseProduct(\'' + s.id + '\')">Release ' + products[productIdx] + '</button>';
+      if(hustle){
+        html += '<button class="card-btn ' + (hustle.automated?'danger':'green') + '" onclick="toggleHustleAuto(\'' + s.id + '\')">'
+          + (hustle.automated ? 'Stop Auto' : 'Automate') + '</button>';
+      }
+    }
+    html += '</div></div>';
   });
+  // Crossover offers for celebs
+  const celebSkills = SKILLS.filter(s => (c.skills[s.id]||0) >= 95);
+  if(celebSkills.length && (c.fame||0) >= 25){
+    const offers = CROSSOVERS.filter(x => (c.fame||0) >= x.fame);
+    if(offers.length){
+      html += '<div style="margin-top:18px;padding:14px;background:#1a1428;border:1px solid var(--gold);border-radius:6px;">'
+        + '<div style="color:var(--gold);font-family:var(--font-m);font-size:10px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;">⭐ Crossover Offers</div>';
+      offers.forEach(o => {
+        const payHint = fmtMoney(o.payRange[0]) + ' — ' + fmtMoney(o.payRange[1]);
+        html += '<div style="padding:8px;margin-top:6px;background:#241a36;border:1px solid #3a2a55;border-radius:5px;">'
+          + '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">'
+          + '<div style="flex:1;">'
+          + '<div style="font-weight:700;color:var(--accent2);font-size:13px;">' + o.label + '</div>'
+          + '<div style="font-size:11px;color:var(--t3);">Pay range: ' + payHint + ' · Needs Fame ' + o.fame + '+</div>'
+          + '</div>'
+          + '<button class="card-btn green" onclick="acceptCrossover(\'' + o.id + '\')">Accept</button>'
+          + '</div></div>';
+      });
+      html += '</div>';
+    }
+  }
   openModal('🎯 Skills & Hobbies', html);
+}
+
+function releaseProduct(skillId){
+  const c = LIFE.char;
+  const level = c.skills[skillId] || 0;
+  const tier = tierForLevel(level);
+  if(!tier){ toast('Need at least level 60.'); return; }
+  if(!c.hustles) c.hustles = {};
+  // Burnout check — too many releases this year
+  const h = c.hustles[skillId];
+  if(h){
+    h.releasesThisYear = (h.releasesThisYear||0);
+    if(h.releasesThisYear >= 3){
+      toast('Burnout. Wait for a new year.');
+      return;
+    }
+  }
+  // Compute payout + fame
+  const burnoutPenalty = h && h.releasesThisYear >= 2 ? 0.45 : 1.0;
+  const skillFactor = 0.6 + (level/100);
+  const lucky = 0.6 + Math.random()*1.6;
+  const range = tier.releasePay;
+  let payout = Math.floor((range[0] + Math.random()*(range[1]-range[0])) * skillFactor * lucky * burnoutPenalty);
+  const fameRange = tier.fameGain;
+  let fameAdd = fameRange[0] + Math.floor(Math.random()*(fameRange[1]-fameRange[0]+1));
+  // Critical failure roll — even a celeb can flop
+  if(Math.random() < 0.08){
+    payout = Math.floor(payout * 0.18);
+    fameAdd = -2;
+    pushEvent('bad', '📉 Critics savaged your new release. It flopped.');
+  } else if(Math.random() < 0.04 && tier.id === 'celeb'){
+    payout = Math.floor(payout * 3);
+    fameAdd += 8;
+    pushEvent('good', '🌟 Your new release is a generational classic. Sales went vertical.');
+  }
+  // Create or extend the hustle
+  if(!c.hustles[skillId]){
+    c.hustles[skillId] = {
+      skillId, monthlyIncome: 0, totalEarned: 0, releases: [], automated: false, releasesThisYear: 0,
+    };
+  }
+  const hu = c.hustles[skillId];
+  const products = HUSTLE_PRODUCTS[skillId] || ['Release'];
+  const idx = Math.min(products.length-1, hu.releases.length);
+  const product = products[idx];
+  hu.releases.push({ year: (LIFE.char.born||0)+LIFE.char.age, name: product, payout, fame:fameAdd, tier: tier.id });
+  hu.totalEarned += payout;
+  hu.releasesThisYear = (hu.releasesThisYear||0) + 1;
+  // Royalties stream — each release adds to monthly recurring
+  hu.monthlyIncome += Math.floor(payout * tier.monthlyMult / 12);
+  c.money += payout;
+  c.fame = clamp((c.fame||0) + fameAdd, 0, 100);
+  pushEvent('career', '🎤 You released ' + product + '. Earned ' + fmtMoney(payout) + (fameAdd>0?' · Fame +' + fameAdd : ''));
+  recordLegacy && fameAdd >= 8 && recordLegacy('released ' + product + ' that became a hit');
+  closeModal();
+  openSkills();
+  renderAll();
+  saveLife();
+}
+
+function toggleHustleAuto(skillId){
+  const c = LIFE.char;
+  if(!c.hustles || !c.hustles[skillId]) return;
+  c.hustles[skillId].automated = !c.hustles[skillId].automated;
+  toast(c.hustles[skillId].automated ? 'Automated. Will auto-release each year.' : 'Auto release off.');
+  closeModal();
+  openSkills();
+  saveLife();
+}
+
+function acceptCrossover(id){
+  const c = LIFE.char;
+  const o = CROSSOVERS.find(x => x.id === id);
+  if(!o) return;
+  if((c.fame||0) < o.fame){ toast('Not famous enough.'); return; }
+  const pay = Math.floor(o.payRange[0] + Math.random()*(o.payRange[1]-o.payRange[0]));
+  c.money += pay;
+  c.fame = clamp((c.fame||0) + 3, 0, 100);
+  if(o.skillBoost && c[o.skillBoost] != null){
+    c[o.skillBoost] = clamp(c[o.skillBoost] + 4, 0, 100);
+  }
+  pushEvent('career', '⭐ Crossover: ' + o.label + ' — earned ' + fmtMoney(pay) + '.');
+  // Risk for reality TV
+  if(o.risk === 'reality_fallout' && Math.random() < 0.35){
+    c.fame = clamp(c.fame - 12, 0, 100);
+    pushEvent('bad', '📺 Reality TV reputation hit. -12 fame.');
+  }
+  recordLegacy && pay >= 2000000 && recordLegacy('took the crossover deal ' + o.label.replace(/^[^ ]+ /,''));
+  closeModal();
+  openSkills();
+  renderAll();
+  saveLife();
+}
+
+// Called each ageUp — runs automated releases, royalty payments, scandal rolls.
+function processSideHustles(){
+  const c = LIFE.char;
+  if(!c.hustles) return;
+  let totalRoyalty = 0;
+  let totalRoyaltyCount = 0;
+  Object.keys(c.hustles).forEach(sid => {
+    const h = c.hustles[sid];
+    h.releasesThisYear = 0; // reset annual burnout counter
+    // Royalty income (capped at 12 months — annual ageUp)
+    if(h.monthlyIncome > 0){
+      const annual = Math.floor(h.monthlyIncome * 12);
+      c.money += annual;
+      totalRoyalty += annual;
+      totalRoyaltyCount++;
+      // Royalty decay — old releases earn less each year
+      h.monthlyIncome = Math.floor(h.monthlyIncome * 0.95);
+    }
+    // Auto-release if toggled on and skill is high enough
+    if(h.automated){
+      const level = c.skills[sid] || 0;
+      const tier = tierForLevel(level);
+      if(tier){
+        releaseProduct(sid);
+      }
+    }
+  });
+  if(totalRoyalty > 0){
+    pushEvent('good', '💰 Royalties this year: ' + fmtMoney(totalRoyalty) + ' across ' + totalRoyaltyCount + ' side hustle' + (totalRoyaltyCount===1?'':'s') + '.');
+  }
+  // Scandal roll — only for celebs
+  const fame = c.fame || 0;
+  if(fame >= 40 && Math.random() < (0.04 + (fame-40)*0.002)){
+    rollScandal();
+  }
+  // Public-backlash counter: high fame + low karma = bigger scandal chance
+  if(fame >= 50 && c.karma < 35 && Math.random() < 0.08){
+    rollScandal(true);
+  }
+}
+
+function rollScandal(amplified){
+  const c = LIFE.char;
+  const s = pickRand(SCANDALS);
+  let fameHit = s.fameHit * (amplified ? 1.5 : 1);
+  c.fame = clamp(c.fame + fameHit, 0, 100);
+  if(s.karma) c.karma = clamp(c.karma + s.karma, 0, 100);
+  if(s.health) c.health = clamp(c.health + s.health, 0, 100);
+  if(s.moneyMult) c.money = Math.floor(c.money * s.moneyMult);
+  if(s.hustleHalt){
+    Object.keys(c.hustles||{}).forEach(sid => {
+      c.hustles[sid].monthlyIncome = Math.floor(c.hustles[sid].monthlyIncome * 0.4);
+      c.hustles[sid].automated = false;
+    });
+  }
+  pushEvent('bad', '📰 SCANDAL: ' + s.desc + ' Fame ' + Math.round(fameHit) + '.');
 }
 function practiceSkill(id){
   const c = LIFE.char;

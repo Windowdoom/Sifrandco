@@ -2935,6 +2935,9 @@ function defaultChar(seed){
     investments: 0,          // brokerage / 401k
     trust:     0,            // family trust principal
     corruption: 0,           // 0-100 — bribes, kickbacks, embezzlement
+    heirlooms: [],           // generational items
+    flips:     [],           // active real-estate flips
+    will:      { conditions: [], disinherited: [], primaryHeir: null, allowLawsuits: true },
     properties: [],          // real-estate portfolio
     companies:  [],          // owned companies
     religion:  null,         // chosen religious tradition
@@ -3065,6 +3068,9 @@ function loadLife(){
         if(c.investments == null) c.investments = 0;
         if(c.trust == null) c.trust = 0;
         if(c.corruption == null) c.corruption = 0;
+        if(!c.heirlooms) c.heirlooms = [];
+        if(!c.flips) c.flips = [];
+        if(!c.will) c.will = { conditions: [], disinherited: [], primaryHeir: null, allowLawsuits: true };
         if(!c.insurance) c.insurance = {home:false, health:false, life:false, auto:false};
         if(!c.properties) c.properties = [];
         if(!c.companies) c.companies = [];
@@ -4293,12 +4299,140 @@ function proposeMarriage(){
   const c = LIFE.char;
   const p = c.partner;
   if(p.compat < 60){ toast(p.firstName + ' said no. Compat too low.'); p.compat = clamp(p.compat - 8, 0, 100); switchRelTab('partner'); return; }
-  c.money -= 8000;
-  p.married = true;
-  pushEvent('romantic', '💍 You married ' + p.firstName + ' ' + p.lastName + '. Wedding cost ' + fmtMoney(8000) + '.');
-  c.happiness = clamp(c.happiness + 18, 0, 100);
-  switchRelTab('partner');
-  renderAll();
+  // Open wedding planner — player picks venue / catering / guest tier
+  openWeddingPlanner();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  WEDDING PLANNING — pick venue, catering, guests. Random disaster
+//  roll affects starting marriage happiness.
+// ═══════════════════════════════════════════════════════════════════════
+const WEDDING_VENUES = [
+  {id:'courthouse', name:'Courthouse Wedding', cost:200,     base:8},
+  {id:'backyard',   name:'Backyard Ceremony',  cost:3500,    base:14},
+  {id:'church',     name:'Church Wedding',     cost:12000,   base:18},
+  {id:'beach',      name:'Beach Destination',  cost:35000,   base:24},
+  {id:'estate',     name:'Private Estate',     cost:120000,  base:30},
+];
+const WEDDING_CATERING = [
+  {id:'potluck',  name:'Potluck',          cost:0,    bonus:0},
+  {id:'buffet',   name:'Buffet',           cost:3500, bonus:3},
+  {id:'plated',   name:'Plated Dinner',    cost:18000,bonus:6},
+  {id:'michelin', name:'Michelin Catering',cost:60000,bonus:12},
+];
+const WEDDING_GUESTS = [
+  {id:'tiny',  name:'Tiny (≤20)',     cost:0,    bonus:0,  drama:0.05},
+  {id:'small', name:'Small (40-70)',  cost:2500, bonus:2,  drama:0.10},
+  {id:'big',   name:'Big (100+)',     cost:9000, bonus:5,  drama:0.25},
+  {id:'mega',  name:'Mega (300+)',    cost:30000,bonus:9,  drama:0.40},
+];
+function openWeddingPlanner(){
+  const c = LIFE.char;
+  c._weddingPick = c._weddingPick || { venue:'courthouse', catering:'potluck', guests:'tiny' };
+  const pick = c._weddingPick;
+  const v = WEDDING_VENUES.find(x => x.id === pick.venue);
+  const ca = WEDDING_CATERING.find(x => x.id === pick.catering);
+  const g = WEDDING_GUESTS.find(x => x.id === pick.guests);
+  const cost = v.cost + ca.cost + g.cost;
+  const hap = v.base + ca.bonus + g.bonus;
+  let html = '<p style="color:var(--t3);font-size:13px;">Plan the wedding. Bigger and grander = more happiness — and a bigger chance the day goes sideways.</p>';
+  const section = (title, key, options) => {
+    let h = '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:14px 0 6px;">' + title + '</div>';
+    options.forEach(o => {
+      const sel = pick[key] === o.id;
+      h += '<div class="card" style="' + (sel?'border-color:var(--gold);':'') + '">'
+        + '<div class="card-ico">' + (sel?'●':'○') + '</div>'
+        + '<div class="card-body"><div class="card-title">' + o.name + '</div>'
+        + '<div class="card-meta">Cost ' + fmtMoney(o.cost) + (o.bonus?' · +' + o.bonus + ' happy':'') + (o.base?' · base +' + o.base + ' happy':'') + (o.drama?' · drama risk ~' + Math.floor(o.drama*100) + '%':'') + '</div></div>'
+        + '<div class="card-act"><button class="card-btn ' + (sel?'green':'')+'" onclick="pickWedding(\'' + key + '\',\'' + o.id + '\')">' + (sel?'Selected':'Pick') + '</button></div></div>';
+    });
+    return h;
+  };
+  html += section('Venue', 'venue', WEDDING_VENUES);
+  html += section('Catering', 'catering', WEDDING_CATERING);
+  html += section('Guest List', 'guests', WEDDING_GUESTS);
+  html += '<div style="margin-top:18px;padding:14px;background:#1a1428;border:1px solid var(--gold);border-radius:6px;text-align:center;">'
+    + '<div style="font-family:var(--font-m);font-size:11px;color:var(--t3);letter-spacing:.18em;">TOTAL · HAPPINESS</div>'
+    + '<div style="font-size:20px;color:var(--gold);font-weight:700;">' + fmtMoney(cost) + ' · +' + hap + '</div>'
+    + '</div>'
+    + '<button class="card-btn green" style="width:100%;margin-top:12px;padding:12px;" onclick="confirmWedding()">💍 Get Married</button>'
+    + '<button class="card-btn muted" style="width:100%;margin-top:6px;padding:10px;" onclick="closeModal()">Cancel</button>';
+  openModal('💍 Wedding Planning', html);
+}
+function pickWedding(key, id){
+  LIFE.char._weddingPick[key] = id;
+  openWeddingPlanner();
+}
+function confirmWedding(){
+  const c = LIFE.char;
+  const pick = c._weddingPick;
+  const v = WEDDING_VENUES.find(x => x.id === pick.venue);
+  const ca = WEDDING_CATERING.find(x => x.id === pick.catering);
+  const g = WEDDING_GUESTS.find(x => x.id === pick.guests);
+  const cost = v.cost + ca.cost + g.cost;
+  if(c.money < cost){ toast('Need ' + fmtMoney(cost) + '.'); return; }
+  c.money -= cost;
+  let hap = v.base + ca.bonus + g.bonus;
+  let disaster = null;
+  if(Math.random() < g.drama){
+    disaster = pickRand(['The cake collapsed.','A drunk uncle gave a too-honest speech.','A rainstorm flooded the venue.','Two aunts got into a screaming match.','The DJ played the wrong first-dance song.']);
+    hap = Math.max(2, hap - 10);
+  }
+  c.partner.married = true;
+  c.partner.weddingVenue = v.name;
+  c.happiness = clamp(c.happiness + hap, 0, 100);
+  pushEvent('romantic', '💍 You married ' + c.partner.firstName + ' ' + c.partner.lastName + ' at the ' + v.name + '. Cost ' + fmtMoney(cost) + ', Happiness +' + hap + '.' + (disaster?' ⚠️ ' + disaster:''));
+  delete c._weddingPick;
+  closeModal(); switchRelTab('partner'); renderAll(); saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  HOBBY TOURNAMENTS — enter local / national / international comps.
+// ═══════════════════════════════════════════════════════════════════════
+const TOURNAMENT_TIERS = [
+  {id:'local',    name:'Local',         entry:25,    minLevel:30, prize:[100,1500],    fameGain:0},
+  {id:'regional', name:'Regional',      entry:200,   minLevel:55, prize:[1000,18000],  fameGain:1},
+  {id:'national', name:'National',      entry:1500,  minLevel:75, prize:[15000,180000],fameGain:3},
+  {id:'world',    name:'World Final',   entry:8000,  minLevel:90, prize:[120000,2000000],fameGain:8},
+];
+function openTournaments(skillId){
+  const c = LIFE.char;
+  const s = SKILLS.find(x => x.id === skillId);
+  if(!s) return;
+  const level = (c.skills && c.skills[skillId]) || 0;
+  let html = '<p style="color:var(--t3);font-size:13px;">Compete in ' + s.name + '. Skill ' + level + '/100 vs. RNG. Win to take the prize, lose to take the lesson.</p>';
+  TOURNAMENT_TIERS.forEach(t => {
+    const eligible = level >= t.minLevel;
+    html += '<div class="card">'
+      + '<div class="card-ico">🏆</div>'
+      + '<div class="card-body"><div class="card-title">' + t.name + ' ' + s.name + ' Tournament</div>'
+      + '<div class="card-meta">Entry ' + fmtMoney(t.entry) + ' · Prize ' + fmtMoney(t.prize[0]) + ' — ' + fmtMoney(t.prize[1]) + ' · Need Lvl ' + t.minLevel + '+' + (t.fameGain?' · +up to ' + t.fameGain + ' fame':'') + '</div></div>'
+      + '<div class="card-act"><button class="card-btn ' + (eligible && c.money>=t.entry?'green':'muted') + '" '
+      + (eligible && c.money>=t.entry?'':'disabled') + ' onclick="enterTournament(\'' + skillId + '\',\'' + t.id + '\')">Enter</button></div></div>';
+  });
+  openModal('🏆 ' + s.name + ' Tournaments', html);
+}
+function enterTournament(skillId, tierId){
+  const c = LIFE.char;
+  const t = TOURNAMENT_TIERS.find(x => x.id === tierId);
+  const level = (c.skills && c.skills[skillId]) || 0;
+  if(level < t.minLevel || c.money < t.entry){ toast('Cannot enter.'); return; }
+  c.money -= t.entry;
+  // Win probability based on skill relative to tier minimum
+  const winChance = Math.min(0.85, (level - t.minLevel + 10) / 80);
+  if(Math.random() < winChance){
+    const prize = t.prize[0] + Math.floor(Math.random() * (t.prize[1] - t.prize[0]));
+    c.money += prize;
+    if(t.fameGain){ c.fame = clamp((c.fame||0) + Math.floor(Math.random()*t.fameGain)+1, 0, 100); }
+    c.skills[skillId] = Math.min(100, level + 2);
+    pushEvent('career', '🏆 You won the ' + t.name + ' ' + SKILLS.find(s=>s.id===skillId).name + ' Tournament. Prize ' + fmtMoney(prize) + '.');
+    if(tierId === 'world') recordLegacy('won the World Final in ' + SKILLS.find(s=>s.id===skillId).name);
+  } else {
+    c.skills[skillId] = Math.min(100, level + 1);
+    pushEvent('bad', '🥺 You lost in the ' + t.name + ' bracket. Learned from it (+1 skill).');
+  }
+  closeModal();
+  openTournaments(skillId);
   saveLife();
 }
 
@@ -5531,6 +5665,63 @@ function continueAs(kidName){
   // (tenants stay; rent keeps flowing to the inheritor).
   ch.properties.forEach(p => { p.inheritedFrom = oldChar.firstName + ' ' + oldChar.lastName; });
   ch.companies.forEach(co => { co.inheritedFrom = oldChar.firstName + ' ' + oldChar.lastName; });
+  // ── Heirlooms: pass the whole chest to the heir; append a history line ──
+  ch.heirlooms = clone(oldChar.heirlooms) || [];
+  ch.heirlooms.forEach(hr => {
+    hr.history = hr.history || [];
+    hr.history.push({ gen: LIFE.generation, note: 'passed to ' + ch.firstName });
+    const type = HEIRLOOM_TYPES.find(t => t.id === hr.typeId);
+    if(type){
+      Object.entries(type.bonus).forEach(([k,v]) => { if(ch[k] != null) ch[k] = clamp(ch[k] + v, 0, 100); });
+    }
+  });
+  // ── Foundation: the family foundation persists; new char becomes new chair ──
+  if(oldChar.foundation){ ch.foundation = clone(oldChar.foundation); }
+  // ── Cult: if the founder dies, the movement crumbles unless heir keeps it ──
+  if(oldChar.cult && !oldChar.cult.exposed){
+    ch.cult = clone(oldChar.cult);
+    ch.cult.founded = ch.age;
+    ch.cult.followers = Math.floor((ch.cult.followers||0) * 0.6);
+    pushEvent('milestone', '🕯️ ' + ch.firstName + ' inherits leadership of ' + ch.cult.name + ', but 40% of followers drift away.');
+  }
+  // ── Apply the will: redistribute inheritance if old char set conditions ──
+  if(oldChar.will){
+    const w = oldChar.will;
+    // Disinherited heirs receive 0
+    if((w.disinherited||[]).includes(kid.name)){
+      ch.money = 0;
+      pushEvent('bad', '📜 The will explicitly disinherited ' + ch.firstName + '. ' + (w.allowLawsuits!==false?'A lawsuit may follow.':'') );
+      if(w.allowLawsuits !== false && Math.random() < 0.5){
+        setTimeout(() => {
+          if(LIFE && LIFE.char && LIFE.char.alive){
+            const award = Math.floor((oldChar.money||0) / Math.max(1, oldChar.children.length) * 0.3);
+            LIFE.char.money += award;
+            pushEvent('milestone', '⚖️ A court awarded ' + fmtMoney(award) + ' from the contested estate.');
+          }
+        }, 400);
+      }
+    } else {
+      // Condition check: if any required condition is met, full share. Else partial.
+      const checks = {
+        graduate:     () => (kid.degrees || []).length > 0,
+        married:      () => false,        // brand-new char, never married yet
+        noCrime:      () => (kid.karma || 50) >= 50,
+        sameReligion: () => oldChar.religion && (kid.religion === oldChar.religion),
+        inCountry:    () => true,         // continueAs keeps the country
+      };
+      const failed = (w.conditions||[]).filter(cid => !(checks[cid] && checks[cid]()));
+      if(failed.length){
+        const cut = Math.floor(ch.money * 0.4);
+        ch.money = cut;
+        pushEvent('bad', '📜 The will required ' + failed.length + ' condition(s) ' + ch.firstName + ' did not meet. Inheritance cut 60%.');
+      }
+    }
+    // Primary heir gets a bonus
+    if(w.primaryHeir === kid.name){
+      ch.money = Math.floor(ch.money * 1.3);
+      pushEvent('good', '📜 As primary heir, ' + ch.firstName + ' received a 30% larger share.');
+    }
+  }
   ch.born   = (new Date().getFullYear()) - ch.age;
   LIFE.char = ch;
   // Build a human-readable inheritance summary
@@ -6146,7 +6337,54 @@ function openBanking(){
             : '<button class="card-btn green" onclick="toggleInsurance(\'' + t + '\')">Get Insured</button>')
       + '</div></div>';
   });
+  // ── Options trading ──
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:18px 0 10px;">⚠ Options & Short Selling</div>'
+    + '<div style="padding:10px;margin-bottom:10px;background:#2a0e0e;border:1px solid var(--crimson);border-radius:5px;font-size:11px;color:var(--t3);">Options expire weekly. Calls bet the market goes up, puts bet it goes down, shorts bet a company crashes. Wrong way = uncapped loss.</div>'
+    + '<div class="card"><div class="card-ico">📈</div>'
+    + '<div class="card-body"><div class="card-title">Buy Call Options ($5k premium)</div>'
+    + '<div class="card-meta">If market rises +5% or more, payout up to 6x.</div></div>'
+    + '<div class="card-act"><button class="card-btn green" onclick="tradeOptions(\'call\',5000)">Buy Call</button></div></div>'
+    + '<div class="card"><div class="card-ico">📉</div>'
+    + '<div class="card-body"><div class="card-title">Buy Put Options ($5k premium)</div>'
+    + '<div class="card-meta">If market drops -5% or more, payout up to 6x.</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="tradeOptions(\'put\',5000)">Buy Put</button></div></div>'
+    + '<div class="card"><div class="card-ico">🩳</div>'
+    + '<div class="card-body"><div class="card-title">Short a Failing Company ($20k position)</div>'
+    + '<div class="card-meta">Win if it crashes. Lose 2-5x if it squeezes.</div></div>'
+    + '<div class="card-act"><button class="card-btn danger" onclick="tradeOptions(\'short\',20000)">Short</button></div></div>';
   openModal('🏦 Banking & Insurance', html);
+}
+
+function tradeOptions(kind, premium){
+  const c = LIFE.char;
+  if(c.money < premium){ toast('Not enough cash for premium.'); return; }
+  c.money -= premium;
+  if(kind === 'call' || kind === 'put'){
+    const moveUp = Math.random() < 0.55;
+    const moveSize = Math.random() * 0.18;
+    const matched = (kind === 'call' && moveUp && moveSize > 0.05) || (kind === 'put' && !moveUp && moveSize > 0.05);
+    if(matched){
+      const payout = Math.floor(premium * (2 + Math.random()*4));
+      c.money += payout;
+      pushEvent('good', '📊 Your ' + kind + ' option paid ' + fmtMoney(payout) + '.');
+    } else {
+      pushEvent('bad', '📊 Your ' + kind + ' option expired worthless. Lost ' + fmtMoney(premium) + '.');
+    }
+  } else if(kind === 'short'){
+    const crash = Math.random() < 0.40;
+    if(crash){
+      const win = Math.floor(premium * (1.5 + Math.random()*2));
+      c.money += premium + win;  // return premium + profit
+      pushEvent('good', '🩳 The short worked. Profit ' + fmtMoney(win) + '.');
+    } else {
+      const squeezeMult = 1.5 + Math.random()*3.5;
+      const loss = Math.floor(premium * squeezeMult);
+      c.money -= loss;
+      pushEvent('bad', '🩳 Short squeeze! You owe an additional ' + fmtMoney(loss) + ' on top of the premium.');
+      if(c.money < -100000) recordLegacy('was margin-called into bankruptcy shorting a meme stock');
+    }
+  }
+  closeModal(); openBanking(); renderAll(); saveLife();
 }
 
 function bankTransfer(action, amount){
@@ -6648,6 +6886,9 @@ function openSkills(){
       + '</div>'
       + '<div class="card-act">'
       + '<button class="card-btn" onclick="practiceSkill(\'' + s.id + '\')">Practice</button>';
+    if(level >= 30){
+      html += '<button class="card-btn" onclick="closeModal();openTournaments(\'' + s.id + '\')">🏆 Tournaments</button>';
+    }
     if(tier){
       html += '<button class="card-btn green" onclick="releaseProduct(\'' + s.id + '\')">Release ' + products[productIdx] + '</button>';
       if(hustle){
@@ -7022,11 +7263,23 @@ function openMore(){
     {label:'💞 Dating Preferences',     fn:'openDatingPrefs'},
     {label:'💋 Risky / Affair',         fn:'openCheatMenu'},
     {label:'👶 Baby-Mama Drama',        fn:'openBabyMamaDrama'},
+    {label:'🏺 Heirlooms',              fn:'openHeirlooms'},
+    {label:'📜 Will & Testament',       fn:'openWill'},
+    {label:'🕯️ Cult / Secret Society',  fn:'openCultMenu'},
+    {label:'🕵️ Underworld Black Market',fn:'openBlackMarket'},
   ];
   // Trust fund only visible to the wealthy
   const netWorth = c.money + (c.savings||0) + (c.investments||0);
   if(netWorth >= 10000000 && !c.trust){
     opts.push({label:'🏛️ Set Up Family Trust (' + fmtMoney(netWorth) + ' net worth)', fn:'setUpTrust'});
+  }
+  if(netWorth >= 100000000 && !(c.foundation)){
+    opts.push({label:'💝 Start Philanthropic Foundation', fn:'openFoundation'});
+  } else if(c.foundation){
+    opts.push({label:'💝 Manage Foundation', fn:'openFoundation'});
+  }
+  if((c.properties||[]).length || c.money >= 50000){
+    opts.push({label:'🔨 Real Estate Flipping (Auctions)', fn:'openFlipping'});
   }
   if(c.reality === 'magical' && !c.isVampire){
     opts.push({label:'🧛 Try to Become a Vampire', fn:'tryBecomeVampire'});
@@ -7038,6 +7291,478 @@ function openMore(){
     + '<div class="card-act"><button class="card-btn">Open</button></div></div>'
   )).join('');
   openModal('✨ More', html);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  HEIRLOOMS — rare unique items passed across generations.
+//  Each carries a small stat bonus AND a history. continueAs() picks
+//  them up automatically through ch.heirlooms = oldChar.heirlooms.
+// ═══════════════════════════════════════════════════════════════════════
+const HEIRLOOM_TYPES = [
+  {id:'sword',     ico:'⚔️',  name:'Ancestor\'s Sword',         bonus:{karma:+2, looks:+1}, lore:'Notched, balanced, ancient.'},
+  {id:'painting',  ico:'🖼️',  name:'Priceless Family Portrait', bonus:{smarts:+2},          lore:'Eyes that follow you across the room.'},
+  {id:'watch',     ico:'⏰',  name:'Vintage Pocket Watch',      bonus:{smarts:+1, happiness:+1}, lore:'Still keeping perfect time.'},
+  {id:'ring',      ico:'💍',  name:'Heirloom Wedding Ring',     bonus:{looks:+2, happiness:+1},  lore:'A symbol of unbroken family.'},
+  {id:'book',      ico:'📕',  name:'Family Memoir',             bonus:{smarts:+3},          lore:'Generations of memories.'},
+  {id:'amulet',    ico:'🧿',  name:'Protective Amulet',         bonus:{health:+2, faith:+2}, lore:'Has seen the family through war.'},
+  {id:'violin',    ico:'🎻',  name:'Master\'s Violin',          bonus:{looks:+1, fame:+2},  lore:'Played at a thousand weddings.'},
+  {id:'cursed',    ico:'🩸',  name:'Cursed Dagger',             bonus:{karma:-3, fame:+4},  lore:'No one will say where it came from.', cursed:true},
+];
+function ensureHeirlooms(){ if(!LIFE.char.heirlooms) LIFE.char.heirlooms = []; }
+function openHeirlooms(){
+  const c = LIFE.char;
+  ensureHeirlooms();
+  const canAcquire = c.money >= 25000;
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Rare items passed across generations. Each carries lore and a small permanent stat bonus while you hold them. They follow the chosen heir at continuation.</div>';
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Held by the Family</div>';
+  if(!c.heirlooms.length){
+    html += '<div style="padding:14px;color:var(--t3);text-align:center;background:#1a1428;border-radius:5px;margin-bottom:14px;">No heirlooms yet.</div>';
+  } else {
+    c.heirlooms.forEach((h, i) => {
+      const type = HEIRLOOM_TYPES.find(t => t.id === h.typeId) || HEIRLOOM_TYPES[0];
+      const bonusStr = Object.entries(type.bonus).map(([k,v]) => k + ' ' + (v>0?'+':'') + v).join(' · ');
+      html += '<div class="card" style="border-color:' + (type.cursed?'var(--crimson)':'var(--gold)') + ';">'
+        + '<div class="card-ico">' + type.ico + '</div>'
+        + '<div class="card-body"><div class="card-title">' + type.name + '</div>'
+        + '<div class="card-meta">' + type.lore + '</div>'
+        + '<div class="card-meta">Bonus: ' + bonusStr + '</div>'
+        + '<div class="card-meta">' + (h.history||[]).map(x => 'Gen ' + x.gen + ': ' + x.note).join(' · ') + '</div></div>'
+        + '<div class="card-act"><button class="card-btn danger" onclick="dropHeirloom(' + i + ')">Sell ($50k)</button></div></div>';
+    });
+  }
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:18px 0 8px;">Acquire (Auction House)</div>';
+  HEIRLOOM_TYPES.forEach(t => {
+    const cost = t.cursed ? 5000 : 25000;
+    html += '<div class="card">'
+      + '<div class="card-ico">' + t.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + t.name + '</div>'
+      + '<div class="card-meta">' + t.lore + ' · ' + (t.cursed?'Risky purchase':'Auction price ' + fmtMoney(cost)) + '</div></div>'
+      + '<div class="card-act"><button class="card-btn ' + (c.money>=cost?'green':'muted') + '" '
+        + (c.money>=cost?'':'disabled') + ' onclick="acquireHeirloom(\'' + t.id + '\',' + cost + ')">Buy</button></div></div>';
+  });
+  openModal('🏺 Heirlooms', html);
+}
+function acquireHeirloom(typeId, cost){
+  const c = LIFE.char;
+  if(c.money < cost){ toast('Not enough.'); return; }
+  c.money -= cost;
+  ensureHeirlooms();
+  const type = HEIRLOOM_TYPES.find(t => t.id === typeId);
+  c.heirlooms.push({
+    typeId, acquiredGen: LIFE.generation,
+    history: [{ gen: LIFE.generation, note: 'acquired by ' + c.firstName }],
+  });
+  // Apply bonus immediately
+  Object.entries(type.bonus).forEach(([k,v]) => {
+    if(c[k] != null) c[k] = clamp(c[k] + v, 0, 100);
+  });
+  pushEvent('milestone', '🏺 You acquired ' + type.name + '. The family chest grows.');
+  closeModal();
+  openHeirlooms();
+  saveLife();
+}
+function dropHeirloom(idx){
+  const c = LIFE.char;
+  if(!confirm('Sell this heirloom forever?')) return;
+  c.heirlooms.splice(idx, 1);
+  c.money += 50000;
+  pushEvent('bad', '💸 Sold an heirloom for ' + fmtMoney(50000) + '. The family will not forget.');
+  closeModal();
+  openHeirlooms();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  WILL & TESTAMENT — set conditions on inheritance for each heir.
+// ═══════════════════════════════════════════════════════════════════════
+const WILL_CONDITIONS = [
+  {id:'graduate',     label:'Must hold a college degree'},
+  {id:'married',      label:'Must be married'},
+  {id:'noCrime',      label:'Must have a clean record (karma ≥ 50)'},
+  {id:'sameReligion', label:'Must share my religion'},
+  {id:'inCountry',    label:'Must still live in my country'},
+];
+function openWill(){
+  const c = LIFE.char;
+  c.will = c.will || { conditions: [], disinherited: [], primaryHeir: null, allowLawsuits: true };
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Set conditions on your estate. Heirs who fail every condition forfeit their share, redistributed to those who comply. Disinherit by name to cut someone out entirely.</div>';
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Conditions</div>';
+  WILL_CONDITIONS.forEach(w => {
+    const on = c.will.conditions.includes(w.id);
+    html += '<div class="card">'
+      + '<div class="card-ico">' + (on?'✓':'·') + '</div>'
+      + '<div class="card-body"><div class="card-title">' + w.label + '</div></div>'
+      + '<div class="card-act"><button class="card-btn ' + (on?'danger':'green') + '" onclick="toggleWillCond(\'' + w.id + '\')">' + (on?'Remove':'Require') + '</button></div></div>';
+  });
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:18px 0 8px;">Heirs</div>';
+  (c.children||[]).filter(k => k.alive).forEach(k => {
+    const disowned = c.will.disinherited.includes(k.name);
+    const primary = c.will.primaryHeir === k.name;
+    html += '<div class="card" style="' + (disowned?'opacity:.5;':'') + '">'
+      + '<div class="card-ico">' + (k.sex==='m'?'👦':'👧') + '</div>'
+      + '<div class="card-body"><div class="card-title">' + k.name + '</div>'
+      + '<div class="card-meta">' + (primary?'PRIMARY HEIR · ':'') + (disowned?'DISINHERITED':'In line') + '</div></div>'
+      + '<div class="card-act">'
+      + '<button class="card-btn" onclick="setPrimaryHeir(\'' + k.name + '\')">Primary</button>'
+      + '<button class="card-btn ' + (disowned?'green':'danger') + '" onclick="toggleDisinherit(\'' + k.name + '\')">' + (disowned?'Restore':'Disinherit') + '</button>'
+      + '</div></div>';
+  });
+  openModal('📜 Will & Testament', html);
+}
+function toggleWillCond(id){
+  const w = LIFE.char.will;
+  const i = w.conditions.indexOf(id);
+  if(i >= 0) w.conditions.splice(i,1); else w.conditions.push(id);
+  closeModal(); openWill(); saveLife();
+}
+function toggleDisinherit(name){
+  const w = LIFE.char.will;
+  const i = w.disinherited.indexOf(name);
+  if(i >= 0) w.disinherited.splice(i,1); else w.disinherited.push(name);
+  closeModal(); openWill(); saveLife();
+}
+function setPrimaryHeir(name){
+  LIFE.char.will.primaryHeir = name;
+  closeModal(); openWill(); saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PHILANTHROPIC FOUNDATION — billionaire move that nudges world stats.
+// ═══════════════════════════════════════════════════════════════════════
+const FOUNDATION_CAUSES = [
+  {id:'health',  ico:'🏥', label:'Global Health',     stat:'economyHealth', mult:1.0, karma:+8},
+  {id:'edu',     ico:'📚', label:'Education Access',  stat:'techLevel',     mult:1.0, karma:+6},
+  {id:'climate', ico:'🌍', label:'Climate Action',    stat:'climateScore',  mult:1.2, karma:+10},
+  {id:'peace',   ico:'🕊️',label:'Peace & Reconciliation', stat:'peaceIndex',mult:1.0, karma:+8},
+];
+function openFoundation(){
+  const c = LIFE.char;
+  if(!c.foundation){
+    if(c.money < 50000000){ toast('Need $50M endowment to launch.'); return; }
+  }
+  c.foundation = c.foundation || { endowment: 50000000, totalGiven: 0, focus: null };
+  const endow = c.foundation.endowment;
+  let html = '<div style="padding:14px;background:#1a1428;border:1px solid var(--gold);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-h);font-size:18px;color:var(--gold);">' + c.lastName + ' Family Foundation</div>'
+    + '<div style="font-family:var(--font-m);font-size:11px;color:var(--t3);">Endowment: ' + fmtMoney(endow) + ' · Total Given: ' + fmtMoney(c.foundation.totalGiven||0) + '</div>'
+    + '</div>'
+    + '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Endow & Distribute</div>';
+  html += '<div class="card"><div class="card-ico">💰</div>'
+    + '<div class="card-body"><div class="card-title">Top Up Endowment</div>'
+    + '<div class="card-meta">Move cash into the foundation. Tax-advantaged.</div></div>'
+    + '<div class="card-act"><button class="card-btn green" onclick="topUpFoundation(1000000)">+$1M</button>'
+    + '<button class="card-btn green" onclick="topUpFoundation(10000000)">+$10M</button></div></div>';
+  FOUNDATION_CAUSES.forEach(cause => {
+    html += '<div class="card"><div class="card-ico">' + cause.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + cause.label + '</div>'
+      + '<div class="card-meta">Boosts world ' + cause.stat + ' · Karma +' + cause.karma + ' per round</div></div>'
+      + '<div class="card-act">'
+      + '<button class="card-btn" onclick="grantFoundation(\'' + cause.id + '\',1000000)">Grant $1M</button>'
+      + '<button class="card-btn green" onclick="grantFoundation(\'' + cause.id + '\',10000000)">Grant $10M</button>'
+      + '</div></div>';
+  });
+  openModal('💝 ' + c.lastName + ' Foundation', html);
+}
+function topUpFoundation(amt){
+  const c = LIFE.char;
+  if(c.money < amt){ toast('Not enough.'); return; }
+  c.money -= amt;
+  c.foundation = c.foundation || { endowment:0, totalGiven:0 };
+  c.foundation.endowment += amt;
+  pushEvent('good', '💝 You added ' + fmtMoney(amt) + ' to the foundation.');
+  closeModal(); openFoundation(); saveLife();
+}
+function grantFoundation(causeId, amt){
+  const c = LIFE.char;
+  if(!c.foundation || c.foundation.endowment < amt){ toast('Endowment too low.'); return; }
+  const cause = FOUNDATION_CAUSES.find(x => x.id === causeId);
+  c.foundation.endowment -= amt;
+  c.foundation.totalGiven += amt;
+  const lift = Math.min(8, Math.floor(amt / 2000000) * cause.mult);
+  LIFE.world[cause.stat] = clamp(LIFE.world[cause.stat] + lift, 0, 100);
+  c.karma = clamp(c.karma + cause.karma, 0, 100);
+  c.fame = clamp((c.fame||0) + Math.min(6, lift), 0, 100);
+  pushEvent('good', '💝 Granted ' + fmtMoney(amt) + ' to ' + cause.label + '. World ' + cause.stat + ' +' + lift + '.');
+  if(amt >= 10000000) recordLegacy('granted ' + fmtMoney(amt) + ' to ' + cause.label + ' via the family foundation');
+  closeModal(); openFoundation(); saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  CULT / SECRET SOCIETY — charismatic founder track.
+// ═══════════════════════════════════════════════════════════════════════
+function openCultMenu(){
+  const c = LIFE.char;
+  if(!c.cult){
+    if(c.looks < 60 && c.smarts < 60){ toast('Need at least 60 Looks or Smarts to attract followers.'); return; }
+    const name = prompt('Name your movement (the world will know it):', 'The Awakening');
+    if(!name) return;
+    const kind = confirm('Click OK for a secret society (hidden, slow growth, low risk).\nClick Cancel for an open cult (fast growth, federal scrutiny).')
+      ? 'society' : 'cult';
+    c.cult = {
+      name, kind, founded: c.age, followers: 5, donations: 0, scrutiny: 0,
+      tenets: [], compound: false, exposed: false,
+    };
+    pushEvent('milestone', '🕯️ You founded ' + name + ' (' + kind + ').');
+    recordLegacy('founded ' + name + ' as a ' + kind);
+  }
+  const cult = c.cult;
+  let html = '<div style="padding:14px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-h);font-size:18px;color:var(--accent2);">' + cult.name + '</div>'
+    + '<div style="font-family:var(--font-m);font-size:11px;color:var(--t3);">'
+    + 'Followers: <b>' + cult.followers + '</b> · Donations stream: ' + fmtMoney(cult.donations) + '/yr'
+    + ' · Federal scrutiny: <b style="color:' + (cult.scrutiny>=60?'var(--crimson)':cult.scrutiny>=30?'var(--gold)':'var(--t2)') + ';">' + cult.scrutiny + '/100</b>'
+    + '</div></div>'
+    + '<div class="card"><div class="card-ico">🪧</div>'
+    + '<div class="card-body"><div class="card-title">Recruit</div>'
+    + '<div class="card-meta">Hand out flyers, host meetings. ~+5-20 followers, +scrutiny if open cult.</div></div>'
+    + '<div class="card-act"><button class="card-btn green" onclick="cultAction(\'recruit\')">Recruit</button></div></div>'
+    + '<div class="card"><div class="card-ico">📖</div>'
+    + '<div class="card-body"><div class="card-title">Codify New Tenet</div>'
+    + '<div class="card-meta">Add a bizarre rule. Strengthens cohesion, raises scrutiny.</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="cultAction(\'tenet\')">Add</button></div></div>'
+    + '<div class="card"><div class="card-ico">💰</div>'
+    + '<div class="card-body"><div class="card-title">Solicit Donations</div>'
+    + '<div class="card-meta">Followers tithe. Income scales with follower count and tenets.</div></div>'
+    + '<div class="card-act"><button class="card-btn green" onclick="cultAction(\'tithe\')">Collect</button></div></div>'
+    + '<div class="card"><div class="card-ico">🏛️</div>'
+    + '<div class="card-body"><div class="card-title">Build a Compound</div>'
+    + '<div class="card-meta">$2M. Strong cohesion, but a giant target. ' + (cult.compound?'<span style="color:var(--green);">✓ Built</span>':'') + '</div></div>'
+    + '<div class="card-act"><button class="card-btn ' + (cult.compound?'muted':'green') + '" '
+      + (cult.compound?'disabled':'') + ' onclick="cultAction(\'compound\')">Build</button></div></div>'
+    + '<div class="card"><div class="card-ico">🛡️</div>'
+    + '<div class="card-body"><div class="card-title">Lawyer Up (Reduce Scrutiny)</div>'
+    + '<div class="card-meta">$50k retainer. Buy a year of regulatory peace.</div></div>'
+    + '<div class="card-act"><button class="card-btn" onclick="cultAction(\'lawyer\')">Hire</button></div></div>';
+  openModal('🕯️ ' + cult.name, html);
+}
+function cultAction(act){
+  const c = LIFE.char;
+  const cult = c.cult; if(!cult) return;
+  if(act === 'recruit'){
+    const gain = 5 + Math.floor(Math.random()*16) + Math.floor((c.looks+c.smarts)/20);
+    cult.followers += gain;
+    if(cult.kind === 'cult') cult.scrutiny = clamp(cult.scrutiny + 4, 0, 100);
+    pushEvent('career', '🪧 Recruited ' + gain + ' new followers (' + cult.followers + ' total).');
+  } else if(act === 'tenet'){
+    cult.tenets = cult.tenets || [];
+    cult.tenets.push('Tenet #' + (cult.tenets.length+1));
+    cult.scrutiny = clamp(cult.scrutiny + 6, 0, 100);
+    pushEvent('career', '📖 Added a new tenet. The flock binds tighter.');
+  } else if(act === 'tithe'){
+    const rev = cult.followers * (200 + (cult.tenets||[]).length * 80);
+    c.money += rev;
+    cult.donations = rev;
+    cult.scrutiny = clamp(cult.scrutiny + 2, 0, 100);
+    pushEvent('career', '💰 Tithes collected: ' + fmtMoney(rev) + '.');
+  } else if(act === 'compound'){
+    if(c.money < 2000000){ toast('Need $2M.'); return; }
+    c.money -= 2000000;
+    cult.compound = true;
+    cult.followers = Math.floor(cult.followers * 1.4);
+    cult.scrutiny = clamp(cult.scrutiny + 18, 0, 100);
+    pushEvent('career', '🏛️ Compound built. Followers moved in.');
+    recordLegacy('built a compound for ' + cult.name);
+  } else if(act === 'lawyer'){
+    if(c.money < 50000){ toast('Need $50k.'); return; }
+    c.money -= 50000;
+    cult.scrutiny = clamp(cult.scrutiny - 25, 0, 100);
+    pushEvent('career', '🛡️ Legal retainer paid. Heat off for now.');
+  }
+  // Federal raid roll
+  if(cult.scrutiny >= 70 && Math.random() < 0.20){
+    cult.exposed = true;
+    const seized = Math.floor(c.money * 0.4);
+    c.money -= seized;
+    pushEvent('death', '🚨 Federal raid on ' + cult.name + '. ' + fmtMoney(seized) + ' seized.');
+    if(Math.random() < 0.6){ goToJail(10, 'racketeering ('+cult.name+')'); }
+    recordLegacy('was federally raided as the leader of ' + cult.name);
+    cult.followers = Math.floor(cult.followers * 0.3);
+    cult.scrutiny = 40;
+  }
+  closeModal();
+  openCultMenu();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  BLACK MARKET — illegal goods (forged docs, cybernetics, exotic
+//  contraband). High haul, high FBI sting risk.
+// ═══════════════════════════════════════════════════════════════════════
+const BLACK_MARKET = [
+  {id:'fake_passport',  ico:'🛂', label:'Forged Passport',     cost:25000,  effect:'Hide from extradition for one year.',   sting:0.20},
+  {id:'fake_diploma',   ico:'🎓', label:'Forged PhD Diploma',  cost:8000,   effect:'+12 Smarts on paper. Career boost.',     sting:0.18},
+  {id:'cyber_eye',      ico:'👁️',label:'Black-Market Cybereye',cost:60000, effect:'+10 Looks, +4 Smarts. Illegal mod.',     sting:0.25,  reality:'cyberpunk'},
+  {id:'cyber_arm',      ico:'🦾',label:'Combat-Grade Prosthetic',cost:120000, effect:'+12 Health. Permanent.',                sting:0.28,  reality:'cyberpunk'},
+  {id:'exotic_pet',     ico:'🐅', label:'Exotic Endangered Pet',cost:80000,  effect:'+12 Looks (cred), -karma. Illegal.',     sting:0.35},
+  {id:'snuff_painting', ico:'🎨', label:'Stolen Masterpiece',  cost:300000, effect:'Worth $1.2M-$5M at private auction.',    sting:0.32},
+  {id:'launder_doc',    ico:'📑', label:'Shell-Company Charter',cost:18000,  effect:'Reduces corruption -8 by hiding records.', sting:0.10},
+  {id:'pharma_grey',    ico:'💊', label:'Grey-Market Smart Drug',cost:6000,  effect:'+15 Smarts for one year. Risk addiction.', sting:0.12},
+];
+function openBlackMarket(){
+  const c = LIFE.char;
+  if(c.age < 18){ toast('Adult only.'); return; }
+  let html = '<div style="color:var(--crimson);font-family:var(--font-m);font-size:10px;letter-spacing:.18em;margin-bottom:14px;text-align:center;text-transform:uppercase;">⚠ Illegal · FBI sting chance per item · Untraceable crypto only</div>';
+  BLACK_MARKET.forEach(it => {
+    if(it.reality && c.reality !== it.reality) return;
+    html += '<div class="card">'
+      + '<div class="card-ico">' + it.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + it.label + '</div>'
+      + '<div class="card-meta">' + it.effect + '</div>'
+      + '<div class="card-meta">Cost ' + fmtMoney(it.cost) + ' · Sting chance ~' + Math.floor(it.sting*100) + '%</div></div>'
+      + '<div class="card-act"><button class="card-btn ' + (c.money>=it.cost?'danger':'muted') + '" '
+        + (c.money>=it.cost?'':'disabled') + ' onclick="buyBlackMarket(\'' + it.id + '\')">Buy</button></div></div>';
+  });
+  openModal('🕵️ Black Market', html);
+}
+function buyBlackMarket(id){
+  const c = LIFE.char;
+  const it = BLACK_MARKET.find(x => x.id === id);
+  if(!it || c.money < it.cost){ toast('Cannot afford.'); return; }
+  c.money -= it.cost;
+  // Sting?
+  if(Math.random() < it.sting){
+    pushEvent('bad', '🚨 FBI sting. They were waiting for you on the dark-web exchange.');
+    goToJail(5, 'attempted purchase of ' + it.label.toLowerCase());
+    closeModal(); renderAll(); saveLife(); return;
+  }
+  // Effect
+  const apply = (k, v) => { if(c[k] != null) c[k] = clamp(c[k] + v, 0, 100); };
+  if(id === 'fake_passport'){ c.flags = c.flags||{}; c.flags.fakePassport = true; pushEvent('bad','🛂 Forged passport in hand.'); }
+  else if(id === 'fake_diploma'){ apply('smarts', +12); c.degrees = c.degrees||[]; c.degrees.push('phd_forged'); pushEvent('bad','🎓 Forged diploma — onto the CV it goes.'); }
+  else if(id === 'cyber_eye'){ apply('looks', +10); apply('smarts', +4); pushEvent('bad','👁️ Black-market ocular installed in a back alley.'); }
+  else if(id === 'cyber_arm'){ apply('health', +12); pushEvent('bad','🦾 Combat-grade prosthetic installed.'); }
+  else if(id === 'exotic_pet'){ apply('looks', +12); apply('karma', -10); pushEvent('bad','🐅 A live tiger now lives in your basement.'); }
+  else if(id === 'snuff_painting'){
+    const sale = 1200000 + Math.floor(Math.random()*3800000);
+    c.money += sale;
+    pushEvent('bad','🎨 Stolen masterpiece moved on for ' + fmtMoney(sale) + '.');
+  }
+  else if(id === 'launder_doc'){ c.corruption = clamp((c.corruption||0) - 8, 0, 100); pushEvent('bad','📑 Records buried under a shell company.'); }
+  else if(id === 'pharma_grey'){
+    apply('smarts', +15);
+    if(Math.random() < 0.25){ c.addictions = c.addictions||[]; if(!c.addictions.includes('smart_drug')){ c.addictions.push('smart_drug'); pushEvent('bad','💊 You\'re addicted to the smart drug.'); }}
+  }
+  c.karma = clamp(c.karma - 5, 0, 100);
+  closeModal(); renderAll(); saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  REAL ESTATE FLIPPING — buy distressed at auction, renovate, sell.
+//  Auctions cycle; renovation choice affects final ROI; market roll
+//  decides actual sale price.
+// ═══════════════════════════════════════════════════════════════════════
+const RENO_TIERS = [
+  {id:'cosmetic',  label:'Cosmetic Refresh', cost:18000,  mult:1.15, dur:'3-month flip'},
+  {id:'kitchen',   label:'Kitchen + Bath',    cost:75000,  mult:1.40, dur:'8-month flip'},
+  {id:'fullgut',   label:'Full Gut Renovation',cost:220000,mult:1.85, dur:'14-month flip'},
+];
+function openFlipping(){
+  const c = LIFE.char;
+  c.flips = c.flips || [];
+  // Generate auctions if needed
+  if(!c._auctionOptions || c._auctionRefreshAge !== c.age){
+    c._auctionOptions = generateAuctionOptions(c);
+    c._auctionRefreshAge = c.age;
+  }
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Buy distressed properties at auction, renovate them, flip for profit. Bigger renovations mean longer hold and bigger upside — if the market cooperates.</div>';
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Current Auction Lot</div>';
+  c._auctionOptions.forEach((a, i) => {
+    html += '<div class="card">'
+      + '<div class="card-ico">🏚️</div>'
+      + '<div class="card-body"><div class="card-title">' + a.nickname + '</div>'
+      + '<div class="card-meta">Condition ' + a.condition + '/100 · ARV est. ' + fmtMoney(a.arv) + ' · Auction price ' + fmtMoney(a.price) + '</div></div>'
+      + '<div class="card-act"><button class="card-btn ' + (c.money>=a.price?'green':'muted') + '" '
+      + (c.money>=a.price?'':'disabled') + ' onclick="bidAuction(' + i + ')">Bid</button></div></div>';
+  });
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:18px 0 8px;">Flips In Progress</div>';
+  if(!c.flips.length){
+    html += '<div style="padding:12px;color:var(--t3);text-align:center;background:#1a1428;border-radius:5px;">No active flips.</div>';
+  } else {
+    c.flips.forEach((f, i) => {
+      const reno = RENO_TIERS.find(r => r.id === f.renoTier);
+      html += '<div class="card">'
+        + '<div class="card-ico">🔨</div>'
+        + '<div class="card-body"><div class="card-title">' + f.nickname + '</div>'
+        + '<div class="card-meta">' + (reno ? reno.label + ' · ' : '') + (f.status||'Awaiting renovation') + '</div>'
+        + '<div class="card-meta">Cost basis ' + fmtMoney(f.basis) + '</div></div>'
+        + '<div class="card-act">'
+        + (f.renoTier ? '<button class="card-btn green" onclick="sellFlip(' + i + ')">Sell Now</button>'
+                      : '<button class="card-btn" onclick="chooseReno(' + i + ')">Pick Renovation</button>')
+        + '</div></div>';
+    });
+  }
+  openModal('🔨 Real Estate Flipping', html);
+}
+function generateAuctionOptions(c){
+  const country = COUNTRIES[c.country] || COUNTRIES.us;
+  const out = [];
+  for(let i=0; i<3; i++){
+    const condition = 10 + Math.floor(Math.random()*40);
+    const arv = Math.floor((180000 + Math.random()*820000) * country.costMult);
+    const price = Math.floor(arv * (0.35 + Math.random()*0.25));
+    out.push({
+      nickname: pickRand(['Foreclosed Bungalow','Bank-Owned Colonial','Estate Sale Ranch','Tax-Lien Townhouse','Distressed Tudor','Court-Ordered Sale']) + ' #' + (i+1),
+      condition, arv, price,
+    });
+  }
+  return out;
+}
+function bidAuction(idx){
+  const c = LIFE.char;
+  const a = c._auctionOptions[idx];
+  if(!a || c.money < a.price){ toast('Cannot afford.'); return; }
+  c.money -= a.price;
+  c.flips = c.flips || [];
+  c.flips.push({
+    nickname: a.nickname, basis: a.price, arv: a.arv, condition: a.condition,
+    renoTier: null, status:'Awaiting renovation',
+  });
+  c._auctionOptions.splice(idx, 1);
+  pushEvent('career', '🏚️ Bought ' + a.nickname + ' at auction for ' + fmtMoney(a.price) + '.');
+  closeModal(); openFlipping(); saveLife();
+}
+function chooseReno(idx){
+  const c = LIFE.char;
+  const f = c.flips[idx]; if(!f) return;
+  let html = '<p>Choose a renovation tier for <b>' + f.nickname + '</b>. After it\'s complete you can list it.</p>';
+  RENO_TIERS.forEach(r => {
+    html += '<div class="card">'
+      + '<div class="card-ico">🛠️</div>'
+      + '<div class="card-body"><div class="card-title">' + r.label + '</div>'
+      + '<div class="card-meta">Cost ' + fmtMoney(r.cost) + ' · est. multiplier ' + r.mult + 'x · ' + r.dur + '</div></div>'
+      + '<div class="card-act"><button class="card-btn ' + (c.money>=r.cost?'green':'muted') + '" '
+      + (c.money>=r.cost?'':'disabled') + ' onclick="applyReno(' + idx + ',\'' + r.id + '\')">Apply</button></div></div>';
+  });
+  openModal('🛠️ Renovate ' + f.nickname, html);
+}
+function applyReno(idx, tierId){
+  const c = LIFE.char;
+  const f = c.flips[idx]; if(!f) return;
+  const r = RENO_TIERS.find(x => x.id === tierId);
+  if(c.money < r.cost){ toast('Not enough.'); return; }
+  c.money -= r.cost;
+  f.renoTier = tierId;
+  f.basis += r.cost;
+  f.status = 'Renovation complete · ready to list';
+  pushEvent('career', '🛠️ ' + r.label + ' complete on ' + f.nickname + '.');
+  closeModal(); openFlipping(); saveLife();
+}
+function sellFlip(idx){
+  const c = LIFE.char;
+  const f = c.flips[idx]; if(!f || !f.renoTier) return;
+  const r = RENO_TIERS.find(x => x.id === f.renoTier);
+  const market = 0.75 + Math.random() * 0.55; // -25% to +30% of expected
+  const salePrice = Math.floor(f.basis * r.mult * market);
+  const profit = salePrice - f.basis;
+  c.money += salePrice;
+  if(profit > 0){
+    pushEvent('career', '💰 Sold ' + f.nickname + ' for ' + fmtMoney(salePrice) + '. Profit ' + fmtMoney(profit) + '.');
+    if(profit >= 500000) recordLegacy('flipped ' + f.nickname + ' for ' + fmtMoney(profit) + ' profit');
+  } else {
+    pushEvent('bad', '📉 Sold ' + f.nickname + ' at a loss of ' + fmtMoney(-profit) + '.');
+  }
+  c.flips.splice(idx, 1);
+  closeModal(); openFlipping(); saveLife();
 }
 
 // ═══════════════════════════════════════════════════════════════════════

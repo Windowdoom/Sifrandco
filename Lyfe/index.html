@@ -2914,6 +2914,9 @@ function defaultChar(seed){
     money:     0,
     savings:   0,            // separate APR-earning bank account
     investments: 0,          // brokerage / 401k
+    trust:     0,            // family trust principal
+    properties: [],          // real-estate portfolio
+    companies:  [],          // owned companies
     religion:  null,         // chosen religious tradition
     college:   null,         // attended college id
     insurance: { home:false, health:false, life:false, auto:false },
@@ -3034,6 +3037,7 @@ function loadLife(){
         if(c.fame == null) c.fame = 0;
         if(c.savings == null) c.savings = 0;
         if(c.investments == null) c.investments = 0;
+        if(c.trust == null) c.trust = 0;
         if(!c.insurance) c.insurance = {home:false, health:false, life:false, auto:false};
         if(!c.properties) c.properties = [];
         if(!c.companies) c.companies = [];
@@ -5328,8 +5332,12 @@ function continueAs(kidName){
   const kid = oldChar.children.find(k => k.name === kidName);
   if(!kid){ return; }
   const heirs = liveKidCount(oldChar);
-  const estate = totalEstateValue(oldChar);
-  const inheritance = Math.max(0, Math.floor(estate / heirs));
+  // Liquid wealth (cash) is split among living kids. Physical assets
+  // (properties, companies, primary house, car, trust, savings, investments)
+  // pass entirely to the chosen heir — they keep rental contracts, tenants,
+  // company treasuries, valuations, the family home, everything.
+  const liquidPool = Math.max(0, oldChar.money || 0);
+  const inheritance = Math.floor(liquidPool / heirs);
   // build a fresh char from kid data
   const country = oldChar.country;
   const newSeed = {
@@ -5369,26 +5377,48 @@ function continueAs(kidName){
   ch.looks  = kid.looks  || ch.looks;
   ch.health = kid.health || ch.health;
   ch.money  = inheritance;
-  // Physical / illiquid assets pass entirely to the chosen heir
-  // (real estate portfolio, companies, primary house, current car, trust).
-  if(oldChar.properties && oldChar.properties.length){ ch.properties = oldChar.properties; }
-  if(oldChar.companies  && oldChar.companies.length){ ch.companies  = oldChar.companies; }
+  // Deep-clone physical / illiquid assets so the chosen heir owns the same
+  // properties (with their tenants, leases, valuations), the same companies
+  // (with their treasuries, products, employees), the family home, car,
+  // trust principal, and any savings / investments accounts.
+  const clone = v => (v == null ? v : JSON.parse(JSON.stringify(v)));
+  ch.properties  = clone(oldChar.properties)  || [];
+  ch.companies   = clone(oldChar.companies)   || [];
+  ch.savings     = oldChar.savings     || 0;
+  ch.investments = oldChar.investments || 0;
+  ch.trust       = oldChar.trust       || 0;
   if(oldChar.houseId && oldChar.houseId !== 'family'){ ch.houseId = oldChar.houseId; }
   if(oldChar.carId   && oldChar.carId   !== 'none'){   ch.carId   = oldChar.carId; }
-  if(oldChar.trust){ ch.trust = oldChar.trust; }
-  // The kid keeps any savings/investments their parent had set aside —
-  // distinct from the cash inheritance so dividends keep compounding.
-  if(oldChar.savings)     ch.savings     = Math.floor((oldChar.savings||0));
-  if(oldChar.investments) ch.investments = Math.floor((oldChar.investments||0));
+  if(oldChar.insurance){ ch.insurance = clone(oldChar.insurance); }
+  // Mark the chosen heir as the new owner / landlord on each property
+  // (tenants stay; rent keeps flowing to the inheritor).
+  ch.properties.forEach(p => { p.inheritedFrom = oldChar.firstName + ' ' + oldChar.lastName; });
+  ch.companies.forEach(co => { co.inheritedFrom = oldChar.firstName + ' ' + oldChar.lastName; });
   ch.born   = (new Date().getFullYear()) - ch.age;
   LIFE.char = ch;
+  // Build a human-readable inheritance summary
+  const bits = [];
+  if(inheritance > 0) bits.push(fmtMoney(inheritance) + ' cash');
+  if(ch.savings)     bits.push(fmtMoney(ch.savings) + ' in savings');
+  if(ch.investments) bits.push(fmtMoney(ch.investments) + ' invested');
+  if(ch.trust)       bits.push(fmtMoney(ch.trust) + ' trust');
+  if(ch.houseId && ch.houseId !== 'family'){
+    const h = HOUSES.find(x => x.id === ch.houseId);
+    if(h) bits.push('the ' + h.name);
+  }
+  if(ch.properties.length){
+    const rented = ch.properties.filter(p => p.rentedOut && p.occupied).length;
+    bits.push(ch.properties.length + ' propert' + (ch.properties.length===1?'y':'ies')
+      + (rented ? ' (' + rented + ' currently rented out)' : ''));
+  }
+  if(ch.companies.length){
+    bits.push(ch.companies.length + ' compan' + (ch.companies.length===1?'y':'ies'));
+  }
   pushEvent('milestone',
-    'You inherited ' + fmtMoney(inheritance) + ' in liquid wealth from your parent '
-    + oldChar.firstName + ' ' + oldChar.lastName
-    + (oldChar.houseId && oldChar.houseId !== 'family' ? ', the family home,' : '')
-    + (oldChar.properties && oldChar.properties.length ? ' a portfolio of ' + oldChar.properties.length + ' properties,' : '')
-    + (oldChar.companies && oldChar.companies.length ? ' a portfolio of ' + oldChar.companies.length + ' companies,' : '')
-    + ' and the family story continues.');
+    'You inherited ' + (bits.length ? bits.join(', ') : 'nothing of value')
+    + ' from your parent ' + oldChar.firstName + ' ' + oldChar.lastName
+    + '. Their tenants are now your tenants, their companies your companies,'
+    + ' and the upkeep is yours to manage. The family story continues.');
   document.getElementById('death-screen').classList.remove('show');
   renderAll();
   saveLife();

@@ -3289,6 +3289,38 @@ function ageUp(){
     LIFE.char.happiness = clamp(LIFE.char.happiness - 6, 0, 100);
     pushEvent('bad', '🪧 Protesters picketed your event with photos of your ancestor.');
   }
+  // Jinn-bound: the pact collects sporadically
+  if(LIFE.char.flags && (LIFE.char.flags.jinnBound || LIFE.char.flags.jinnInheritance) && Math.random() < 0.08){
+    const tolls = [
+      {t:'🜂 The jinn collected: every clock in your house struck thirteen.', fx:{happiness:-6}},
+      {t:'🜂 The jinn collected: a relative you loved fell mute for a season.', fx:{happiness:-10, karma:-2}},
+      {t:'🜂 The jinn collected: you lost two years of memory overnight.', fx:{smarts:-5, happiness:-8}},
+      {t:'🜂 The jinn collected: a hallway in your house no longer exists when you look at it directly.', fx:{happiness:-5}},
+    ];
+    const e = pickRand(tolls);
+    Object.entries(e.fx).forEach(([k,v]) => { if(LIFE.char[k] != null) LIFE.char[k] = clamp(LIFE.char[k] + v, 0, 100); });
+    pushEvent('bad', e.t);
+  }
+  // Demon contract: shortened lifespan + nightly torment
+  if(LIFE.char.flags && LIFE.char.flags.demonContract){
+    if(LIFE.char.age > 55 && Math.random() < 0.18){
+      pushEvent('death', '😈 The bargain came due. You collapsed at the appointed hour.');
+      LIFE.char.alive = false; LIFE.char.cause = 'soul claimed by demon';
+    } else if(Math.random() < 0.12){
+      LIFE.char.happiness = clamp(LIFE.char.happiness - 4, 0, 100);
+      pushEvent('bad', '😈 Night-terrors return. Sleep gives no rest.');
+    }
+  }
+  if(LIFE.char.flags && LIFE.char.flags.demonInheritance && Math.random() < 0.05){
+    LIFE.char.happiness = clamp(LIFE.char.happiness - 5, 0, 100);
+    pushEvent('bad', '😈 The shadow that signed in your ancestor\'s blood still follows.');
+  }
+  // Pharaoh lineage: people remember
+  if(LIFE.char.flags && LIFE.char.flags.pharaohLineage && Math.random() < 0.05){
+    LIFE.char.happiness = clamp(LIFE.char.happiness - 5, 0, 100);
+    LIFE.char.karma = clamp(LIFE.char.karma - 3, 0, 100);
+    pushEvent('bad', '⛓️ A descendant of one of your ancestor\'s slaves recognized you in public.');
+  }
   // faith decay/practice
   rollFaithEvent();
   // personality drift
@@ -3715,8 +3747,12 @@ function renderActionBar(){
   if(a >= 16) btns.push({lbl:'🏠 Assets', fn:'openShop()'});
   if(a >= 18) btns.push({lbl:'🏘️ Real Estate', fn:'openRealEstate()'});
   if(a >= 18) btns.push({lbl:'🏢 Companies', fn:'openCompanies()'});
-  // Office of Power unlocks at 35 once the politician career has been entered
-  if(a >= 35 && c.career && c.career.key === 'politician'){
+  // Office of Power unlocks at 35 with politician career, OR for billionaires
+  // ($500B net worth), OR for occult-track players (magical reality).
+  const totEst = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : 0;
+  if((a >= 35 && c.career && c.career.key === 'politician')
+     || totEst >= 500000000000
+     || c.reality === 'magical'){
     btns.push({lbl:'🏛️ Office of Power', fn:'openOfficeOfPower()'});
   }
   if(a >= 18) btns.push({lbl:'🏛️ Gov', fn:'openGovernment()'});
@@ -5650,6 +5686,32 @@ function applyDynastyReputation(ch, oldChar){
     ch.flags.warCriminalLineage = true;
     pushEvent('bad', '⚠️ You bear the name of an indicted war criminal. Doors will close before you knock on them.');
   }
+  if(w.pharaohRule){
+    ch.karma = clamp(ch.karma - 30, 0, 100);
+    ch.fame = clamp((ch.fame||0) + 30, 0, 100);
+    ch.happiness = clamp(ch.happiness - 15, 0, 100);
+    ch.flags = ch.flags || {};
+    ch.flags.pharaohLineage = true;
+    pushEvent('bad', '⛓️ You are descended from the would-be Pharaoh. The world has not forgotten the labor camps.');
+  }
+  if(w.demonInWorld || (oldChar.flags && oldChar.flags.demonContract)){
+    ch.karma = clamp(ch.karma - 12, 0, 100);
+    ch.happiness = clamp(ch.happiness - 8, 0, 100);
+    ch.flags = ch.flags || {};
+    ch.flags.demonInheritance = true;
+    pushEvent('bad', '😈 Your ancestor signed in blood. The mark passed to you. Sleep comes hard.');
+  }
+  if(oldChar.flags && oldChar.flags.jinnBound){
+    ch.flags = ch.flags || {};
+    ch.flags.jinnInheritance = true;
+    // The jinn still expects fulfillment — passes to bloodline
+    pushEvent('bad', '🜂 A jinn watches you from the corner of every room. Your bloodline owes a debt.');
+  }
+  if(w.debtFree){
+    ch.fame = clamp((ch.fame||0) + 8, 0, 100);
+    ch.happiness = clamp(ch.happiness + 4, 0, 100);
+    pushEvent('good', '🌍 You were born into a world without sovereign debt. Your ancestor saw to it.');
+  }
   if(oldChar.foundation && (oldChar.foundation.totalGiven||0) > 5000000){
     ch.karma = clamp(ch.karma + 8, 0, 100);
     ch.fame  = clamp((ch.fame||0) + 6, 0, 100);
@@ -7353,6 +7415,11 @@ function doSurgery(id){
 // ═══════════════════════════════════════════════════════════════════════
 //  VAMPIRE MODE — magical reality special
 // ═══════════════════════════════════════════════════════════════════════
+// Shortcut wrappers so the jinn / demon pacts can be invoked from the More
+// menu (magical reality) without requiring the Office of Power to be open.
+function invokeJinnDirect(){ executePoliticalMove('summon_jinn'); }
+function invokeDemonDirect(){ executePoliticalMove('bargain_demon'); }
+
 function tryBecomeVampire(){
   const c = LIFE.char;
   if(c.reality !== 'magical'){ toast('Only available in the magical reality.'); return; }
@@ -7410,6 +7477,12 @@ function openMore(){
   }
   if(c.reality === 'magical' && !c.isVampire){
     opts.push({label:'🧛 Try to Become a Vampire', fn:'tryBecomeVampire'});
+  }
+  if(c.reality === 'magical' && !(c.flags && c.flags.jinnBound)){
+    opts.push({label:'🜂 Invoke a Jinn (Pact)', fn:'invokeJinnDirect'});
+  }
+  if(c.reality === 'magical' && !(c.flags && c.flags.demonContract)){
+    opts.push({label:'😈 Bargain With a Demon', fn:'invokeDemonDirect'});
   }
   html += opts.map(o => (
     '<div class="card" onclick="closeModal();' + o.fn + '()" style="cursor:pointer;">'
@@ -10956,12 +11029,112 @@ const POLITICAL_MOVES = [
       }
     },
   },
+  // ═══ ULTIMATE TIER — unlocked at ≥ $500B net worth. ═══
+  {id:'pay_world_debt', label:'🌍 Pay Off World Sovereign Debt', cost:500000000000,
+    desc:'You wire $500B to the IMF and clear the sovereign debts of forty nations. The economic shockwave is immediate — interest-rate collapse, currency stabilization, mass debt forgiveness. The world remembers your name forever.',
+    requires: () => totalEstateValue(LIFE.char) >= 500000000000,
+    exec: () => {
+      const c = LIFE.char;
+      LIFE.world.debtFree = true;
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 30, 0, 100);
+      LIFE.world.peaceIndex    = clamp(LIFE.world.peaceIndex + 15, 0, 100);
+      c.karma = clamp(c.karma + 40, 0, 100);
+      c.fame  = clamp((c.fame||0) + 60, 0, 100);
+      c.happiness = clamp(c.happiness + 25, 0, 100);
+      pushEvent('milestone', '🌍 You paid off the world\'s sovereign debt. History will remember this day.');
+      recordLegacy('paid off the sovereign debt of forty nations');
+      // Every bloc dramatically warms to you
+      ensureBlocState && Object.keys(LIFE.world.blocs||{}).forEach(b => {
+        LIFE.world.blocs[b].stance = clamp(LIFE.world.blocs[b].stance + 25, 0, 100);
+      });
+    },
+  },
+  {id:'pharaoh_enslave', label:'⛓️ Declare Yourself Pharaoh — Enslave Humanity', cost:0,
+    desc:'You proclaim yourself a living god, dissolve the elected order, and conscript humanity into forced labor on a global scale. This is the Pharaoh path. History tells you how it ends: a Musa figure will rise. The dead, the broken, the displaced — they will count against your name forever.',
+    requires: () => totalEstateValue(LIFE.char) >= 500000000000,
+    exec: () => {
+      const c = LIFE.char;
+      LIFE.world.pharaohRule = true;
+      LIFE.world.warCriminal = true;
+      LIFE.world.iccIndictment = true;
+      LIFE.world.peaceIndex = 0;
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 50, 0, 100);
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore - 20, 0, 100);
+      c.karma = 0;
+      c.fame = clamp((c.fame||0) + 60, 0, 100);
+      c.corruption = 100;
+      pushEvent('death', '⛓️ You declared yourself Pharaoh. The labor camps were filled within months. The dead are uncountable.');
+      recordLegacy('declared themself Pharaoh and enslaved humanity');
+      // The Musa-figure rises: 85% chance you are overthrown within 3 years
+      if(Math.random() < 0.85){
+        setTimeout(() => {
+          if(LIFE && LIFE.char && LIFE.char.alive){
+            const path = Math.random() < 0.5 ? 'parted by a prophet' : 'drowned in a sea of insurrection';
+            pushEvent('death', '🌊 The waters ' + path + '. A liberator the people call Musa rose against you. Your reign ended.');
+            LIFE.char.alive = false; LIFE.char.cause = 'overthrown as Pharaoh';
+          }
+        }, 250);
+      }
+    },
+  },
+  {id:'summon_jinn', label:'🜂 Invoke a Jinn (Pact of Smokeless Fire)', cost:0,
+    desc:'In magical realities only. You speak the binding rites and a jinn answers — a being of smokeless fire. The pact grants you preternatural wealth and influence, but jinns are not slaves; they remember every contract, and they collect.',
+    requires: () => LIFE.char.reality === 'magical',
+    exec: () => {
+      const c = LIFE.char;
+      c.flags = c.flags || {};
+      c.flags.jinnBound = true;
+      c.money += 50000000;
+      c.fame  = clamp((c.fame||0) + 30, 0, 100);
+      c.smarts = clamp(c.smarts + 12, 0, 100);
+      c.happiness = clamp(c.happiness - 15, 0, 100);
+      c.faith = clamp(c.faith - 25, 0, 100);
+      pushEvent('death', '🜂 A jinn appeared at the threshold and signed the pact in smokeless fire. Wealth flowed. Sleep did not.');
+      recordLegacy('bound a jinn by pact');
+      // Annual jinn-collection events fire from now on in rollSpontaneousEvents
+      // (modelled via the flag; small chance of curse each year)
+      if(Math.random() < 0.4){
+        setTimeout(() => {
+          if(LIFE && LIFE.char && LIFE.char.alive){
+            const cursed = pickRand(['your firstborn child fell mute for a year','your spouse vanished for three nights','you woke to find every mirror in your house cracked','your dog spoke a single sentence and died']);
+            pushEvent('bad', '🜂 The jinn collected: ' + cursed + '.');
+            LIFE.char.happiness = clamp(LIFE.char.happiness - 12, 0, 100);
+          }
+        }, 350);
+      }
+    },
+  },
+  {id:'bargain_demon', label:'😈 Bargain With a Demon (Faustian Contract)', cost:0,
+    desc:'In magical realities only. You go to a crossroads and sign in your own blood. The price is yours: years of life, your soul\'s peace, your descendants\' fortune. The reward: a corner of the world goes silent in your favor.',
+    requires: () => LIFE.char.reality === 'magical',
+    exec: () => {
+      const c = LIFE.char;
+      c.flags = c.flags || {};
+      c.flags.demonContract = true;
+      c.money += 200000000;
+      c.fame = clamp((c.fame||0) + 20, 0, 100);
+      c.health = clamp(c.health - 20, 0, 100);
+      c.karma = 0;
+      c.faith = 0;
+      // Shorten remaining lifespan flag (interpreted as old-age death roll boost elsewhere)
+      c.flags.shortenedLife = true;
+      pushEvent('death', '😈 The crossroads bargain is signed. The reward came that night. The cost will come later.');
+      recordLegacy('signed a Faustian pact with a demon');
+      // Descendants will start with a karma stigma — handled via applyDynastyReputation when warCriminal-like flag fires
+      LIFE.world.demonInWorld = true;
+    },
+  },
 ];
 
 function openOfficeOfPower(){
   const c = LIFE.char;
-  if(!c.career || c.career.key !== 'politician' || c.age < 35){
-    toast('Need a political career and age 35+.');
+  // Eligibility: politician age 35+, OR a $500B+ net worth (wealth is power),
+  // OR a magical-reality pact holder (jinn / demon contract).
+  const billionaireGate = totalEstateValue(c) >= 500000000000;
+  const occultGate = c.reality === 'magical';
+  const politicalGate = c.career && c.career.key === 'politician' && c.age >= 35;
+  if(!politicalGate && !billionaireGate && !occultGate){
+    toast('Need a political career & age 35+, $500B net worth, or a magical reality.');
     return;
   }
   const w = LIFE.world;
@@ -11279,7 +11452,8 @@ function executePoliticalMove(id){
   if(m.cost && LIFE.char.money < m.cost){ toast('Need ' + fmtMoney(m.cost) + '.'); return; }
   // The most consequential moves require explicit confirmation
   if(['order_genocide','authoritarian_turn','nuclear_test','launch_nuclear_war',
-      'start_war_for_contracts','rig_election','embezzle_treasury'].includes(id)){
+      'start_war_for_contracts','rig_election','embezzle_treasury',
+      'pharaoh_enslave','bargain_demon','summon_jinn','pay_world_debt'].includes(id)){
     const ok = confirm(m.label + '\n\n' + m.desc + '\n\nThis is irreversible. Continue?');
     if(!ok) return;
   }

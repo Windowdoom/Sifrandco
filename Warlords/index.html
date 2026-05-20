@@ -353,6 +353,47 @@ button:disabled{opacity:.35;cursor:not-allowed}
   writing-mode:vertical-rl;transform:rotate(180deg);
 }
 
+/* Piece-pick row: bottom-LEFT, always visible. The reliable way to move. */
+#piece-bar{
+  position:absolute;bottom:24px;left:24px;
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;
+  background:linear-gradient(180deg,#2a1a0a,#1c1208);
+  border:1px solid var(--crimson2);
+  border-radius:var(--rl);
+  box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 24px rgba(200,48,47,.18);
+  z-index:5;
+}
+.pb-label{
+  font-family:var(--fm);font-size:10px;color:var(--paper3);
+  letter-spacing:.22em;text-transform:uppercase;margin-right:4px;
+}
+.pb-btn{
+  padding:8px 12px;
+  font-family:var(--fh);font-size:12px;font-weight:700;
+  letter-spacing:.06em;
+  color:var(--cream);
+  background:linear-gradient(180deg,var(--crimson2),var(--crimson));
+  border:1.5px solid var(--ink2);
+  border-radius:6px;
+  box-shadow:0 0 0 1px var(--crimson2) inset,0 3px 6px rgba(0,0,0,.4);
+  transition:all .15s;
+  min-width:84px;
+  cursor:pointer;
+}
+.pb-btn:hover:not(:disabled){
+  transform:translateY(-2px);
+  box-shadow:0 0 0 1px var(--gold) inset,0 6px 14px rgba(212,160,23,.4);
+}
+.pb-btn:disabled{
+  background:#3a2510;color:var(--paper3);border-color:#241808;
+  box-shadow:none;cursor:not-allowed;
+}
+.pb-btn.singularity{
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  color:var(--ink);
+}
+
 #message-bar{
   position:absolute;top:18px;left:50%;transform:translateX(-50%);
   padding:10px 22px;
@@ -713,6 +754,12 @@ button:disabled{opacity:.35;cursor:not-allowed}
         <div class="die unrolled" id="die1" onclick="W.selectDie(1)"></div>
         <div class="die unrolled" id="die2" onclick="W.selectDie(2)"></div>
         <div class="dice-label">Dice</div>
+      </div>
+      <div id="piece-bar">
+        <div class="pb-label">Move:</div>
+        <button class="pb-btn" id="pb1" onclick="W.clickPiece(0)" disabled>① Origin</button>
+        <button class="pb-btn" id="pb2" onclick="W.clickPiece(1)" disabled>② Origin</button>
+        <button class="pb-btn" id="pb3" onclick="W.clickPiece(2)" disabled>③ Origin</button>
       </div>
       <div id="message-bar">Click <b>ROLL DICE</b> to begin your turn.</div>
     </div>
@@ -1502,7 +1549,26 @@ W.renderAll = () => {
   W.renderBoard();
   W.renderSide();
   W.renderDice();
+  W.renderPieceBar();
   W.renderMessage();
+};
+
+/* Piece-pick bar: always shows each of your three pieces & enables them
+   when a die is selected and not yet used. The reliable move path. */
+W.renderPieceBar = () => {
+  const P = W.G.player;
+  const dieReady = W.G.rolled && W.G.selectedDie !== null
+                   && !W.G.dice.used[W.G.selectedDie-1];
+  P.pieces.forEach((piece, i) => {
+    const btn = document.getElementById("pb" + (i+1));
+    if(!btn) return;
+    const tile = W.TILES[piece.pos] || {};
+    const tileName = tile.name || ("Tile #" + piece.pos);
+    const finished = piece.pos >= 60;
+    btn.innerHTML = ["①","②","③"][i] + " " + W.esc(tileName);
+    btn.disabled = !dieReady || finished;
+    btn.classList.toggle("singularity", finished);
+  });
 };
 
 W.renderTop = () => {
@@ -1673,16 +1739,17 @@ W.civIcon = (civId, sz, col) => {
   return I[civId] || `<text y="${s*.3}" text-anchor="middle" font-family="Cinzel,serif" font-size="${s*.9}" fill="${col}" font-weight="700">${W.CIVS[civId]?W.CIVS[civId].gl:"?"}</text>`;
 };
 
-/* Pawn-shaped piece SVG. Drawn around (0,0) — bigger now (~36 tall). */
+/* Pawn-shaped piece SVG — chess-pawn silhouette with a labeled head disc */
 W.pieceSVG = (color, label, isPlayer, glow) => {
   const stroke = "#1a0e04";
-  const txtCol = isPlayer ? "#fff" : "#1a0e04";
+  const txtCol = isPlayer ? "#1a0e04" : "#fff";
+  const headFill = isPlayer ? "#fff" : color;
   return `<g${glow?' filter="url(#glow-piece)"':''}>
-    <ellipse cx="0" cy="17" rx="14" ry="3.5" fill="rgba(0,0,0,.5)"/>
-    <path d="M -14,15 L -10,11 L -10,6 Q -13,3 -9,1 L -9,-4 Q -13,-7 -8,-9 A 8,8 0 1 1 8,-9 Q 13,-7 9,-4 L 9,1 Q 13,3 10,6 L 10,11 L 14,15 Z"
-          fill="${color}" stroke="${stroke}" stroke-width="1.8"/>
-    <circle cx="0" cy="-9" r="6.5" fill="${color}" stroke="${stroke}" stroke-width="1.5"/>
-    <text x="0" y="-6" text-anchor="middle" font-family="Cinzel,serif" font-size="11" font-weight="800" fill="${txtCol}">${W.esc(label||"")}</text>
+    <ellipse cx="0" cy="18" rx="15" ry="4" fill="rgba(0,0,0,.55)"/>
+    <path d="M -15,17 L -11,12 L -11,6 Q -14,3 -10,1 L -10,-4 Q -14,-7 -9,-9 A 9,9 0 1 1 9,-9 Q 14,-7 10,-4 L 10,1 Q 14,3 11,6 L 11,12 L 15,17 Z"
+          fill="${color}" stroke="${stroke}" stroke-width="2"/>
+    <circle cx="0" cy="-9" r="8.5" fill="${headFill}" stroke="${stroke}" stroke-width="2"/>
+    <text x="0" y="-5" text-anchor="middle" font-family="Cinzel,serif" font-size="13" font-weight="800" fill="${txtCol}">${W.esc(label||"")}</text>
   </g>`;
 };
 
@@ -1854,7 +1921,10 @@ W.renderBoard = () => {
       const isPlayer = entry.pl === W.G.player;
       const isSelectable = isPlayer && W.G.selectedDie !== null && !W.G.dice.used[W.G.selectedDie-1];
       const label = isPlayer ? (entry.pi+1) : (entry.pl.glyph || "");
-      html += `<g transform="translate(${px},${py})" style="cursor:${isPlayer?'pointer':'default'};" ${isPlayer?`onclick="W.clickPiece(${entry.pi})"`:''}>
+      /* Invisible larger hit-target makes clicking the piece reliable */
+      const hitClick = isPlayer ? `onclick="W.clickPiece(${entry.pi})"` : '';
+      html += `<g transform="translate(${px},${py})" style="cursor:${isPlayer?'pointer':'default'};" ${hitClick}>
+        ${isPlayer ? `<circle cx="0" cy="0" r="22" fill="transparent"/>` : ''}
         ${W.pieceSVG(entry.pl.color, label, isPlayer, isSelectable)}
       </g>`;
     });

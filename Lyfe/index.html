@@ -4259,6 +4259,7 @@ function renderPartnerStatus(){
   if(!p.married){
     html += '<button class="card-btn green" onclick="proposeMarriage()">💍 Propose</button>';
     html += '<button class="card-btn muted" onclick="goOnDate()">Date Night (−$80)</button>';
+    html += '<button class="card-btn" onclick="tryForBabyPremarital()">👶 Try for Baby (Pre-marital)</button>';
   } else {
     html += '<button class="card-btn muted" onclick="goOnDate()">Date Night (−$80)</button>';
     html += '<button class="card-btn green" onclick="tryForBaby()">Try for Baby</button>';
@@ -5234,7 +5235,110 @@ function openCrime(){
     + '<div class="card-meta">If caught: ' + cr.sentence[0] + '-' + cr.sentence[1] + ' yrs prison · Karma ' + cr.karma + '</div></div>'
     + '<div class="card-act"><button class="card-btn danger" onclick="commitCrime(\'' + cr.id + '\')">Do It</button></div></div>'
   )).join('');
+  // ─── Atrocities: gated, framed as crimes, never rewarding ───
+  if(c.age >= 21){
+    html += '<div style="margin-top:22px;padding:12px;background:#2a0e0e;border:1px solid var(--crimson);border-radius:6px;">'
+      + '<div style="color:var(--crimson);font-family:var(--font-m);font-size:10px;letter-spacing:.2em;margin-bottom:8px;text-transform:uppercase;text-align:center;">⚠ Atrocities — the worst acts a human can commit</div>'
+      + '<div style="color:var(--t3);font-size:11px;line-height:1.5;margin-bottom:10px;text-align:center;">These are felonies, depicted as the tragedies they are. They carry decades-to-life prison sentences, total social ruin, the destruction of your family bonds, and a permanent dynasty mark. Read each one before you commit.</div>';
+    ATROCITIES.forEach(a => {
+      if(a.requires && !a.requires(c)){ return; }
+      html += '<div style="padding:10px;margin-top:6px;background:#180a0a;border:1px solid #5a1a1a;border-radius:5px;">'
+        + '<div style="font-weight:700;color:var(--crimson);font-size:13px;">' + a.label + '</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:3px;line-height:1.5;">' + a.warn + '</div>'
+        + '<div style="font-size:10px;color:var(--gold);margin-top:4px;">Consequences: ' + a.cons + '</div>'
+        + '<button class="card-btn danger" style="margin-top:6px;" onclick="confirmAtrocity(\'' + a.id + '\')">Commit</button>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
   openModal('Crime', html);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ATROCITIES — depicted as crimes of the highest moral severity.
+//  No payouts; only ruinous consequences. Permanent legacy marks.
+// ═══════════════════════════════════════════════════════════════════════
+const ATROCITIES = [
+  {id:'kill_spouse', label:'☠️ Murder Your Spouse',
+    warn:'A felony. The crime of femicide / uxoricide. The game depicts the act, not its justification — there is no honor in it. Your partner will be dead, your children orphaned, your name destroyed.',
+    cons:'Life imprisonment (auto-conviction 90%). Karma -90. All children traumatized -50 happiness. Marriage ends. Dynasty legacy: marked as a murderer.',
+    requires: c => !!c.partner,
+    exec: c => {
+      if(Math.random() < 0.9){
+        goToJail(40, 'murder of spouse');
+      } else {
+        pushEvent('bad', '⚠ You evaded immediate arrest. The investigation will haunt you.');
+        c.flags = c.flags || {}; c.flags.fugitive = true;
+      }
+      const partnerName = c.partner.firstName + ' ' + c.partner.lastName;
+      c.partner = null;
+      c.karma = clamp(c.karma - 90, 0, 100);
+      c.happiness = clamp(c.happiness - 60, 0, 100);
+      (c.children||[]).forEach(k => { if(k.alive){ k.traumatized = true; }});
+      pushEvent('death', '🕯 ' + partnerName + ' was murdered. The act was yours.');
+      recordLegacy('murdered their spouse — a felony');
+    },
+  },
+  {id:'kill_child', label:'☠️ Murder Your Own Child',
+    warn:'Infanticide / filicide. The most severe crime against family. The game depicts the horror of it; no story or justification is given. This is the act and only the act.',
+    cons:'Life imprisonment (auto-conviction 98%). Karma -100. Partner divorces. Remaining children flee. Dynasty legacy: marked as a child-killer for all generations.',
+    requires: c => (c.children||[]).some(k => k.alive),
+    exec: c => {
+      const liveKids = c.children.filter(k => k.alive);
+      const victim = liveKids[0];
+      victim.alive = false;
+      victim.cause = 'killed by parent';
+      goToJail(60, 'murder of own child');
+      c.karma = 0;
+      c.happiness = clamp(c.happiness - 80, 0, 100);
+      if(c.partner){ pushEvent('bad', '💔 ' + c.partner.firstName + ' filed for immediate divorce.'); c.partner = null; }
+      pushEvent('death', '🕯 ' + victim.name + ' is dead. The act was yours.');
+      recordLegacy('killed their own child ' + victim.name);
+    },
+  },
+  {id:'stoning_target', label:'🪨 Order a Stoning',
+    warn:'You incite a mob to stone a person to death. Across history this has been a tool of extrajudicial murder against women and minorities. The game treats it as the lynching it is.',
+    cons:'25 years prison (or death penalty in some countries). Karma -85. Community split. Dynasty legacy: marked as a mob killer.',
+    exec: c => {
+      const ctry = COUNTRIES[c.country];
+      if(ctry && ctry.lifeExp < 70 && Math.random() < 0.4){
+        pushEvent('death', '🕯 You were sentenced to death for inciting a stoning.');
+        c.alive = false; c.cause = 'executed';
+      } else {
+        goToJail(25, 'incitement to murder');
+      }
+      c.karma = clamp(c.karma - 85, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 4, 0, 100);
+      recordLegacy('led an extrajudicial mob killing');
+    },
+  },
+  {id:'disown_oow', label:'💔 Disown an Out-of-Wedlock Child',
+    warn:'Refuse to acknowledge a baby because they were born outside marriage. This is depicted as cruelty, not as honor.',
+    cons:'Karma -25. The child grows up without you and may seek you out later. Spouse / community judgment.',
+    requires: c => (c.children||[]).some(k => k.outOfWedlock && k.alive),
+    exec: c => {
+      const oow = c.children.find(k => k.outOfWedlock && k.alive);
+      oow.disowned = true;
+      c.karma = clamp(c.karma - 25, 0, 100);
+      c.happiness = clamp(c.happiness - 12, 0, 100);
+      pushEvent('bad', '💔 You disowned ' + oow.name + ' for being born out of wedlock.');
+      recordLegacy('disowned their own child for being born out of wedlock');
+    },
+  },
+];
+
+function confirmAtrocity(id){
+  const a = ATROCITIES.find(x => x.id === id);
+  if(!a) return;
+  const proceed = confirm(
+    a.label + '\n\n' + a.warn + '\n\nConsequences: ' + a.cons
+    + '\n\nThis cannot be undone. Continue?'
+  );
+  if(!proceed) return;
+  a.exec(LIFE.char);
+  closeModal();
+  renderAll();
+  saveLife();
 }
 
 function commitCrime(id){
@@ -6077,6 +6181,53 @@ function toggleInsurance(t){
   }
   closeModal();
   openBanking();
+  renderAll();
+  saveLife();
+}
+
+// Pre-marital baby — same biology, different social fallout.
+// In conservative cultures the karma + community judgment is higher;
+// in secular cultures it's milder. The kid is marked outOfWedlock so
+// future Drama events (paternity disputes, community shame, etc.) fire.
+function tryForBabyPremarital(){
+  const c = LIFE.char;
+  const p = c.partner;
+  if(!p){ toast('Need a partner first.'); return; }
+  if(p.married){ toast('You are already married — use Try for Baby instead.'); return; }
+  if(c.children && c.children.length >= 10){ toast('Ten kids is a lot.'); return; }
+  const outcome = getBabyOutcome(c);
+  if(!outcome.success){
+    toast(outcome.msg);
+    pushEvent('', '👶 ' + outcome.msg);
+    closeModal();
+    renderAll();
+    saveLife();
+    return;
+  }
+  outcome.babies.forEach((b, idx) => {
+    const babyName = prompt('Pre-marital baby ' + (idx+1) + '/' + outcome.babies.length + ' is a '
+      + (b.sex==='m'?'boy':'girl') + '! Name them:', pickRand(NAMES[c.country][b.sex]));
+    if(babyName === null) return;
+    c.children.push({
+      name: babyName || pickRand(NAMES[c.country][b.sex]),
+      sex: b.sex, age: 0, alive: true, lastName: c.lastName,
+      smarts: Math.floor(((c.smarts + (p.smarts||60))/2) + rangeRand(-10,10)),
+      looks:  Math.floor(((c.looks + (p.looks||60))/2) + rangeRand(-10,10)),
+      health: rangeRand(60, 95),
+      outOfWedlock: true,
+      otherParent: p.firstName + ' ' + (p.lastName || ''),
+    });
+  });
+  pushEvent('milestone', '👶 You had a baby with ' + p.firstName + ' before marriage. The community noticed.');
+  // Cultural fallout: conservative cultures hit happiness/karma harder
+  const ctry = COUNTRIES[c.country] || {};
+  const conservative = ['family-first','communal','collectivist','reserved'].includes(ctry.culture);
+  const hapHit = conservative ? -10 : -4;
+  const karHit = conservative ? -5 : -2;
+  c.happiness = clamp(c.happiness + hapHit + 18, 0, 100); // joy still net positive
+  c.karma = clamp(c.karma + karHit, 0, 100);
+  c.money -= 8000 * outcome.babies.length;
+  closeModal();
   renderAll();
   saveLife();
 }
@@ -9361,6 +9512,154 @@ const POLITICAL_MOVES = [
       recordLegacy('seized emergency powers and suspended the constitution');
     },
   },
+  // ═══ WORLD POLITICS — multilateral choices, alliances, conflicts ═══
+  {id:'join_alliance', label:'🤝 Join a Defense Alliance', cost:0,
+    desc:'Sign your nation into a mutual-defense pact. Peace index up if allies are peaceful, down if militant. Permanent geopolitical realignment.',
+    requires: () => !LIFE.world.alliance,
+    exec: () => {
+      LIFE.world.alliance = true;
+      const militant = Math.random() < 0.4;
+      if(militant){
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 8, 0, 100);
+        pushEvent('career', '🤝 Allied with a militant bloc. Diplomatic posture hardened.');
+      } else {
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 8, 0, 100);
+        pushEvent('career', '🤝 Allied with peaceful neighbors. Borders feel safer.');
+      }
+      recordLegacy('signed the nation into a defense alliance');
+    },
+  },
+  {id:'leave_alliance', label:'🚪 Withdraw From Alliance', cost:0,
+    desc:'Exit the bloc. -peaceIndex, -economyHealth, +sovereignty / +ideology shift.',
+    requires: () => LIFE.world.alliance,
+    exec: () => {
+      LIFE.world.alliance = false;
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 10, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 4, 0, 100);
+      LIFE.world.ideology = clamp(LIFE.world.ideology + 6, -100, 100);
+      pushEvent('career', '🚪 Withdrew from the alliance. Sanctions warnings issued.');
+      recordLegacy('pulled the nation out of its defense alliance');
+    },
+  },
+  {id:'impose_sanctions', label:'⛔ Impose Sanctions on a Rival', cost:0,
+    desc:'Cut trade with a rival nation. +ideology, -economyHealth both sides, -peaceIndex.',
+    exec: () => {
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 5, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 8, 0, 100);
+      LIFE.world.sanctionsActive = true;
+      pushEvent('career', '⛔ Sanctions imposed. Trade routes shuttered.');
+      recordLegacy('imposed sweeping sanctions on a rival nation');
+    },
+  },
+  {id:'lift_sanctions', label:'🕊️ Lift Sanctions Regime', cost:0,
+    desc:'Reopen trade with rivals. +peaceIndex, +economyHealth, -ideology (perceived as soft).',
+    requires: () => LIFE.world.sanctionsActive,
+    exec: () => {
+      LIFE.world.sanctionsActive = false;
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 8, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 5, 0, 100);
+      LIFE.world.ideology = clamp(LIFE.world.ideology - 4, -100, 100);
+      pushEvent('career', '🕊️ Sanctions lifted. Ports reopen.');
+      recordLegacy('lifted the sanctions regime and reopened trade');
+    },
+  },
+  {id:'foreign_aid', label:'💝 Send Foreign Aid Package', cost:200000,
+    desc:'Send humanitarian + reconstruction aid abroad. +peaceIndex, +karma, +world standing.',
+    exec: () => {
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 6, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 12, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 5, 0, 100);
+      pushEvent('career', '💝 Foreign aid dispatched. Allies grateful.');
+      recordLegacy('sent a major foreign aid package');
+    },
+  },
+  {id:'spy_op', label:'🕵️ Authorize Covert Operation Abroad', cost:0,
+    desc:'Order intelligence services to destabilize a foreign government. If exposed, world condemns you.',
+    exec: () => {
+      if(Math.random() < 0.35){
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 15, 0, 100);
+        LIFE.char.karma = clamp(LIFE.char.karma - 18, 0, 100);
+        LIFE.char.fame = clamp((LIFE.char.fame||0) + 8, 0, 100);
+        pushEvent('bad', '🕵️ Covert op exposed. International scandal.');
+        recordLegacy('was caught running a covert op abroad');
+      } else {
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 4, 0, 100);
+        pushEvent('career', '🕵️ Covert op succeeded. Foreign regime destabilized.');
+        recordLegacy('ran a successful covert op overseas');
+      }
+    },
+  },
+  {id:'host_summit', label:'🏛️ Host a Global Summit', cost:500000,
+    desc:'Convene world leaders. +fame, +peaceIndex, slight +climateScore.',
+    exec: () => {
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 15, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 5, 0, 100);
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore + 2, 0, 100);
+      pushEvent('career', '🏛️ World leaders summited in your capital.');
+      recordLegacy('hosted a major global summit');
+    },
+  },
+  {id:'accept_refugees', label:'🛂 Accept Refugees', cost:0,
+    desc:'Open borders to displaced people fleeing war or climate disaster. +karma, +peaceIndex, -economyHealth short-term, ideology shifts left.',
+    exec: () => {
+      LIFE.char.karma = clamp(LIFE.char.karma + 15, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 4, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 3, 0, 100);
+      LIFE.world.ideology = clamp(LIFE.world.ideology - 4, -100, 100);
+      pushEvent('career', '🛂 Borders opened. Refugees welcomed.');
+      recordLegacy('opened the borders to refugees in crisis');
+    },
+  },
+  {id:'close_borders', label:'🚧 Seal the Borders', cost:0,
+    desc:'Refuse entry to refugees and asylum seekers. +ideology right, -karma, -peaceIndex.',
+    exec: () => {
+      LIFE.char.karma = clamp(LIFE.char.karma - 12, 0, 100);
+      LIFE.world.ideology = clamp(LIFE.world.ideology + 6, -100, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 5, 0, 100);
+      pushEvent('career', '🚧 Borders sealed. Asylum seekers turned away.');
+      recordLegacy('sealed the borders against refugees');
+    },
+  },
+  {id:'nuclear_test', label:'☢️ Conduct a Nuclear Test', cost:0,
+    desc:'Detonate a warhead as a show of force. Massive peaceIndex collapse, international condemnation, possible WW3 risk.',
+    exec: () => {
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 25, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma - 20, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 25, 0, 100);
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore - 5, 0, 100);
+      if(LIFE.world.peaceIndex < 25 && Math.random() < 0.15){
+        LIFE.world.ww3Happened = true;
+        pushEvent('bad', '💥 A retaliatory exchange. The Third World War has begun.');
+        recordLegacy('triggered World War 3');
+      } else {
+        pushEvent('bad', '☢️ Nuclear test detected by satellites. Global condemnation.');
+        recordLegacy('conducted a nuclear weapons test');
+      }
+    },
+  },
+  // ═══ THE WORST: depicted as the war crime it is ═══
+  {id:'order_genocide', label:'☠️ Order Ethnic Cleansing / Genocide', cost:0,
+    desc:'You order the systematic killing of a population in your country. This is the gravest war crime under international law. The game depicts it as the atrocity it is — there is no narrative justification, only the act and its consequences. ICC warrants are issued.',
+    exec: () => {
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 60, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 30, 0, 100);
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore - 8, 0, 100);
+      LIFE.char.karma = 0;
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 30, 0, 100);
+      LIFE.world.warCriminal = true;
+      LIFE.world.iccIndictment = true;
+      pushEvent('death', '☠️ You ordered a campaign of ethnic cleansing. The ICC has issued a warrant. The world mourns the dead.');
+      recordLegacy('ordered a genocide and was indicted by the ICC');
+      if(Math.random() < 0.6){
+        setTimeout(() => {
+          if(LIFE && LIFE.char && LIFE.char.alive){
+            pushEvent('death', '🕯 You were overthrown and executed for war crimes.');
+            LIFE.char.alive = false; LIFE.char.cause = 'executed for war crimes';
+          }
+        }, 200);
+      }
+    },
+  },
 ];
 
 function openOfficeOfPower(){
@@ -9429,6 +9728,11 @@ function executePoliticalMove(id){
   const m = POLITICAL_MOVES.find(x => x.id === id);
   if(!m) return;
   if(m.cost && LIFE.char.money < m.cost){ toast('Need ' + fmtMoney(m.cost) + '.'); return; }
+  // The most consequential moves require explicit confirmation
+  if(['order_genocide','authoritarian_turn','nuclear_test'].includes(id)){
+    const ok = confirm(m.label + '\n\n' + m.desc + '\n\nThis is irreversible. Continue?');
+    if(!ok) return;
+  }
   if(m.cost) LIFE.char.money -= m.cost;
   m.exec();
   saveLife();

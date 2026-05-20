@@ -2934,6 +2934,7 @@ function defaultChar(seed){
     savings:   0,            // separate APR-earning bank account
     investments: 0,          // brokerage / 401k
     trust:     0,            // family trust principal
+    corruption: 0,           // 0-100 — bribes, kickbacks, embezzlement
     properties: [],          // real-estate portfolio
     companies:  [],          // owned companies
     religion:  null,         // chosen religious tradition
@@ -3063,6 +3064,7 @@ function loadLife(){
         if(c.savings == null) c.savings = 0;
         if(c.investments == null) c.investments = 0;
         if(c.trust == null) c.trust = 0;
+        if(c.corruption == null) c.corruption = 0;
         if(!c.insurance) c.insurance = {home:false, health:false, life:false, auto:false};
         if(!c.properties) c.properties = [];
         if(!c.companies) c.companies = [];
@@ -10075,7 +10077,29 @@ function openOfficeOfPower(){
     + (w.agiAchieved ? '<div style="font-size:11px;color:var(--accent2);">🤖 AGI achieved</div>' : '')
     + (w.stablecoinIssued ? '<div style="font-size:11px;color:var(--accent2);">💎 National stablecoin in circulation</div>' : '')
     + (w.authoritarian ? '<div style="font-size:11px;color:var(--crimson);">🔒 Under emergency rule</div>' : '')
+    + (w.warCriminal   ? '<div style="font-size:11px;color:var(--crimson);">☠️ Indicted as a war criminal (ICC)</div>' : '')
+    + '<div style="margin-top:10px;font-size:11px;color:var(--t3);">Corruption: <b style="color:'
+    + ((c.corruption||0) >= 50 ? 'var(--crimson)' : (c.corruption||0) >= 25 ? 'var(--gold)' : 'var(--t2)') + ';">'
+    + (c.corruption||0) + '/100</b></div>'
     + '</div>'
+    // ── Foreign Powers panel ──
+    + (function(){
+        ensureBlocState();
+        let h = '<div style="font-family:var(--font-m);font-size:10px;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;">🌐 Foreign Powers</div>'
+          + '<div style="background:#1a1428;border:1px solid var(--accent);border-radius:6px;padding:12px;margin-bottom:14px;">';
+        FOREIGN_BLOCS.forEach(b => {
+          const s = (LIFE.world.blocs[b.id]||{}).stance || 50;
+          const lbl = s >= 80 ? 'Allied' : s >= 60 ? 'Friendly' : s >= 40 ? 'Neutral' : s >= 20 ? 'Hostile' : 'Adversary';
+          const col = s >= 60 ? 'var(--green)' : s >= 40 ? 'var(--gold)' : 'var(--crimson)';
+          h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px dotted #2a1f3d;">'
+            + '<span><span style="font-size:14px;">' + b.flag + '</span> ' + b.name
+            + ' <span style="color:var(--t3);font-size:10px;">· ' + b.align.replace(/_/g,' ') + '</span></span>'
+            + '<span style="color:' + col + ';font-family:var(--font-m);font-size:11px;letter-spacing:.1em;">' + lbl + ' (' + s + ')</span>'
+            + '</div>';
+        });
+        h += '</div>';
+        return h;
+      })()
     + '<div style="font-family:var(--font-m);font-size:10px;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;">⚡ Decisions of State</div>'
     + '<div style="background:#1a1428;border:1px solid var(--gold);border-radius:6px;padding:12px;">';
   POLITICAL_MOVES.forEach(m => {
@@ -10094,6 +10118,24 @@ function openOfficeOfPower(){
       + '</div></div>';
   });
   html += '</div>';
+  // ── Corruption panel ──
+  const corruptionAvailable = CORRUPTION_MOVES.filter(m => !m.requires || m.requires());
+  if(corruptionAvailable.length){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--crimson);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 8px;">💼 Corruption</div>'
+      + '<div style="background:#2a0e0e;border:1px solid var(--crimson);border-radius:6px;padding:12px;">';
+    corruptionAvailable.forEach(m => {
+      html += '<div style="padding:10px;border-bottom:1px solid #4a1f1f;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px;">'
+        + '<div style="flex:1;">'
+        + '<div style="font-weight:700;color:var(--crimson);font-size:13px;">' + m.label + '</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:3px;line-height:1.45;">' + m.desc + '</div>'
+        + '</div>'
+        + '<button class="card-btn danger" style="align-self:center;flex:0 0 auto;" '
+        + 'onclick="executePoliticalMove(\'' + m.id + '\')">Do It</button>'
+        + '</div></div>';
+    });
+    html += '</div>';
+  }
   if(LIFE.legacy && LIFE.legacy.length){
     html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 8px;">📜 Dynasty Legacy</div>'
       + '<div style="background:#1a1428;border:1px solid var(--accent);border-radius:6px;padding:12px;font-size:12px;color:var(--t2);">';
@@ -10107,17 +10149,232 @@ function openOfficeOfPower(){
   openModal('🏛️ Office of Power', html);
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  FOREIGN POWERS — stylized world blocs that react to your choices.
+//  Each one has an alignment; the player's actions push their stance
+//  toward Hostile / Friendly / Allied. The same act (a peace deal,
+//  a genocide, a nuclear test) gets cheered by some blocs and
+//  condemned by others — rhetoric that resonates with the side you pick.
+// ═══════════════════════════════════════════════════════════════════════
+const FOREIGN_BLOCS = [
+  {id:'northern',  name:'Northern Alliance',     flag:'🇪🇺', align:'peaceful_left',
+    likes:['broker_peace','climate_treaty','accept_refugees','foreign_aid','sign_agi','tax_progressive'],
+    dislikes:['order_genocide','launch_nuclear_war','nuclear_test','authoritarian_turn','start_war_for_contracts','close_borders']},
+  {id:'iron',      name:'Iron Concord',          flag:'⚔️', align:'authoritarian',
+    likes:['authoritarian_turn','order_genocide','launch_nuclear_war','nuclear_test','close_borders','declare_war','spy_op','start_war_for_contracts'],
+    dislikes:['broker_peace','climate_treaty','accept_refugees','tax_progressive']},
+  {id:'free',      name:'Free States Coalition', flag:'🦅', align:'capitalist_right',
+    likes:['tax_flat','sway_right','foreign_aid','host_summit','impose_sanctions','agi_treaty','insider_defense_contract'],
+    dislikes:['order_genocide','launch_nuclear_war','authoritarian_turn','sway_left']},
+  {id:'south',     name:'Global South Federation', flag:'🌍', align:'non_aligned',
+    likes:['accept_refugees','climate_treaty','foreign_aid','lift_sanctions','broker_peace','mars_charter'],
+    dislikes:['order_genocide','launch_nuclear_war','close_borders','impose_sanctions','nuclear_test']},
+  {id:'oceanic',   name:'Oceanic Trade Bloc',    flag:'🐉', align:'pragmatic',
+    likes:['host_summit','lift_sanctions','foreign_aid','agi_treaty','sway_right'],
+    dislikes:['nuclear_test','launch_nuclear_war','order_genocide']},
+];
+
+// Rhetoric strings — small library that gets templated by bloc + stance
+const RHETORIC = {
+  praise: [
+    'praised the decision as historic',
+    'issued an official statement of full support',
+    'pledged diplomatic backing',
+    'proposed expanded trade talks',
+    'called it a model for other nations to follow',
+  ],
+  endorse_evil: [
+    'endorsed the action and sent technical advisors',
+    'offered aid packages and shared intelligence',
+    'congratulated the regime publicly',
+    'proposed a new alliance on shared values',
+    'invited the leader to a state visit',
+  ],
+  condemn: [
+    'condemned the action in the strongest possible terms',
+    'recalled their ambassador',
+    'imposed targeted sanctions',
+    'introduced a UN resolution against the regime',
+    'froze trade negotiations',
+  ],
+  warn: [
+    'expressed serious concerns',
+    'summoned the ambassador for clarification',
+    'issued a formal protest',
+    'reviewed diplomatic ties',
+  ],
+};
+
+function ensureBlocState(){
+  LIFE.world.blocs = LIFE.world.blocs || {};
+  FOREIGN_BLOCS.forEach(b => {
+    if(!LIFE.world.blocs[b.id]){
+      LIFE.world.blocs[b.id] = { stance: 50 }; // 0 hostile … 100 allied
+    }
+  });
+}
+
+// Run after every political move. Move bloc stances and emit
+// rhetoric appropriate to alignment + action.
+function reactToMove(moveId){
+  ensureBlocState();
+  const reactions = [];
+  FOREIGN_BLOCS.forEach(b => {
+    const state = LIFE.world.blocs[b.id];
+    const liked = b.likes.includes(moveId);
+    const disliked = b.dislikes.includes(moveId);
+    if(!liked && !disliked) return;
+    const delta = liked ? +12 : -14;
+    state.stance = clamp(state.stance + delta, 0, 100);
+    let rhetoric;
+    if(liked && b.align === 'authoritarian' &&
+       ['order_genocide','launch_nuclear_war','authoritarian_turn','start_war_for_contracts'].includes(moveId)){
+      rhetoric = pickRand(RHETORIC.endorse_evil);
+    } else if(liked){
+      rhetoric = pickRand(RHETORIC.praise);
+    } else if(disliked && state.stance < 25){
+      rhetoric = pickRand(RHETORIC.condemn);
+    } else {
+      rhetoric = pickRand(RHETORIC.warn);
+    }
+    reactions.push({ blocName: b.flag + ' ' + b.name, text: rhetoric, liked, stance: state.stance });
+  });
+  if(reactions.length){
+    const summary = reactions.map(r =>
+      r.blocName + ' ' + r.text + ' (' + (r.liked?'+':'') + (r.stance) + ')'
+    ).join(' · ');
+    pushEvent('career', '🌐 ' + summary);
+  }
+  // Authoritarian blocs offer aid for atrocities — corrupting endorsement
+  const iron = LIFE.world.blocs['iron'];
+  if(iron && iron.stance >= 75 &&
+     ['order_genocide','launch_nuclear_war','authoritarian_turn'].includes(moveId)){
+    const aid = 2000000 + Math.floor(Math.random() * 8000000);
+    LIFE.char.money += aid;
+    LIFE.char.corruption = clamp((LIFE.char.corruption||0) + 15, 0, 100);
+    pushEvent('bad', '⚔️ The Iron Concord wired ' + fmtMoney(aid) + ' as a "fraternal aid package." Corruption +15.');
+    recordLegacy('accepted a fraternal aid package from the Iron Concord');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  CORRUPTION — a tracked stat. Bribes, kickbacks, embezzlement.
+//  High corruption -> higher investigation chance, but unlocks more
+//  options. Affects descendants' starting standing (inherited stigma).
+// ═══════════════════════════════════════════════════════════════════════
+const CORRUPTION_MOVES = [
+  {id:'take_foreign_bribe', label:'💼 Accept Foreign Power Bribe', cost:0,
+    desc:'A foreign bloc with high stance offers a "consulting fee" to influence your policy. Pure corruption.',
+    requires: () => {
+      ensureBlocState();
+      return Object.values(LIFE.world.blocs||{}).some(b => b.stance >= 65);
+    },
+    exec: () => {
+      const c = LIFE.char;
+      const friendly = FOREIGN_BLOCS.filter(b => (LIFE.world.blocs[b.id]||{}).stance >= 65);
+      const bloc = pickRand(friendly);
+      const bribe = 800000 + Math.floor(Math.random()*5200000);
+      c.money += bribe;
+      c.corruption = clamp((c.corruption||0) + 22, 0, 100);
+      c.karma = clamp(c.karma - 10, 0, 100);
+      pushEvent('bad', '💼 You took ' + fmtMoney(bribe) + ' as a "consulting fee" from ' + bloc.flag + ' ' + bloc.name + '. Corruption +22.');
+      recordLegacy('took a foreign bribe from ' + bloc.name);
+      if(Math.random() < 0.18){
+        setTimeout(() => {
+          if(LIFE.char.alive){
+            pushEvent('bad', '⚖️ A journalist exposed the foreign bribe. Investigation underway.');
+            if(Math.random() < 0.5) goToJail(6, 'foreign agent registration violation');
+          }
+        }, 200);
+      }
+    },
+  },
+  {id:'embezzle_treasury', label:'🏦 Embezzle From National Treasury', cost:0,
+    desc:'You divert public funds to a numbered account. Big haul, big risk if caught.',
+    requires: () => {
+      const c = LIFE.char;
+      return c.career && c.career.key === 'politician' && c.career.rungIdx >= 3;
+    },
+    exec: () => {
+      const c = LIFE.char;
+      const haul = 3000000 + Math.floor(Math.random()*12000000);
+      c.money += haul;
+      c.corruption = clamp((c.corruption||0) + 30, 0, 100);
+      c.karma = clamp(c.karma - 20, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 4, 0, 100);
+      pushEvent('bad', '🏦 You embezzled ' + fmtMoney(haul) + ' from the treasury. Corruption +30.');
+      recordLegacy('embezzled millions from the national treasury');
+      const catchChance = 0.10 + (c.corruption||0) * 0.004;
+      if(Math.random() < catchChance){
+        setTimeout(() => {
+          if(LIFE.char.alive){
+            pushEvent('bad', '⚖️ Forensic auditors found the trail. Indictment.');
+            goToJail(12, 'embezzlement of public funds');
+          }
+        }, 200);
+      }
+    },
+  },
+  {id:'launder_through_company', label:'🧼 Launder Bribes Through Your Own Company', cost:0,
+    desc:'Route foreign money through a company you control to make it look like legit revenue.',
+    requires: () => {
+      const c = LIFE.char;
+      return (c.companies||[]).length > 0 && (c.corruption||0) >= 20;
+    },
+    exec: () => {
+      const c = LIFE.char;
+      const co = c.companies[0];
+      const clean = Math.floor((c.corruption||0) * 100000);
+      co.cash = (co.cash||0) + clean;
+      c.corruption = clamp((c.corruption||0) + 6, 0, 100);
+      pushEvent('career', '🧼 ' + fmtMoney(clean) + ' laundered through ' + co.name + '. Cash on hand jumped.');
+      recordLegacy('laundered dirty money through ' + co.name);
+    },
+  },
+  {id:'rig_election', label:'🗳️ Rig an Election', cost:0,
+    desc:'Tilt voting machines, suppress turnout in opposition districts, fake ballots. Guarantees re-election. Heavy karma + corruption cost.',
+    requires: () => {
+      const c = LIFE.char;
+      return c.career && c.career.key === 'politician';
+    },
+    exec: () => {
+      const c = LIFE.char;
+      c.corruption = clamp((c.corruption||0) + 28, 0, 100);
+      c.karma = clamp(c.karma - 22, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 6, 0, 100);
+      LIFE.world.ideology = clamp(LIFE.world.ideology + 5, -100, 100);
+      // Forced career stay — you don't lose the seat
+      c.flags = c.flags || {};
+      c.flags.riggedElection = true;
+      pushEvent('bad', '🗳️ You rigged the election. You keep your seat. Some voters know.');
+      recordLegacy('rigged an election to stay in power');
+      if(Math.random() < 0.22){
+        setTimeout(() => {
+          if(LIFE.char.alive){
+            pushEvent('bad', '🪧 Protests fill the capital. An investigation opens.');
+            if(Math.random() < 0.4) goToJail(15, 'electoral fraud');
+          }
+        }, 200);
+      }
+    },
+  },
+];
+
 function executePoliticalMove(id){
-  const m = POLITICAL_MOVES.find(x => x.id === id);
+  // Combined lookup — both arrays
+  let m = POLITICAL_MOVES.find(x => x.id === id);
+  if(!m) m = CORRUPTION_MOVES.find(x => x.id === id);
   if(!m) return;
   if(m.cost && LIFE.char.money < m.cost){ toast('Need ' + fmtMoney(m.cost) + '.'); return; }
   // The most consequential moves require explicit confirmation
-  if(['order_genocide','authoritarian_turn','nuclear_test','launch_nuclear_war','start_war_for_contracts'].includes(id)){
+  if(['order_genocide','authoritarian_turn','nuclear_test','launch_nuclear_war',
+      'start_war_for_contracts','rig_election','embezzle_treasury'].includes(id)){
     const ok = confirm(m.label + '\n\n' + m.desc + '\n\nThis is irreversible. Continue?');
     if(!ok) return;
   }
   if(m.cost) LIFE.char.money -= m.cost;
   m.exec();
+  reactToMove(id);
   saveLife();
   closeModal();
   openOfficeOfPower();

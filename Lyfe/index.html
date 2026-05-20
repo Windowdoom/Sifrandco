@@ -452,6 +452,7 @@ input,select{font-family:inherit;}
   <div class="tb-chip country" id="tb-country">🇺🇸 USA</div>
   <div class="tb-chip age" id="tb-age">Age 0</div>
   <div class="tb-chip money" id="tb-money">$0</div>
+  <div class="tb-chip" id="tb-networth" title="Net worth — cash + savings + investments + real estate + companies + house + car + trust">Net $0</div>
   <button class="tb-btn" onclick="openFamilyTree()">Family Tree</button>
   <button class="tb-btn warn" onclick="confirmRestart()">New Life</button>
 </div>
@@ -3663,6 +3664,8 @@ function renderTopbar(){
   const moneyEl = document.getElementById('tb-money');
   moneyEl.textContent = fmtMoney(c.money);
   moneyEl.className = 'tb-chip money' + (c.money < 0 ? ' neg' : '');
+  const nwEl = document.getElementById('tb-networth');
+  if(nwEl) nwEl.textContent = 'Net ' + fmtMoney(totalEstateValue(c));
 }
 
 function renderCharCard(){
@@ -5299,11 +5302,34 @@ function showDeathScreen(){
   document.getElementById('death-screen').classList.add('show');
 }
 
+// Total estate value at death — cash, savings, investments, trust, real estate
+// resale, owned company valuations, house, car. Split equally among living kids.
+function totalEstateValue(c){
+  let n = (c.money||0) + (c.savings||0) + (c.investments||0) + (c.trust||0);
+  if(c.properties && c.properties.length){
+    n += c.properties.reduce((s,p) => s + (p.currentValue||0), 0);
+  }
+  if(c.companies && c.companies.length){
+    n += c.companies.reduce((s,co) => s + (co.valuation || co.treasury || 0), 0);
+  }
+  if(c.houseId && c.houseId !== 'family'){
+    const h = HOUSES.find(x => x.id === c.houseId);
+    if(h) n += Math.floor((h.price||0) * 0.85);
+  }
+  if(c.carId && c.carId !== 'none'){
+    const car = CARS.find(x => x.id === c.carId);
+    if(car) n += Math.floor((car.price||0) * 0.5);
+  }
+  return Math.max(0, n);
+}
+
 function continueAs(kidName){
   const oldChar = LIFE.char;
   const kid = oldChar.children.find(k => k.name === kidName);
   if(!kid){ return; }
-  const inheritance = Math.max(0, Math.floor(oldChar.money / liveKidCount(oldChar)));
+  const heirs = liveKidCount(oldChar);
+  const estate = totalEstateValue(oldChar);
+  const inheritance = Math.max(0, Math.floor(estate / heirs));
   // build a fresh char from kid data
   const country = oldChar.country;
   const newSeed = {
@@ -5343,10 +5369,26 @@ function continueAs(kidName){
   ch.looks  = kid.looks  || ch.looks;
   ch.health = kid.health || ch.health;
   ch.money  = inheritance;
+  // Physical / illiquid assets pass entirely to the chosen heir
+  // (real estate portfolio, companies, primary house, current car, trust).
+  if(oldChar.properties && oldChar.properties.length){ ch.properties = oldChar.properties; }
+  if(oldChar.companies  && oldChar.companies.length){ ch.companies  = oldChar.companies; }
+  if(oldChar.houseId && oldChar.houseId !== 'family'){ ch.houseId = oldChar.houseId; }
+  if(oldChar.carId   && oldChar.carId   !== 'none'){   ch.carId   = oldChar.carId; }
+  if(oldChar.trust){ ch.trust = oldChar.trust; }
+  // The kid keeps any savings/investments their parent had set aside —
+  // distinct from the cash inheritance so dividends keep compounding.
+  if(oldChar.savings)     ch.savings     = Math.floor((oldChar.savings||0));
+  if(oldChar.investments) ch.investments = Math.floor((oldChar.investments||0));
   ch.born   = (new Date().getFullYear()) - ch.age;
   LIFE.char = ch;
   pushEvent('milestone',
-    'You inherited ' + fmtMoney(inheritance) + ' from your parent ' + oldChar.firstName + ' ' + oldChar.lastName + '. You continue your family\'s story.');
+    'You inherited ' + fmtMoney(inheritance) + ' in liquid wealth from your parent '
+    + oldChar.firstName + ' ' + oldChar.lastName
+    + (oldChar.houseId && oldChar.houseId !== 'family' ? ', the family home,' : '')
+    + (oldChar.properties && oldChar.properties.length ? ' a portfolio of ' + oldChar.properties.length + ' properties,' : '')
+    + (oldChar.companies && oldChar.companies.length ? ' a portfolio of ' + oldChar.companies.length + ' companies,' : '')
+    + ' and the family story continues.');
   document.getElementById('death-screen').classList.remove('show');
   renderAll();
   saveLife();
@@ -5745,26 +5787,33 @@ function rollApocalypseEvent(){
 
 function processBankingInterest(){
   const c = LIFE.char;
-  // Savings APR is 4% by default
+  // Savings compound monthly at 5% APR — APY ≈ 5.12%. Effective on the
+  // full annual balance is applied once per ageUp via (1+r/12)^12 - 1.
   if(c.savings > 0){
-    const yield_ = Math.floor(c.savings * 0.04);
+    const apy = Math.pow(1 + 0.05/12, 12) - 1; // ≈ 0.05116
+    const yield_ = Math.floor(c.savings * apy);
     c.savings += yield_;
-    if(yield_ > 100){
-      pushEvent('good', '🏦 Savings yielded ' + fmtMoney(yield_) + ' in interest.', {money:0});
+    if(yield_ >= 1){
+      pushEvent('good', '🏦 Savings compounded — interest ' + fmtMoney(yield_) + ' added.', {money:0});
     }
   }
+  // Investments — 8% average annual return with real volatility.
   if(c.investments > 0){
-    // 8% average return with volatility (-10% to +18%)
     const swing = 0.04 + Math.random() * 0.14;
     const direction = Math.random() < 0.7 ? +1 : -1;
     const returnRate = direction > 0 ? swing : -swing/2;
     const change = Math.floor(c.investments * returnRate);
     c.investments += change;
     if(c.investments < 0) c.investments = 0;
-    if(Math.abs(change) > 500){
+    if(Math.abs(change) > 100){
       const tag = change > 0 ? 'good' : 'bad';
       pushEvent(tag, '📈 Investments ' + (change>0?'gained':'lost') + ' ' + fmtMoney(Math.abs(change)) + ' this year.', {money:0});
     }
+  }
+  // Trust fund grows at a steady 6%
+  if(c.trust > 0){
+    const yield_ = Math.floor(c.trust * 0.06);
+    c.trust += yield_;
   }
 }
 
@@ -5876,13 +5925,26 @@ function doReligious(id){
 // ═══════════════════════════════════════════════════════════════════════
 function openBanking(){
   const c = LIFE.char;
+  const nw = totalEstateValue(c);
+  const propVal = (c.properties||[]).reduce((s,p) => s + (p.currentValue||0), 0);
+  const coVal   = (c.companies||[]).reduce((s,co) => s + (co.valuation || co.treasury || 0), 0);
+  // Projected gain over the next year — 5.12% APY savings + 8% expected investments
+  const projSavings = Math.floor((c.savings||0) * 0.0512);
+  const projInvest  = Math.floor((c.investments||0) * 0.08);
   let html = ''
     + '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
-    +   '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px 14px;font-family:var(--font-m);font-size:11px;">'
+    +   '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px 14px;font-family:var(--font-m);font-size:11px;">'
     +     '<div><span style="color:var(--t3);letter-spacing:.1em;">CHECKING</span><br><span style="font-size:15px;color:' + (c.money>=0?'var(--green)':'var(--crimson)') + ';font-weight:700;">' + fmtMoney(c.money) + '</span></div>'
-    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">SAVINGS</span><br><span style="font-size:15px;color:var(--green);font-weight:700;">' + fmtMoney(c.savings||0) + '</span></div>'
-    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">INVESTMENTS</span><br><span style="font-size:15px;color:var(--accent2);font-weight:700;">' + fmtMoney(c.investments||0) + '</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">SAVINGS · 5% APY</span><br><span style="font-size:15px;color:var(--green);font-weight:700;">' + fmtMoney(c.savings||0) + '</span><br><span style="color:var(--t3);font-size:10px;">+'+ fmtMoney(projSavings) +' / yr</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">INVEST · ~8%</span><br><span style="font-size:15px;color:var(--accent2);font-weight:700;">' + fmtMoney(c.investments||0) + '</span><br><span style="color:var(--t3);font-size:10px;">~'+ fmtMoney(projInvest) +' / yr</span></div>'
+    +     '<div><span style="color:var(--t3);letter-spacing:.1em;">NET WORTH</span><br><span style="font-size:15px;color:var(--gold);font-weight:700;">' + fmtMoney(nw) + '</span></div>'
     +   '</div>'
+    +   (propVal || coVal || c.trust ?
+        '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #2a1f3d;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-family:var(--font-m);font-size:10px;color:var(--t3);">'
+        + '<div>Real Estate: <span style="color:var(--accent2);">' + fmtMoney(propVal) + '</span></div>'
+        + '<div>Companies: <span style="color:var(--accent2);">' + fmtMoney(coVal) + '</span></div>'
+        + '<div>Trust: <span style="color:var(--accent2);">' + fmtMoney(c.trust||0) + '</span></div>'
+        + '</div>' : '')
     + '</div>'
     + '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;">Transfer Money</div>'
     + '<div class="card"><div class="card-ico">💸</div>'

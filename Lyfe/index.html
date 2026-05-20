@@ -666,9 +666,17 @@ const NAMES = {
 // Currency formatting helper
 function fmtMoney(n){
   const cur = COUNTRIES[LIFE.char.country].cur;
-  if(Math.abs(n) >= 1000000){ return (n<0?'−':'') + cur + (Math.abs(n)/1000000).toFixed(1) + 'M'; }
-  if(Math.abs(n) >= 1000){ return (n<0?'−':'') + cur + (Math.abs(n)/1000).toFixed(1) + 'k'; }
-  return (n<0?'−':'') + cur + Math.abs(n).toLocaleString();
+  const sign = n < 0 ? '−' : '';
+  const a = Math.abs(n);
+  // Scale up indefinitely — no cap. B → Trillion → Quadrillion → Quintillion …
+  // After Qi we just keep adding more digits — money is uncapped.
+  if(a >= 1e18) return sign + cur + (a/1e18).toFixed(2) + 'Qi';
+  if(a >= 1e15) return sign + cur + (a/1e15).toFixed(2) + 'Qa';
+  if(a >= 1e12) return sign + cur + (a/1e12).toFixed(2) + 'T';
+  if(a >= 1e9)  return sign + cur + (a/1e9).toFixed(2)  + 'B';
+  if(a >= 1e6)  return sign + cur + (a/1e6).toFixed(1)  + 'M';
+  if(a >= 1e3)  return sign + cur + (a/1e3).toFixed(1)  + 'k';
+  return sign + cur + a.toLocaleString();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2938,6 +2946,8 @@ function defaultChar(seed){
     heirlooms: [],           // generational items
     flips:     [],           // active real-estate flips
     will:      { conditions: [], disinherited: [], primaryHeir: null, allowLawsuits: true },
+    estateRoyalties: 0,      // monthly stream inherited from parent's hustle catalog
+    hustles:   {},           // per-skill side-hustle state (releases, royalties)
     properties: [],          // real-estate portfolio
     companies:  [],          // owned companies
     religion:  null,         // chosen religious tradition
@@ -3071,6 +3081,8 @@ function loadLife(){
         if(!c.heirlooms) c.heirlooms = [];
         if(!c.flips) c.flips = [];
         if(!c.will) c.will = { conditions: [], disinherited: [], primaryHeir: null, allowLawsuits: true };
+        if(c.estateRoyalties == null) c.estateRoyalties = 0;
+        if(!c.hustles) c.hustles = {};
         if(!c.insurance) c.insurance = {home:false, health:false, life:false, auto:false};
         if(!c.properties) c.properties = [];
         if(!c.companies) c.companies = [];
@@ -3258,6 +3270,25 @@ function ageUp(){
   // banking interest tick
   processBankingInterest();
   processSideHustles();
+  // Estate royalties flow to the heir every year (50% of parent's hustle income)
+  if(LIFE.char.estateRoyalties){
+    const annual = LIFE.char.estateRoyalties * 12;
+    LIFE.char.money += annual;
+    pushEvent('good', '🎵 Estate royalties from ancestral catalog: ' + fmtMoney(annual) + '.');
+    // Slow decay — public memory fades 8% per year
+    LIFE.char.estateRoyalties = Math.floor(LIFE.char.estateRoyalties * 0.92);
+  }
+  // Family-under-investigation flag triggers occasional audits
+  if(LIFE.char.flags && LIFE.char.flags.familyUnderInvestigation && Math.random() < 0.06){
+    const fine = 10000 + Math.floor(Math.random()*40000);
+    LIFE.char.money -= fine;
+    pushEvent('bad', '⚖️ Tax audit on your family. Forensic team levied ' + fmtMoney(fine) + ' in penalties.');
+  }
+  // War-criminal lineage: occasional public-shaming events
+  if(LIFE.char.flags && LIFE.char.flags.warCriminalLineage && Math.random() < 0.04){
+    LIFE.char.happiness = clamp(LIFE.char.happiness - 6, 0, 100);
+    pushEvent('bad', '🪧 Protesters picketed your event with photos of your ancestor.');
+  }
   // faith decay/practice
   rollFaithEvent();
   // personality drift
@@ -5598,6 +5629,62 @@ function totalEstateValue(c){
   return Math.max(0, n);
 }
 
+// Compute and apply how the dynasty's history shapes the heir's starting
+// fame, karma, corruption stigma — and surface a "World You Inherit"
+// briefing so the player sees the consequences of past generations.
+function applyDynastyReputation(ch, oldChar){
+  const w = LIFE.world || {};
+  const legacy = LIFE.legacy || [];
+  const inheritedFame = Math.floor((oldChar.fame||0) * 0.25);
+  ch.fame = clamp((ch.fame||0) + inheritedFame, 0, 100);
+  if((oldChar.karma||50) < 30) ch.karma = clamp(ch.karma - 8, 0, 100);
+  if((oldChar.corruption||0) > 50){
+    ch.flags = ch.flags || {};
+    ch.flags.familyUnderInvestigation = true;
+    pushEvent('bad', '⚖️ Investigators have flagged the ' + oldChar.lastName + ' family. Background checks will be harder.');
+  }
+  if(w.warCriminal){
+    ch.karma = clamp(ch.karma - 20, 0, 100);
+    ch.fame = clamp((ch.fame||0) + 25, 0, 100);
+    ch.flags = ch.flags || {};
+    ch.flags.warCriminalLineage = true;
+    pushEvent('bad', '⚠️ You bear the name of an indicted war criminal. Doors will close before you knock on them.');
+  }
+  if(oldChar.foundation && (oldChar.foundation.totalGiven||0) > 5000000){
+    ch.karma = clamp(ch.karma + 8, 0, 100);
+    ch.fame  = clamp((ch.fame||0) + 6, 0, 100);
+  }
+  if(w.ww3Happened){
+    ch.happiness = clamp(ch.happiness - 12, 0, 100);
+    ch.health = clamp(ch.health - 8, 0, 100);
+  }
+  if(w.nuclearWar){
+    ch.health = clamp(ch.health - 18, 0, 100);
+    ch.happiness = clamp(ch.happiness - 20, 0, 100);
+  }
+  if(w.authoritarian){
+    ch.happiness = clamp(ch.happiness - 8, 0, 100);
+  }
+  if(w.marsColonized){
+    ch.smarts = clamp(ch.smarts + 4, 0, 100);
+    ch.happiness = clamp(ch.happiness + 3, 0, 100);
+  }
+  const bits = [];
+  bits.push('Economy ' + w.economyHealth + ' · Peace ' + w.peaceIndex + ' · Climate ' + w.climateScore + ' · Tech ' + w.techLevel);
+  if(w.marsColonized)    bits.push('🚀 Mars colonized');
+  if(w.agiAchieved)      bits.push('🤖 AGI achieved');
+  if(w.ww3Happened)      bits.push('💥 WW3 has happened');
+  if(w.nuclearWar)       bits.push('☢️ Nuclear winter');
+  if(w.authoritarian)    bits.push('🔒 Authoritarian rule');
+  if(w.warCriminal)      bits.push('☠️ Dynasty marked as war criminal');
+  if(w.stablecoinIssued) bits.push('💎 Stablecoin in circulation');
+  pushEvent('milestone', '🌍 The world you inherit — ' + bits.join(' · '));
+  if(legacy.length){
+    const recent = legacy.slice(-3).map(l => 'Gen ' + l.gen + ': ' + l.name + ' ' + l.deed).join(' · ');
+    pushEvent('milestone', '📜 Recent dynasty acts — ' + recent);
+  }
+}
+
 function continueAs(kidName){
   const oldChar = LIFE.char;
   const kid = oldChar.children.find(k => k.name === kidName);
@@ -5676,7 +5763,10 @@ function continueAs(kidName){
     }
   });
   // ── Foundation: the family foundation persists; new char becomes new chair ──
-  if(oldChar.foundation){ ch.foundation = clone(oldChar.foundation); }
+  if(oldChar.foundation){
+    ch.foundation = clone(oldChar.foundation);
+    pushEvent('milestone', '💝 ' + ch.firstName + ' inherits chairmanship of the ' + (oldChar.lastName||'family') + ' Foundation (endowment ' + fmtMoney(ch.foundation.endowment||0) + ').');
+  }
   // ── Cult: if the founder dies, the movement crumbles unless heir keeps it ──
   if(oldChar.cult && !oldChar.cult.exposed){
     ch.cult = clone(oldChar.cult);
@@ -5684,6 +5774,43 @@ function continueAs(kidName){
     ch.cult.followers = Math.floor((ch.cult.followers||0) * 0.6);
     pushEvent('milestone', '🕯️ ' + ch.firstName + ' inherits leadership of ' + ch.cult.name + ', but 40% of followers drift away.');
   }
+  // ── Flips in progress: incomplete renovations pass to heir as-is ──
+  if(oldChar.flips && oldChar.flips.length){
+    ch.flips = clone(oldChar.flips);
+    pushEvent('milestone', '🔨 ' + ch.flips.length + ' active real-estate flip' + (ch.flips.length===1?'':'s') + ' passed to ' + ch.firstName + '.');
+  }
+  // ── Hustle royalty stream: 50% of parent's monthly royalty across all
+  //   hustles becomes "estate royalty income" the heir collects each year.
+  //   The catalog stays under the parent's name but the cheques arrive.
+  if(oldChar.hustles && Object.keys(oldChar.hustles).length){
+    ch.estateRoyalties = 0;
+    Object.values(oldChar.hustles).forEach(h => {
+      ch.estateRoyalties += Math.floor((h.monthlyIncome||0) * 0.5);
+    });
+    if(ch.estateRoyalties > 0){
+      pushEvent('milestone', '🎵 You inherit estate royalties of ' + fmtMoney(ch.estateRoyalties*12) + '/yr from ' + oldChar.firstName + '\'s catalog.');
+    }
+  }
+  // ── Religion: faith tradition passes to descendants ──
+  if(oldChar.religion){
+    ch.religion = oldChar.religion;
+    ch.faith = Math.floor((oldChar.faith||0) * 0.5);
+  }
+  // ── Insurance: keep coverage active ──
+  if(oldChar.insurance){ ch.insurance = clone(oldChar.insurance); }
+  // ── Pets: surviving pets follow the heir home ──
+  if(oldChar.pets && oldChar.pets.length){
+    ch.pets = oldChar.pets.filter(p => p.alive);
+    if(ch.pets.length) pushEvent('milestone', '🐾 ' + ch.pets.length + ' pet(s) followed you home.');
+  }
+  // ── Skill inheritance: 25% of the parent's top three skills, capped at 40 ──
+  if(oldChar.skills){
+    const top = Object.entries(oldChar.skills).sort((a,b) => b[1]-a[1]).slice(0,3);
+    ch.skills = ch.skills || {};
+    top.forEach(([sid, lvl]) => { ch.skills[sid] = Math.min(40, Math.floor(lvl * 0.25)); });
+  }
+  // ── Dynasty reputation: family fame and family stains carry forward ──
+  applyDynastyReputation(ch, oldChar);
   // ── Apply the will: redistribute inheritance if old char set conditions ──
   if(oldChar.will){
     const w = oldChar.will;
@@ -9276,19 +9403,78 @@ function inheritAs(kidName, mode){
   // Inherit real assets
   if(inheritsHouse && oldChar.houseId && oldChar.houseId !== 'family') ch.houseId = oldChar.houseId;
   if(inheritsCar && oldChar.carId && oldChar.carId !== 'none') ch.carId = oldChar.carId;
-  // Trust pass-through
-  if(oldChar.trust && oldChar.trust.generations > 0){
-    ch.trust = {
-      amount: oldChar.trust.amount,
-      generations: oldChar.trust.generations - 1,
-      setUpAt: oldChar.trust.setUpAt,
-    };
-    ch.money += ch.trust.amount;
+  // Trust pass-through (handle both old object-style and new numeric-style)
+  if(oldChar.trust){
+    if(typeof oldChar.trust === 'object' && oldChar.trust.generations > 0){
+      ch.trust = {
+        amount: oldChar.trust.amount,
+        generations: oldChar.trust.generations - 1,
+        setUpAt: oldChar.trust.setUpAt,
+      };
+      ch.money += ch.trust.amount;
+    } else if(typeof oldChar.trust === 'number'){
+      ch.trust = oldChar.trust;
+    }
   }
   // Rooms transfer if inheriting house
   if(inheritsHouse && oldChar.rooms){
     ch.rooms = oldChar.rooms.slice();
   }
+
+  // ─── FULL ASSET TRANSFER ───
+  // Anything else of value the parent built passes to the chosen heir.
+  const clone = v => (v == null ? v : JSON.parse(JSON.stringify(v)));
+  ch.properties  = clone(oldChar.properties)  || [];
+  ch.companies   = clone(oldChar.companies)   || [];
+  ch.flips       = clone(oldChar.flips)       || [];
+  ch.heirlooms   = clone(oldChar.heirlooms)   || [];
+  ch.savings     = oldChar.savings     || 0;
+  ch.investments = oldChar.investments || 0;
+  if(oldChar.insurance){ ch.insurance = clone(oldChar.insurance); }
+  ch.properties.forEach(p => { p.inheritedFrom = oldChar.firstName + ' ' + oldChar.lastName; });
+  ch.companies.forEach(co => { co.inheritedFrom = oldChar.firstName + ' ' + oldChar.lastName; });
+  ch.heirlooms.forEach(hr => {
+    hr.history = hr.history || [];
+    hr.history.push({ gen: LIFE.generation, note: 'passed to ' + ch.firstName });
+    const type = (typeof HEIRLOOM_TYPES !== 'undefined') ? HEIRLOOM_TYPES.find(t => t.id === hr.typeId) : null;
+    if(type){
+      Object.entries(type.bonus).forEach(([k,v]) => { if(ch[k] != null) ch[k] = clamp(ch[k] + v, 0, 100); });
+    }
+  });
+  if(oldChar.foundation){
+    ch.foundation = clone(oldChar.foundation);
+    pushEvent('milestone', '💝 ' + ch.firstName + ' inherits chairmanship of the ' + (oldChar.lastName||'family') + ' Foundation (endowment ' + fmtMoney(ch.foundation.endowment||0) + ').');
+  }
+  if(oldChar.cult && !oldChar.cult.exposed){
+    ch.cult = clone(oldChar.cult);
+    ch.cult.founded = ch.age;
+    ch.cult.followers = Math.floor((ch.cult.followers||0) * 0.6);
+    pushEvent('milestone', '🕯️ ' + ch.firstName + ' inherits leadership of ' + ch.cult.name + ', but 40% of followers drift away.');
+  }
+  if(oldChar.hustles && Object.keys(oldChar.hustles).length){
+    ch.estateRoyalties = 0;
+    Object.values(oldChar.hustles).forEach(h => {
+      ch.estateRoyalties += Math.floor((h.monthlyIncome||0) * 0.5);
+    });
+    if(ch.estateRoyalties > 0){
+      pushEvent('milestone', '🎵 You inherit estate royalties of ' + fmtMoney(ch.estateRoyalties*12) + '/yr from ' + oldChar.firstName + '\'s catalog.');
+    }
+  }
+  if(oldChar.religion){
+    ch.religion = oldChar.religion;
+    ch.faith = Math.floor((oldChar.faith||0) * 0.5);
+  }
+  if(oldChar.pets && oldChar.pets.length){
+    ch.pets = oldChar.pets.filter(p => p.alive);
+    if(ch.pets.length) pushEvent('milestone', '🐾 ' + ch.pets.length + ' pet(s) followed you home.');
+  }
+  if(oldChar.skills){
+    const top = Object.entries(oldChar.skills).sort((a,b) => b[1]-a[1]).slice(0,3);
+    ch.skills = ch.skills || {};
+    top.forEach(([sid, lvl]) => { ch.skills[sid] = Math.min(40, Math.floor(lvl * 0.25)); });
+  }
+  // ─── DYNASTY REPUTATION CARRIES FORWARD ───
+  if(typeof applyDynastyReputation === 'function') applyDynastyReputation(ch, oldChar);
 
   LIFE.char = ch;
   let modeText = '';

@@ -3091,6 +3091,10 @@ function loadLife(){
         if(!c.will) c.will = { conditions: [], disinherited: [], primaryHeir: null, allowLawsuits: true };
         if(c.estateRoyalties == null) c.estateRoyalties = 0;
         if(!c.hustles) c.hustles = {};
+        if(!c.memories) c.memories = [];
+        if(!c.personalityTraits) c.personalityTraits = [];
+        if(c.partner && !c.partner.memories) c.partner.memories = [];
+        (c.children || []).forEach(k => { if(!k.memories) k.memories = []; });
         if(!c.insurance) c.insurance = {home:false, health:false, life:false, auto:false};
         if(!c.properties) c.properties = [];
         if(!c.companies) c.companies = [];
@@ -3146,6 +3150,10 @@ function enterGame(){
 function pushBirthEvents(){
   const c = LIFE.char;
   const country = COUNTRIES[c.country];
+  // Seed earliest memory: born wealthy / born poor → shapes adult crystallized traits
+  if((c.inheritance || 0) >= 5000000){
+    if(typeof recordMemory === 'function') recordMemory('rich_at_birth', 5, 'inheritance');
+  }
   // Assign 2 random personality traits at birth (no conflicts: opt vs pess, intro vs extro)
   const conflicting = { optimist:'pessimist', pessimist:'optimist', introvert:'extrovert', extrovert:'introvert', generous:'greedy', greedy:'generous' };
   const pool = TRAITS.slice().sort(() => Math.random() - 0.5);
@@ -3278,6 +3286,15 @@ function ageUp(){
   // banking interest tick
   processBankingInterest();
   processSideHustles();
+  // Identity layer — runs once per year after stats settle
+  applyTraitDrifts();
+  crystallizeTraits();
+  rollRelationshipFlashbacks();
+  rollCareerEvent();
+  checkChapterTransition();
+  // World ledger & difficulty pass
+  tickWorldLedger();
+  rollMacroDifficulty();
   // Estate royalties flow to the heir every year (50% of parent's hustle income)
   if(LIFE.char.estateRoyalties){
     const annual = LIFE.char.estateRoyalties * 12;
@@ -3400,8 +3417,8 @@ function ageOthers(){
           par.alive = false;
           pushEvent('death', 'Your ' + (p==='mom'?'mother':'father') + ' ' + par.firstName + ' passed away at age ' + par.age + '.');
           c.happiness = Math.max(0, c.happiness - 25);
-          if(p==='mom' && !c.flags.momDeath){ c.flags.momDeath = true; c.money += 20000; pushEvent('milestone', 'You inherited ' + fmtMoney(20000) + ' from your mother.'); }
-          if(p==='dad' && !c.flags.dadDeath){ c.flags.dadDeath = true; c.money += 15000; pushEvent('milestone', 'You inherited ' + fmtMoney(15000) + ' from your father.'); }
+          if(p==='mom' && !c.flags.momDeath){ c.flags.momDeath = true; c.money += 20000; pushEvent('milestone', 'You inherited ' + fmtMoney(20000) + ' from your mother.'); recordMemory('parent_death', c.age < 18 ? 9 : 6, 'mom'); }
+          if(p==='dad' && !c.flags.dadDeath){ c.flags.dadDeath = true; c.money += 15000; pushEvent('milestone', 'You inherited ' + fmtMoney(15000) + ' from your father.'); recordMemory('parent_death', c.age < 18 ? 9 : 6, 'dad'); }
         }
       }
     }
@@ -3763,6 +3780,10 @@ function renderActionBar(){
      || c.reality === 'magical'){
     btns.push({lbl:'🏛️ Office of Power', fn:'openOfficeOfPower()'});
   }
+  // World Ledger appears once any act has been logged on this dynasty
+  if(LIFE.world && LIFE.world.ledger && LIFE.world.ledger.acts && LIFE.world.ledger.acts.length){
+    btns.push({lbl:'🌐 World Ledger', fn:'openWorldLedger()'});
+  }
   if(a >= 18) btns.push({lbl:'🏛️ Gov', fn:'openGovernment()'});
   // City + Faith for anyone who can leave the house
   if(a >= 6) btns.push({lbl:'🏙️ City', fn:'openCityMap()'});
@@ -3812,7 +3833,15 @@ function renderCharCard(){
   else if(c.retired) occ = '⛱ Retired';
   else occ = 'Unemployed';
   document.getElementById('char-occ').textContent = occ;
-  document.getElementById('char-loc').textContent = c.city + ', ' + COUNTRIES[c.country].short;
+  // Append the current life-chapter and any crystallized personality traits
+  const ch = chapterFor(c.age);
+  const pTraits = (c.personalityTraits||[]).map(id => {
+    const t = PERSONALITY_TRAITS.find(x => x.id === id);
+    return t ? t.label : null;
+  }).filter(Boolean);
+  const subParts = [c.city + ', ' + COUNTRIES[c.country].short, ch.ico + ' ' + ch.label];
+  if(pTraits.length) subParts.push(pTraits.join(' · '));
+  document.getElementById('char-loc').textContent = subParts.join(' · ');
 }
 
 function renderStats(){
@@ -5621,13 +5650,79 @@ function openFamilyTree(){
 // ═══════════════════════════════════════════════════════════════════════
 //  DEATH SCREEN — continue as descendant
 // ═══════════════════════════════════════════════════════════════════════
+function deathEulogy(c){
+  // Build a narrative summary of what this person actually did with their life.
+  const parts = [];
+  const era = c.born ? (c.born < 1950 ? 'in a different century' : c.born < 2000 ? 'before the millennium' : 'in the modern era') : '';
+  // Opening line — country + era
+  parts.push(c.firstName + ' ' + c.lastName + ' lived ' + c.age + ' years' + (c.born ? ', born ' + c.born + ' in ' + c.city + ', ' + COUNTRIES[c.country].name : '') + '.');
+  // Career arc
+  if(c.career && CAREERS[c.career.key]){
+    const def = CAREERS[c.career.key];
+    const finalTitle = def.rungs[c.career.rungIdx].title;
+    parts.push('They worked their way up to ' + finalTitle + ' in ' + def.name.toLowerCase() + '.');
+  } else if(c.retired){
+    parts.push('They retired before the end.');
+  }
+  // Wealth + assets
+  const nw = totalEstateValue(c);
+  if(nw >= 1_000_000_000_000){ parts.push('They died holding ' + fmtMoney(nw) + ' — a fortune larger than most nations.'); }
+  else if(nw >= 1_000_000_000){ parts.push('Their final net worth was ' + fmtMoney(nw) + '.'); }
+  else if(nw >= 100_000){      parts.push('They left behind ' + fmtMoney(nw) + '.'); }
+  else if(nw <= 0){            parts.push('They died penniless.'); }
+  // Family
+  const liveKids = (c.children||[]).filter(k => k.alive).length;
+  const deadKids = (c.children||[]).filter(k => !k.alive).length;
+  if(c.partner && c.partner.married){
+    parts.push('They were married to ' + c.partner.firstName + ' ' + c.partner.lastName + '.');
+  } else if(c.children && c.children.length){
+    parts.push('They never married.');
+  }
+  if(liveKids){
+    parts.push('They left ' + liveKids + ' surviving child' + (liveKids===1?'':'ren') + (deadKids ? ' (and outlived ' + deadKids + ')' : '') + '.');
+  }
+  // Empire
+  if((c.companies||[]).length) parts.push('They owned ' + c.companies.length + ' compan' + (c.companies.length===1?'y':'ies') + '.');
+  if((c.properties||[]).length) parts.push('They held ' + c.properties.length + ' propert' + (c.properties.length===1?'y':'ies') + '.');
+  if(c.foundation && (c.foundation.totalGiven||0) > 0) parts.push('Their foundation gave away ' + fmtMoney(c.foundation.totalGiven) + ' in their lifetime.');
+  if(c.cult) parts.push('They led the ' + c.cult.kind + ' "' + c.cult.name + '" with ' + (c.cult.followers||0) + ' followers.');
+  // Personality
+  const pTraits = (c.personalityTraits||[]).map(id => { const t = PERSONALITY_TRAITS.find(x=>x.id===id); return t?t.label:null; }).filter(Boolean);
+  if(pTraits.length) parts.push('Those who knew them remembered them as ' + pTraits.join(', ').toLowerCase() + '.');
+  // World acts — pull from LIFE.legacy, this character's entries
+  const myActs = (LIFE.legacy||[]).filter(l => l.name === (c.firstName + ' ' + c.lastName));
+  if(myActs.length){
+    const top = myActs.slice(-3).map(a => a.deed);
+    parts.push('In their lifetime they ' + top.join('; ') + '.');
+  }
+  // Ledger toll
+  const ledger = LIFE.world && LIFE.world.ledger;
+  if(ledger){
+    if(ledger.livesEnded > 1_000_000 || ledger.livesSaved > 1_000_000){
+      const net = ledger.livesSaved - ledger.livesEnded;
+      if(net > 0)      parts.push('The dynasty\'s ledger by their death: net ' + fmtBig(net) + ' lives saved.');
+      else if(net < 0) parts.push('The dynasty\'s ledger by their death: net ' + fmtBig(-net) + ' lives ended.');
+    }
+  }
+  // Final beat
+  const score = (c.karma||0) - (50 - (c.fame||0));
+  if(c.karma >= 80) parts.push('They will be remembered as a force for good.');
+  else if(c.karma <= 15) parts.push('History will not be kind to them.');
+  else if((c.fame||0) >= 70) parts.push('Their name was on every wall and every screen.');
+  else if(c.age >= 75 && liveKids) parts.push('They went quietly. The story continues with their children.');
+  parts.push('Cause of death: ' + (c.cause || 'unknown') + '.');
+  return parts.join(' ');
+}
+
 function showDeathScreen(){
   const c = LIFE.char;
   const occ = c.career ? CAREERS[c.career.key].rungs[c.career.rungIdx].title : 'No career';
   const sub = document.getElementById('death-sub');
   sub.textContent = c.firstName + ' ' + c.lastName + ' · ' + c.born + '–' + (c.born+c.age);
   const summary = document.getElementById('death-summary');
+  const eulogy = deathEulogy(c);
   summary.innerHTML = ''
+    + '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;font-family:Georgia,serif;font-size:14px;line-height:1.6;color:var(--t1);font-style:italic;">' + eulogy + '</div>'
     + '<div class="death-stat"><span class="death-stat-k">Age at death</span><span class="death-stat-v">' + c.age + '</span></div>'
     + '<div class="death-stat"><span class="death-stat-k">Cause</span><span class="death-stat-v">' + c.cause + '</span></div>'
     + '<div class="death-stat"><span class="death-stat-k">Final occupation</span><span class="death-stat-v">' + occ + '</span></div>'
@@ -6064,7 +6159,7 @@ function continueAs(kidName){
       pushEvent('good', '📜 As primary heir, ' + ch.firstName + ' received a 30% larger share.');
     }
   }
-  ch.born   = (new Date().getFullYear()) - ch.age;
+  ch.born   = (oldChar.born || (new Date().getFullYear() - oldChar.age)) + (oldChar.age - kid.age);
   LIFE.char = ch;
   // Build a human-readable inheritance summary
   const bits = [];
@@ -6482,6 +6577,582 @@ function rollApocalypseEvent(){
       if(fx.faith)     c.faith     = clamp(c.faith + fx.faith, 0, 100);
       if(ev.money)     c.money    += ev.money;
       pushEvent('death', '☢ ' + ev.text, fx);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PERSONALITY MEMORY — formative experiences crystallize into adult traits.
+//  Each ageUp we scan recent memories; if a pattern hits a threshold, a
+//  permanent personality trait is added that biases future stat drifts,
+//  event chances, and relationship outcomes.
+// ═══════════════════════════════════════════════════════════════════════
+function recordMemory(type, intensity, source){
+  const c = LIFE.char;
+  if(!c.memories) c.memories = [];
+  c.memories.push({ age: c.age, type, intensity, source: source || null });
+  // Trim to most recent 80 — keeps save small, trait check uses last 30
+  if(c.memories.length > 80) c.memories.splice(0, c.memories.length - 80);
+}
+
+const PERSONALITY_TRAITS = [
+  // Childhood (≤ 18) patterns
+  {id:'grief_shaped',  needs:{type:'parent_death', count:1, before:18},
+   label:'Grief-shaped', desc:'Lost a parent young; happiness ceiling lower, empathy higher.',
+   apply:c => { c._happyCeiling = 85; c._empathyBonus = (c._empathyBonus||0) + 4; }},
+  {id:'neglected',     needs:{type:'parent_neglect', count:3, before:14},
+   label:'Insecure',    desc:'Felt unwanted as a child; harder to trust, slower compatibility growth.',
+   apply:c => { c._trustPenalty = (c._trustPenalty||0) + 12; }},
+  {id:'bullied_kid',   needs:{type:'bullied', count:2, before:16},
+   label:'Defensive',   desc:'Bullied young; quicker to anger, +smarts drift, -looks drift.',
+   apply:c => { c._smartsDrift = (c._smartsDrift||0) + 1; c._looksDrift = (c._looksDrift||0) - 1; }},
+  {id:'religious_awakening', needs:{type:'religious_awakening', count:1, before:25},
+   label:'Devout',      desc:'A spiritual moment shaped you; faith holds, karma drifts up slowly.',
+   apply:c => { c._faithFloor = 30; c._karmaDrift = (c._karmaDrift||0) + 0.5; }},
+  {id:'silver_spoon',  needs:{type:'rich_at_birth', count:1, before:5},
+   label:'Entitled',    desc:'Born into money; +crime temptation, karma drifts down.',
+   apply:c => { c._karmaDrift = (c._karmaDrift||0) - 0.4; c._crimeAppetite = (c._crimeAppetite||0) + 6; }},
+  // Adult patterns
+  {id:'betrayed_lover', needs:{type:'cheated_on', count:1, before:99},
+   label:'Wounded',     desc:'A partner cheated; future compat suffers, ceiling lower.',
+   apply:c => { c._compatPenalty = (c._compatPenalty||0) + 8; }},
+  {id:'self_made',      needs:{type:'wealth_gain', count:3, before:45},
+   label:'Self-made',   desc:'Built it yourself; resilient to financial loss, +karma drift.',
+   apply:c => { c._lossResilience = true; c._karmaDrift = (c._karmaDrift||0) + 0.3; }},
+  {id:'addict_lineage', needs:{type:'substance_use', count:4, before:99},
+   label:'Addictive personality', desc:'Hooked easily; addictions cost more and stick longer.',
+   apply:c => { c._addictionMultiplier = 1.5; }},
+  {id:'war_survivor',   needs:{type:'war_event', count:1, before:99},
+   label:'Survival mindset', desc:'You came through something terrible; +karma is harder to gain, -loss-resilience grows.',
+   apply:c => { c._happyCeiling = 80; c._lossResilience = true; }},
+  {id:'absent_parent',  needs:{type:'neglected_child', count:4, before:99},
+   label:'Distant parent', desc:'Your kids will remember you not being there.',
+   apply:c => { c._parentDistance = true; }},
+];
+
+function crystallizeTraits(){
+  const c = LIFE.char;
+  if(!c.memories || c.memories.length === 0) return;
+  if(!c.personalityTraits) c.personalityTraits = [];
+  PERSONALITY_TRAITS.forEach(t => {
+    if(c.personalityTraits.includes(t.id)) return;
+    const need = t.needs;
+    const matches = c.memories.filter(m =>
+      m.type === need.type && (!need.before || m.age <= need.before)
+    );
+    if(matches.length >= need.count){
+      c.personalityTraits.push(t.id);
+      t.apply(c);
+      pushEvent('milestone', '🧬 New personality trait formed: ' + t.label + ' — ' + t.desc);
+    }
+  });
+}
+
+// Apply per-year stat drifts from crystallized traits
+function applyTraitDrifts(){
+  const c = LIFE.char;
+  if(c._karmaDrift)  c.karma  = clamp(c.karma  + c._karmaDrift,  0, 100);
+  if(c._smartsDrift) c.smarts = clamp(c.smarts + c._smartsDrift, 0, 100);
+  if(c._looksDrift)  c.looks  = clamp(c.looks  + c._looksDrift,  0, 100);
+  if(c._happyCeiling != null && c.happiness > c._happyCeiling){
+    c.happiness = c._happyCeiling;
+  }
+  if(c._faithFloor != null && c.faith < c._faithFloor){
+    c.faith = c._faithFloor;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  RELATIONSHIP MEMORY — NPCs remember specific incidents and reference
+//  them years later. Affects compat, can fire flashback events.
+// ═══════════════════════════════════════════════════════════════════════
+function addPartnerMemory(kind, weight, note){
+  const c = LIFE.char;
+  if(!c.partner) return;
+  c.partner.memories = c.partner.memories || [];
+  c.partner.memories.push({ age: c.age, kind, weight, note });
+  if(c.partner.memories.length > 30){
+    c.partner.memories.splice(0, c.partner.memories.length - 30);
+  }
+}
+function addChildMemory(kidName, kind, weight, note){
+  const c = LIFE.char;
+  const kid = (c.children||[]).find(k => k.name === kidName);
+  if(!kid) return;
+  kid.memories = kid.memories || [];
+  kid.memories.push({ age: c.age, kidAge: kid.age, kind, weight, note });
+  if(kid.memories.length > 30){ kid.memories.splice(0, kid.memories.length - 30); }
+}
+
+// Each ageUp roll: NPCs occasionally re-surface a memory that still stings.
+function rollRelationshipFlashbacks(){
+  const c = LIFE.char;
+  // Partner: scan their memories, weight by intensity * time decay
+  if(c.partner && c.partner.memories && c.partner.memories.length){
+    if(Math.random() < 0.25){
+      // Pick the heaviest memory still unresolved
+      const m = c.partner.memories.slice().sort((a,b) => b.weight - a.weight)[0];
+      const yearsAgo = c.age - m.age;
+      if(m.weight >= 6){
+        const drop = Math.max(2, Math.floor(m.weight * 0.7));
+        c.partner.compat = clamp((c.partner.compat||50) - drop, 0, 100);
+        pushEvent('bad', '💔 ' + c.partner.firstName + ' brought up ' + (m.note || m.kind) + ' (' + yearsAgo + ' years ago). Compat −' + drop + '.');
+      } else if(m.weight >= 3 && yearsAgo >= 5){
+        pushEvent('', '💭 ' + c.partner.firstName + ' mentioned ' + (m.note || m.kind) + ' over dinner. The room went quiet.');
+      }
+    }
+  }
+  // Children: resentful kids surface their own grievances after age 14
+  (c.children||[]).forEach(k => {
+    if(!k.alive || k.age < 14) return;
+    if(!k.memories || !k.memories.length) return;
+    if(Math.random() < 0.10){
+      const m = k.memories.slice().sort((a,b) => b.weight - a.weight)[0];
+      if(m.weight >= 5){
+        k.rapport = clamp((k.rapport||50) - 8, 0, 100);
+        pushEvent('bad', '😠 ' + k.name + ' (' + k.age + ') said: "You remember when ' + (m.note || m.kind) + '? I do." Rapport −8.');
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  CAREER-SPECIFIC EVENT POOLS — doctor / criminal / musician / CEO etc.
+//  Each career key has its own flavor pool. One fires per year on top of
+//  the generic LIFE_EVENTS roll.
+// ═══════════════════════════════════════════════════════════════════════
+const CAREER_EVENTS = {
+  doctor: [
+    {p:0.06, text:'🩺 You saved a coding patient in the ED. Hospital named you doctor of the month.', fx:{karma:+6, happiness:+5}},
+    {p:0.04, text:'⚖️ A malpractice claim was filed against you. Settled out of court.',                fx:{money:-180000, happiness:-10}},
+    {p:0.05, text:'😩 36-hour shift. You barely remember driving home.',                                  fx:{health:-4, happiness:-6}},
+    {p:0.03, text:'📜 You published a case in NEJM — a small one but yours.',                              fx:{smarts:+4, fame:+3}},
+    {p:0.04, text:'💔 A child died on your table. You took it home with you.',                              fx:{happiness:-12, _mem:'war_event'}},
+  ],
+  lawyer: [
+    {p:0.06, text:'⚖️ Won a high-profile case — billable hours through the roof.',  fx:{money:+85000, fame:+4}},
+    {p:0.04, text:'⚖️ Lost on a technicality. The client is going to prison anyway.', fx:{karma:-3, happiness:-7}},
+    {p:0.03, text:'📰 A prosecutor leaked your client list. Reputation hit.',         fx:{fame:+3, karma:-2}},
+    {p:0.04, text:'🤝 A mentor at your firm took you under their wing.',              fx:{smarts:+3, _mem:'mentor'}},
+  ],
+  politician: [
+    {p:0.05, text:'🪧 Constituents protested outside your office.',                fx:{happiness:-6}},
+    {p:0.04, text:'💼 A lobbyist offered you tickets you should not have taken.', fx:{money:+30000, karma:-4, _mem:'corruption_temptation'}},
+    {p:0.05, text:'📰 A puff-piece profile ran. Your numbers tick up.',           fx:{fame:+5}},
+    {p:0.03, text:'🗳️ A primary challenger appeared — early polls neck-and-neck.', fx:{happiness:-4}},
+  ],
+  ceo: [
+    {p:0.05, text:'🏢 You laid off 8% of staff this quarter. Stock up. Morale collapsed.', fx:{karma:-5, _mem:'layoff_decision'}},
+    {p:0.04, text:'📈 Acquired a smaller competitor in a hostile takeover.',                fx:{fame:+4, karma:-3}},
+    {p:0.04, text:'📰 A scandal hit your firm. You had to address shareholders.',           fx:{happiness:-8, fame:+3}},
+    {p:0.03, text:'😩 The board pressured you over earnings. You slept 4 hrs a night.',     fx:{health:-4, happiness:-6}},
+  ],
+  musician: [
+    {p:0.06, text:'🎵 A song of yours went viral. Streams climbed for a week.',          fx:{fame:+8, money:+12000}},
+    {p:0.04, text:'🍷 An after-party got out of hand. Tabloids ran it the next day.',    fx:{health:-4, fame:+2, karma:-2, _mem:'substance_use'}},
+    {p:0.03, text:'🎤 A fan wrote you about a song that got them through grief.',         fx:{happiness:+8, karma:+3}},
+    {p:0.03, text:'📞 Your label dropped you. The contract was harsher than you read.', fx:{money:-40000, happiness:-12}},
+  ],
+  actor: [
+    {p:0.06, text:'🎬 Cast in a major studio film.',                            fx:{fame:+10, money:+60000}},
+    {p:0.04, text:'📰 A paparazzi photo took on a life of its own.',            fx:{fame:+5, happiness:-6}},
+    {p:0.03, text:'🏆 Award nomination announced.',                              fx:{fame:+6, happiness:+8}},
+    {p:0.03, text:'😩 A typecasting trap closed around you. Nothing new offered.', fx:{happiness:-7}},
+  ],
+  scientist: [
+    {p:0.05, text:'🔬 A breakthrough paper got picked up by Nature.',         fx:{smarts:+5, fame:+5}},
+    {p:0.04, text:'💰 NIH funded your grant proposal.',                       fx:{money:+90000, smarts:+3}},
+    {p:0.03, text:'🔁 A rival group scooped your result by three weeks.',     fx:{happiness:-8, smarts:+1}},
+  ],
+  pilot: [
+    {p:0.04, text:'✈️ A near-miss in heavy turbulence. You walked off the jet shaking.', fx:{health:-3, _mem:'war_event'}},
+    {p:0.05, text:'🌍 Layover in a city you fell in love with.',                       fx:{happiness:+7}},
+    {p:0.03, text:'💼 Promoted to captain.',                                            fx:{money:+30000, fame:+2}},
+  ],
+  athlete: [
+    {p:0.05, text:'🏆 You won a major championship.',                                  fx:{fame:+12, money:+200000, health:-2}},
+    {p:0.04, text:'🤕 An injury sidelined you for the season.',                         fx:{health:-15, happiness:-12, _mem:'war_event'}},
+    {p:0.04, text:'💊 Trainer suggested something you should not have taken.',          fx:{karma:-4, _mem:'substance_use'}},
+  ],
+  military: [
+    {p:0.05, text:'🎖️ Decorated for valor in action.',                                  fx:{fame:+6, karma:+4}},
+    {p:0.04, text:'💔 Lost someone in your unit.',                                       fx:{happiness:-15, _mem:'war_event'}},
+    {p:0.03, text:'🪖 Deployed overseas for nine months.',                               fx:{health:-4, money:+18000}},
+  ],
+  criminal: [
+    {p:0.06, text:'👀 You started seeing tails everywhere — paranoia or real?',       fx:{happiness:-8, _mem:'war_event'}},
+    {p:0.05, text:'🤐 A snitch turned. You moved up your timeline.',                   fx:{karma:-4, happiness:-6}},
+    {p:0.05, text:'💵 A score paid bigger than expected.',                              fx:{money:+45000, karma:-4}},
+    {p:0.03, text:'🪦 A rival went missing. You did not ask why.',                       fx:{karma:-8}},
+  ],
+  teacher: [
+    {p:0.05, text:'🍎 A former student returned to thank you for changing their life.', fx:{happiness:+10, karma:+5}},
+    {p:0.04, text:'📚 Parents complained to admin about your syllabus.',                 fx:{happiness:-5}},
+    {p:0.03, text:'😩 Under-paid another year. Considered quitting.',                     fx:{happiness:-6, money:-1000}},
+  ],
+};
+
+function rollCareerEvent(){
+  const c = LIFE.char;
+  if(!c.career || !c.career.key) return;
+  const pool = CAREER_EVENTS[c.career.key];
+  if(!pool) return;
+  for(const e of pool){
+    if(Math.random() < e.p){
+      const fx = e.fx || {};
+      if(fx.money)      c.money     += fx.money;
+      if(fx.karma)      c.karma      = clamp(c.karma + fx.karma, 0, 100);
+      if(fx.happiness)  c.happiness  = clamp(c.happiness + fx.happiness, 0, 100);
+      if(fx.health)     c.health     = clamp(c.health + fx.health, 0, 100);
+      if(fx.smarts)     c.smarts     = clamp(c.smarts + fx.smarts, 0, 100);
+      if(fx.looks)      c.looks      = clamp(c.looks + fx.looks, 0, 100);
+      if(fx.fame)       c.fame       = clamp((c.fame||0) + fx.fame, 0, 100);
+      if(fx._mem)       recordMemory(fx._mem, 6, c.career.key);
+      pushEvent('career', e.text);
+      return; // one per year
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  LIFE CHAPTERS — tone-shifts the timeline. Cheap, big aesthetic payoff.
+// ═══════════════════════════════════════════════════════════════════════
+const LIFE_CHAPTERS = [
+  {id:'innocence',  label:'Innocence',  min:0,  ico:'🌱'},
+  {id:'rebellion',  label:'Rebellion',  min:13, ico:'🔥'},
+  {id:'ambition',   label:'Ambition',   min:20, ico:'⚡'},
+  {id:'collapse',   label:'The Middle', min:35, ico:'🌊'},
+  {id:'reinvention',label:'Reinvention',min:55, ico:'🔧'},
+  {id:'legacy',     label:'Legacy',     min:70, ico:'🏛️'},
+];
+function chapterFor(age){
+  let cur = LIFE_CHAPTERS[0];
+  LIFE_CHAPTERS.forEach(ch => { if(age >= ch.min) cur = ch; });
+  return cur;
+}
+function checkChapterTransition(){
+  const c = LIFE.char;
+  const ch = chapterFor(c.age);
+  if(!c._lastChapter){ c._lastChapter = ch.id; return; }
+  if(c._lastChapter !== ch.id){
+    pushEvent('milestone', ch.ico + ' ── Chapter ' + ch.label.toUpperCase() + ' ──');
+    c._lastChapter = ch.id;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  WORLD LEDGER — every world-shaping act leaves a number behind.
+//  Debt outstanding, pandemic death toll, displaced, suffering / benefit
+//  index, media sentiment. Updates each year so consequences feel alive.
+//  All entries persist on LIFE.world.ledger across every generation; the
+//  dynasty either gets memorialized for the goods, scrutinized for the
+//  evils, forever.
+// ═══════════════════════════════════════════════════════════════════════
+const WORLD_LEDGER_ACTS = {
+  // GOOD — memorial
+  pay_world_debt:             {good:true,  name:'Sovereign Debt Cleared',   ico:'🌍', lives:0,             debtCleared:80_000_000_000_000},
+  cure_all_disease:           {good:true,  name:'Cured All Disease',         ico:'🧬', lives:4_000_000_000},
+  end_hunger:                 {good:true,  name:'Ended World Hunger',         ico:'🌾', lives:800_000_000},
+  cure_aging:                 {good:true,  name:'Cured Biological Aging',     ico:'⏳', lives:8_000_000_000},
+  global_ubi:                 {good:true,  name:'Funded Global UBI',          ico:'💵', lives:6_000_000_000},
+  reforest_planet:            {good:true,  name:'Reforested the Planet',      ico:'🌳', lives:0},
+  mass_mind_upload_voluntary: {good:true,  name:'Opened Voluntary Mind-Upload',ico:'🧠', lives:0},
+  aligned_singularity:        {good:true,  name:'Launched Aligned Singularity',ico:'🌐', lives:0},
+  generation_ships:           {good:true,  name:'Launched Generation Ships',  ico:'🚀', lives:0},
+  mass_resurrection:          {good:true,  name:'Resurrected Lost Human Lineages', ico:'⚱️', lives:0},
+  open_all_patents:           {good:true,  name:'Open-Sourced All Patents',   ico:'🔓', lives:0},
+  dyson_swarm:                {good:true,  name:'Built the Dyson Swarm',      ico:'☀️', lives:0},
+  broker_peace:               {good:true,  name:'Brokered a Peace Accord',    ico:'🕊️', lives:500_000},
+  climate_treaty:             {good:true,  name:'Signed Global Climate Treaty', ico:'🌍', lives:0},
+  foreign_aid:                {good:true,  name:'Sent Foreign Aid Package',   ico:'💝', lives:50_000},
+  mars_colony:                {good:true,  name:'Founded First Mars Colony',  ico:'🚀', lives:0},
+  agi_breakthrough:           {good:true,  name:'Achieved AGI',               ico:'🤖', lives:0},
+  find_atlantis_eden:         {good:true,  name:'Located Atlantis & Eden',    ico:'🏛️', lives:0},
+  confirm_multiverse:         {good:true,  name:'Confirmed the Multiverse',   ico:'🌌', lives:0},
+  // EVIL — scrutiny
+  order_genocide:             {good:false, name:'Ordered an Ethnic Cleansing',ico:'☠️', deaths:5_000_000},
+  launch_nuclear_war:         {good:false, name:'Launched Nuclear First Strike', ico:'💥', deaths:2_000_000_000},
+  pharaoh_enslave:            {good:false, name:'Declared Pharaoh — Enslaved Humanity', ico:'⛓️', deaths:50_000_000, enslaved:1_500_000_000},
+  engineer_pandemic:          {good:false, name:'Engineered a Pandemic for Profit', ico:'☣️', deaths:80_000_000},
+  crash_global_currency:      {good:false, name:'Crashed the Global Currencies', ico:'📉', impoverished:3_500_000_000},
+  orbital_death_satellite:    {good:false, name:'Deployed Orbital Weapons Platform', ico:'🛰️', deaths:0},
+  continental_extinction:     {good:false, name:'Geoengineered Continental Extinction', ico:'🌪️', deaths:450_000_000, displaced:200_000_000},
+  cobalt_salted_doomsday:     {good:false, name:'Armed the Cobalt Doomsday Device', ico:'☢️', deaths:0},
+  ethnic_bioweapon:           {good:false, name:'Deployed an Ethnic-Selective Bioweapon', ico:'🧫', deaths:25_000_000},
+  consciousness_hellscape:    {good:false, name:'Built the Consciousness Hellscape', ico:'🧠', trapped:5_000_000},
+  doomsday_bunker_elite:      {good:false, name:'Sealed the Elite Bunker Network', ico:'🔒', deaths:0},
+  buy_country:                {good:false, name:'Bought a Sovereign Nation',   ico:'🚩', enslaved:50_000_000},
+  buy_world_media:            {good:false, name:'Acquired All Major Media',    ico:'📰', deaths:0},
+  force_worship:              {good:false, name:'Forced Worship as God-King',  ico:'👑', deaths:5_000_000},
+  nuclear_test:               {good:false, name:'Conducted a Nuclear Test',    ico:'☢️', deaths:1_000},
+  declare_war:                {good:false, name:'Authorized Military Action',  ico:'⚔️', deaths:80_000},
+  start_war_for_contracts:    {good:false, name:'Engineered a War for Personal Profit', ico:'⚔️', deaths:300_000},
+  spy_op:                     {good:false, name:'Authorized Covert Operation', ico:'🕵️', deaths:500},
+};
+
+function ensureLedger(){
+  LIFE.world.ledger = LIFE.world.ledger || {
+    acts: [],                              // [{moveId, gen, age, name, year, good, ico, deaths, lives, ...}]
+    livesSaved: 0,
+    livesEnded: 0,
+    displaced: 0,
+    impoverished: 0,
+    enslaved: 0,
+    trapped: 0,
+    debtOutstanding: 80_000_000_000_000,   // $80T initial world sovereign debt
+    pandemicDeathToll: 0,                  // ticks while pandemic active
+    outrage: 0,                            // global outrage, 0-100
+    memorials: 0,
+    scrutinies: 0,
+  };
+  return LIFE.world.ledger;
+}
+
+function recordLedgerAct(moveId){
+  const meta = WORLD_LEDGER_ACTS[moveId];
+  if(!meta) return;
+  const l = ensureLedger();
+  const c = LIFE.char;
+  const entry = Object.assign({
+    moveId,
+    gen: LIFE.generation,
+    age: c.age,
+    actorName: c.firstName + ' ' + c.lastName,
+    year: (c.born||0) + c.age,
+  }, meta);
+  l.acts.push(entry);
+  if(meta.lives)        l.livesSaved   += meta.lives;
+  if(meta.deaths)       l.livesEnded   += meta.deaths;
+  if(meta.displaced)    l.displaced    += meta.displaced;
+  if(meta.impoverished) l.impoverished += meta.impoverished;
+  if(meta.enslaved)     l.enslaved     += meta.enslaved;
+  if(meta.trapped)      l.trapped      += meta.trapped;
+  if(meta.debtCleared){ l.debtOutstanding = Math.max(0, l.debtOutstanding - meta.debtCleared); }
+  if(meta.good){
+    l.memorials++;
+    l.outrage = clamp(l.outrage - 8, 0, 100);
+  } else {
+    l.scrutinies++;
+    l.outrage = clamp(l.outrage + 15, 0, 100);
+  }
+}
+
+// Each year: ongoing world effects.
+function tickWorldLedger(){
+  const l = ensureLedger();
+  const w = LIFE.world;
+  // Pandemic still raging? Ticks ~12M deaths per year until contained.
+  if(w.pandemic && !w.diseaseFree){
+    const yearly = 12_000_000;
+    l.pandemicDeathToll += yearly;
+    l.livesEnded += yearly;
+  }
+  // Disease cure ends pandemic and adds to lives saved
+  if(w.diseaseFree && w.pandemic){
+    w.pandemic = false;
+    pushEvent('good', '🧬 The cure ended the pandemic. ' + fmtBig(l.pandemicDeathToll) + ' counted dead; survivors remember.');
+  }
+  // Currency crash: keeps impoverishing while economy < 40
+  if(w.currencyCrash && w.economyHealth < 40 && Math.random() < 0.5){
+    l.impoverished += 80_000_000;
+  }
+  // Debt regrows during economic crisis
+  if(w.economyHealth < 30){
+    l.debtOutstanding += 500_000_000_000;
+  }
+  // UBI quietly reduces debt outstanding via the economy bump
+  if(w.ubiActive){
+    l.debtOutstanding = Math.max(0, l.debtOutstanding - 200_000_000_000);
+  }
+  // Pharaoh rule actively kills people
+  if(w.pharaohRule && Math.random() < 0.4){
+    const yearly = 2_000_000;
+    l.livesEnded += yearly;
+    l.enslaved   += 30_000_000;
+  }
+  // Hellscape adds more trapped
+  if(w.hellscape && Math.random() < 0.3){
+    l.trapped += 100_000;
+  }
+  // Cobalt doomsday — biosphere dying ramps deaths fast
+  if(w.biosphereDead){
+    l.livesEnded += 200_000_000;
+  }
+  // Outrage decays naturally
+  l.outrage = clamp(l.outrage - 2, 0, 100);
+  // Memorials lift outrage further if balance is positive
+  if(l.memorials > l.scrutinies + 3) l.outrage = clamp(l.outrage - 2, 0, 100);
+}
+
+function fmtBig(n){
+  if(!n) return '0';
+  const a = Math.abs(n);
+  if(a >= 1e12) return (n/1e12).toFixed(2) + 'T';
+  if(a >= 1e9)  return (n/1e9).toFixed(2)  + 'B';
+  if(a >= 1e6)  return (n/1e6).toFixed(1)  + 'M';
+  if(a >= 1e3)  return (n/1e3).toFixed(1)  + 'k';
+  return String(Math.round(n));
+}
+
+function openWorldLedger(){
+  const l = ensureLedger();
+  const w = LIFE.world;
+  const net = l.livesSaved - l.livesEnded;
+  const score = l.memorials - l.scrutinies;
+  const sentiment = l.outrage >= 60 ? 'OUTRAGE' : l.outrage >= 30 ? 'TENSE' : score >= 3 ? 'REVERENT' : 'INDIFFERENT';
+  const sentCol = l.outrage >= 60 ? 'var(--crimson)' : l.outrage >= 30 ? 'var(--gold)' : 'var(--green)';
+  let html = ''
+    + '<div style="padding:14px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-h);font-size:18px;color:var(--accent2);margin-bottom:10px;">Cumulative Impact</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;font-family:var(--font-m);font-size:12px;">'
+    + '<div><span style="color:var(--green);font-size:18px;font-weight:700;">' + fmtBig(l.livesSaved) + '</span><br><span style="color:var(--t3);font-size:10px;letter-spacing:.18em;">LIVES SAVED</span></div>'
+    + '<div><span style="color:var(--crimson);font-size:18px;font-weight:700;">' + fmtBig(l.livesEnded) + '</span><br><span style="color:var(--t3);font-size:10px;letter-spacing:.18em;">LIVES ENDED</span></div>'
+    + '<div><span style="color:' + (net>=0?'var(--green)':'var(--crimson)') + ';font-size:16px;font-weight:700;">' + (net>=0?'+':'') + fmtBig(net) + '</span><br><span style="color:var(--t3);font-size:10px;letter-spacing:.18em;">NET LIVES</span></div>'
+    + '<div><span style="color:var(--gold);font-size:16px;font-weight:700;">' + fmtBig(l.displaced) + '</span><br><span style="color:var(--t3);font-size:10px;letter-spacing:.18em;">DISPLACED</span></div>'
+    + '<div><span style="color:var(--gold);font-size:16px;font-weight:700;">' + fmtBig(l.impoverished) + '</span><br><span style="color:var(--t3);font-size:10px;letter-spacing:.18em;">IMPOVERISHED</span></div>'
+    + '<div><span style="color:var(--crimson);font-size:16px;font-weight:700;">' + fmtBig(l.enslaved) + '</span><br><span style="color:var(--t3);font-size:10px;letter-spacing:.18em;">ENSLAVED / SUBJUGATED</span></div>'
+    + '<div><span style="color:var(--crimson);font-size:16px;font-weight:700;">' + fmtBig(l.trapped) + '</span><br><span style="color:var(--t3);font-size:10px;letter-spacing:.18em;">TRAPPED IN HELLSCAPE</span></div>'
+    + '<div><span style="color:var(--accent2);font-size:16px;font-weight:700;">' + fmtMoney(l.debtOutstanding) + '</span><br><span style="color:var(--t3);font-size:10px;letter-spacing:.18em;">WORLD DEBT REMAINING</span></div>'
+    + '</div>'
+    + '<div style="margin-top:14px;padding-top:12px;border-top:1px solid #2a1f3d;display:flex;justify-content:space-between;align-items:center;">'
+    + '<div><span style="color:var(--t3);font-size:11px;letter-spacing:.2em;">MEDIA SENTIMENT</span><br>'
+    + '<span style="color:' + sentCol + ';font-size:14px;font-weight:700;letter-spacing:.15em;">' + sentiment + '</span> '
+    + '<span style="color:var(--t3);font-size:11px;">(outrage ' + l.outrage + '/100)</span></div>'
+    + '<div style="text-align:right;"><span style="color:var(--t3);font-size:11px;letter-spacing:.2em;">DYNASTY SCORE</span><br>'
+    + '<span style="color:var(--green);font-weight:700;">' + l.memorials + ' memorial' + (l.memorials===1?'':'s') + '</span> · '
+    + '<span style="color:var(--crimson);font-weight:700;">' + l.scrutinies + ' scrutin' + (l.scrutinies===1?'y':'ies') + '</span></div>'
+    + '</div>'
+    + '</div>';
+  // Active world conditions
+  const flags = [];
+  if(w.pandemic)             flags.push({t:'☣️ Pandemic ongoing — '+fmtBig(l.pandemicDeathToll)+' dead so far', bad:true});
+  if(w.warCriminal)          flags.push({t:'☠️ ICC indictment active', bad:true});
+  if(w.pharaohRule)          flags.push({t:'⛓️ Pharaoh rule — labor camps still running', bad:true});
+  if(w.godKing)              flags.push({t:'👑 God-King decree in effect', bad:true});
+  if(w.authoritarian)        flags.push({t:'🔒 Emergency rule', bad:true});
+  if(w.orbitalWeapon)        flags.push({t:'🛰️ Orbital weapons platform circles overhead', bad:true});
+  if(w.doomsdayArmed)        flags.push({t:'☢️ Cobalt doomsday device armed', bad:true});
+  if(w.biosphereDead)        flags.push({t:'💀 Biosphere is dying', bad:true});
+  if(w.continentalExtinction) flags.push({t:'🌪️ A continent depopulated', bad:true});
+  if(w.hellscape)            flags.push({t:'🧠 Consciousness hellscape running', bad:true});
+  if(w.bunkerElite)          flags.push({t:'🔒 Elite bunker sealed', bad:true});
+  if(w.mediaMonopoly)        flags.push({t:'📰 Media monopoly', bad:true});
+  if(w.corporateNation)      flags.push({t:'🚩 Corporate-owned nation', bad:true});
+  if(w.somethingLooksBack)   flags.push({t:'👁️ Something watches from another branch', bad:true});
+  if(w.ubiActive)            flags.push({t:'💵 Global UBI active', bad:false});
+  if(w.diseaseFree)          flags.push({t:'🧬 Disease-free world', bad:false});
+  if(w.hungerEnded)          flags.push({t:'🌾 No hunger on Earth', bad:false});
+  if(w.agingCured)           flags.push({t:'⏳ Aging cured', bad:false});
+  if(w.debtFree)             flags.push({t:'🌍 Sovereign debt cleared', bad:false});
+  if(w.alignedSingularity)   flags.push({t:'🌐 Aligned Singularity active', bad:false});
+  if(w.uploadAvailable)      flags.push({t:'🧠 Voluntary mind-upload open', bad:false});
+  if(w.dysonSwarm)           flags.push({t:'☀️ Dyson Swarm operational', bad:false});
+  if(w.generationShipsLaunched) flags.push({t:'🚀 Generation ships en route', bad:false});
+  if(flags.length){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:14px 0 8px;">Active World Conditions</div>'
+      + '<div style="background:#1a1428;border:1px solid var(--accent);border-radius:6px;padding:12px;">';
+    flags.forEach(f => {
+      html += '<div style="font-size:12px;color:' + (f.bad?'var(--crimson)':'var(--green)') + ';padding:3px 0;">' + f.t + '</div>';
+    });
+    html += '</div>';
+  }
+  // Memorials & scrutinies — dynasty ledger
+  if(l.acts.length){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:14px 0 8px;">Dynasty Ledger (' + l.acts.length + ' acts)</div>'
+      + '<div style="background:#1a1428;border:1px solid var(--accent);border-radius:6px;padding:12px;max-height:280px;overflow-y:auto;">';
+    l.acts.slice().reverse().forEach(a => {
+      const tag = a.good ? '🏛️ MEMORIAL' : '⚖️ SCRUTINY';
+      const col = a.good ? 'var(--green)' : 'var(--crimson)';
+      const detail = a.deaths ? ' · ' + fmtBig(a.deaths) + ' dead'
+                   : a.lives ? ' · ' + fmtBig(a.lives) + ' helped'
+                   : a.enslaved ? ' · ' + fmtBig(a.enslaved) + ' subjugated'
+                   : a.impoverished ? ' · ' + fmtBig(a.impoverished) + ' impoverished'
+                   : a.displaced ? ' · ' + fmtBig(a.displaced) + ' displaced'
+                   : a.trapped ? ' · ' + fmtBig(a.trapped) + ' trapped'
+                   : a.debtCleared ? ' · ' + fmtMoney(a.debtCleared) + ' cleared'
+                   : '';
+      html += '<div style="padding:5px 0;border-bottom:1px dotted #2a1f3d;font-size:12px;">'
+        + '<span style="color:var(--t3);font-size:10px;letter-spacing:.15em;">Gen ' + a.gen + ' · ' + a.year + ' · </span>'
+        + '<span style="color:' + col + ';font-size:9px;letter-spacing:.18em;">' + tag + '</span><br>'
+        + '<span>' + a.ico + ' <b>' + a.actorName + '</b> — ' + a.name + detail + '</span>'
+        + '</div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div style="padding:24px;color:var(--t3);text-align:center;background:#1a1428;border-radius:5px;margin-top:14px;">The world ledger is empty. Every act you take will be recorded here forever.</div>';
+  }
+  openModal('🌐 World Ledger', html);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  MACRO DIFFICULTY — randomized headwinds so the money curve doesn't
+//  flatten. Recessions, audits, strikes, supply shocks, regulatory
+//  crackdowns, tax shake-downs. Scales with wealth — the richer you
+//  are, the bigger the friction.
+// ═══════════════════════════════════════════════════════════════════════
+const MACRO_EVENTS = [
+  // ── Affect EVERY company on the player's portfolio ──
+  {id:'recession',  p:0.06, scope:'global',  text:'📉 A global recession hit. Every company in your portfolio took a 25% revenue cut for the year.',
+    apply:c => { (c.companies||[]).forEach(co => { co.revenue = Math.floor(co.revenue * 0.75); }); }},
+  {id:'rate_hike',  p:0.05, scope:'global',  text:'💵 Central banks raised rates 250bps. Investment returns ran cold this year.',
+    apply:c => { c.investments = Math.floor((c.investments||0) * 0.92); }},
+  {id:'supply_chain',p:0.05,scope:'global',  text:'🚢 A supply-chain shock froze deliveries. Manufacturing margins compressed for the year.',
+    apply:c => { (c.companies||[]).forEach(co => { if(['auto','energy','retail','logistics','apparel','aerospace'].includes(co.industry)){ co.profitMargin = Math.max(0.02, co.profitMargin - 0.04); }}); }},
+  {id:'regulatory', p:0.05, scope:'global',  text:'⚖️ A regulator dropped a new compliance rule across your sector. Margins compressed.',
+    apply:c => { (c.companies||[]).forEach(co => { co.profitMargin = Math.max(0.02, co.profitMargin - 0.025); }); }},
+  {id:'tariffs',    p:0.04, scope:'global',  text:'🚧 A new tariff regime taxed your cross-border revenue.',
+    apply:c => { (c.companies||[]).forEach(co => { co.revenue = Math.floor(co.revenue * 0.88); }); }},
+  // ── Audits + fines on the player personally ──
+  {id:'audit_personal', p:0.04, scope:'audit', text:'⚖️ A tax audit found understated income. Penalty assessed.',
+    apply:c => { const fine = Math.min(c.money * 0.04, 5_000_000); c.money -= Math.floor(fine); }},
+  {id:'tax_top_bracket', p:0.06, scope:'tax', text:'🏛️ A surprise top-bracket levy on ultra-high net worth was signed into law.',
+    apply:c => { if(c.money > 1_000_000_000){ c.money = Math.floor(c.money * 0.97); }}},
+  {id:'wealth_tax',  p:0.04, scope:'tax', text:'📊 A global wealth tax took effect at the trillionaire tier.',
+    apply:c => { const tot = totalEstateValue(c); if(tot > 1_000_000_000_000){ c.money = Math.floor(c.money * 0.94); }}},
+  // ── Industry-specific strikes ──
+  {id:'strike',     p:0.05, scope:'strike',  text:'🪧 Workers at your company walked out. Revenue lost.',
+    apply:c => { const co = (c.companies||[])[Math.floor(Math.random()*((c.companies||[]).length))];
+                 if(co){ co.revenue = Math.floor(co.revenue * 0.82); co.morale = clamp((co.morale||60) - 12, 0, 100); }}},
+  {id:'pr_disaster',p:0.04, scope:'pr',      text:'📰 A scandal hit one of your companies. Stock takes weeks to recover.',
+    apply:c => { const co = (c.companies||[])[Math.floor(Math.random()*((c.companies||[]).length))];
+                 if(co){ co.valuation = Math.floor(co.valuation * 0.85); c.fame = clamp((c.fame||0) - 4, 0, 100); }}},
+  // ── Employee-tier headwinds (when no companies but has a salary) ──
+  {id:'layoff_risk',p:0.04, scope:'employee', text:'😩 Your firm announced layoffs. You kept your job but no raise this year.',
+    apply:c => { c.happiness = clamp(c.happiness - 6, 0, 100); }},
+  {id:'promotion_passed',p:0.06,scope:'employee', text:'😩 You were passed over for the promotion you expected.',
+    apply:c => { c.happiness = clamp(c.happiness - 8, 0, 100); c._promotionPassedThisYear = true; }},
+  {id:'wage_freeze',p:0.05, scope:'employee', text:'🥶 Wage freeze across your industry. No raise this year.',
+    apply:c => { c.happiness = clamp(c.happiness - 4, 0, 100); }},
+  // ── Gentle tailwinds, so it isn't all pain ──
+  {id:'bull_market',p:0.04, scope:'good',    text:'📈 A roaring bull market — investments outperformed.',
+    apply:c => { c.investments = Math.floor((c.investments||0) * 1.18); }},
+  {id:'sector_boom',p:0.03, scope:'good',    text:'🚀 A sector boom lifted your companies.',
+    apply:c => { (c.companies||[]).forEach(co => { co.revenue = Math.floor(co.revenue * 1.15); }); }},
+];
+
+function rollMacroDifficulty(){
+  const c = LIFE.char;
+  if(c.inJail) return;
+  const hasCompanies = (c.companies||[]).length > 0;
+  const hasSalary = !!c.career;
+  // Scale event chance with wealth — the more you have, the more shocks find you
+  const nw = totalEstateValue(c);
+  const wealthMult = nw > 1e15 ? 2.0 : nw > 1e12 ? 1.6 : nw > 1e9 ? 1.3 : nw > 1e7 ? 1.1 : 1.0;
+  // Try up to 2 macro events per year
+  for(let i = 0; i < 2; i++){
+    const pool = MACRO_EVENTS.filter(e => {
+      if(e.scope === 'global' && !hasCompanies) return false;
+      if(e.scope === 'strike' && !hasCompanies) return false;
+      if(e.scope === 'pr' && !hasCompanies) return false;
+      if(e.scope === 'employee' && (!hasSalary || hasCompanies)) return false;
+      return true;
+    });
+    for(const e of pool){
+      if(Math.random() < e.p * wealthMult){
+        e.apply(c);
+        pushEvent(e.scope === 'good' ? 'good' : 'bad', e.text);
+        break;
+      }
     }
   }
 }
@@ -9622,7 +10293,10 @@ function inheritAs(kidName, mode){
   ch.looks  = kid.looks  || ch.looks;
   ch.health = kid.health || ch.health;
   ch.money  = share;
-  ch.born   = (new Date().getFullYear()) - ch.age;
+  // The child was born when the parent was (parent.age - kid.age). Use the
+  // parent's birth year + that gap so dynasties actually progress in time
+  // instead of every generation being reset to the real-world year.
+  ch.born   = (oldChar.born || (new Date().getFullYear() - oldChar.age)) + (oldChar.age - kid.age);
   ch.diseases = kid.diseases || [];
 
   // Inherit real assets
@@ -10092,6 +10766,10 @@ function haveAffair(type){
   // Discovery roll
   if(Math.random() < cfg.discChance){
     c.partner.compat = clamp(c.partner.compat - cfg.compatLoss, 0, 100);
+    if(typeof addPartnerMemory === 'function'){
+      addPartnerMemory('discovered_affair', 9, 'when you cheated on them with the ' + type);
+    }
+    if(typeof recordMemory === 'function') recordMemory('cheated_on', 8, 'self');
     pushEvent('death', '💔 ' + c.partner.firstName + ' discovered your affair. Compatibility tanked.');
     if(c.partner.compat < 25 && Math.random() < 0.6){
       initiateDivorce();
@@ -12058,6 +12736,7 @@ function executePoliticalMove(id){
   if(m.cost) LIFE.char.money -= m.cost;
   m.exec();
   reactToMove(id);
+  if(typeof recordLedgerAct === 'function') recordLedgerAct(id);
   saveLife();
   closeModal();
   openOfficeOfPower();

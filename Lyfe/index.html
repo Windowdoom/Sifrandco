@@ -3077,6 +3077,14 @@ function loadLife(){
         if(c.savings == null) c.savings = 0;
         if(c.investments == null) c.investments = 0;
         if(c.trust == null) c.trust = 0;
+        // Repair legacy object-form trust ({amount, generations, setUpAt}) → number.
+        if(typeof c.trust === 'object' && c.trust !== null){
+          c.trust = Number(c.trust.amount) || 0;
+        }
+        // Repair any NaN-poisoned numeric fields so the new gates work.
+        ['money','savings','investments','trust','happiness','health','smarts','looks','karma','faith','fame','corruption','estateRoyalties'].forEach(k => {
+          if(c[k] != null && !isFinite(c[k])) c[k] = 0;
+        });
         if(c.corruption == null) c.corruption = 0;
         if(!c.heirlooms) c.heirlooms = [];
         if(!c.flips) c.flips = [];
@@ -5646,8 +5654,18 @@ function showDeathScreen(){
 
 // Total estate value at death — cash, savings, investments, trust, real estate
 // resale, owned company valuations, house, car. Split equally among living kids.
+// Trust is stored either as a number (newer code) or as an object
+// {amount, generations, setUpAt} (older setUpTrust). Always coerce to number.
+function trustAmount(c){
+  const t = c && c.trust;
+  if(t == null) return 0;
+  if(typeof t === 'number') return isFinite(t) ? t : 0;
+  if(typeof t === 'object') return Number(t.amount) || 0;
+  return 0;
+}
+
 function totalEstateValue(c){
-  let n = (c.money||0) + (c.savings||0) + (c.investments||0) + (c.trust||0);
+  let n = (c.money||0) + (c.savings||0) + (c.investments||0) + trustAmount(c);
   if(c.properties && c.properties.length){
     n += c.properties.reduce((s,p) => s + (p.currentValue||0), 0);
   }
@@ -6053,7 +6071,8 @@ function continueAs(kidName){
   if(inheritance > 0) bits.push(fmtMoney(inheritance) + ' cash');
   if(ch.savings)     bits.push(fmtMoney(ch.savings) + ' in savings');
   if(ch.investments) bits.push(fmtMoney(ch.investments) + ' invested');
-  if(ch.trust)       bits.push(fmtMoney(ch.trust) + ' trust');
+  const tAmt = trustAmount(ch);
+  if(tAmt)           bits.push(fmtMoney(tAmt) + ' trust');
   if(ch.houseId && ch.houseId !== 'family'){
     const h = HOUSES.find(x => x.id === ch.houseId);
     if(h) bits.push('the ' + h.name);
@@ -6493,9 +6512,11 @@ function processBankingInterest(){
     }
   }
   // Trust fund grows at a steady 6%
-  if(c.trust > 0){
-    const yield_ = Math.floor(c.trust * 0.06);
-    c.trust += yield_;
+  const tAmt = trustAmount(c);
+  if(tAmt > 0){
+    const yield_ = Math.floor(tAmt * 0.06);
+    if(typeof c.trust === 'object'){ c.trust.amount = tAmt + yield_; }
+    else { c.trust = tAmt + yield_; }
   }
 }
 
@@ -6621,11 +6642,11 @@ function openBanking(){
     +     '<div><span style="color:var(--t3);letter-spacing:.1em;">INVEST · ~8%</span><br><span style="font-size:15px;color:var(--accent2);font-weight:700;">' + fmtMoney(c.investments||0) + '</span><br><span style="color:var(--t3);font-size:10px;">~'+ fmtMoney(projInvest) +' / yr</span></div>'
     +     '<div><span style="color:var(--t3);letter-spacing:.1em;">NET WORTH</span><br><span style="font-size:15px;color:var(--gold);font-weight:700;">' + fmtMoney(nw) + '</span></div>'
     +   '</div>'
-    +   (propVal || coVal || c.trust ?
+    +   (propVal || coVal || trustAmount(c) ?
         '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #2a1f3d;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-family:var(--font-m);font-size:10px;color:var(--t3);">'
         + '<div>Real Estate: <span style="color:var(--accent2);">' + fmtMoney(propVal) + '</span></div>'
         + '<div>Companies: <span style="color:var(--accent2);">' + fmtMoney(coVal) + '</span></div>'
-        + '<div>Trust: <span style="color:var(--accent2);">' + fmtMoney(c.trust||0) + '</span></div>'
+        + '<div>Trust: <span style="color:var(--accent2);">' + fmtMoney(trustAmount(c)) + '</span></div>'
         + '</div>' : '')
     + '</div>'
     + '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;">Transfer Money</div>'
@@ -9439,17 +9460,13 @@ function setUpTrust(){
   const c = LIFE.char;
   const totalNetWorth = c.money + (c.savings||0) + (c.investments||0);
   if(totalNetWorth < 10000000){ toast('Trust funds require $10M+ in net worth.'); return; }
-  if(c.trust){ toast('You already have a trust set up.'); return; }
+  if(trustAmount(c) > 0){ toast('You already have a trust set up.'); return; }
   const fee = 50000;
   if(c.money < fee){ toast('Trust setup costs ' + fmtMoney(fee) + '.'); return; }
   c.money -= fee;
-  c.trust = {
-    amount: Math.floor((c.money + (c.savings||0) + (c.investments||0)) * 0.50),
-    generations: 2,
-    setUpAt: c.age,
-  };
+  const move = Math.floor((c.money + (c.savings||0) + (c.investments||0)) * 0.50);
+  c.trust = move;
   // Move half the money into the trust (locked from taxes & creditors)
-  const move = c.trust.amount;
   if(c.savings >= move){ c.savings -= move; }
   else { const rem = move - c.savings; c.savings = 0; c.money -= rem; }
   pushEvent('milestone', '🏛️ You set up a family trust with ' + fmtMoney(move) + '. It will pass tax-free to your descendants for 2 generations.');
@@ -9469,7 +9486,7 @@ function computeEstate(c){
   const houseVal = (house && house.price > 0) ? Math.floor(house.price * (COUNTRIES[c.country].costMult||1) * 0.85) : 0;
   const car = CARS.find(x => x.id === c.carId);
   const carVal = (car && car.price > 0) ? Math.floor(car.price * 0.6) : 0;
-  const trustVal = (c.trust && c.trust.amount) ? c.trust.amount : 0;
+  const trustVal = trustAmount(c);
   // Estate tax only on non-trust assets
   const taxable = Math.max(0, (cash + houseVal + carVal) - fis.estateExempt);
   const tax = Math.floor(taxable * fis.estateTax);

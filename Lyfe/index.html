@@ -3424,7 +3424,7 @@ function ageUp(){
   if(LIFE.char.flags && LIFE.char.flags.demonContract){
     if(LIFE.char.age > 55 && Math.random() < 0.18){
       pushEvent('death', '😈 The bargain came due. You collapsed at the appointed hour.');
-      LIFE.char.alive = false; LIFE.char.cause = 'soul claimed by demon';
+      killCharacter('soul claimed by demon');
     } else if(Math.random() < 0.12){
       LIFE.char.happiness = clamp(LIFE.char.happiness - 4, 0, 100);
       pushEvent('bad', '😈 Night-terrors return. Sleep gives no rest.');
@@ -12019,7 +12019,7 @@ const POLITICAL_MOVES = [
         setTimeout(() => {
           if(LIFE && LIFE.char && LIFE.char.alive){
             pushEvent('death', '🕯 You were overthrown and executed for war crimes.');
-            LIFE.char.alive = false; LIFE.char.cause = 'executed for war crimes';
+            killCharacter('executed for war crimes');
           }
         }, 200);
       }
@@ -12047,10 +12047,10 @@ const POLITICAL_MOVES = [
         if(LIFE && LIFE.char && LIFE.char.alive){
           if(Math.random() < 0.7){
             pushEvent('death', '☢️ You died when the retaliatory warhead struck your capital.');
-            LIFE.char.alive = false; LIFE.char.cause = 'killed in nuclear retaliation';
+            killCharacter('killed in nuclear retaliation');
           } else {
             pushEvent('death', '🕯 You were dragged from a bunker and tried in a tribunal. Executed for crimes against humanity.');
-            LIFE.char.alive = false; LIFE.char.cause = 'executed for nuclear war crimes';
+            killCharacter('executed for nuclear war crimes');
           }
         }
       }, 200);
@@ -12199,7 +12199,7 @@ const POLITICAL_MOVES = [
           if(LIFE && LIFE.char && LIFE.char.alive){
             const path = Math.random() < 0.5 ? 'parted by a prophet' : 'drowned in a sea of insurrection';
             pushEvent('death', '🌊 The waters ' + path + '. A liberator the people call Musa rose against you. Your reign ended.');
-            LIFE.char.alive = false; LIFE.char.cause = 'overthrown as Pharaoh';
+            killCharacter('overthrown as Pharaoh');
           }
         }, 250);
       }
@@ -12395,7 +12395,7 @@ const POLITICAL_MOVES = [
         setTimeout(() => {
           if(LIFE && LIFE.char && LIFE.char.alive){
             pushEvent('death', '⚔️ The temple was burned. Your statue was pulled down by a crowd. You were torn apart.');
-            LIFE.char.alive = false; LIFE.char.cause = 'killed as deposed god-king';
+            killCharacter('killed as deposed god-king');
           }
         }, 250);
       }
@@ -12461,7 +12461,7 @@ const POLITICAL_MOVES = [
             LIFE.world.biosphereDead = true;
             LIFE.world.nuclearWar = true;
             pushEvent('death', '☢️ A faction triggered the device. The cobalt fallout is now spreading. The biosphere is dying. There is no end-of-game screen for this.');
-            LIFE.char.alive = false; LIFE.char.cause = 'killed in cobalt-fallout extinction';
+            killCharacter('killed in cobalt-fallout extinction');
             recordLegacy('caused the cobalt-fallout extinction of the biosphere');
           }
         }, 300);
@@ -12485,7 +12485,7 @@ const POLITICAL_MOVES = [
         setTimeout(() => {
           if(LIFE && LIFE.char && LIFE.char.alive){
             pushEvent('death', '🕯 The Hague convened in 72 hours. You were executed for crimes against humanity.');
-            LIFE.char.alive = false; LIFE.char.cause = 'executed for crimes against humanity';
+            killCharacter('executed for crimes against humanity');
           }
         }, 250);
       }

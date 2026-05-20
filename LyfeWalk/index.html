@@ -283,6 +283,9 @@ button,input,select{font-family:inherit;cursor:pointer;}
   <div class="hud-chip time" id="hud-time">Day 1 · 9 AM</div>
   <div class="hud-chip age" id="hud-age">Age 18</div>
   <div class="hud-chip money" id="hud-money">$1,500</div>
+  <div class="hud-chip" id="hud-networth" title="Total net worth — cash, savings, investments, property">Net $1,500</div>
+  <button class="tb-btn" onclick="openBank()">🏦 Bank</button>
+  <button class="tb-btn" onclick="openSkipTime()">⏩ Skip</button>
   <span id="topbar-actions"></span>
   <button class="tb-btn" onclick="openStats()">Stats</button>
   <button class="tb-btn" onclick="openCharSheet()">📋</button>
@@ -307,7 +310,7 @@ button,input,select{font-family:inherit;cursor:pointer;}
     <span id="hud-hunger" style="display:none"></span><span id="hud-hunger-v" style="display:none"></span>
   </div>
   <div id="controls-hint">
-    <b>WASD</b> walk · <b>Click</b> walk to point · <b>E</b> interact · <b>SPACE</b> +1 day · <b>SHIFT+SPACE</b> +1 week · <b>R</b> +1 hr
+    <b>WASD</b> walk · <b>Click</b> walk · <b>E</b> interact · <b>SPACE</b> +1 day · <b>SHIFT+SPACE</b> +1 week · <b>R</b> +1 hr · use <b>⏩ Skip</b> for 6mo / 1yr / 5yr jumps
   </div>
   <div id="mini-msg"></div>
 </div>
@@ -932,6 +935,7 @@ function defaultGame(name, sex, skinId, country){
       // affect happiness/health directly.
       energy:100, hunger:100,
       money:1500, salary:0,
+      savings:0, investments:0,
       job:null, jobYears:0,
       education:'(not in school yet)', degrees:[],
       // Parents — visible NPCs in the home zone, age with you, eventually pass on
@@ -955,7 +959,19 @@ function defaultGame(name, sex, skinId, country){
   };
 }
 function save(){ try { localStorage.setItem('lyfewalk_save', JSON.stringify(G)); } catch(e){} }
-function load(){ try { const s = localStorage.getItem('lyfewalk_save'); if(s){ G = JSON.parse(s); return true; } } catch(e){} return false; }
+function load(){ try {
+  const s = localStorage.getItem('lyfewalk_save');
+  if(!s) return false;
+  G = JSON.parse(s);
+  // Backfill new fields onto old saves so they don't crash newer code.
+  if(G && G.char){
+    if(G.char.savings == null)     G.char.savings = 0;
+    if(G.char.investments == null) G.char.investments = 0;
+    if(G.char.kids == null)        G.char.kids = [];
+    if(G.char.owned == null)       G.char.owned = { house:null, car:null, rooms:[] };
+  }
+  return true;
+} catch(e){} return false; }
 
 let CC = { name:'', sex:'m', skin:'fair', country:'us' };
 
@@ -1393,6 +1409,20 @@ function advanceDay(){
       c.enrolled = null;
     }
   }
+  // Compound savings interest monthly: ~5% APR savings, ~8% avg investments with swing.
+  if(G.char.day % 30 === 0){
+    if(c.savings > 0){
+      const yield_ = Math.floor(c.savings * (0.05/12));
+      c.savings += yield_;
+      if(yield_ >= 25) miniMsg('🏦 Savings interest +' + fmt(yield_));
+    }
+    if(c.investments > 0){
+      const swing = (Math.random()*0.04) - 0.012; // -1.2% to +2.8% monthly
+      const ch = Math.floor(c.investments * swing);
+      c.investments = Math.max(0, c.investments + ch);
+      if(Math.abs(ch) >= 100) miniMsg('📈 Investments ' + (ch>=0?'+':'') + fmt(ch));
+    }
+  }
   if(G.char.day % 30 === 0){ ageUp(); }
 }
 function ageUp(){
@@ -1526,6 +1556,130 @@ function ageUp(){
   showYearSummary();
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  BANK — savings (5% APR) + investments (8% avg) — both compound monthly.
+// ═══════════════════════════════════════════════════════════════════════
+function openBank(){
+  const c = G.char;
+  const html =
+      '<div style="padding:14px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    +   '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-family:var(--font-m,monospace);font-size:11px;">'
+    +     '<div><div style="color:var(--t3);letter-spacing:.1em;">CHECKING</div><div style="font-size:15px;color:'+(c.money>=0?'var(--green)':'var(--crimson)')+';font-weight:700;">'+fmt(c.money)+'</div></div>'
+    +     '<div><div style="color:var(--t3);letter-spacing:.1em;">SAVINGS</div><div style="font-size:15px;color:var(--green);font-weight:700;">'+fmt(c.savings||0)+'</div><div style="color:var(--t3);">5% APR · monthly</div></div>'
+    +     '<div><div style="color:var(--t3);letter-spacing:.1em;">INVESTMENTS</div><div style="font-size:15px;color:var(--accent2);font-weight:700;">'+fmt(c.investments||0)+'</div><div style="color:var(--t3);">~8% APR · volatile</div></div>'
+    +     '<div><div style="color:var(--t3);letter-spacing:.1em;">NET WORTH</div><div style="font-size:15px;color:var(--gold);font-weight:700;">'+fmt(netWorth(c))+'</div></div>'
+    +   '</div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+    + '<button class="btn" onclick="bankMove(\'tosavings\',100)">→ Savings $100</button>'
+    + '<button class="btn green" onclick="bankMove(\'tosavings\',1000)">→ Savings $1,000</button>'
+    + '<button class="btn" onclick="bankMove(\'tosavings\',10000)">→ Savings $10,000</button>'
+    + '<button class="btn" onclick="bankMove(\'tosavings\',-1)">→ Savings ALL</button>'
+    + '<button class="btn" onclick="bankMove(\'toinvest\',1000)">→ Invest $1,000</button>'
+    + '<button class="btn green" onclick="bankMove(\'toinvest\',10000)">→ Invest $10,000</button>'
+    + '<button class="btn muted" onclick="bankMove(\'fromsavings\',1000)">Pull Savings $1k</button>'
+    + '<button class="btn muted" onclick="bankMove(\'frominvest\',1000)">Sell Invest $1k</button>'
+    + '</div>';
+  openMod('🏦 Bank', html);
+}
+function bankMove(action, amount){
+  const c = G.char;
+  if(amount === -1) amount = c.money;
+  if(amount <= 0){ toast('Nothing to move.'); return; }
+  if(action === 'tosavings'){
+    if(c.money < amount){ toast('Not enough cash.'); return; }
+    c.money -= amount; c.savings = (c.savings||0) + amount;
+  } else if(action === 'toinvest'){
+    if(c.money < amount){ toast('Not enough cash.'); return; }
+    c.money -= amount; c.investments = (c.investments||0) + amount;
+  } else if(action === 'fromsavings'){
+    if((c.savings||0) < amount){ toast('Not enough in savings.'); return; }
+    c.savings -= amount; c.money += amount;
+  } else if(action === 'frominvest'){
+    if((c.investments||0) < amount){ toast('Not enough in investments.'); return; }
+    c.investments -= amount; c.money += amount;
+  }
+  updateHud();
+  save();
+  openBank();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SKIP TIME — 6mo / 1yr / 5yr fast-forward with significant random events.
+// ═══════════════════════════════════════════════════════════════════════
+const BIG_EVENTS = [
+  {t:'💰 You won a small lottery prize.',         fx:{money:+5000, happy:+12}},
+  {t:'💼 You got an unexpected promotion at work.', fx:{money:+8000, happy:+15, smarts:+3}, need:c=>!!c.job},
+  {t:'🤝 An old friend offered you a side gig.',  fx:{money:+3000, happy:+4}},
+  {t:'🩺 You were hospitalized for a few weeks.', fx:{money:-4000, health:-10, happy:-8}},
+  {t:'🚗 Your car needed major repairs.',         fx:{money:-2200, happy:-4}, need:c=>!!(c.owned&&c.owned.car)},
+  {t:'🏠 Pipe burst at home — costly repairs.',   fx:{money:-1800, happy:-3}, need:c=>!!(c.owned&&c.owned.house)},
+  {t:'🎓 You took an online course and leveled up.', fx:{smarts:+6, happy:+3}},
+  {t:'🏋️ You committed to fitness — felt amazing.', fx:{health:+8, looks:+4, happy:+5}},
+  {t:'💔 A close relative passed away.',          fx:{happy:-15, money:+8000}},
+  {t:'🐶 You adopted a stray and bonded fast.',   fx:{happy:+10, money:-600}},
+  {t:'⚖️ A small legal dispute drained your wallet.', fx:{money:-3500, happy:-5}},
+  {t:'🎨 You discovered a new hobby that absorbed you.', fx:{happy:+9, smarts:+2}},
+  {t:'🍷 A wild party year — fun but reckless.',  fx:{happy:+12, health:-6, money:-1500}},
+  {t:'📈 An investment tip paid off handsomely.', fx:{money:+12000, happy:+8}},
+  {t:'📉 A bad investment cost you.',             fx:{money:-6000, happy:-7}},
+  {t:'💍 A whirlwind romance found you.',         fx:{happy:+18}, need:c=>!c.relationship && c.age>=16},
+  {t:'👶 You became a parent unexpectedly.',      fx:{happy:+15, money:-3000}, special:'baby', need:c=>c.age>=18},
+  {t:'🚓 You were mugged — lost some cash.',      fx:{money:-1500, happy:-6, health:-3}},
+  {t:'🌟 You won a community award.',             fx:{happy:+10, karma:+8, fame:+5}},
+  {t:'💼 You quit your job for a better one.',    fx:{money:+2000, happy:+8}, need:c=>!!c.job},
+  {t:'🏝️ You took a long vacation abroad.',       fx:{happy:+18, money:-4000}},
+  {t:'🔥 A house fire damaged your property.',    fx:{money:-9000, happy:-12}, need:c=>!!(c.owned&&c.owned.house)},
+  {t:'🎁 You received a generous gift from family.', fx:{money:+5500, happy:+6}},
+  {t:'🤕 A car accident left you shaken.',        fx:{health:-12, money:-3500, happy:-9}},
+  {t:'⚡ A power outage week — bored to tears.',  fx:{happy:-4}},
+];
+function rollBigEvent(){
+  const c = G.char;
+  const pool = BIG_EVENTS.filter(e => !e.need || e.need(c));
+  if(!pool.length) return;
+  const e = pool[Math.floor(Math.random()*pool.length)];
+  applyFx(e.fx);
+  if(e.special === 'baby'){
+    c.kids = c.kids || [];
+    c.kids.push({name:'Baby '+(c.kids.length+1), sex:Math.random()<0.5?'m':'f', age:0, alive:true});
+  }
+  miniMsg(e.t);
+}
+
+function openSkipTime(){
+  const html =
+      '<p style="color:var(--t3);margin-bottom:14px;text-align:center;">Skip ahead. Bigger jumps trigger significant random events along the way.</p>'
+    + '<div style="display:grid;grid-template-columns:1fr;gap:9px;">'
+    + '<button class="btn" onclick="closeMod();skipMonths(6)">⏩ Skip 6 months (passive)</button>'
+    + '<button class="btn green" onclick="closeMod();skipMonths(12)">⏩⏩ Skip 1 year (1-2 significant events)</button>'
+    + '<button class="btn green" onclick="closeMod();skipMonths(60)">⏩⏩⏩ Skip 5 years (5-8 significant events)</button>'
+    + '</div>';
+  openMod('⏩ Skip Time', html);
+}
+function skipMonths(months){
+  const c = G.char;
+  const startAge = c.age;
+  const days = months * 30;
+  for(let i=0; i<days; i++){
+    c.day++;
+    advanceDay();
+    if(!c.alive) break;
+  }
+  if(!c.alive){ updateHud(); return; }
+  const years = Math.floor(months / 12);
+  if(years >= 1){
+    const eventCount = years <= 1
+      ? 1 + Math.floor(Math.random()*2)        // 1-2
+      : Math.min(8, years + Math.floor(Math.random()*4)); // ~years +noise
+    for(let i=0; i<eventCount; i++){ rollBigEvent(); if(!c.alive) break; }
+  }
+  const aged = c.age - startAge;
+  miniMsg('⏩ ' + aged + ' year' + (aged===1?'':'s') + ' passed.');
+  updateHud();
+  save();
+}
+
 function openAchievements(){
   const list = computeAchievements();
   let html = '';
@@ -1562,17 +1716,81 @@ function rollLifeEvent(){
 }
 
 function killCharacter(cause){
-  G.char.alive = false;
-  G.char.cause = cause;
-  document.getElementById('death-summary').innerHTML =
-    '<div class="death-row"><span>Name</span><span>' + G.char.name + '</span></div>'
-    + '<div class="death-row"><span>Age</span><span>' + G.char.age + '</span></div>'
+  const c = G.char;
+  c.alive = false;
+  c.cause = cause;
+  const nw = netWorth(c);
+  const heirs = (c.kids||[]).filter(k => k.alive);
+  let html = ''
+    + '<div class="death-row"><span>Name</span><span>' + c.name + '</span></div>'
+    + '<div class="death-row"><span>Age</span><span>' + c.age + '</span></div>'
     + '<div class="death-row"><span>Cause</span><span>' + cause + '</span></div>'
-    + '<div class="death-row"><span>Country</span><span>' + COUNTRIES[G.char.country].flag + ' ' + COUNTRIES[G.char.country].name + '</span></div>'
-    + '<div class="death-row"><span>Job</span><span>' + (G.char.job || 'Unemployed') + '</span></div>'
-    + '<div class="death-row"><span>Money</span><span>' + fmt(G.char.money) + '</span></div>'
-    + '<div class="death-row"><span>Days lived</span><span>' + G.char.day + '</span></div>';
+    + '<div class="death-row"><span>Country</span><span>' + COUNTRIES[c.country].flag + ' ' + COUNTRIES[c.country].name + '</span></div>'
+    + '<div class="death-row"><span>Job</span><span>' + (c.job || 'Unemployed') + '</span></div>'
+    + '<div class="death-row"><span>Cash</span><span>' + fmt(c.money) + '</span></div>'
+    + '<div class="death-row"><span>Savings</span><span>' + fmt(c.savings||0) + '</span></div>'
+    + '<div class="death-row"><span>Investments</span><span>' + fmt(c.investments||0) + '</span></div>'
+    + (c.owned&&c.owned.house ? '<div class="death-row"><span>House</span><span>' + c.owned.house + '</span></div>' : '')
+    + (c.owned&&c.owned.car   ? '<div class="death-row"><span>Car</span><span>'   + c.owned.car   + '</span></div>' : '')
+    + '<div class="death-row"><span>Net worth</span><span>' + fmt(nw) + '</span></div>'
+    + '<div class="death-row"><span>Days lived</span><span>' + c.day + '</span></div>';
+  if(heirs.length){
+    const split = Math.floor(nw / heirs.length);
+    html += '<div style="margin-top:12px;padding:12px;background:#1a1428;border:1px solid var(--gold);border-radius:6px;">'
+      +    '<div style="color:var(--gold);font-weight:700;margin-bottom:8px;">Continue as next of kin (inherits ' + fmt(split) + ' each + all assets):</div>';
+    heirs.forEach((k,i) => {
+      html += '<button class="btn green" style="margin:4px;" onclick="continueAsKid(' + i + ')">' + (k.sex==='f'?'👧':'👦') + ' ' + k.name + ' (age ' + k.age + ')</button>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div style="margin-top:12px;color:var(--t3);text-align:center;">No surviving heirs. Net worth lost to the void.</div>';
+  }
+  document.getElementById('death-summary').innerHTML = html;
   document.getElementById('death').classList.add('show');
+  save();
+}
+
+// Inherit everything — money, savings, investments, house, car, items — to chosen kid.
+function continueAsKid(kidIdx){
+  const old = G.char;
+  const kid = (old.kids||[])[kidIdx];
+  if(!kid){ return; }
+  const heirs = old.kids.filter(k => k.alive);
+  const split = heirs.length;
+  const cashShare    = Math.floor(old.money / split);
+  const savingsShare = Math.floor((old.savings||0) / split);
+  const investShare  = Math.floor((old.investments||0) / split);
+  // House + car go entirely to the chosen heir (can't physically split)
+  const newChar = {
+    name: kid.name, sex: kid.sex, skin: old.skin, country: old.country,
+    age: Math.max(kid.age, 18),
+    day: old.day, hour: 8, daysAlive: 0,
+    happiness:55, health:80, smarts:55, looks:55, karma:55, faith:25, fame:0,
+    energy:100, hunger:100,
+    money: cashShare,
+    savings: savingsShare,
+    investments: investShare,
+    salary:0, job:null, jobYears:0,
+    education:'(continuing on)', degrees:[],
+    mom:{ name:old.name, age:old.age, alive:false, sex:old.sex },
+    dad:{ name:'?', age:50, alive:true, sex: old.sex==='m'?'f':'m' },
+    enrolled:null, enrolledYearsLeft:0,
+    relationship:null, kids:[],
+    ownedItems: old.ownedItems || [],
+    owned: { house: old.owned ? old.owned.house : null, car: old.owned ? old.owned.car : null, rooms: old.owned ? (old.owned.rooms||[]) : [] },
+    pets:[], bodyMods:[], addictions:[], placesVisited:[],
+    traits: [], diseases: [], fertility: 50,
+    religion: old.religion, reality: old.reality,
+    alive:true, cause:null,
+    generation: (old.generation||1) + 1,
+  };
+  G.char = newChar;
+  G.zone = 'home';
+  G.player = { x:5, y:8 };
+  document.getElementById('death').classList.remove('show');
+  buildZoneDOM('home');
+  updateHud();
+  miniMsg('🕯 ' + old.name + ' is at rest. ' + newChar.name + ' continues the family.');
   save();
 }
 
@@ -2648,9 +2866,24 @@ function renderTopbarActions(){
   wrap.innerHTML = btns.map(b => '<button class="tb-btn" onclick="' + b.fn + '">' + b.lbl + '</button>').join('');
 }
 
+function netWorth(c){
+  let n = (c.money||0) + (c.savings||0) + (c.investments||0);
+  if(c.owned && c.owned.house){
+    const h = (typeof HOUSES!=='undefined') && HOUSES.find(x => x.id === c.owned.house);
+    if(h) n += Math.floor(h.price * 0.85);
+  }
+  if(c.owned && c.owned.car){
+    const car = (typeof CARS!=='undefined') && CARS.find(x => x.id === c.owned.car);
+    if(car) n += Math.floor(car.price * 0.5);
+  }
+  return n;
+}
+
 function updateHud(){
   const c = G.char;
   renderTopbarActions();
+  const nwEl = document.getElementById('hud-networth');
+  if(nwEl){ nwEl.textContent = 'Net ' + fmt(netWorth(c)); }
   document.getElementById('hud-age').textContent = 'Age ' + c.age;
   const moneyEl = document.getElementById('hud-money');
   moneyEl.textContent = fmt(c.money);

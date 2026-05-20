@@ -110,6 +110,17 @@ button,input,select{font-family:inherit;cursor:pointer;}
 .actor.npc{font-size:22px;width:22px;height:30px;z-index:40;
   animation:npc-bob 0.5s infinite alternate ease-in-out;}
 @keyframes npc-bob{from{transform:translateY(0);}to{transform:translateY(-2px);}}
+.player-ailment{position:absolute;top:-18px;right:-12px;font-size:18px;
+  filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));
+  animation:ailmentBob 1.2s infinite alternate;pointer-events:none;}
+@keyframes ailmentBob{from{transform:translateY(0);}to{transform:translateY(-4px);}}
+.actor-frail{filter:saturate(.7) brightness(.9);}
+.actor-frail #player-base{animation:elderWobble 2.4s infinite;}
+@keyframes elderWobble{0%,100%{transform:translateX(0) translateY(0) rotate(0);}25%{transform:translateX(-1px) translateY(-1px) rotate(-2deg);}75%{transform:translateX(1px) translateY(0) rotate(2deg);}}
+.actor-label{position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  font-family:var(--font-m);font-size:8px;letter-spacing:.05em;color:var(--t1);
+  background:rgba(0,0,0,.7);padding:1px 5px;border-radius:2px;white-space:nowrap;
+  pointer-events:none;}
 .actor-shadow{position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);
   width:16px;height:5px;background:radial-gradient(ellipse,rgba(0,0,0,.5),transparent 70%);}
 .prompt-bubble{position:absolute;top:-30px;left:50%;transform:translateX(-50%);
@@ -296,7 +307,7 @@ button,input,select{font-family:inherit;cursor:pointer;}
       <span class="hsr-v" id="hud-smarts-v">55</span></div>
   </div>
   <div id="controls-hint">
-    <b>WASD</b> walk · <b>Click</b> walk to point · <b>E</b> interact · <b>R</b> rest (advance time)
+    <b>WASD</b> walk · <b>Click</b> walk to point · <b>E</b> interact · <b>SPACE</b> +1 day · <b>SHIFT+SPACE</b> +1 week · <b>R</b> +1 hr
   </div>
   <div id="mini-msg"></div>
 </div>
@@ -944,12 +955,15 @@ function defaultGame(name, sex, skinId, country){
   return {
     char:{
       name, sex, skin:skinId, country,
-      age:18, day:1, hour:9,
+      age:0, day:1, hour:9, daysAlive:0,
       happiness:60, health:80, smarts:55, looks:55, karma:60,
       energy:80, hunger:80, faith:30, fame:0,
       money:1500, salary:0,
       job:null, jobYears:0,
-      education:'High School', degrees:[],
+      education:'(not in school yet)', degrees:[],
+      // Parents — visible NPCs in the home zone, age with you, eventually pass on
+      mom: { name:'Mom',  age:30 + Math.floor(Math.random()*8), alive:true, sex:'f' },
+      dad: { name:'Dad',  age:32 + Math.floor(Math.random()*8), alive:true, sex:'m' },
       enrolled:null, enrolledYearsLeft:0,
       relationship:null, kids:[],
       ownedItems:[], owned:{ house:null, car:null, rooms:[] },
@@ -1078,7 +1092,22 @@ function buildZoneDOM(zoneId){
       + '<div class="bldg-label">' + b.name + '</div>'
       + '</div>';
   });
-  if(zoneId === 'neighborhood'){
+  if(zoneId === 'home'){
+    // Parents move around the home and help raise you when young
+    const c = G.char;
+    const momAlive = !c.mom || c.mom.alive !== false;
+    const dadAlive = !c.dad || c.dad.alive !== false;
+    if(momAlive){
+      html += '<div class="actor npc" id="npc-mom" style="left:' + (3*TILE) + 'px;top:' + (4*TILE) + 'px;">'
+        + (c.age < 1 ? '👩‍🍼' : '👩')
+        + '<div class="actor-label">Mom</div><div class="actor-shadow"></div></div>';
+    }
+    if(dadAlive){
+      html += '<div class="actor npc" id="npc-dad" style="left:' + (15*TILE) + 'px;top:' + (4*TILE) + 'px;">'
+        + (c.age < 1 ? '👨‍🍼' : '👨')
+        + '<div class="actor-label">Dad</div><div class="actor-shadow"></div></div>';
+    }
+  } else if(zoneId === 'neighborhood'){
     html += npcHTML('npc1','👨', 6, 9);
     html += npcHTML('npc2','👩', 18, 10);
     html += npcHTML('npc3','🧒', 24, 13);
@@ -1089,7 +1118,13 @@ function buildZoneDOM(zoneId){
     html += npcHTML('npc4','🧒', 6, 12);
     html += npcHTML('npc5','👮', 22, 11);
   }
-  html += '<div class="actor" id="player" style="left:0px;top:0px;">' + playerEmoji() + '<div class="actor-shadow"></div></div>';
+  // Player avatar with ailment overlay slot
+  const ailment = playerAilmentEmoji();
+  html += '<div class="actor" id="player" style="left:0px;top:0px;">'
+    + '<span id="player-base">' + playerEmoji() + '</span>'
+    + '<span class="player-ailment" id="player-ailment" '
+    + 'style="' + (ailment?'':'display:none;') + '">' + ailment + '</span>'
+    + '<div class="actor-shadow"></div></div>';
   world.innerHTML = html;
   world.onclick = onWorldClick;
 }
@@ -1100,9 +1135,30 @@ function npcHTML(id, emoji, x, y){
 function playerEmoji(){
   const c = G.char;
   const tone = SKIN_TONES.find(s => s.id === c.skin) || SKIN_TONES[0];
-  if(c.age < 18) return tone.emoji.child;
-  if(c.age < 60) return tone.emoji[c.sex] || tone.emoji.m;
-  return c.sex === 'm' ? '👴' : '👵';
+  // Age-staged avatar — Virtual Families style life-stage progression
+  let base;
+  if(c.age < 2)        base = '👶';
+  else if(c.age < 5)   base = c.sex === 'm' ? '👦' : '👧';
+  else if(c.age < 13)  base = tone.emoji.child;
+  else if(c.age < 20)  base = c.sex === 'm' ? '🧑' : '👩';
+  else if(c.age < 40)  base = tone.emoji[c.sex] || tone.emoji.m;
+  else if(c.age < 60)  base = c.sex === 'm' ? '🧔' : '👩';
+  else if(c.age < 75)  base = c.sex === 'm' ? '👴' : '👵';
+  else                 base = c.sex === 'm' ? '👴' : '👵';
+  return base;
+}
+
+// Status overlay (coughing, sick, tired) — appears as a tiny popup near the player
+function playerAilmentEmoji(){
+  const c = G.char;
+  if(!c) return '';
+  if(c.health <= 25) return '🤒';        // really sick
+  if(c.health <= 40) return '😷';        // sick
+  if(c.energy <= 15) return '💤';        // exhausted
+  if(c.hunger <= 15) return '🍽️';        // starving
+  if(c.age >= 70 && Math.random() < 0.30) return '🦯'; // cane / shuffle
+  if(c.age >= 80 && c.health < 60 && Math.random() < 0.40) return '😩'; // groaning
+  return '';
 }
 
 function renderPlayer(){
@@ -1110,6 +1166,31 @@ function renderPlayer(){
   if(!el) return;
   el.style.left = tileToPx(G.player.x) + 'px';
   el.style.top  = tileToPx(G.player.y - 0.2) + 'px';
+  // Keep avatar in sync with current age (so the player visibly grows up
+  // without needing to re-enter the zone)
+  const baseEl = document.getElementById('player-base');
+  if(baseEl){
+    const expected = playerEmoji();
+    if(baseEl.textContent !== expected) baseEl.textContent = expected;
+  }
+  // Ailment overlay
+  const ailEl = document.getElementById('player-ailment');
+  if(ailEl){
+    const a = playerAilmentEmoji();
+    if(a){
+      ailEl.style.display = '';
+      if(ailEl.textContent !== a) ailEl.textContent = a;
+    } else {
+      ailEl.style.display = 'none';
+    }
+  }
+  // Slow walking for elders / sick
+  const c = G.char;
+  if(c && (c.age >= 70 || c.health < 30)){
+    el.classList.add('actor-frail');
+  } else {
+    el.classList.remove('actor-frail');
+  }
 }
 
 function centerCameraOnPlayer(){
@@ -1284,17 +1365,25 @@ function advanceHours(hours){
   save();
 }
 function advanceDay(){
-  if(G.char.job){
-    G.char.money += Math.floor(G.char.salary / 365);
-    G.char.jobYears += 1/365;
+  const c = G.char;
+  c.daysAlive = (c.daysAlive||0) + 1;
+  // Parents tend you when you're young — small daily happiness/health boost
+  if(c.age < 5 && (c.mom && c.mom.alive || c.dad && c.dad.alive)){
+    c.happiness = clamp(c.happiness + 1, 0, 100);
+    c.health    = clamp(c.health + 0.5, 0, 100);
+    c.hunger    = clamp(c.hunger + 3, 0, 100); // parents feed you
   }
-  if(G.char.enrolled){
-    G.char.enrolledYearsLeft -= 1/365;
-    if(G.char.enrolledYearsLeft <= 0){
-      G.char.degrees.push(G.char.enrolled);
-      miniMsg('🎓 Graduated with ' + G.char.enrolled + '!');
-      G.char.smarts = clamp(G.char.smarts + 8, 0, 100);
-      G.char.enrolled = null;
+  if(c.job){
+    c.money += Math.floor(c.salary / 365);
+    c.jobYears += 1/365;
+  }
+  if(c.enrolled){
+    c.enrolledYearsLeft -= 1/365;
+    if(c.enrolledYearsLeft <= 0){
+      c.degrees.push(c.enrolled);
+      miniMsg('🎓 Graduated with ' + c.enrolled + '!');
+      c.smarts = clamp(c.smarts + 8, 0, 100);
+      c.enrolled = null;
     }
   }
   if(G.char.day % 30 === 0){ ageUp(); }
@@ -1303,6 +1392,43 @@ function ageUp(){
   const c = G.char;
   c.age++;
   miniMsg('🎂 You\'re now ' + c.age + ' years old.');
+  // ─── Childhood milestones ───
+  if(c.age === 1)  { miniMsg('👶 You took your first steps.'); c.happiness = clamp(c.happiness + 5, 0, 100); }
+  if(c.age === 2)  { miniMsg('🗣 You said your first word.'); }
+  if(c.age === 3)  { miniMsg('🚸 You started preschool.'); c.smarts = clamp(c.smarts + 3, 0, 100); }
+  if(c.age === 5)  { miniMsg('🎒 You started kindergarten.'); c.smarts = clamp(c.smarts + 3, 0, 100); c.education = 'Elementary School'; }
+  if(c.age === 11) { miniMsg('🏫 You started middle school.'); c.smarts = clamp(c.smarts + 3, 0, 100); c.education = 'Middle School'; }
+  if(c.age === 13) { miniMsg('🌡 You hit puberty. Everything is complicated now.'); c.looks = clamp(c.looks + 3, 0, 100); }
+  if(c.age === 14) { c.education = 'High School'; }
+  if(c.age === 16) { miniMsg('🚗 You got your driver\'s license.'); }
+  if(c.age === 18) { miniMsg('🎓 You graduated high school. Welcome to adulthood.'); c.education = 'High School Graduate'; }
+  if(c.age === 21) { miniMsg('🥂 You can legally drink now.'); }
+  // ─── Parents age along with you, and eventually pass on ───
+  if(c.mom && c.mom.alive){
+    c.mom.age++;
+    if(c.mom.age > 78){
+      const chance = 0.04 + (c.mom.age - 78) * 0.02;
+      if(Math.random() < chance){
+        c.mom.alive = false;
+        miniMsg('🕯 Your mother passed away at age ' + c.mom.age + '.');
+        c.happiness = clamp(c.happiness - 25, 0, 100);
+      }
+    }
+  }
+  if(c.dad && c.dad.alive){
+    c.dad.age++;
+    if(c.dad.age > 76){
+      const chance = 0.04 + (c.dad.age - 76) * 0.02;
+      if(Math.random() < chance){
+        c.dad.alive = false;
+        miniMsg('🕯 Your father passed away at age ' + c.dad.age + '.');
+        c.happiness = clamp(c.happiness - 25, 0, 100);
+      }
+    }
+  }
+  // Refresh the home zone DOM if we're currently in home (so the parents
+  // disappear / change emoji as they age)
+  if(G.zone === 'home') buildZoneDOM('home');
   // Trait drift each year
   (c.traits || []).forEach(tid => {
     const t = TRAITS.find(x => x.id === tid);
@@ -2585,9 +2711,20 @@ window.addEventListener('keydown', e => {
   if(!G || !G.char || !G.char.alive) return;
   const k = e.key.toLowerCase();
   G.keys[k] = true;
-  if(k === 'e' || k === ' '){
+  if(k === 'e'){
     e.preventDefault();
     if(G.lastInteract){ triggerBuildingAction(G.lastInteract.id); }
+  } else if(k === ' '){
+    // SPACE: advance one full day (24 hours). If holding shift, advance 7 days.
+    e.preventDefault();
+    if(G.lastInteract){
+      // If standing right next to a building, prioritize interaction
+      triggerBuildingAction(G.lastInteract.id);
+    } else {
+      const days = e.shiftKey ? 7 : 1;
+      advanceHours(24 * days);
+      miniMsg(days === 7 ? '📅 +1 week passed.' : '📅 +1 day passed.');
+    }
   } else if(k === 'r'){
     e.preventDefault();
     advanceHours(1);

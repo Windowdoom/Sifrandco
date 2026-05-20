@@ -288,10 +288,11 @@ button:disabled{opacity:.35;cursor:not-allowed}
     #18100a;
   overflow:hidden;
   display:flex;align-items:center;justify-content:center;
-  padding:24px;
+  padding:18px;
 }
 #board{
-  width:100%;height:100%;max-width:980px;max-height:780px;
+  width:100%;height:100%;
+  max-width:min(94vh, 880px);max-height:min(94vh, 880px);
   filter:drop-shadow(0 12px 32px rgba(0,0,0,.6));
 }
 /* Dice live at bottom-right corner of the board, out of the way */
@@ -707,7 +708,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
   </div>
   <div id="main">
     <div id="board-wrap">
-      <svg id="board" viewBox="0 0 980 780"></svg>
+      <svg id="board" viewBox="0 0 696 696" preserveAspectRatio="xMidYMid meet"></svg>
       <div id="dice-overlay" title="Click a die after rolling to select it">
         <div class="die unrolled" id="die1" onclick="W.selectDie(1)"></div>
         <div class="die unrolled" id="die2" onclick="W.selectDie(2)"></div>
@@ -799,10 +800,10 @@ W.FOUNDERS = ["sumer","egypt","greece","rome","persia","china","france","england
    ========================================================= */
 W.BOARD_COLS = 8;
 W.BOARD_ROWS = 8;
-W.TILE = 96;        /* tile size in SVG units */
-W.MARGIN = 14;
-W.BOARD_W = W.BOARD_COLS * (W.TILE + W.MARGIN) - W.MARGIN;
-W.BOARD_H = W.BOARD_ROWS * (W.TILE + W.MARGIN) - W.MARGIN;
+W.TILE = 80;        /* tile size in SVG units */
+W.MARGIN = 8;
+W.BOARD_W = W.BOARD_COLS * (W.TILE + W.MARGIN) - W.MARGIN;  /* = 696 */
+W.BOARD_H = W.BOARD_ROWS * (W.TILE + W.MARGIN) - W.MARGIN;  /* = 696 */
 
 /* Convert tile index → grid (col, row) using boustrophedon (snake) layout */
 W.tileXY = (idx) => {
@@ -1672,15 +1673,16 @@ W.civIcon = (civId, sz, col) => {
   return I[civId] || `<text y="${s*.3}" text-anchor="middle" font-family="Cinzel,serif" font-size="${s*.9}" fill="${col}" font-weight="700">${W.CIVS[civId]?W.CIVS[civId].gl:"?"}</text>`;
 };
 
-/* Pawn-shaped piece SVG. Drawn around (0,0) in a 28-wide box. */
+/* Pawn-shaped piece SVG. Drawn around (0,0) — bigger now (~36 tall). */
 W.pieceSVG = (color, label, isPlayer, glow) => {
   const stroke = "#1a0e04";
   const txtCol = isPlayer ? "#fff" : "#1a0e04";
   return `<g${glow?' filter="url(#glow-piece)"':''}>
-    <ellipse cx="0" cy="13" rx="11" ry="3" fill="rgba(0,0,0,.45)"/>
-    <path d="M -11,12 L -8,9 L -8,5 Q -10,2 -7,1 L -7,-3 Q -10,-5 -6,-7 A 6,6 0 1 1 6,-7 Q 10,-5 7,-3 L 7,1 Q 10,2 8,5 L 8,9 L 11,12 Z"
-          fill="${color}" stroke="${stroke}" stroke-width="1.5"/>
-    <text x="0" y="-1" text-anchor="middle" font-family="Cinzel,serif" font-size="9" font-weight="800" fill="${txtCol}">${W.esc(label||"")}</text>
+    <ellipse cx="0" cy="17" rx="14" ry="3.5" fill="rgba(0,0,0,.5)"/>
+    <path d="M -14,15 L -10,11 L -10,6 Q -13,3 -9,1 L -9,-4 Q -13,-7 -8,-9 A 8,8 0 1 1 8,-9 Q 13,-7 9,-4 L 9,1 Q 13,3 10,6 L 10,11 L 14,15 Z"
+          fill="${color}" stroke="${stroke}" stroke-width="1.8"/>
+    <circle cx="0" cy="-9" r="6.5" fill="${color}" stroke="${stroke}" stroke-width="1.5"/>
+    <text x="0" y="-6" text-anchor="middle" font-family="Cinzel,serif" font-size="11" font-weight="800" fill="${txtCol}">${W.esc(label||"")}</text>
   </g>`;
 };
 
@@ -1838,17 +1840,20 @@ W.renderBoard = () => {
   Object.entries(pieceCounts).forEach(([pos, arr]) => {
     const [c,r] = W.tileXY(+pos);
     const [cx,cy] = W.gridPx(c,r);
+    /* Stack pieces in two rows of up to 6 each, centered horizontally,
+       positioned in the LOWER HALF of the tile so the illustration stays visible */
+    const total = arr.length;
+    const perRow = Math.min(total, 4);
     arr.forEach((entry, i) => {
-      /* Cluster pieces around the bottom-right of the tile */
-      const cols = Math.min(arr.length, 4);
-      const colN = i % cols;
-      const rowN = Math.floor(i / cols);
-      const startX = cx + W.TILE*.18 - (cols-1)*9;
-      const px = startX + colN * 18;
-      const py = cy + W.TILE*.16 + rowN * 22;
+      const rowN = Math.floor(i / perRow);
+      const colN = i % perRow;
+      const rowCount = (rowN === Math.floor((total-1)/perRow)) ? ((total-1) % perRow) + 1 : perRow;
+      const spacing = 16;
+      const px = cx + (colN - (rowCount-1)/2) * spacing;
+      const py = cy + 12 + rowN * 18;
       const isPlayer = entry.pl === W.G.player;
       const isSelectable = isPlayer && W.G.selectedDie !== null && !W.G.dice.used[W.G.selectedDie-1];
-      const label = isPlayer ? (entry.pi+1) : "";
+      const label = isPlayer ? (entry.pi+1) : (entry.pl.glyph || "");
       html += `<g transform="translate(${px},${py})" style="cursor:${isPlayer?'pointer':'default'};" ${isPlayer?`onclick="W.clickPiece(${entry.pi})"`:''}>
         ${W.pieceSVG(entry.pl.color, label, isPlayer, isSelectable)}
       </g>`;

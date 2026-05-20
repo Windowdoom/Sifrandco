@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lyfe-Walk · A Living Household</title>
+<style>
+:root{
+  --bg:#0a0614;
+  --s1:#15102a;
+  --s2:#1f1738;
+  --accent:#9f6cf2;
+  --accent2:#c39cff;
+  --gold:#ffd060;
+  --green:#5ee27a;
+  --crimson:#ff5e5e;
+  --teal:#1dd6c4;
+  --t1:#f0e8ff;
+  --t2:#c9b8ee;
+  --t3:#7a6a96;
+  --font-m:'Courier New',monospace;
+  --font-h:Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:Georgia,serif;overflow:hidden;}
+button,input,select{font-family:inherit;cursor:pointer;}
+
+/* ── Layout ── */
+#root{display:flex;height:100vh;}
+#world-col{flex:1;display:flex;flex-direction:column;min-width:0;}
+#side-col{width:340px;background:linear-gradient(180deg,#13101f,#0a0614);
+  border-left:1px solid #2a1f3d;display:flex;flex-direction:column;}
+
+/* ── Topbar ── */
+#topbar{height:48px;background:linear-gradient(180deg,#13131f,#0a0a14);
+  border-bottom:1px solid #2a1f3d;display:flex;align-items:center;padding:0 16px;gap:12px;
+  font-family:var(--font-m);font-size:12px;}
+.brand{font-family:var(--font-h);font-size:18px;color:var(--accent2);letter-spacing:.05em;}
+.brand-sub{font-size:10px;color:var(--t3);margin-left:6px;letter-spacing:.2em;}
+.chip{padding:5px 10px;background:#1a1428;border:1px solid #2a1f3d;border-radius:14px;
+  font-family:var(--font-m);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--t2);}
+.chip.gold{color:var(--gold);border-color:rgba(255,208,96,.3);}
+.chip.green{color:var(--green);border-color:rgba(94,226,122,.3);}
+.chip.teal{color:var(--teal);border-color:rgba(29,214,196,.3);}
+.spacer{flex:1;}
+.tb-btn{padding:5px 12px;background:#1a1428;border:1px solid #3a2a55;border-radius:4px;
+  color:var(--accent2);font-family:var(--font-m);font-size:11px;letter-spacing:.1em;}
+.tb-btn:hover{background:#241a36;}
+
+/* ── World ── */
+#world-wrap{flex:1;position:relative;overflow:hidden;background:#08050f;}
+#house{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:680px;height:500px;background:linear-gradient(180deg,#2a1f4a,#1a1330);
+  border:2px solid var(--accent);border-radius:8px;
+  box-shadow:0 0 40px rgba(159,108,242,.2),inset 0 0 60px rgba(0,0,0,.4);
+  overflow:hidden;}
+.room{position:absolute;border:1px dashed rgba(195,156,255,.15);}
+.room-label{position:absolute;bottom:3px;right:5px;font-family:var(--font-m);
+  font-size:9px;letter-spacing:.15em;color:rgba(195,156,255,.35);text-transform:uppercase;}
+.furniture{position:absolute;display:flex;flex-direction:column;align-items:center;
+  cursor:pointer;user-select:none;transition:transform .15s;}
+.furniture:hover{transform:translate(-50%,-50%) scale(1.1);z-index:5;}
+.furniture{transform:translate(-50%,-50%);}
+.f-icon{font-size:32px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
+.f-label{font-family:var(--font-m);font-size:8px;color:var(--t3);
+  margin-top:1px;letter-spacing:.1em;}
+
+/* ── Characters ── */
+.actor{position:absolute;display:flex;flex-direction:column;align-items:center;
+  transform:translate(-50%,-100%);transition:left .8s linear,top .8s linear;cursor:pointer;
+  user-select:none;z-index:10;}
+.actor.selected .a-emoji{filter:drop-shadow(0 0 8px var(--gold));}
+.a-emoji{font-size:34px;line-height:1;}
+.a-name{font-family:var(--font-m);font-size:9px;color:var(--t2);
+  margin-top:-2px;letter-spacing:.1em;background:rgba(0,0,0,.55);padding:1px 5px;border-radius:6px;}
+.a-thought{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,.95);color:#222;padding:4px 8px;border-radius:10px;
+  font-size:11px;font-family:Georgia,serif;white-space:nowrap;
+  box-shadow:0 2px 6px rgba(0,0,0,.5);margin-bottom:4px;}
+.a-thought::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(255,255,255,.95);}
+.a-mood{position:absolute;top:-6px;right:-6px;width:14px;height:14px;border-radius:50%;
+  background:#fff;border:2px solid;font-size:10px;display:flex;align-items:center;justify-content:center;}
+
+/* ── Side panel ── */
+.side-head{padding:14px 16px;border-bottom:1px solid #2a1f3d;
+  font-family:var(--font-h);font-size:14px;color:var(--accent2);letter-spacing:.1em;}
+.side-body{flex:1;overflow-y:auto;padding:14px 16px;}
+.side-body::-webkit-scrollbar{width:6px;}
+.side-body::-webkit-scrollbar-track{background:#0a0614;}
+.side-body::-webkit-scrollbar-thumb{background:#3a2a55;border-radius:3px;}
+
+.actor-card{padding:12px;background:#1a1428;border:1px solid var(--accent);
+  border-radius:6px;margin-bottom:10px;}
+.actor-card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.actor-card-emoji{font-size:30px;}
+.actor-card-name{flex:1;font-family:var(--font-h);font-size:14px;color:var(--t1);}
+.actor-card-sub{font-family:var(--font-m);font-size:9px;color:var(--t3);letter-spacing:.1em;}
+.need-row{display:flex;align-items:center;gap:6px;margin:4px 0;font-size:10px;}
+.need-name{flex:0 0 50px;color:var(--t3);font-family:var(--font-m);letter-spacing:.1em;}
+.need-bar{flex:1;height:6px;background:#0a0614;border-radius:3px;overflow:hidden;}
+.need-fill{height:100%;transition:width .4s;}
+.need-val{flex:0 0 25px;text-align:right;color:var(--t2);font-family:var(--font-m);}
+.bar-hunger{background:linear-gradient(90deg,#ff8c5e,#ffc060);}
+.bar-energy{background:linear-gradient(90deg,#5e9eff,#7fbfff);}
+.bar-hygiene{background:linear-gradient(90deg,#5ee2c4,#9af0d8);}
+.bar-fun{background:linear-gradient(90deg,#ffd060,#fff080);}
+.bar-social{background:linear-gradient(90deg,#ff6cb8,#ff9cd8);}
+.bar-health{background:linear-gradient(90deg,#5ee27a,#9af090);}
+
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;}
+.act-btn{padding:7px 8px;background:#241a36;border:1px solid #3a2a55;
+  border-radius:4px;color:var(--t1);font-family:var(--font-m);font-size:10px;
+  letter-spacing:.05em;text-align:center;cursor:pointer;}
+.act-btn:hover{background:#2f2347;border-color:var(--accent);}
+.act-btn.gold{color:var(--gold);border-color:rgba(255,208,96,.4);}
+.act-btn.green{color:var(--green);border-color:rgba(94,226,122,.4);}
+.act-btn.red{color:var(--crimson);border-color:rgba(255,94,94,.4);}
+.act-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── Log ── */
+#log{height:140px;background:#08050f;border-top:1px solid #2a1f3d;
+  overflow-y:auto;padding:8px 14px;font-family:var(--font-m);font-size:11px;}
+#log::-webkit-scrollbar{width:6px;}
+#log::-webkit-scrollbar-track{background:#0a0614;}
+#log::-webkit-scrollbar-thumb{background:#3a2a55;border-radius:3px;}
+.log-entry{padding:2px 0;color:var(--t2);line-height:1.5;}
+.log-entry .log-time{color:var(--t3);margin-right:8px;}
+.log-good{color:var(--green);}
+.log-bad{color:var(--crimson);}
+.log-baby{color:var(--gold);}
+.log-death{color:var(--crimson);font-weight:700;}
+
+/* ── Modal ── */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.75);
+  display:none;align-items:center;justify-content:center;z-index:1000;}
+#modal.show{display:flex;}
+.modal-box{background:linear-gradient(180deg,#1a1428,#0f0a1c);
+  border:2px solid var(--accent);border-radius:10px;
+  max-width:560px;width:90%;max-height:84vh;overflow-y:auto;
+  padding:24px;box-shadow:0 0 30px rgba(159,108,242,.3);}
+.modal-title{font-family:var(--font-h);font-size:20px;color:var(--accent2);
+  margin-bottom:14px;letter-spacing:.05em;}
+.modal-body{font-size:14px;color:var(--t2);line-height:1.6;}
+.modal-actions{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;}
+.m-btn{padding:9px 16px;background:var(--accent);color:#fff;border:none;border-radius:4px;
+  font-size:13px;letter-spacing:.05em;font-family:Georgia,serif;}
+.m-btn.muted{background:#2a1f3d;color:var(--t2);}
+.m-btn.green{background:var(--green);color:#0a0614;}
+.m-btn.red{background:var(--crimson);color:#fff;}
+
+/* ── Intro ── */
+#intro{position:fixed;inset:0;background:linear-gradient(180deg,#0a0614,#15102a);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  padding:30px;z-index:500;}
+#intro h1{font-family:var(--font-h);font-size:42px;color:var(--accent2);margin-bottom:6px;}
+#intro .sub{color:var(--t3);font-style:italic;margin-bottom:24px;}
+#intro-card{background:#1a1428;border:1px solid var(--accent);border-radius:8px;
+  padding:24px;width:420px;max-width:90vw;}
+.cc-row{margin:14px 0;}
+.cc-label{font-family:var(--font-m);font-size:10px;color:var(--t3);
+  letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px;}
+.cc-input{width:100%;padding:8px 10px;background:#0f0a1c;color:var(--t1);
+  border:1px solid #3a2a55;border-radius:4px;font-size:14px;}
+.cc-opts{display:flex;gap:6px;flex-wrap:wrap;}
+.cc-opt{padding:7px 12px;background:#241a36;border:1px solid #3a2a55;
+  border-radius:4px;font-size:11px;color:var(--t2);cursor:pointer;}
+.cc-opt.sel{background:var(--accent);color:#fff;border-color:var(--accent);}
+.cc-color{width:30px;height:30px;border-radius:50%;border:2px solid #3a2a55;cursor:pointer;}
+.cc-color.sel{border-color:var(--gold);box-shadow:0 0 8px var(--gold);}
+#start-btn{margin-top:18px;width:100%;padding:12px;background:var(--accent);
+  color:#fff;border:none;border-radius:5px;font-size:15px;letter-spacing:.1em;
+  font-family:var(--font-h);}
+
+/* ── Drag state ── */
+body.drag-mode #house{cursor:crosshair;}
+body.drag-mode .actor{opacity:.4;}
+
+/* ── Toast ── */
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  background:rgba(20,15,40,.95);border:1px solid var(--accent);
+  color:var(--accent2);padding:9px 18px;border-radius:5px;font-size:13px;
+  font-family:var(--font-m);letter-spacing:.05em;
+  opacity:0;transition:opacity .25s;pointer-events:none;z-index:1500;}
+#toast.show{opacity:1;}
+
+/* ── Day-night overlay ── */
+#night{position:absolute;inset:0;pointer-events:none;
+  background:rgba(5,5,30,0);transition:background 1s;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ INTRO ═══════════════════════════════ -->
+<div id="intro">
+  <h1>Lyfe-Walk</h1>
+  <div class="sub">A living household. They live their lives. You guide.</div>
+  <div id="intro-card">
+    <div class="cc-row">
+      <div class="cc-label">Founder's Name</div>
+      <input class="cc-input" id="cc-name" placeholder="What shall we call them?" maxlength="20">
+    </div>
+    <div class="cc-row">
+      <div class="cc-label">Sex</div>
+      <div class="cc-opts" id="cc-sex"></div>
+    </div>
+    <div class="cc-row">
+      <div class="cc-label">Skin Tone</div>
+      <div class="cc-opts" id="cc-skin"></div>
+    </div>
+    <div class="cc-row">
+      <div class="cc-label">Country</div>
+      <div class="cc-opts" id="cc-country"></div>
+    </div>
+    <button id="start-btn" onclick="startGame()">Begin the Family</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ GAME ═══════════════════════════════ -->
+<div id="root" style="display:none;">
+  <div id="world-col">
+    <div id="topbar">
+      <span class="brand">Lyfe-Walk</span><span class="brand-sub">v2 · Living Household</span>
+      <span class="chip" id="chip-time">Day 1 · 9 AM</span>
+      <span class="chip teal" id="chip-gen">Gen 1</span>
+      <span class="chip green" id="chip-money">$1,500</span>
+      <span class="chip gold" id="chip-pop">👨 1 · 👶 0</span>
+      <span class="spacer"></span>
+      <button class="tb-btn" onclick="setSpeed(1)" id="sp1">1×</button>
+      <button class="tb-btn" onclick="setSpeed(4)" id="sp4">4×</button>
+      <button class="tb-btn" onclick="setSpeed(16)" id="sp16">16×</button>
+      <button class="tb-btn" onclick="togglePause()" id="sp-pause">⏸</button>
+      <button class="tb-btn" onclick="openShop()">🛒 Shop</button>
+      <button class="tb-btn" onclick="openFamilyTree()">🌳 Tree</button>
+      <button class="tb-btn" onclick="confirmReset()">↺ New</button>
+    </div>
+    <div id="world-wrap">
+      <div id="house">
+        <div id="rooms"></div>
+        <div id="furniture"></div>
+        <div id="actors"></div>
+        <div id="night"></div>
+      </div>
+    </div>
+    <div id="log"></div>
+  </div>
+  <div id="side-col">
+    <div class="side-head" id="side-head">Household</div>
+    <div class="side-body" id="side-body"></div>
+  </div>
+</div>
+
+<div id="modal"><div class="modal-box">
+  <div class="modal-title" id="mod-title">—</div>
+  <div class="modal-body" id="mod-body"></div>
+  <div class="modal-actions" id="mod-actions"></div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════════════════════════════
+const SKIN_TONES = [
+  {id:'fair',  hex:'#f5d4b0', m:'👨🏻', f:'👩🏻', child:'🧒🏻', baby:'👶🏻', old_m:'👴🏻', old_f:'👵🏻'},
+  {id:'light', hex:'#e6b88f', m:'👨🏼', f:'👩🏼', child:'🧒🏼', baby:'👶🏼', old_m:'👴🏼', old_f:'👵🏼'},
+  {id:'med',   hex:'#c08e5a', m:'👨🏽', f:'👩🏽', child:'🧒🏽', baby:'👶🏽', old_m:'👴🏽', old_f:'👵🏽'},
+  {id:'tan',   hex:'#9a6534', m:'👨🏾', f:'👩🏾', child:'🧒🏾', baby:'👶🏾', old_m:'👴🏾', old_f:'👵🏾'},
+  {id:'dark',  hex:'#5c3a1d', m:'👨🏿', f:'👩🏿', child:'🧒🏿', baby:'👶🏿', old_m:'👴🏿', old_f:'👵🏿'},
+];
+
+const COUNTRIES = {
+  us:{name:'United States',flag:'🇺🇸',short:'USA',cur:'$',salaryMult:1.00},
+  uk:{name:'United Kingdom',flag:'🇬🇧',short:'UK',cur:'£',salaryMult:0.85},
+  jp:{name:'Japan',flag:'🇯🇵',short:'JPN',cur:'¥',salaryMult:0.75},
+  br:{name:'Brazil',flag:'🇧🇷',short:'BRA',cur:'R$',salaryMult:0.42},
+  in:{name:'India',flag:'🇮🇳',short:'IND',cur:'₹',salaryMult:0.35},
+  fr:{name:'France',flag:'🇫🇷',short:'FRA',cur:'€',salaryMult:0.78},
+  de:{name:'Germany',flag:'🇩🇪',short:'DEU',cur:'€',salaryMult:0.88},
+  ca:{name:'Canada',flag:'🇨🇦',short:'CAN',cur:'C$',salaryMult:0.82},
+  au:{name:'Australia',flag:'🇦🇺',short:'AUS',cur:'A$',salaryMult:0.90},
+  mx:{name:'Mexico',flag:'🇲🇽',short:'MEX',cur:'$',salaryMult:0.32},
+};
+
+// 14 rooms. Each room belongs to a "zone" with named bounds (px).
+// House is 680×500. Coords are pixel offsets inside #house.
+const ROOMS = [
+  {id:'kitchen',  name:'Kitchen',  x:10,  y:10,  w:200, h:140, color:'rgba(255,180,100,.04)'},
+  {id:'dining',   name:'Dining',   x:220, y:10,  w:200, h:140, color:'rgba(255,140,200,.04)'},
+  {id:'living',   name:'Living',   x:430, y:10,  w:240, h:200, color:'rgba(140,200,255,.04)'},
+  {id:'study',    name:'Study',    x:10,  y:160, w:200, h:140, color:'rgba(180,150,255,.04)'},
+  {id:'bath',     name:'Bath',     x:220, y:160, w:130, h:140, color:'rgba(120,220,255,.04)'},
+  {id:'play',     name:'Play',     x:360, y:160, w:300, h:50,  color:'rgba(255,220,100,.04)'},
+  {id:'bed1',     name:'Bedroom',  x:10,  y:310, w:220, h:180, color:'rgba(160,120,200,.04)'},
+  {id:'bed2',     name:'Nursery',  x:240, y:310, w:200, h:180, color:'rgba(255,160,200,.04)'},
+  {id:'garden',   name:'Garden',   x:450, y:220, w:220, h:270, color:'rgba(120,220,150,.04)'},
+];
+
+// Furniture / interactables. (x,y) is its center in pixels inside #house.
+// "act" determines the activity. "need" is what need it satisfies primarily.
+const FURNITURE = [
+  {id:'fridge',  ico:'🍱', label:'Fridge',   x:50,  y:80,  act:'eat',     need:'hunger',  cost:6,    dur:30},
+  {id:'stove',   ico:'🍳', label:'Stove',    x:120, y:80,  act:'cook',    need:'hunger',  cost:3,    dur:50,   gives:18},
+  {id:'sink',    ico:'🚰', label:'Sink',     x:180, y:80,  act:'drink',   need:'hunger',  cost:0,    dur:8,    gives:6},
+  {id:'table',   ico:'🍽️',label:'Table',    x:320, y:80,  act:'dine',    need:'social',  cost:0,    dur:40,   gives:20},
+  {id:'couch',   ico:'🛋️',label:'Couch',    x:500, y:90,  act:'relax',   need:'fun',     cost:0,    dur:40,   gives:14},
+  {id:'tv',      ico:'📺', label:'TV',       x:620, y:90,  act:'watch',   need:'fun',     cost:0,    dur:60,   gives:22},
+  {id:'desk',    ico:'💻', label:'Computer', x:60,  y:230, act:'work',    need:null,      cost:0,    dur:120,  gives:0},
+  {id:'books',   ico:'📚', label:'Books',    x:160, y:230, act:'study',   need:'fun',     cost:0,    dur:60,   gives:10},
+  {id:'shower',  ico:'🚿', label:'Shower',   x:260, y:230, act:'shower',  need:'hygiene', cost:0,    dur:25,   gives:55},
+  {id:'toilet',  ico:'🚽', label:'Toilet',   x:320, y:230, act:'toilet',  need:'hygiene', cost:0,    dur:10,   gives:15},
+  {id:'toys',    ico:'🧸', label:'Toys',     x:430, y:185, act:'play',    need:'fun',     cost:0,    dur:40,   gives:24},
+  {id:'piano',   ico:'🎹', label:'Piano',    x:560, y:185, act:'piano',   need:'fun',     cost:0,    dur:50,   gives:18},
+  {id:'bed',     ico:'🛏️',label:'Bed',      x:90,  y:400, act:'sleep',   need:'energy',  cost:0,    dur:240,  gives:90},
+  {id:'crib',    ico:'🛌', label:'Crib',     x:340, y:400, act:'crib',    need:'energy',  cost:0,    dur:120,  gives:80},
+  {id:'phone',   ico:'📞', label:'Phone',    x:540, y:90,  act:'call',    need:'social',  cost:0,    dur:30,   gives:25},
+  {id:'plant',   ico:'🌱', label:'Garden',   x:560, y:360, act:'garden',  need:'fun',     cost:0,    dur:60,   gives:10},
+];
+
+// Careers — work from home computer, earn per hour
+const CAREERS = [
+  {id:'freelance',  name:'Freelance Writer',     hourly:18},
+  {id:'devops',     name:'Software Engineer',    hourly:55, minSmarts:60},
+  {id:'designer',   name:'Graphic Designer',     hourly:30},
+  {id:'tutor',      name:'Online Tutor',         hourly:25, minSmarts:55},
+  {id:'trader',     name:'Day Trader',           hourly:80, minSmarts:75, risky:true},
+  {id:'streamer',   name:'Twitch Streamer',      hourly:22, minLooks:55},
+  {id:'consultant', name:'Consultant',           hourly:65, minSmarts:65},
+  {id:'novelist',   name:'Novelist',             hourly:14},
+];
+
+// Shop items
+const SHOP_ITEMS = [
+  {id:'fridge2',     name:'Premium Fridge',       cost:1200,  desc:'Food gives more hunger. Cheaper meals.'},
+  {id:'gym',         name:'Home Gym',             cost:1500,  desc:'A new workout option that boosts health.'},
+  {id:'tv2',         name:'Big-Screen TV',        cost:900,   desc:'TV gives more fun.'},
+  {id:'desk2',       name:'Ergonomic Desk',       cost:600,   desc:'+25% work pay (less tiring).'},
+  {id:'aircon',      name:'Air Conditioner',      cost:800,   desc:'Faster recovery, less heatstroke.'},
+  {id:'medkit',      name:'First-Aid Kit',        cost:120,   desc:'Heal a sick family member.'},
+  {id:'vitamins',    name:'Vitamins (1 mo)',      cost:60,    desc:'Slow health decay for a month.'},
+  {id:'pizza',       name:'Pizza Delivery',       cost:30,    desc:'Fills everyone\'s hunger.'},
+];
+
+// Possible thoughts by need state
+const THOUGHTS = {
+  hunger:    ['I\'m starving...','My stomach is growling.','I need food.','When\'s lunch?'],
+  energy:    ['I\'m exhausted.','I need to sleep.','So tired...','Bed sounds good.'],
+  hygiene:   ['I feel gross.','I need a shower.','I smell.','Time to wash up.'],
+  fun:       ['I\'m so bored.','Need something to do.','This is dull.','Anyone want to play?'],
+  social:    ['I feel lonely.','Wish someone would talk to me.','I miss family.','Need company.'],
+  idle:      ['What should I do?','Hmm.','Just thinking.','Nice day.','I love this house.'],
+  happy:     ['Life is good.','Feeling great.','What a lovely day.','I love my family.'],
+  sick:      ['I don\'t feel well...','Cough.','My head hurts.','I think I\'m sick.'],
+};
+
+// Big random life events that fire over time
+const LIFE_EVENTS = [
+  {t:'A neighbor knocked, complaining about noise.', fx:{social:-10}},
+  {t:'A package arrived — a small gift from a relative.', money:80, fx:{social:+10}},
+  {t:'A bird flew in through an open window. Everyone laughed.', fx:{fun:+8}},
+  {t:'The plumbing made a strange noise.', money:-40},
+  {t:'A storm rolled through — power was out for an hour.', fx:{fun:-6}},
+  {t:'A lottery ticket paid off!', money:+250},
+  {t:'The garbage was missed by collection.', fx:{hygiene:-8}},
+  {t:'A relative sent a card with cash.', money:+150},
+  {t:'A scam call wasted everyone\'s afternoon.', fx:{fun:-4}},
+  {t:'A friendly cat visited the porch.', fx:{fun:+5,social:+5}},
+  {t:'A surprise tax refund arrived!', money:+400},
+  {t:'A door hinge broke.', money:-25},
+];
+
+// Names by country (small samples for procedural NPCs)
+const NAMES = {
+  us:{m:['Liam','Noah','Oliver','James','Henry','Mason','Alex','Ethan','Lucas','Mateo'],
+      f:['Olivia','Emma','Ava','Sophia','Isabella','Mia','Lily','Charlotte','Amelia','Harper'],
+      l:['Smith','Johnson','Brown','Jones','Garcia','Miller','Davis','Wilson','Anderson','Taylor']},
+  uk:{m:['Oliver','Harry','George','Jack','Leo','Charlie','Arthur','Theo','Henry','Oscar'],
+      f:['Olivia','Amelia','Isla','Ava','Mia','Ivy','Lily','Sophia','Rosie','Grace'],
+      l:['Smith','Jones','Williams','Brown','Taylor','Davies','Wilson','Evans','Thomas','Roberts']},
+  jp:{m:['Haruto','Yuto','Sota','Yuki','Ren','Riku','Hayato','Daiki','Kaito','Sho'],
+      f:['Hina','Yuna','Aoi','Mio','Sakura','Yui','Rin','Nanami','Mei','Akari'],
+      l:['Sato','Suzuki','Takahashi','Tanaka','Watanabe','Ito','Yamamoto','Nakamura','Kobayashi','Kato']},
+  br:{m:['Miguel','Arthur','Heitor','Bernardo','Davi','Lorenzo','Theo','Pedro','Gabriel','Enzo'],
+      f:['Helena','Alice','Laura','Maria','Sophia','Isabella','Manuela','Julia','Heloisa','Luiza'],
+      l:['Silva','Santos','Oliveira','Souza','Lima','Pereira','Costa','Rodrigues','Almeida','Nascimento']},
+  in:{m:['Aarav','Vivaan','Aditya','Vihaan','Arjun','Sai','Reyansh','Krishna','Ishaan','Shaurya'],
+      f:['Aanya','Aadhya','Diya','Pari','Anaya','Saanvi','Myra','Sara','Riya','Kiara'],
+      l:['Sharma','Verma','Patel','Singh','Kumar','Gupta','Mehta','Reddy','Khan','Rao']},
+  fr:{m:['Gabriel','Leo','Raphael','Louis','Arthur','Hugo','Adam','Jules','Maël','Ethan'],
+      f:['Emma','Jade','Louise','Alice','Chloé','Lina','Mia','Rose','Anna','Léa'],
+      l:['Martin','Bernard','Dubois','Thomas','Robert','Petit','Richard','Durand','Leroy','Moreau']},
+  de:{m:['Noah','Leon','Paul','Ben','Elias','Finn','Luis','Felix','Jonas','Max'],
+      f:['Emilia','Hannah','Mia','Emma','Sofia','Lina','Marie','Lea','Anna','Lara'],
+      l:['Müller','Schmidt','Schneider','Fischer','Weber','Meyer','Wagner','Becker','Schulz','Hoffmann']},
+  ca:{m:['Liam','Noah','Oliver','William','James','Benjamin','Lucas','Henry','Alexander','Mason'],
+      f:['Olivia','Charlotte','Emma','Amelia','Ava','Sophia','Isabella','Mia','Evelyn','Harper'],
+      l:['Smith','Brown','Tremblay','Martin','Roy','Wilson','MacDonald','Gagnon','Lee','Wong']},
+  au:{m:['Oliver','Noah','Jack','William','Leo','Henry','Lucas','Thomas','James','Mason'],
+      f:['Charlotte','Olivia','Mia','Amelia','Ava','Isla','Grace','Willow','Harper','Sophia'],
+      l:['Smith','Jones','Williams','Brown','Wilson','Taylor','Johnson','White','Martin','Anderson']},
+  mx:{m:['Santiago','Mateo','Sebastián','Leonardo','Matías','Diego','Emiliano','Daniel','Liam','Alexander'],
+      f:['Sofía','María','Valentina','Camila','Ximena','Renata','Regina','Victoria','Emily','Daniela'],
+      l:['García','Martínez','López','Hernández','González','Rodríguez','Pérez','Sánchez','Ramírez','Cruz']},
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════════
+let G = null; // { household, time, lastTickMs, speed, paused, selected, mode }
+let LOOP = null;
+const TICK_MS = 200;       // real ms between ticks
+const GAME_MINS_PER_TICK = 5; // game minutes advanced per tick at 1× speed
+
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function fmt(n){ if(n<0) return '-' + fmt(-n); if(n>=1e6) return '$' + (n/1e6).toFixed(2) + 'M'; if(n>=1e3) return '$' + (n/1e3).toFixed(1) + 'k'; return '$' + n; }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function newHousehold(name, sex, skin, country){
+  const founder = makeAdult(name, sex, skin, country, 22 + Math.floor(Math.random()*5));
+  return {
+    members: [founder],
+    money: 1500,
+    items: [],
+    country,
+    gen: 1,
+    eventLog: [],
+    foundedAt: Date.now(),
+    lastSavedAt: Date.now(),
+  };
+}
+
+function makeAdult(name, sex, skin, country, age){
+  return {
+    id: uid(),
+    name: name || pick(NAMES[country][sex]),
+    sex, skin, country,
+    age,                        // years (kids tracked in months elsewhere)
+    ageMonths: age * 12,
+    health: 90,
+    mood: 60,
+    happiness: 60,
+    smarts: 40 + Math.floor(Math.random()*30),
+    looks:  40 + Math.floor(Math.random()*30),
+    needs: { hunger:80, energy:80, hygiene:80, fun:70, social:70 },
+    pos: { x: 300 + Math.random()*100, y: 250 + Math.random()*60 },
+    target: null,
+    status: 'idle',
+    statusUntil: 0,
+    thought: '',
+    thoughtUntil: 0,
+    career: null,
+    sick: false,
+    partnerId: null,
+    married: false,
+    parentIds: [],
+    childIds: [],
+    isBaby: false,
+    isChild: false,
+    pregnant: false,
+    pregnancyDue: 0,
+    autonomous: true,
+    moodHistory: [],          // praise/scold timestamps
+    deathDay: null,
+  };
+}
+
+function makeChild(name, sex, skin, country, parentA, parentB){
+  const c = makeAdult(name, sex, skin, country, 0);
+  c.ageMonths = 0;
+  c.age = 0;
+  c.isBaby = true;
+  c.parentIds = [parentA.id, parentB ? parentB.id : null].filter(Boolean);
+  c.needs = { hunger:90, energy:90, hygiene:80, fun:80, social:80 };
+  c.pos = { x: 340, y: 400 };
+  return c;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SAVE / LOAD
+// ═══════════════════════════════════════════════════════════════════════
+function save(){
+  if(!G) return;
+  G.lastSavedAt = Date.now();
+  try { localStorage.setItem('lyfewalk_v2', JSON.stringify(G)); } catch(e){}
+}
+function load(){
+  try {
+    const s = localStorage.getItem('lyfewalk_v2');
+    if(!s) return false;
+    G = JSON.parse(s);
+    // ensure shape
+    if(!G.household || !G.time) return false;
+    return true;
+  } catch(e){ return false; }
+}
+function clearSave(){ try { localStorage.removeItem('lyfewalk_v2'); } catch(e){} }
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TIME / TICK / LOOP
+// ═══════════════════════════════════════════════════════════════════════
+function timeString(){
+  const t = G.time;
+  const ampm = t.hour < 12 ? 'AM' : 'PM';
+  const h12 = t.hour === 0 ? 12 : t.hour > 12 ? t.hour - 12 : t.hour;
+  return 'Day ' + t.day + ' · ' + h12 + ':' + String(t.minute).padStart(2,'0') + ' ' + ampm;
+}
+
+function advanceTime(mins){
+  G.time.minute += mins;
+  while(G.time.minute >= 60){ G.time.minute -= 60; G.time.hour++; }
+  while(G.time.hour >= 24){ G.time.hour -= 24; G.time.day++; onNewDay(); }
+}
+
+function onNewDay(){
+  // Each new day: drain stuff, age, pay bills monthly, life events
+  G.household.members.forEach(m => {
+    if(m.deathDay) return;
+    m.ageMonths += 1;             // 30 game days ≈ 1 month
+    if(m.ageMonths % 12 === 0){
+      m.age = Math.floor(m.ageMonths/12);
+      if(m.isBaby && m.ageMonths >= 24){ m.isBaby = false; m.isChild = true; logMsg('🎂 ' + m.name + ' is no longer a baby (now ' + m.age + ').', 'baby'); }
+      if(m.isChild && m.ageMonths >= 13*12){ m.isChild = false; logMsg('🎂 ' + m.name + ' grew into a teenager.', 'baby'); }
+      logMsg('🎂 ' + m.name + ' turned ' + m.age + '.', 'good');
+      // Aging effects
+      if(m.age >= 60){
+        m.health = clamp(m.health - 2, 0, 100);
+      }
+    }
+    // Daily slight decay
+    m.health = clamp(m.health + (m.mood > 60 ? 0.3 : -0.4), 0, 100);
+    // Old-age death roll
+    if(m.age >= 70){
+      const chance = 0.001 + (m.age - 70) * 0.0008;
+      if(Math.random() < chance){
+        kill(m, 'old age');
+      }
+    }
+    // Sickness
+    if(!m.sick && m.health < 50 && Math.random() < 0.03){
+      m.sick = true;
+      logMsg('🤒 ' + m.name + ' fell ill.', 'bad');
+    }
+    if(m.sick){
+      m.health = clamp(m.health - 3, 0, 100);
+      if(m.health <= 0){ kill(m, 'illness'); }
+      if(Math.random() < 0.08){
+        m.sick = false;
+        logMsg('💚 ' + m.name + ' recovered.', 'good');
+      }
+    }
+    // Pregnancy
+    if(m.pregnant){
+      m.pregnancyDue -= 1;
+      if(m.pregnancyDue <= 0){
+        deliverBaby(m);
+      }
+    }
+  });
+  // Weekly bills
+  if(G.time.day % 7 === 0){
+    const adults = G.household.members.filter(m => !m.deathDay && !m.isBaby && !m.isChild);
+    const cost = 90 + adults.length * 60;
+    G.household.money -= cost;
+    logMsg('💸 Weekly bills paid: ' + fmt(cost) + '.');
+  }
+  // Monthly random event
+  if(G.time.day % 30 === 0 && Math.random() < 0.7){
+    rollLifeEvent();
+  }
+}
+
+function deliverBaby(mom){
+  const country = G.household.country;
+  const sex = Math.random() < 0.5 ? 'm' : 'f';
+  const skin = mom.skin;
+  const name = pick(NAMES[country][sex]);
+  const dad = G.household.members.find(m => m.id === mom.partnerId);
+  const baby = makeChild(name, sex, skin, country, mom, dad);
+  baby.pos = { x: 340, y: 400 };
+  G.household.members.push(baby);
+  mom.pregnant = false;
+  mom.pregnancyDue = 0;
+  mom.childIds = mom.childIds || [];
+  mom.childIds.push(baby.id);
+  if(dad){ dad.childIds = dad.childIds || []; dad.childIds.push(baby.id); }
+  logMsg('🍼 ' + mom.name + ' gave birth to ' + name + '!', 'baby');
+}
+
+function kill(m, cause){
+  if(m.deathDay) return;
+  m.deathDay = G.time.day;
+  m.cause = cause;
+  m.autonomous = false;
+  logMsg('🕯 ' + m.name + ' has passed away (' + cause + ', age ' + m.age + ').', 'death');
+  // If everyone dead, check for heir
+  const alive = G.household.members.filter(x => !x.deathDay);
+  if(!alive.length){
+    setTimeout(() => endHousehold(), 1500);
+  }
+}
+
+function endHousehold(){
+  openModal('End of a Line',
+    '<p>Every member of your household has passed on. The story ends here.</p>'
+    + '<p style="margin-top:10px;">You can start a new family in this house. Furniture and money are gone, but the land remains.</p>',
+    [
+      {label:'Start New Family', fn:() => { clearSave(); location.reload(); }, cls:'green'},
+    ]);
+}
+
+function rollLifeEvent(){
+  const e = pick(LIFE_EVENTS);
+  if(e.money) G.household.money += e.money;
+  if(e.fx){
+    G.household.members.forEach(m => {
+      if(m.deathDay) return;
+      Object.keys(e.fx).forEach(k => {
+        if(m.needs[k] != null) m.needs[k] = clamp(m.needs[k] + e.fx[k], 0, 100);
+      });
+    });
+  }
+  logMsg('📰 ' + e.t + (e.money ? ' (' + (e.money>0?'+':'') + fmt(e.money) + ')' : ''),
+    e.money > 0 ? 'good' : e.money < 0 ? 'bad' : '');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TICK — autonomous AI per character
+// ═══════════════════════════════════════════════════════════════════════
+function tick(){
+  if(!G || G.paused) return;
+  const now = Date.now();
+  const elapsed = now - G.lastTickMs;
+  if(elapsed < TICK_MS) return;
+  G.lastTickMs = now;
+  const mins = GAME_MINS_PER_TICK * G.speed;
+  advanceTime(mins);
+  // Each member: drain needs, decide, execute
+  G.household.members.forEach(m => {
+    if(m.deathDay) return;
+    drainNeeds(m, mins);
+    updateMood(m);
+    if(!m.autonomous){
+      // player-controlled action; only timer-progress
+      progressActivity(m, mins);
+      return;
+    }
+    if(m.status === 'idle'){
+      const plan = planAction(m);
+      if(plan) startActivity(m, plan);
+    } else {
+      progressActivity(m, mins);
+    }
+    updateThought(m);
+  });
+  renderTick();
+  if(G.time.day % 2 === 0 && G.time.hour === 3 && G.time.minute < mins){
+    save();
+  }
+}
+
+function drainNeeds(m, mins){
+  // Babies and children drain faster on some needs
+  const k = (m.isBaby) ? 1.6 : (m.isChild ? 1.2 : 1);
+  // Per-minute drain rates (so 1 day = 24*60 minutes drains a need by ~80)
+  m.needs.hunger  = clamp(m.needs.hunger  - 0.06 * mins * k, 0, 100);
+  m.needs.energy  = clamp(m.needs.energy  - 0.04 * mins, 0, 100);
+  m.needs.hygiene = clamp(m.needs.hygiene - 0.03 * mins, 0, 100);
+  m.needs.fun     = clamp(m.needs.fun     - 0.035 * mins, 0, 100);
+  m.needs.social  = clamp(m.needs.social  - 0.025 * mins, 0, 100);
+  // Critical need penalties
+  if(m.needs.hunger < 10) m.health = clamp(m.health - 0.05 * mins, 0, 100);
+  if(m.needs.energy < 10) m.mood = clamp(m.mood - 0.05 * mins, 0, 100);
+  if(m.health <= 0 && !m.deathDay) kill(m, 'starvation');
+}
+
+function updateMood(m){
+  // Mood is a weighted average of needs + health
+  const avg = (m.needs.hunger + m.needs.energy + m.needs.hygiene + m.needs.fun + m.needs.social) / 5;
+  const target = (avg * 0.7) + (m.health * 0.3);
+  m.mood = clamp(m.mood + (target - m.mood) * 0.05, 0, 100);
+  m.happiness = m.mood;
+}
+
+function planAction(m){
+  // Pick the action that addresses the lowest need.
+  // Babies sleep/eat/get changed. Children also play. Adults can work, etc.
+  const sortable = Object.entries(m.needs).sort((a,b) => a[1] - b[1]);
+  for(const [need, val] of sortable){
+    if(val >= 65) break;
+    const furn = chooseFurnitureForNeed(m, need);
+    if(furn) return { furn, need };
+  }
+  // No urgent needs — work if adult & has career
+  if(!m.isBaby && !m.isChild && m.career && m.needs.energy > 40){
+    if(Math.random() < 0.4){
+      const f = FURNITURE.find(x => x.id === 'desk');
+      return { furn: f, need: 'work' };
+    }
+  }
+  // Or socialize with another household member
+  if(m.needs.social < 80){
+    const others = G.household.members.filter(o => o.id !== m.id && !o.deathDay);
+    if(others.length && Math.random() < 0.3){
+      const f = FURNITURE.find(x => x.id === 'couch');
+      return { furn: f, need: 'social' };
+    }
+  }
+  // Wander idle
+  if(Math.random() < 0.2){
+    return { furn: pick(FURNITURE.filter(f => f.id === 'couch' || f.id === 'garden')), need: 'idle' };
+  }
+  return null;
+}
+
+function chooseFurnitureForNeed(m, need){
+  const opts = FURNITURE.filter(f => f.need === need);
+  if(!opts.length) return null;
+  // Special: babies prefer crib
+  if(m.isBaby){
+    if(need === 'energy') return FURNITURE.find(f => f.id === 'crib');
+    if(need === 'hunger') return FURNITURE.find(f => f.id === 'fridge');
+  }
+  return pick(opts);
+}
+
+function startActivity(m, plan){
+  m.target = { x: plan.furn.x, y: plan.furn.y, furn: plan.furn };
+  m.status = 'walking';
+  m.statusUntil = 0;
+}
+
+function progressActivity(m, mins){
+  if(m.status === 'walking'){
+    // Move toward target. Pixel-per-tick speed: 10 px per game minute
+    const speed = 6 * mins;
+    const dx = m.target.x - m.pos.x;
+    const dy = m.target.y - m.pos.y;
+    const d = Math.hypot(dx, dy);
+    if(d < 8){
+      // Arrived — begin activity
+      m.pos.x = m.target.x;
+      m.pos.y = m.target.y - 14;
+      const f = m.target.furn;
+      m.status = f.act;
+      m.statusUntil = f.dur;
+      m.thought = activityThought(m, f.act);
+      m.thoughtUntil = 30;
+      // Apply costs (e.g. food cost)
+      if(f.cost && G.household.money < f.cost){
+        // Can't afford — abandon
+        m.status = 'idle';
+        m.target = null;
+        m.thought = 'No money for food...';
+        m.thoughtUntil = 20;
+        return;
+      }
+      if(f.cost) G.household.money -= f.cost;
+    } else {
+      m.pos.x += (dx / d) * speed;
+      m.pos.y += (dy / d) * speed;
+    }
+  } else if(m.status !== 'idle'){
+    // Activity in progress
+    m.statusUntil -= mins;
+    if(m.statusUntil <= 0){
+      finishActivity(m);
+    }
+  }
+}
+
+function finishActivity(m){
+  const f = m.target ? m.target.furn : null;
+  if(f){
+    if(f.act === 'work'){
+      const hourlyBase = (m.career && m.career.hourly) || 15;
+      const hours = f.dur / 60;
+      const pay = Math.floor(hourlyBase * hours * COUNTRIES[m.country].salaryMult);
+      G.household.money += pay;
+      m.needs.energy = clamp(m.needs.energy - 12, 0, 100);
+      m.smarts = clamp(m.smarts + 0.1, 0, 100);
+      logMsg('💼 ' + m.name + ' worked and earned ' + fmt(pay) + '.', 'good');
+    } else if(f.gives){
+      if(f.need && m.needs[f.need] != null){
+        m.needs[f.need] = clamp(m.needs[f.need] + f.gives, 0, 100);
+      }
+      // Sleeping also restores health a bit
+      if(f.act === 'sleep' || f.act === 'crib'){
+        m.health = clamp(m.health + 4, 0, 100);
+      }
+      if(f.act === 'shower'){
+        m.needs.hygiene = clamp(m.needs.hygiene + 55, 0, 100);
+      }
+      if(f.act === 'dine'){
+        m.needs.hunger = clamp(m.needs.hunger + 18, 0, 100);
+        m.needs.social = clamp(m.needs.social + 20, 0, 100);
+      }
+      if(f.act === 'garden' && Math.random() < 0.3){
+        G.household.money += 8;
+      }
+    }
+  }
+  m.status = 'idle';
+  m.target = null;
+}
+
+function activityThought(m, act){
+  const map = {
+    eat:'Mmm, food.', cook:'Cooking up something.', drink:'Just water.',
+    dine:'Lovely meal.', relax:'Just relaxing.', watch:'TV time.',
+    work:'Grinding.', study:'Reading.', shower:'So fresh.',
+    toilet:'Be right back.', play:'Wheee!', piano:'La la la.',
+    sleep:'Zzz...', crib:'Zzz...', call:'Catching up.', garden:'Plants are nice.',
+  };
+  return map[act] || '...';
+}
+
+function updateThought(m){
+  m.thoughtUntil -= 1;
+  if(m.thoughtUntil > 0) return;
+  if(m.status === 'idle' && Math.random() < 0.06){
+    // Pick a need-driven thought
+    const sorted = Object.entries(m.needs).sort((a,b) => a[1] - b[1]);
+    const [need, val] = sorted[0];
+    if(val < 35 && THOUGHTS[need]){ m.thought = pick(THOUGHTS[need]); }
+    else if(m.mood > 75){ m.thought = pick(THOUGHTS.happy); }
+    else if(m.sick){ m.thought = pick(THOUGHTS.sick); }
+    else { m.thought = pick(THOUGHTS.idle); }
+    m.thoughtUntil = 25 + Math.floor(Math.random()*40);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  INTERVENTION — player actions
+// ═══════════════════════════════════════════════════════════════════════
+function selectActor(id){
+  G.selected = id;
+  renderSide();
+  renderActors();
+}
+
+function intervention(act){
+  const m = G.household.members.find(x => x.id === G.selected);
+  if(!m || m.deathDay) return;
+  switch(act){
+    case 'praise':
+      m.mood = clamp(m.mood + 15, 0, 100);
+      m.thought = pick(['Thank you!','That feels good.','I love you too.','Yay!']);
+      m.thoughtUntil = 30;
+      logMsg('👍 You praised ' + m.name + '.', 'good');
+      break;
+    case 'scold':
+      m.mood = clamp(m.mood - 10, 0, 100);
+      // Cancel current activity
+      m.status = 'idle';
+      m.target = null;
+      m.thought = pick(['I\'m sorry...','Okay, okay.','That hurts.','I\'ll be good.']);
+      m.thoughtUntil = 30;
+      logMsg('👎 You scolded ' + m.name + '.', 'bad');
+      break;
+    case 'feed':
+      if(G.household.money < 6){ toast('Not enough money.'); return; }
+      G.household.money -= 6;
+      m.needs.hunger = clamp(m.needs.hunger + 35, 0, 100);
+      m.thought = 'Yum.';
+      m.thoughtUntil = 20;
+      logMsg('🍱 You fed ' + m.name + '.');
+      break;
+    case 'sleep':
+      sendTo(m, 'bed');
+      break;
+    case 'shower':
+      sendTo(m, 'shower');
+      break;
+    case 'play':
+      sendTo(m, 'toys');
+      break;
+    case 'work':
+      if(!m.career){ openCareerPicker(m); return; }
+      sendTo(m, 'desk');
+      break;
+    case 'tv':
+      sendTo(m, 'tv');
+      break;
+    case 'doctor':
+      if(G.household.money < 80){ toast('Doctor visits cost $80.'); return; }
+      G.household.money -= 80;
+      m.sick = false;
+      m.health = clamp(m.health + 20, 0, 100);
+      logMsg('🩺 ' + m.name + ' saw a doctor and feels better.', 'good');
+      break;
+    case 'tryforbaby':
+      tryForBaby(m);
+      break;
+    case 'datestranger':
+      meetStranger(m);
+      break;
+    case 'pickup':
+      G.mode = 'pickup';
+      G.pickupId = m.id;
+      document.body.classList.add('drag-mode');
+      toast('Click anywhere in the house to drop ' + m.name + '.');
+      break;
+  }
+  renderSide();
+  save();
+}
+
+function sendTo(m, furnId){
+  const f = FURNITURE.find(x => x.id === furnId);
+  if(!f){ return; }
+  m.target = { x: f.x, y: f.y, furn: f };
+  m.status = 'walking';
+  m.statusUntil = 0;
+  m.thought = 'On it.';
+  m.thoughtUntil = 15;
+}
+
+function tryForBaby(m){
+  if(m.sex !== 'f'){
+    const p = G.household.members.find(x => x.id === m.partnerId);
+    if(p && p.sex === 'f' && p.age >= 18 && p.age <= 50 && !p.pregnant){
+      p.pregnant = true;
+      p.pregnancyDue = 270; // ~9 months in game-days
+      logMsg('🤰 ' + p.name + ' is pregnant!', 'baby');
+      return;
+    }
+    toast('Need a female partner of childbearing age.');
+    return;
+  }
+  if(m.pregnant){ toast(m.name + ' is already pregnant.'); return; }
+  if(m.age < 18 || m.age > 50){ toast('Out of childbearing range.'); return; }
+  if(!m.partnerId){ toast('Need a partner first.'); return; }
+  m.pregnant = true;
+  m.pregnancyDue = 270;
+  logMsg('🤰 ' + m.name + ' is pregnant!', 'baby');
+}
+
+function meetStranger(m){
+  if(m.partnerId){ toast('Already partnered.'); return; }
+  if(m.age < 16){ toast('Too young.'); return; }
+  const country = G.household.country;
+  const sex = m.sex === 'm' ? 'f' : 'm';
+  const skin = pick(SKIN_TONES).id;
+  const candidate = makeAdult(pick(NAMES[country][sex]), sex, skin, country, m.age + Math.floor(Math.random()*8 - 4));
+  if(candidate.age < 18) candidate.age = 18;
+  const compat = 40 + Math.floor(Math.random()*60);
+  openModal('A New Acquaintance',
+    '<p><span style="font-size:48px;">' + avatarFor(candidate) + '</span></p>'
+    + '<p><b>' + candidate.name + '</b>, age ' + candidate.age + '.</p>'
+    + '<p>Compatibility with ' + m.name + ': <b style="color:' + (compat>=60?'var(--green)':'var(--gold)') + ';">' + compat + '%</b></p>'
+    + '<p>Smarts: ' + candidate.smarts + ' · Looks: ' + candidate.looks + '</p>',
+    [
+      {label:'Move In Together', fn:() => {
+        candidate.id = uid();
+        candidate.partnerId = m.id;
+        m.partnerId = candidate.id;
+        candidate.pos = { x: m.pos.x + 30, y: m.pos.y };
+        G.household.members.push(candidate);
+        logMsg('💕 ' + candidate.name + ' moved in with ' + m.name + '.', 'good');
+        closeModal();
+        renderAll();
+        save();
+      }, cls: 'green'},
+      {label:'Pass', fn: closeModal, cls:'muted'},
+    ]);
+}
+
+function openCareerPicker(m){
+  let html = '<p>' + m.name + ' has no career yet. Pick one:</p>';
+  CAREERS.forEach(c => {
+    const eligible = (!c.minSmarts || m.smarts >= c.minSmarts) && (!c.minLooks || m.looks >= c.minLooks);
+    html += '<div style="padding:10px;margin-top:8px;background:#241a36;border:1px solid #3a2a55;border-radius:5px;'+(eligible?'':'opacity:.4;')+'">'
+      + '<b style="color:var(--accent2);">' + c.name + '</b><br>'
+      + '<span style="font-size:11px;color:var(--t3);">' + fmt(c.hourly) + '/hr'
+      + (c.minSmarts?' · needs Smarts ' + c.minSmarts:'')
+      + (c.minLooks?' · needs Looks ' + c.minLooks:'') + '</span>'
+      + (eligible
+        ? '<button class="m-btn green" style="float:right;padding:5px 12px;font-size:11px;" onclick="pickCareer(\'' + m.id + '\',\'' + c.id + '\')">Take Job</button>'
+        : '<span style="float:right;font-size:10px;color:var(--crimson);">Not eligible</span>')
+      + '</div>';
+  });
+  openModal('Choose a Career', html, [{label:'Cancel', fn: closeModal, cls:'muted'}]);
+}
+function pickCareer(mid, cid){
+  const m = G.household.members.find(x => x.id === mid);
+  const c = CAREERS.find(x => x.id === cid);
+  m.career = { id: c.id, name: c.name, hourly: c.hourly };
+  logMsg('💼 ' + m.name + ' became a ' + c.name + '.', 'good');
+  closeModal();
+  renderSide();
+  save();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  WORLD CLICK — for pickup mode
+// ═══════════════════════════════════════════════════════════════════════
+function onHouseClick(ev){
+  if(G.mode !== 'pickup') return;
+  const house = document.getElementById('house');
+  const r = house.getBoundingClientRect();
+  const x = ev.clientX - r.left;
+  const y = ev.clientY - r.top;
+  const m = G.household.members.find(x => x.id === G.pickupId);
+  if(m){
+    m.pos.x = x; m.pos.y = y;
+    m.status = 'idle';
+    m.target = null;
+    m.thought = 'Whoa!';
+    m.thoughtUntil = 15;
+    logMsg('🤚 You picked up and moved ' + m.name + '.');
+  }
+  G.mode = null;
+  G.pickupId = null;
+  document.body.classList.remove('drag-mode');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SHOP
+// ═══════════════════════════════════════════════════════════════════════
+function openShop(){
+  let html = '<p style="color:var(--t3);font-size:13px;">Buy items to upgrade the household.</p>';
+  SHOP_ITEMS.forEach(it => {
+    const owned = G.household.items.includes(it.id);
+    html += '<div style="padding:10px;margin-top:8px;background:#241a36;border:1px solid #3a2a55;border-radius:5px;">'
+      + '<b style="color:var(--accent2);">' + it.name + '</b> <span style="float:right;color:var(--gold);">' + fmt(it.cost) + '</span><br>'
+      + '<span style="font-size:11px;color:var(--t3);">' + it.desc + '</span><br>'
+      + (owned && !it.id.startsWith('pizza') && !it.id.startsWith('vitamins') && !it.id.startsWith('medkit')
+        ? '<span style="font-size:10px;color:var(--green);">✓ Owned</span>'
+        : '<button class="m-btn" style="margin-top:5px;padding:5px 12px;font-size:11px;" onclick="buyItem(\'' + it.id + '\')">Buy</button>');
+    html += '</div>';
+  });
+  openModal('🛒 Shop', html, [{label:'Close', fn: closeModal, cls:'muted'}]);
+}
+function buyItem(id){
+  const it = SHOP_ITEMS.find(x => x.id === id);
+  if(G.household.money < it.cost){ toast('Not enough money.'); return; }
+  G.household.money -= it.cost;
+  if(id === 'pizza'){
+    G.household.members.forEach(m => { if(!m.deathDay) m.needs.hunger = clamp(m.needs.hunger + 40, 0, 100); });
+    logMsg('🍕 Pizza for everyone!', 'good');
+  } else if(id === 'medkit'){
+    const sick = G.household.members.find(m => m.sick && !m.deathDay);
+    if(sick){ sick.sick = false; sick.health = clamp(sick.health + 25, 0, 100); logMsg('💊 ' + sick.name + ' used the first-aid kit.', 'good'); }
+    else { logMsg('💊 First-aid kit stored.'); G.household.items.push(id); }
+  } else if(id === 'vitamins'){
+    G.household.members.forEach(m => { if(!m.deathDay) m.health = clamp(m.health + 10, 0, 100); });
+    logMsg('💊 Everyone took vitamins.', 'good');
+  } else {
+    G.household.items.push(id);
+    logMsg('🛒 You bought ' + it.name + '.', 'good');
+  }
+  closeModal();
+  openShop();
+  save();
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  FAMILY TREE
+// ═══════════════════════════════════════════════════════════════════════
+function openFamilyTree(){
+  let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+  G.household.members.forEach(m => {
+    const age = m.deathDay ? '✝ ' + (m.age || '?') : 'age ' + (m.age || 0);
+    const ico = avatarFor(m);
+    const role = m.isBaby ? 'Baby' : m.isChild ? 'Child' : 'Adult';
+    const partner = m.partnerId ? G.household.members.find(x => x.id === m.partnerId) : null;
+    html += '<div style="padding:10px;background:#241a36;border:1px solid #3a2a55;border-radius:5px;'+(m.deathDay?'opacity:.5;':'')+'">'
+      + '<span style="font-size:28px;">' + ico + '</span> '
+      + '<b>' + m.name + '</b> · ' + role + ' · ' + age
+      + (m.career ? ' · ' + m.career.name : '')
+      + (partner ? '<br><span style="font-size:11px;color:var(--t3);">💕 Partner: ' + partner.name + '</span>' : '')
+      + (m.childIds && m.childIds.length ? '<br><span style="font-size:11px;color:var(--t3);">👶 Children: ' + m.childIds.length + '</span>' : '')
+      + (m.deathDay ? '<br><span style="font-size:11px;color:var(--crimson);">✝ ' + (m.cause || 'unknown') + '</span>' : '')
+      + '</div>';
+  });
+  html += '</div>';
+  openModal('🌳 Family Tree · Gen ' + G.household.gen, html, [{label:'Close', fn: closeModal, cls:'muted'}]);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  RENDERING
+// ═══════════════════════════════════════════════════════════════════════
+function avatarFor(m){
+  const tone = SKIN_TONES.find(s => s.id === m.skin) || SKIN_TONES[0];
+  if(m.deathDay) return '⚱️';
+  if(m.isBaby) return tone.baby;
+  if(m.isChild) return tone.child;
+  if(m.age >= 65) return m.sex === 'm' ? tone.old_m : tone.old_f;
+  return m.sex === 'm' ? tone.m : tone.f;
+}
+
+function renderRooms(){
+  const wrap = document.getElementById('rooms');
+  wrap.innerHTML = ROOMS.map(r =>
+    '<div class="room" style="left:' + r.x + 'px;top:' + r.y + 'px;'
+    + 'width:' + r.w + 'px;height:' + r.h + 'px;background:' + r.color + ';">'
+    + '<span class="room-label">' + r.name + '</span></div>'
+  ).join('');
+}
+
+function renderFurniture(){
+  const wrap = document.getElementById('furniture');
+  wrap.innerHTML = FURNITURE.map(f =>
+    '<div class="furniture" style="left:' + f.x + 'px;top:' + f.y + 'px;" onclick="furnitureClick(\'' + f.id + '\')">'
+    + '<div class="f-icon">' + f.ico + '</div>'
+    + '<div class="f-label">' + f.label + '</div></div>'
+  ).join('');
+}
+
+function furnitureClick(fid){
+  if(!G.selected){ toast('Select a family member first.'); return; }
+  const m = G.household.members.find(x => x.id === G.selected);
+  if(!m || m.deathDay) return;
+  sendTo(m, fid);
+  renderSide();
+}
+
+function renderActors(){
+  const wrap = document.getElementById('actors');
+  wrap.innerHTML = G.household.members.map(m => {
+    if(m.deathDay) return ''; // gone
+    const sel = m.id === G.selected ? ' selected' : '';
+    const moodCol = m.mood > 70 ? '#5ee27a' : m.mood > 40 ? '#ffd060' : '#ff5e5e';
+    const moodIco = m.mood > 70 ? '😀' : m.mood > 40 ? '😐' : '😞';
+    const thought = (m.thought && m.thoughtUntil > 0)
+      ? '<div class="a-thought">' + m.thought + '</div>' : '';
+    return '<div class="actor' + sel + '" style="left:' + m.pos.x + 'px;top:' + m.pos.y + 'px;" onclick="selectActor(\'' + m.id + '\')">'
+      + thought
+      + '<div class="a-emoji">' + avatarFor(m) + (m.sick?'🤒':'') + '</div>'
+      + '<div class="a-name">' + m.name + '</div>'
+      + '<div class="a-mood" style="border-color:' + moodCol + ';color:' + moodCol + ';">' + moodIco + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderActorsPositions(){
+  // Lightweight update — only positions/thoughts; called every tick
+  G.household.members.forEach(m => {
+    if(m.deathDay) return;
+    const el = document.querySelector('.actor[onclick*="\'' + m.id + '\'"]');
+    if(!el) return;
+    el.style.left = m.pos.x + 'px';
+    el.style.top = m.pos.y + 'px';
+    const t = el.querySelector('.a-thought');
+    if(m.thought && m.thoughtUntil > 0){
+      if(!t){
+        const newT = document.createElement('div');
+        newT.className = 'a-thought';
+        newT.textContent = m.thought;
+        el.insertBefore(newT, el.firstChild);
+      } else { t.textContent = m.thought; }
+    } else if(t){ t.remove(); }
+  });
+}
+
+function renderTopbar(){
+  document.getElementById('chip-time').textContent = timeString();
+  document.getElementById('chip-gen').textContent = 'Gen ' + G.household.gen;
+  document.getElementById('chip-money').textContent = fmt(G.household.money);
+  const alive = G.household.members.filter(m => !m.deathDay);
+  const adults = alive.filter(m => !m.isBaby && !m.isChild).length;
+  const kids = alive.filter(m => m.isBaby || m.isChild).length;
+  document.getElementById('chip-pop').textContent = '👨 ' + adults + ' · 👶 ' + kids;
+  // Speed indicator
+  ['sp1','sp4','sp16'].forEach(id => {
+    document.getElementById(id).style.background = '#1a1428';
+  });
+  const cur = G.speed === 1 ? 'sp1' : G.speed === 4 ? 'sp4' : G.speed === 16 ? 'sp16' : null;
+  if(cur) document.getElementById(cur).style.background = 'var(--accent)';
+  document.getElementById('sp-pause').textContent = G.paused ? '▶' : '⏸';
+  // Day-night overlay
+  const night = document.getElementById('night');
+  if(night){
+    const h = G.time.hour;
+    let a = 0;
+    if(h >= 21 || h < 6) a = 0.45;
+    else if(h >= 19 || h < 7) a = 0.2;
+    night.style.background = 'rgba(5,5,30,' + a + ')';
+  }
+}
+
+function renderSide(){
+  const head = document.getElementById('side-head');
+  const body = document.getElementById('side-body');
+  if(!G.selected){
+    head.textContent = 'Household · ' + G.household.members.filter(m => !m.deathDay).length + ' alive';
+    body.innerHTML = G.household.members.map(m => {
+      if(m.deathDay) return '';
+      return '<div class="actor-card" onclick="selectActor(\'' + m.id + '\')" style="cursor:pointer;">'
+        + '<div class="actor-card-head">'
+        + '<span class="actor-card-emoji">' + avatarFor(m) + '</span>'
+        + '<div style="flex:1;">'
+        + '<div class="actor-card-name">' + m.name + '</div>'
+        + '<div class="actor-card-sub">Age ' + m.age + ' · ' + (m.isBaby?'Baby':m.isChild?'Child':m.career?m.career.name:'Adult') + '</div>'
+        + '</div>'
+        + '</div>'
+        + '<div class="need-row"><span class="need-name">Mood</span>'
+        + '<div class="need-bar"><div class="need-fill bar-fun" style="width:' + Math.round(m.mood) + '%;"></div></div>'
+        + '<span class="need-val">' + Math.round(m.mood) + '</span></div>'
+        + '</div>';
+    }).join('') || '<p style="color:var(--t3);text-align:center;">No one left.</p>';
+    return;
+  }
+  const m = G.household.members.find(x => x.id === G.selected);
+  if(!m){ G.selected = null; return renderSide(); }
+  head.innerHTML = '<span style="cursor:pointer;color:var(--t3);" onclick="selectActor(null)">←</span> ' + m.name;
+  const needRow = (name, key, cls) => (
+    '<div class="need-row"><span class="need-name">' + name + '</span>'
+    + '<div class="need-bar"><div class="need-fill ' + cls + '" style="width:' + Math.round(m.needs[key] != null ? m.needs[key] : m[key]) + '%;"></div></div>'
+    + '<span class="need-val">' + Math.round(m.needs[key] != null ? m.needs[key] : m[key]) + '</span></div>'
+  );
+  let actions = '';
+  const partner = m.partnerId ? G.household.members.find(x => x.id === m.partnerId) : null;
+  actions += '<button class="act-btn green" onclick="intervention(\'praise\')">👍 Praise</button>';
+  actions += '<button class="act-btn red" onclick="intervention(\'scold\')">👎 Scold</button>';
+  actions += '<button class="act-btn" onclick="intervention(\'feed\')">🍱 Feed ($6)</button>';
+  actions += '<button class="act-btn" onclick="intervention(\'sleep\')">🛏️ Sleep</button>';
+  actions += '<button class="act-btn" onclick="intervention(\'shower\')">🚿 Shower</button>';
+  actions += '<button class="act-btn" onclick="intervention(\'play\')">🧸 Play</button>';
+  if(!m.isBaby){
+    actions += '<button class="act-btn" onclick="intervention(\'tv\')">📺 Watch</button>';
+    if(!m.isChild){
+      actions += '<button class="act-btn gold" onclick="intervention(\'work\')">💼 Work</button>';
+      if(!m.partnerId && m.age >= 16){
+        actions += '<button class="act-btn gold" onclick="intervention(\'datestranger\')">💕 Date</button>';
+      }
+      if(m.partnerId && m.age >= 18 && m.age <= 50 && !m.pregnant){
+        actions += '<button class="act-btn gold" onclick="intervention(\'tryforbaby\')">👶 Baby</button>';
+      }
+    }
+  }
+  if(m.sick) actions += '<button class="act-btn red" onclick="intervention(\'doctor\')">🩺 Doctor ($80)</button>';
+  actions += '<button class="act-btn" onclick="intervention(\'pickup\')">🤚 Pick Up</button>';
+  body.innerHTML =
+      '<div class="actor-card">'
+    + '<div class="actor-card-head">'
+    + '<span class="actor-card-emoji">' + avatarFor(m) + (m.sick?'🤒':'') + '</span>'
+    + '<div style="flex:1;">'
+    + '<div class="actor-card-name">' + m.name + '</div>'
+    + '<div class="actor-card-sub">Age ' + m.age + ' · ' + (m.isBaby?'Baby':m.isChild?'Child':(m.career?m.career.name:'Unemployed')) + '</div>'
+    + '<div class="actor-card-sub">'
+      + (partner ? '💕 ' + partner.name + (m.married ? ' (married)' : ' (together)') : 'Single')
+      + (m.pregnant ? ' · 🤰 ' + Math.ceil(m.pregnancyDue / 30) + 'mo to go' : '')
+    + '</div>'
+    + '</div>'
+    + '</div>'
+    + needRow('Hunger',  'hunger',  'bar-hunger')
+    + needRow('Energy',  'energy',  'bar-energy')
+    + needRow('Hygiene', 'hygiene', 'bar-hygiene')
+    + needRow('Fun',     'fun',     'bar-fun')
+    + needRow('Social',  'social',  'bar-social')
+    + '<div class="need-row"><span class="need-name">Health</span>'
+    + '<div class="need-bar"><div class="need-fill bar-health" style="width:' + Math.round(m.health) + '%;"></div></div>'
+    + '<span class="need-val">' + Math.round(m.health) + '</span></div>'
+    + '<div class="need-row"><span class="need-name">Mood</span>'
+    + '<div class="need-bar"><div class="need-fill bar-fun" style="width:' + Math.round(m.mood) + '%;"></div></div>'
+    + '<span class="need-val">' + Math.round(m.mood) + '</span></div>'
+    + '<div style="margin-top:6px;font-size:10px;color:var(--t3);font-family:var(--font-m);letter-spacing:.1em;text-transform:uppercase;">Currently</div>'
+    + '<div style="font-size:12px;color:var(--t2);margin-bottom:8px;">' + (m.status === 'walking' ? 'Walking to ' + (m.target?m.target.furn.label:'') : m.status) + '</div>'
+    + '<div class="action-grid">' + actions + '</div>'
+    + '</div>';
+}
+
+function renderTick(){
+  renderTopbar();
+  renderActorsPositions();
+  // Need bars in side panel — re-render compact
+  if(G.selected){
+    const m = G.household.members.find(x => x.id === G.selected);
+    if(m && !m.deathDay){
+      document.querySelectorAll('.need-fill').forEach((el, i) => {
+        const keys = ['hunger','energy','hygiene','fun','social','health','mood'];
+        if(i < 5){ el.style.width = Math.round(m.needs[keys[i]]) + '%'; }
+        else if(i === 5){ el.style.width = Math.round(m.health) + '%'; }
+        else if(i === 6){ el.style.width = Math.round(m.mood) + '%'; }
+      });
+    }
+  } else {
+    // overview cards — update mood bars only
+    document.querySelectorAll('#side-body .need-fill.bar-fun').forEach((el, i) => {
+      const alive = G.household.members.filter(m => !m.deathDay);
+      if(alive[i]) el.style.width = Math.round(alive[i].mood) + '%';
+    });
+  }
+}
+
+function renderAll(){
+  renderRooms();
+  renderFurniture();
+  renderActors();
+  renderTopbar();
+  renderSide();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  LOG
+// ═══════════════════════════════════════════════════════════════════════
+function logMsg(text, cls){
+  const t = timeString();
+  G.household.eventLog = G.household.eventLog || [];
+  G.household.eventLog.push({ t, text, cls });
+  if(G.household.eventLog.length > 200) G.household.eventLog.shift();
+  renderLog();
+}
+function renderLog(){
+  const wrap = document.getElementById('log');
+  if(!wrap) return;
+  const items = (G.household.eventLog || []).slice(-30).reverse();
+  wrap.innerHTML = items.map(e =>
+    '<div class="log-entry log-' + (e.cls||'') + '"><span class="log-time">' + e.t + '</span>' + e.text + '</div>'
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  MODAL / TOAST
+// ═══════════════════════════════════════════════════════════════════════
+function openModal(title, html, actions){
+  document.getElementById('mod-title').textContent = title;
+  document.getElementById('mod-body').innerHTML = html;
+  const aWrap = document.getElementById('mod-actions');
+  aWrap.innerHTML = '';
+  (actions || [{label:'Close', fn: closeModal, cls:'muted'}]).forEach((a, i) => {
+    const b = document.createElement('button');
+    b.className = 'm-btn ' + (a.cls || '');
+    b.textContent = a.label;
+    b.onclick = a.fn;
+    aWrap.appendChild(b);
+  });
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+let _toastT = null;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if(_toastT) clearTimeout(_toastT);
+  _toastT = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  CONTROLS
+// ═══════════════════════════════════════════════════════════════════════
+function setSpeed(n){ G.speed = n; G.paused = false; renderTopbar(); }
+function togglePause(){ G.paused = !G.paused; renderTopbar(); }
+function confirmReset(){
+  openModal('Start Over?',
+    '<p>This abandons the current household. All progress will be lost.</p>',
+    [
+      {label:'Yes, Start New', cls:'red', fn:() => { clearSave(); location.reload(); }},
+      {label:'Cancel', cls:'muted', fn: closeModal},
+    ]);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  CHARACTER CREATION
+// ═══════════════════════════════════════════════════════════════════════
+let CC = { name:'', sex:'m', skin:'fair', country:'us' };
+function renderCC(){
+  const sexes = [{id:'m',label:'Male'},{id:'f',label:'Female'}];
+  document.getElementById('cc-sex').innerHTML = sexes.map(s =>
+    '<div class="cc-opt ' + (CC.sex===s.id?'sel':'') + '" onclick="setCC(\'sex\',\'' + s.id + '\')">' + s.label + '</div>').join('');
+  document.getElementById('cc-skin').innerHTML = SKIN_TONES.map(s =>
+    '<div class="cc-color ' + (CC.skin===s.id?'sel':'') + '" style="background:' + s.hex + ';" onclick="setCC(\'skin\',\'' + s.id + '\')"></div>').join('');
+  document.getElementById('cc-country').innerHTML = Object.keys(COUNTRIES).map(k =>
+    '<div class="cc-opt ' + (CC.country===k?'sel':'') + '" onclick="setCC(\'country\',\'' + k + '\')">' + COUNTRIES[k].flag + ' ' + COUNTRIES[k].name + '</div>').join('');
+}
+function setCC(f,v){ CC[f]=v; renderCC(); }
+
+function startGame(){
+  const name = (document.getElementById('cc-name').value || '').trim() || pick(NAMES[CC.country][CC.sex]);
+  G = {
+    household: newHousehold(name, CC.sex, CC.skin, CC.country),
+    time: { day:1, hour:9, minute:0 },
+    speed: 4,
+    paused: false,
+    selected: null,
+    mode: null,
+    lastTickMs: Date.now(),
+  };
+  // Welcome log
+  logMsg('🏠 ' + name + ' founded a new household in ' + COUNTRIES[CC.country].name + '.', 'good');
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('root').style.display = 'flex';
+  renderAll();
+  renderLog();
+  startLoop();
+  save();
+}
+
+function resumeFromSave(){
+  // Apply offline progression — fast-forward up to 4 game hours per real hour elapsed.
+  const realElapsedMs = Date.now() - (G.lastSavedAt || Date.now());
+  const gameMinutes = Math.min(60*8, Math.floor(realElapsedMs / 1000 / 60 * 60)); // cap 8 hrs
+  if(gameMinutes > 5){
+    advanceTime(gameMinutes);
+    logMsg('⏳ Welcome back. ' + Math.floor(gameMinutes / 60) + 'h passed while you were away.', 'good');
+  }
+  G.lastTickMs = Date.now();
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('root').style.display = 'flex';
+  renderAll();
+  renderLog();
+  startLoop();
+}
+
+function startLoop(){
+  if(LOOP) clearInterval(LOOP);
+  LOOP = setInterval(tick, TICK_MS);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('house').addEventListener('click', onHouseClick);
+  if(load() && G && G.household && G.household.members.length){
+    resumeFromSave();
+  } else {
+    renderCC();
+  }
+});
+</script>
+</body>
+</html>

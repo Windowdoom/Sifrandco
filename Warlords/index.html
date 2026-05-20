@@ -294,64 +294,74 @@ button:disabled{opacity:.35;cursor:not-allowed}
   width:100%;height:100%;max-width:980px;max-height:780px;
   filter:drop-shadow(0 12px 32px rgba(0,0,0,.6));
 }
+/* Dice live at bottom-right corner of the board, out of the way */
 #dice-overlay{
-  position:absolute;top:24px;left:50%;transform:translateX(-50%);
-  display:flex;align-items:center;gap:14px;
-  padding:14px 22px;
+  position:absolute;bottom:24px;right:24px;
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
   background:linear-gradient(180deg,#2a1a0a,#1c1208);
-  border:2px solid var(--gold);
+  border:1px solid var(--gold);
   border-radius:var(--rl);
-  box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 32px rgba(212,160,23,.2);
+  box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 24px rgba(212,160,23,.15);
   z-index:5;
+  transition:all .35s cubic-bezier(.4,0,.2,1);
 }
+#dice-overlay.faded{opacity:.45;transform:scale(.85)}
+#dice-overlay.faded:hover{opacity:1;transform:scale(1)}
 .die{
-  width:48px;height:48px;
-  background:linear-gradient(135deg,var(--cream),var(--paper2));
+  width:44px;height:44px;
+  background:linear-gradient(135deg,#fff,var(--paper));
   border:2px solid var(--ink2);
-  border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--fh);font-size:24px;font-weight:800;
-  color:var(--ink);
-  box-shadow:
-    0 0 0 1px var(--cream) inset,
-    0 4px 8px rgba(0,0,0,.4);
-  position:relative;transition:all .2s;
+  border-radius:7px;
+  position:relative;transition:all .25s;
   cursor:pointer;
+  box-shadow:
+    0 0 0 1px #fff inset,
+    inset -2px -2px 0 rgba(0,0,0,.08),
+    0 4px 8px rgba(0,0,0,.4);
 }
-.die.used{opacity:.35;filter:grayscale(1);cursor:not-allowed}
+.die svg{width:100%;height:100%}
+.die .pip{fill:var(--ink)}
+.die.used{opacity:.35;filter:grayscale(1) brightness(.7);cursor:not-allowed}
 .die.selected{
   border-color:var(--crimson2);
   box-shadow:
     0 0 0 2px var(--crimson2) inset,
-    0 0 16px rgba(200,48,47,.6),
+    0 0 16px rgba(200,48,47,.7),
     0 4px 8px rgba(0,0,0,.4);
-  transform:translateY(-3px);
+  transform:translateY(-3px) scale(1.05);
 }
 .die.unrolled{
   background:linear-gradient(135deg,#3a2510,#241808);
-  color:var(--gold);border-color:var(--gold);
 }
-.die.rolling{animation:roll-anim .5s ease}
+.die.unrolled::before{
+  content:"?";
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fh);font-size:22px;font-weight:800;color:var(--gold);
+}
+.die.rolling{animation:roll-anim .55s ease}
 @keyframes roll-anim{
-  0%{transform:rotateX(0)}
-  50%{transform:rotateX(720deg) scale(1.2)}
-  100%{transform:rotateX(0)}
+  0%{transform:rotateX(0) rotateY(0)}
+  50%{transform:rotateX(720deg) rotateY(360deg) scale(1.25)}
+  100%{transform:rotateX(0) rotateY(0)}
 }
 .dice-label{
-  font-family:var(--fm);font-size:10px;color:var(--paper3);
+  font-family:var(--fm);font-size:9px;color:var(--paper3);
   letter-spacing:.22em;text-transform:uppercase;
+  writing-mode:vertical-rl;transform:rotate(180deg);
 }
 
 #message-bar{
-  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
-  padding:12px 24px;
-  background:rgba(28,18,8,.95);
+  position:absolute;top:18px;left:50%;transform:translateX(-50%);
+  padding:10px 22px;
+  background:rgba(28,18,8,.92);
   border:1px solid var(--gold);
   border-radius:var(--rl);
-  font-family:var(--fb);font-style:italic;font-size:15px;
+  font-family:var(--fb);font-style:italic;font-size:14px;
   color:var(--paper);
   box-shadow:0 8px 24px rgba(0,0,0,.6);
-  max-width:580px;text-align:center;
+  max-width:540px;text-align:center;
   z-index:5;
 }
 #message-bar b{color:var(--gold);font-style:normal;font-weight:600}
@@ -698,10 +708,10 @@ button:disabled{opacity:.35;cursor:not-allowed}
   <div id="main">
     <div id="board-wrap">
       <svg id="board" viewBox="0 0 980 780"></svg>
-      <div id="dice-overlay">
-        <div class="dice-label">Roll</div>
-        <div class="die unrolled" id="die1" onclick="W.selectDie(1)">?</div>
-        <div class="die unrolled" id="die2" onclick="W.selectDie(2)">?</div>
+      <div id="dice-overlay" title="Click a die after rolling to select it">
+        <div class="die unrolled" id="die1" onclick="W.selectDie(1)"></div>
+        <div class="die unrolled" id="die2" onclick="W.selectDie(2)"></div>
+        <div class="dice-label">Dice</div>
       </div>
       <div id="message-bar">Click <b>ROLL DICE</b> to begin your turn.</div>
     </div>
@@ -1516,26 +1526,201 @@ W.renderMessage = () => {
   el.innerHTML = W.G.message || "";
 };
 
+/* Generate a die face as an SVG of pips, 1-6 standard pattern */
+W.diceFaceSVG = (n) => {
+  /* Positions on a 44x44 die (12px padding, pip radius 3.4) */
+  const P = { TL:[12,12], TC:[22,12], TR:[32,12],
+              ML:[12,22], MC:[22,22], MR:[32,22],
+              BL:[12,32], BC:[22,32], BR:[32,32] };
+  const MAP = {
+    1:["MC"],
+    2:["TL","BR"],
+    3:["TL","MC","BR"],
+    4:["TL","TR","BL","BR"],
+    5:["TL","TR","MC","BL","BR"],
+    6:["TL","TR","ML","MR","BL","BR"],
+    7:["TL","TC","TR","BL","BC","BR"], // when bonus pushes past 6
+    8:["TL","TC","TR","ML","MR","BL","BC","BR"],
+    9:["TL","TC","TR","ML","MC","MR","BL","BC","BR"],
+  };
+  const positions = MAP[Math.min(9, n)] || MAP[1];
+  const pips = positions.map(k => `<circle class="pip" cx="${P[k][0]}" cy="${P[k][1]}" r="3.4"/>`).join("");
+  return `<svg viewBox="0 0 44 44">${pips}</svg>`;
+};
+
 W.renderDice = () => {
   const d1 = document.getElementById("die1");
   const d2 = document.getElementById("die2");
   const dice = W.G.dice;
+  const overlay = document.getElementById("dice-overlay");
   if(!W.G.rolled){
-    d1.textContent = "?"; d2.textContent = "?";
+    d1.innerHTML = ""; d2.innerHTML = "";
     d1.className = "die unrolled"; d2.className = "die unrolled";
+    overlay.classList.remove("faded");
     return;
   }
-  d1.textContent = dice.d1; d2.textContent = dice.d2;
+  d1.innerHTML = W.diceFaceSVG(dice.d1);
+  d2.innerHTML = W.diceFaceSVG(dice.d2);
   d1.className = "die"; d2.className = "die";
   if(dice.used[0]) d1.classList.add("used");
   if(dice.used[1]) d2.classList.add("used");
   if(W.G.selectedDie === 1 && !dice.used[0]) d1.classList.add("selected");
   if(W.G.selectedDie === 2 && !dice.used[1]) d2.classList.add("selected");
+  /* If both used, fade the dice box so it's clearly out of the way */
+  if(dice.used[0] && dice.used[1]) overlay.classList.add("faded");
+  else overlay.classList.remove("faded");
+};
+
+/* SVG icons for civilizations — thematic mini illustrations.
+   Each returns inner-SVG drawn around (0,0) in a ~36x36 box. */
+W.civIcon = (civId, sz, col) => {
+  sz = sz || 32;
+  col = col || "#fff";
+  const s = sz/2;
+  const I = {
+    sumer:  `<path d="M -${s*.7},${s*.7} L -${s*.5},${s*.7} L -${s*.5},${s*.2} L -${s*.3},${s*.2} L -${s*.3},-${s*.1} L -${s*.1},-${s*.1} L -${s*.1},-${s*.4} L ${s*.1},-${s*.4} L ${s*.1},-${s*.1} L ${s*.3},-${s*.1} L ${s*.3},${s*.2} L ${s*.5},${s*.2} L ${s*.5},${s*.7} L ${s*.7},${s*.7} Z" fill="${col}"/>`, // ziggurat
+    egypt:  `<path d="M -${s*.7},${s*.7} L 0,-${s*.7} L ${s*.7},${s*.7} Z" fill="${col}"/>
+             <path d="M -${s*.3},${s*.3} L ${s*.3},${s*.3} L 0,-${s*.1} Z" fill="${col}" opacity=".4"/>`, // pyramid
+    greece: `<rect x="-${s*.5}" y="-${s*.6}" width="${s}" height="${s*.15}" fill="${col}"/>
+             <rect x="-${s*.45}" y="-${s*.45}" width="${s*.18}" height="${s*.85}" fill="${col}"/>
+             <rect x="-${s*.09}" y="-${s*.45}" width="${s*.18}" height="${s*.85}" fill="${col}"/>
+             <rect x="${s*.27}" y="-${s*.45}" width="${s*.18}" height="${s*.85}" fill="${col}"/>
+             <rect x="-${s*.5}" y="${s*.4}" width="${s}" height="${s*.15}" fill="${col}"/>`, // 3 columns
+    rome:   `<path d="M -${s*.55},${s*.55} L -${s*.55},-${s*.1} A ${s*.55},${s*.55} 0 0 1 ${s*.55},-${s*.1} L ${s*.55},${s*.55} Z" fill="${col}"/>
+             <rect x="-${s*.18}" y="-${s*.1}" width="${s*.36}" height="${s*.65}" fill="#1a0e04"/>`, // Roman arch
+    persia: `<path d="M 0,-${s*.7} L ${s*.18},-${s*.4} L ${s*.45},-${s*.3} L ${s*.5},${s*.5} L -${s*.5},${s*.5} L -${s*.45},-${s*.3} L -${s*.18},-${s*.4} Z" fill="${col}"/>
+             <circle cx="0" cy="0" r="${s*.18}" fill="#1a0e04"/>`, // winged bull / standard
+    china:  `<path d="M -${s*.55},${s*.55} L -${s*.45},${s*.2} L -${s*.55},-${s*.05} L -${s*.4},-${s*.4} L -${s*.55},-${s*.6} L ${s*.55},-${s*.6} L ${s*.4},-${s*.4} L ${s*.55},-${s*.05} L ${s*.45},${s*.2} L ${s*.55},${s*.55} Z" fill="${col}"/>
+             <line x1="0" y1="-${s*.6}" x2="0" y2="${s*.55}" stroke="#1a0e04" stroke-width="2"/>`, // pagoda
+    carthage:`<path d="M -${s*.6},${s*.2} Q 0,${s*.65} ${s*.6},${s*.2} L ${s*.45},${s*.05} L -${s*.45},${s*.05} Z" fill="${col}"/>
+              <line x1="0" y1="${s*.05}" x2="0" y2="-${s*.55}" stroke="${col}" stroke-width="2"/>
+              <path d="M 0,-${s*.55} L ${s*.35},-${s*.25} L 0,-${s*.1} Z" fill="${col}"/>`, // sail ship
+    byz:    `<circle cx="0" cy="${s*.1}" r="${s*.5}" fill="${col}"/>
+             <rect x="-${s*.5}" y="${s*.1}" width="${s}" height="${s*.45}" fill="${col}"/>
+             <line x1="0" y1="-${s*.55}" x2="0" y2="-${s*.3}" stroke="${col}" stroke-width="2"/>
+             <line x1="-${s*.15}" y1="-${s*.4}" x2="${s*.15}" y2="-${s*.4}" stroke="${col}" stroke-width="2"/>`, // domed church + cross
+    cal:    `<circle cx="0" cy="${s*.1}" r="${s*.45}" fill="${col}"/>
+             <rect x="-${s*.45}" y="${s*.1}" width="${s*.9}" height="${s*.45}" fill="${col}"/>
+             <path d="M 0,-${s*.5} A ${s*.15},${s*.15} 0 1 0 ${s*.05},-${s*.25} A ${s*.1},${s*.1} 0 1 1 0,-${s*.5} Z" fill="${col}"/>`, // dome + crescent
+    mongol: `<path d="M -${s*.6},${s*.55} L -${s*.5},-${s*.2} A ${s*.5},${s*.5} 0 0 1 ${s*.5},-${s*.2} L ${s*.6},${s*.55} Z" fill="${col}"/>
+             <line x1="0" y1="-${s*.7}" x2="0" y2="-${s*.4}" stroke="${col}" stroke-width="2"/>`, // yurt
+    france: `<path d="M 0,-${s*.6} L ${s*.18},-${s*.2} L ${s*.55},-${s*.15} L ${s*.25},${s*.15} L ${s*.35},${s*.55} L 0,${s*.3} L -${s*.35},${s*.55} L -${s*.25},${s*.15} L -${s*.55},-${s*.15} L -${s*.18},-${s*.2} Z" fill="${col}"/>`, // fleur-de-lis (rough)
+    england:`<path d="M -${s*.5},-${s*.5} L ${s*.5},-${s*.5} L ${s*.5},${s*.1} Q ${s*.5},${s*.5} 0,${s*.6} Q -${s*.5},${s*.5} -${s*.5},${s*.1} Z" fill="${col}"/>
+             <rect x="-${s*.05}" y="-${s*.45}" width="${s*.1}" height="${s*.85}" fill="#1a0e04"/>
+             <rect x="-${s*.4}" y="${s*.0}" width="${s*.8}" height="${s*.12}" fill="#1a0e04"/>`, // cross shield
+    britain:`<path d="M -${s*.65},${s*.3} L -${s*.5},${s*.5} L ${s*.5},${s*.5} L ${s*.65},${s*.3} L ${s*.5},${s*.2} L -${s*.5},${s*.2} Z" fill="${col}"/>
+             <line x1="-${s*.3}" y1="${s*.2}" x2="-${s*.3}" y2="-${s*.5}" stroke="${col}" stroke-width="2"/>
+             <line x1="0" y1="${s*.2}" x2="0" y2="-${s*.55}" stroke="${col}" stroke-width="2"/>
+             <line x1="${s*.3}" y1="${s*.2}" x2="${s*.3}" y2="-${s*.5}" stroke="${col}" stroke-width="2"/>
+             <path d="M -${s*.4},-${s*.4} L -${s*.2},-${s*.4} L -${s*.3},-${s*.55} Z" fill="${col}"/>
+             <path d="M -${s*.1},-${s*.45} L ${s*.1},-${s*.45} L 0,-${s*.6} Z" fill="${col}"/>
+             <path d="M ${s*.2},-${s*.4} L ${s*.4},-${s*.4} L ${s*.3},-${s*.55} Z" fill="${col}"/>`, // ship of the line
+    france2:`<path d="M -${s*.65},${s*.0} Q 0,-${s*.6} ${s*.65},${s*.0} L ${s*.5},${s*.2} L -${s*.5},${s*.2} Z" fill="${col}"/>
+             <ellipse cx="0" cy="${s*.2}" rx="${s*.55}" ry="${s*.1}" fill="${col}"/>`, // bicorne hat
+    usa:    `<rect x="-${s*.45}" y="-${s*.55}" width="${s*.9}" height="${s*.95}" fill="${col}"/>
+             <g fill="#1a0e04"><rect x="-${s*.45}" y="-${s*.5}" width="${s*.4}" height="${s*.4}"/>
+             <rect x="-${s*.4}" y="-${s*.4}" width="${s*.3}" height="${s*.02}"/>
+             <rect x="-${s*.4}" y="-${s*.3}" width="${s*.3}" height="${s*.02}"/>
+             <rect x="-${s*.4}" y="-${s*.2}" width="${s*.3}" height="${s*.02}"/>
+             <rect x="-${s*.05}" y="-${s*.1}" width="${s*.5}" height="${s*.04}"/>
+             <rect x="-${s*.05}" y="0" width="${s*.5}" height="${s*.04}"/>
+             <rect x="-${s*.05}" y="${s*.1}" width="${s*.5}" height="${s*.04}"/>
+             <rect x="-${s*.05}" y="${s*.2}" width="${s*.5}" height="${s*.04}"/></g>`, // flag-ish
+    germany:`<rect x="-${s*.55}" y="-${s*.5}" width="${s*1.1}" height="${s*.35}" rx="2" fill="${col}"/>
+             <rect x="-${s*.55}" y="-${s*.15}" width="${s*1.1}" height="${s*.65}" rx="2" fill="${col}" opacity=".75"/>
+             <rect x="-${s*.15}" y="${s*.1}" width="${s*.3}" height="${s*.3}" fill="#1a0e04"/>`, // factory
+    japan:  `<rect x="-${s*.5}" y="-${s*.55}" width="${s}" height="${s*.1}" fill="${col}"/>
+             <rect x="-${s*.55}" y="-${s*.7}" width="${s*1.1}" height="${s*.12}" fill="${col}"/>
+             <rect x="-${s*.4}" y="-${s*.45}" width="${s*.1}" height="${s*1.0}" fill="${col}"/>
+             <rect x="${s*.3}" y="-${s*.45}" width="${s*.1}" height="${s*1.0}" fill="${col}"/>`, // torii gate
+    russia: `<path d="M -${s*.35},${s*.55} L -${s*.35},${s*.0} Q -${s*.6},-${s*.2} -${s*.3},-${s*.35} Q -${s*.3},-${s*.6} 0,-${s*.65} Q ${s*.3},-${s*.6} ${s*.3},-${s*.35} Q ${s*.6},-${s*.2} ${s*.35},${s*.0} L ${s*.35},${s*.55} Z" fill="${col}"/>
+             <line x1="0" y1="-${s*.7}" x2="0" y2="-${s*.5}" stroke="${col}" stroke-width="2"/>
+             <line x1="-${s*.1}" y1="-${s*.6}" x2="${s*.1}" y2="-${s*.6}" stroke="${col}" stroke-width="2"/>`, // onion dome
+    ussr:   `<g fill="${col}"><path d="M -${s*.55},${s*.4} L 0,-${s*.5} L ${s*.55},${s*.4} L ${s*.55},${s*.55} L ${s*.3},${s*.55} L ${s*.3},${s*.3} L -${s*.3},${s*.3} L -${s*.3},${s*.55} L -${s*.55},${s*.55} Z"/>
+             <circle cx="-${s*.25}" cy="0" r="${s*.18}" fill="none" stroke="${col}" stroke-width="3"/></g>`, // hammer & sickle stylised
+    usa_mod:`<rect x="-${s*.1}" y="-${s*.7}" width="${s*.2}" height="${s*1.25}" fill="${col}"/>
+             <path d="M 0,-${s*.7} L -${s*.15},-${s*.5} L ${s*.15},-${s*.5} Z" fill="${col}"/>`, // torch/liberty
+    china_mod:`<g fill="${col}">
+             <rect x="-${s*.5}" y="-${s*.6}" width="${s*.25}" height="${s*1.2}"/>
+             <rect x="-${s*.15}" y="-${s*.4}" width="${s*.25}" height="${s*1.0}"/>
+             <rect x="${s*.2}" y="-${s*.55}" width="${s*.25}" height="${s*1.15}"/></g>`, // skyscrapers
+    india:  `<g fill="${col}">
+             <ellipse cx="0" cy="0" rx="${s*.45}" ry="${s*.15}"/>
+             <ellipse cx="-${s*.35}" cy="-${s*.1}" rx="${s*.18}" ry="${s*.32}" transform="rotate(-45 -${s*.35} -${s*.1})"/>
+             <ellipse cx="${s*.35}" cy="-${s*.1}" rx="${s*.18}" ry="${s*.32}" transform="rotate(45 ${s*.35} -${s*.1})"/>
+             <ellipse cx="0" cy="-${s*.4}" rx="${s*.18}" ry="${s*.32}"/></g>`, // lotus
+    eu:     (() => {
+              let stars = "";
+              for(let i=0; i<12; i++){
+                const a = (i / 12) * Math.PI * 2;
+                const sx = (Math.cos(a) * s * .55).toFixed(1);
+                const sy = (Math.sin(a) * s * .55).toFixed(1);
+                stars += `<circle cx="${sx}" cy="${sy}" r="${s*.07}" fill="${col}"/>`;
+              }
+              return stars;
+            })(),
+    agi:    `<path d="M -${s*.5},-${s*.1} Q -${s*.55},-${s*.5} -${s*.2},-${s*.55} Q 0,-${s*.7} ${s*.2},-${s*.55} Q ${s*.55},-${s*.5} ${s*.5},-${s*.1} Q ${s*.55},${s*.25} ${s*.25},${s*.4} Q 0,${s*.55} -${s*.25},${s*.4} Q -${s*.55},${s*.25} -${s*.5},-${s*.1} Z" fill="${col}"/>
+             <path d="M -${s*.25},-${s*.1} Q -${s*.1},-${s*.3} 0,-${s*.15} Q ${s*.1},-${s*.3} ${s*.25},-${s*.1} Q ${s*.3},${s*.1} ${s*.15},${s*.25} Q 0,${s*.35} -${s*.15},${s*.25} Q -${s*.3},${s*.1} -${s*.25},-${s*.1} Z" fill="#1a0e04" opacity=".4"/>`, // brain
+    mars:   `<circle cx="0" cy="0" r="${s*.55}" fill="${col}"/>
+             <circle cx="-${s*.2}" cy="-${s*.15}" r="${s*.1}" fill="#1a0e04" opacity=".4"/>
+             <circle cx="${s*.15}" cy="${s*.18}" r="${s*.08}" fill="#1a0e04" opacity=".4"/>`, // planet
+    fusion: `<circle cx="0" cy="0" r="${s*.15}" fill="${col}"/>
+             <ellipse cx="0" cy="0" rx="${s*.55}" ry="${s*.18}" fill="none" stroke="${col}" stroke-width="2"/>
+             <ellipse cx="0" cy="0" rx="${s*.55}" ry="${s*.18}" fill="none" stroke="${col}" stroke-width="2" transform="rotate(60)"/>
+             <ellipse cx="0" cy="0" rx="${s*.55}" ry="${s*.18}" fill="none" stroke="${col}" stroke-width="2" transform="rotate(120)"/>`, // atom
+  };
+  return I[civId] || `<text y="${s*.3}" text-anchor="middle" font-family="Cinzel,serif" font-size="${s*.9}" fill="${col}" font-weight="700">${W.CIVS[civId]?W.CIVS[civId].gl:"?"}</text>`;
+};
+
+/* Pawn-shaped piece SVG. Drawn around (0,0) in a 28-wide box. */
+W.pieceSVG = (color, label, isPlayer, glow) => {
+  const stroke = "#1a0e04";
+  const txtCol = isPlayer ? "#fff" : "#1a0e04";
+  return `<g${glow?' filter="url(#glow-piece)"':''}>
+    <ellipse cx="0" cy="13" rx="11" ry="3" fill="rgba(0,0,0,.45)"/>
+    <path d="M -11,12 L -8,9 L -8,5 Q -10,2 -7,1 L -7,-3 Q -10,-5 -6,-7 A 6,6 0 1 1 6,-7 Q 10,-5 7,-3 L 7,1 Q 10,2 8,5 L 8,9 L 11,12 Z"
+          fill="${color}" stroke="${stroke}" stroke-width="1.5"/>
+    <text x="0" y="-1" text-anchor="middle" font-family="Cinzel,serif" font-size="9" font-weight="800" fill="${txtCol}">${W.esc(label||"")}</text>
+  </g>`;
 };
 
 W.renderBoard = () => {
   const svg = document.getElementById("board");
-  let html = "";
+  let html = `<defs>
+    <filter id="tile-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
+      <feOffset dx="0" dy="2"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".5"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-piece" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-tile" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="tile-paper" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,.18)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,.18)"/>
+    </linearGradient>
+  </defs>`;
+
+  /* Pre-compute possible move targets for selected die */
+  const reachable = new Set();
+  if(W.G.rolled && W.G.selectedDie !== null && !W.G.dice.used[W.G.selectedDie-1]){
+    let move = W.G.selectedDie === 1 ? W.G.dice.d1 : W.G.dice.d2;
+    if(W.hasCiv("china") && !W.G.flagChinaUsed) move += 1;
+    if(W.hasCiv("fusion")) move += 1;
+    if(W.hasCiv("germany") && (W.G.dice.d1 + W.G.dice.d2) >= 7) move += 1;
+    W.G.player.pieces.forEach(p => {
+      let target = p.pos + move;
+      if(target > 63) target = 63 - (target - 63);
+      reachable.add(target);
+    });
+  }
+
   /* Draw tiles */
   W.TILES.forEach((tile, idx) => {
     const [col, row] = W.tileXY(idx);
@@ -1549,45 +1734,98 @@ W.renderBoard = () => {
       civ = W.CIVS[tile.civId];
       if(civ) fill = civ.color;
     }
+    const isReach = reachable.has(idx);
     /* Tile background */
-    html += `<g class="tile" data-id="${idx}" style="cursor:pointer;" onclick="W.clickTile(${idx})">
-      <rect x="${tx}" y="${ty}" width="${W.TILE}" height="${W.TILE}" rx="8"
-        fill="${fill}" stroke="#1a0e04" stroke-width="2" opacity="0.85"/>
-      <rect x="${tx+3}" y="${ty+3}" width="${W.TILE-6}" height="${W.TILE-6}" rx="6"
-        fill="none" stroke="${type.text}" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.4"/>
-      <text x="${tx+8}" y="${ty+18}" font-family="JetBrains Mono,monospace" font-size="10" fill="${type.text}" opacity=".7" font-weight="700">${idx}</text>`;
-    /* Tile content */
+    html += `<g class="tile" data-id="${idx}" style="cursor:pointer;" onclick="W.clickTile(${idx})" filter="url(#tile-shadow)">
+      <rect x="${tx}" y="${ty}" width="${W.TILE}" height="${W.TILE}" rx="10"
+        fill="${fill}" stroke="#1a0e04" stroke-width="2" opacity="0.9"/>
+      <rect x="${tx}" y="${ty}" width="${W.TILE}" height="${W.TILE}" rx="10" fill="url(#tile-paper)"/>
+      <rect x="${tx+4}" y="${ty+4}" width="${W.TILE-8}" height="${W.TILE-8}" rx="7"
+        fill="none" stroke="${type.text}" stroke-width="1" stroke-dasharray="3 3" opacity="0.35"/>
+      <text x="${tx+8}" y="${ty+18}" font-family="JetBrains Mono,monospace" font-size="10" fill="${type.text}" opacity=".55" font-weight="700">${idx}</text>`;
+    if(isReach){
+      html += `<rect x="${tx-2}" y="${ty-2}" width="${W.TILE+4}" height="${W.TILE+4}" rx="12" fill="none" stroke="#ffd700" stroke-width="3" filter="url(#glow-tile)" opacity=".9">
+        <animate attributeName="opacity" values=".4;1;.4" dur="1.4s" repeatCount="indefinite"/>
+      </rect>`;
+    }
+    /* Tile content (illustrated) */
     if(tile.t === "civ" && civ){
-      html += `<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="24" fill="${type.text}">${civ.gl}</text>
-        <text x="${cx}" y="${cy+18}" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="${type.text}" font-weight="700">${W.esc(civ.n)}</text>`;
-    } else if(tile.t === "origin" || tile.t === "singularity"){
-      html += `<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="36" fill="${type.text}">${type.glyph}</text>
-        <text x="${cx}" y="${cy+22}" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="${type.text}" font-weight="700">${W.esc(tile.name)}</text>`;
+      html += `<g transform="translate(${cx},${cy-8})">${W.civIcon(tile.civId, 44, type.text)}</g>
+        <text x="${cx}" y="${cy+30}" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="${type.text}" font-weight="700">${W.esc(civ.n)}</text>`;
+    } else if(tile.t === "origin"){
+      html += `<g transform="translate(${cx},${cy-6})">
+        <circle r="22" fill="${type.text}" opacity=".15"/>
+        <path d="M -14,10 L 0,-16 L 14,10 Z" fill="${type.text}"/>
+        <circle r="6" fill="#1a0e04" opacity=".5"/>
+        </g>
+        <text x="${cx}" y="${cy+30}" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="${type.text}" font-weight="700">${W.esc(tile.name)}</text>`;
+    } else if(tile.t === "singularity"){
+      html += `<g transform="translate(${cx},${cy-6})">
+        <circle r="20" fill="${type.text}" opacity=".25"/>
+        <path d="M 0,-18 L 5,-5 L 18,-5 L 8,3 L 11,16 L 0,9 L -11,16 L -8,3 L -18,-5 L -5,-5 Z" fill="${type.text}"/>
+        </g>
+        <text x="${cx}" y="${cy+30}" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="${type.text}" font-weight="700">${W.esc(tile.name)}</text>`;
     } else if(tile.t === "era"){
-      html += `<text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="22" fill="${type.text}">⚊</text>
-        <text x="${cx}" y="${cy+12}" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="${type.text}" font-weight="700">${W.esc(tile.name)}</text>
-        <text x="${cx}" y="${cy+24}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="${type.text}" opacity=".7">${W.esc(tile.sub||"")}</text>`;
-    } else if(tile.t !== "blank"){
-      html += `<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="28" fill="${type.text}">${type.glyph}</text>
-        <text x="${cx}" y="${cy+22}" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="${type.text}" font-weight="700">${W.esc(tile.name||type.label)}</text>`;
+      html += `<g transform="translate(${cx},${cy-8})">
+        <rect x="-22" y="-4" width="44" height="8" fill="${type.text}" opacity=".3" rx="2"/>
+        <rect x="-22" y="-4" width="44" height="2" fill="${type.text}"/>
+        <rect x="-22" y="4" width="44" height="2" fill="${type.text}"/>
+        <text y="22" text-anchor="middle" font-family="Cinzel,serif" font-size="11" fill="${type.text}" font-weight="700">${W.esc(tile.name)}</text>
+        </g>
+        <text x="${cx}" y="${cy+34}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="${type.text}" opacity=".7">${W.esc(tile.sub||"")}</text>`;
+    } else if(tile.t === "ladder"){
+      const jump = tile.jump;
+      html += `<g transform="translate(${cx},${cy-6})">
+        <path d="M -12,12 L -12,-12 M 12,12 L 12,-12 M -12,8 L 12,8 M -12,2 L 12,2 M -12,-4 L 12,-4 M -12,-10 L 12,-10" stroke="${type.text}" stroke-width="2.2"/>
+        <path d="M 0,-18 L -7,-12 L 7,-12 Z" fill="${type.text}"/>
+        </g>
+        <text x="${cx}" y="${cy+30}" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="${type.text}" font-weight="700">${W.esc(tile.name||"")}</text>
+        <text x="${cx}" y="${cy+40}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="${type.text}" opacity=".75">+${jump}</text>`;
+    } else if(tile.t === "snake"){
+      const jump = -tile.jump;
+      html += `<g transform="translate(${cx},${cy-6})">
+        <path d="M -14,-12 Q -14,-4 -6,-4 Q 2,-4 2,4 Q 2,12 10,12 Q 18,12 18,4" stroke="${type.text}" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="-14" cy="-12" r="3" fill="${type.text}"/>
+        <circle cx="-15" cy="-13" r="1" fill="#1a0e04"/>
+        </g>
+        <text x="${cx}" y="${cy+30}" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="${type.text}" font-weight="700">${W.esc(tile.name||"")}</text>
+        <text x="${cx}" y="${cy+40}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="${type.text}" opacity=".75">${jump}</text>`;
+    } else if(tile.t === "event"){
+      html += `<g transform="translate(${cx},${cy-6})">
+        <path d="M 0,-16 L 4,-5 L 16,-5 L 7,3 L 10,14 L 0,7 L -10,14 L -7,3 L -16,-5 L -4,-5 Z" fill="${type.text}" opacity=".95"/>
+        </g>
+        <text x="${cx}" y="${cy+30}" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="${type.text}" font-weight="700">${W.esc(tile.name||"Event")}</text>`;
+    } else if(tile.t === "safe"){
+      html += `<g transform="translate(${cx},${cy-6})">
+        <rect x="-4" y="-16" width="8" height="32" fill="${type.text}"/>
+        <rect x="-16" y="-4" width="32" height="8" fill="${type.text}"/>
+        </g>
+        <text x="${cx}" y="${cy+34}" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="${type.text}" font-weight="700">${W.esc(tile.name||"Safe")}</text>`;
     }
     html += `</g>`;
   });
-  /* Path arrows between tiles */
+
+  /* Path arrows between adjacent tiles */
   for(let i=0; i<63; i++){
     const [c1,r1] = W.tileXY(i);
     const [c2,r2] = W.tileXY(i+1);
     const [x1,y1] = W.gridPx(c1,r1);
     const [x2,y2] = W.gridPx(c2,r2);
-    /* Only draw arrows that are next to each other (skip the wrap) */
     if(Math.abs(c1-c2) === 1 && r1 === r2){
       const mx = (x1+x2)/2;
       const my = (y1+y2)/2;
       const dir = x2>x1 ? 1 : -1;
-      html += `<polygon points="${mx-4*dir},${my-3} ${mx+4*dir},${my} ${mx-4*dir},${my+3}" fill="rgba(212,160,23,.5)"/>`;
+      html += `<polygon points="${mx-5*dir},${my-4} ${mx+5*dir},${my} ${mx-5*dir},${my+4}" fill="rgba(212,160,23,.55)"/>`;
+    }
+    /* Row-wrap connector arrow */
+    if(r1 !== r2){
+      const mx = (x1+x2)/2;
+      const my = (y1+y2)/2;
+      html += `<polygon points="${mx-4},${my-5} ${mx+4},${my-5} ${mx},${my+5}" fill="rgba(212,160,23,.55)"/>`;
     }
   }
-  /* Pieces */
+
+  /* Pieces — pawn-shaped */
   const allPlayers = [W.G.player, ...W.G.ais];
   const pieceCounts = {};
   allPlayers.forEach(pl => {
@@ -1601,20 +1839,22 @@ W.renderBoard = () => {
     const [c,r] = W.tileXY(+pos);
     const [cx,cy] = W.gridPx(c,r);
     arr.forEach((entry, i) => {
-      const offX = (i % 4) * 14 - 21;
-      const offY = Math.floor(i/4) * 14 - 7;
-      const px = cx + offX;
-      const py = cy + offY + 28;
+      /* Cluster pieces around the bottom-right of the tile */
+      const cols = Math.min(arr.length, 4);
+      const colN = i % cols;
+      const rowN = Math.floor(i / cols);
+      const startX = cx + W.TILE*.18 - (cols-1)*9;
+      const px = startX + colN * 18;
+      const py = cy + W.TILE*.16 + rowN * 22;
       const isPlayer = entry.pl === W.G.player;
       const isSelectable = isPlayer && W.G.selectedDie !== null && !W.G.dice.used[W.G.selectedDie-1];
-      html += `<g class="piece ${isSelectable?'piece-sel':''}" style="cursor:${isPlayer?'pointer':'default'};" ${isPlayer?`onclick="W.clickPiece(${entry.pi})"`:''}>
-        <circle cx="${px}" cy="${py}" r="10" fill="${entry.pl.color}" stroke="#1a0e04" stroke-width="2"/>
-        <text x="${px}" y="${py+3}" text-anchor="middle" font-size="10" font-weight="800" fill="${isPlayer?'#1a0e04':'#fff'}">${isPlayer?'★':entry.pl.glyph}</text>
+      const label = isPlayer ? (entry.pi+1) : "";
+      html += `<g transform="translate(${px},${py})" style="cursor:${isPlayer?'pointer':'default'};" ${isPlayer?`onclick="W.clickPiece(${entry.pi})"`:''}>
+        ${W.pieceSVG(entry.pl.color, label, isPlayer, isSelectable)}
       </g>`;
     });
   });
-  /* Highlight tiles the selected piece could reach */
-  /* (visual cue not strictly required; pieces already glow) */
+
   svg.innerHTML = html;
 };
 

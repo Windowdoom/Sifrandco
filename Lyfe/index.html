@@ -3521,8 +3521,65 @@ function ageOthers(){
   c.siblings.forEach(s => { if(s.alive) s.age++; });
   // partner
   if(c.partner && c.partner.alive !== false) c.partner.age++;
-  // children
-  c.children.forEach(k => { if(k.alive) k.age++; });
+  // children — also age their own grandkid lines
+  c.children.forEach(k => {
+    if(!k.alive) return;
+    k.age++;
+    // Children who are old enough may produce grandkids each year
+    rollGrandchildBirth(k);
+    // And the existing grandkids age with everyone else
+    (k.children || []).forEach(g => { if(g.alive) g.age++; });
+  });
+}
+
+// Adult children (18-55 women / 18-70 men) procedurally have grandkids
+// for the player. Probability tapers with age and existing-grandkid count
+// just like spontaneous babies.
+function rollGrandchildBirth(kid){
+  const c = LIFE.char;
+  if(!kid || !kid.alive) return;
+  if(kid.age < 18) return;
+  const kidSex = kid.sex || 'm';
+  const fertCutoff = kidSex === 'f' ? 55 : 70;
+  if(kid.age >= fertCutoff) return;
+  kid.children = kid.children || [];
+  if(kid.children.length >= 8) return;
+  // Once-per-year chance scales with kid's age
+  const ageMod = kid.age < 30 ? 0.12 : kid.age < 38 ? 0.09 : kid.age < 44 ? 0.05 : kid.age < 50 ? 0.025 : 0.012;
+  if(Math.random() >= ageMod) return;
+  const sex = Math.random() < 0.5 ? 'm' : 'f';
+  const pool = (typeof NAMES === 'object' && NAMES[c.country] && NAMES[c.country][sex]) ? NAMES[c.country][sex] : null;
+  const name = pool ? pool[Math.floor(Math.random()*pool.length)] : (sex === 'm' ? 'James' : 'Mary');
+  // Late-parenthood defects also apply to the kid's babies
+  const lateRisk = (kid.age >= 40 ? (kid.age - 38) * 0.025 : 0);
+  const inheritedDiseases = [];
+  if(typeof GENETIC_DISEASES !== 'undefined'){
+    GENETIC_DISEASES.forEach(d => {
+      if((kid.diseases||[]).includes(d.id) && Math.random() < d.inherit){
+        inheritedDiseases.push(d.id);
+      }
+      if(lateRisk > 0 && !inheritedDiseases.includes(d.id) && Math.random() < (lateRisk * 0.18)){
+        inheritedDiseases.push(d.id);
+      }
+    });
+  }
+  const grandkid = {
+    name, sex, age: 0, alive: true,
+    lastName: kid.lastName || c.lastName,
+    parentName: kid.name,
+    smarts: Math.floor((kid.smarts || 60) + (Math.random()*20 - 10)),
+    looks:  Math.floor((kid.looks  || 60) + (Math.random()*20 - 10)),
+    health: clamp(60 + Math.floor(Math.random()*35) + (kid.age >= 40 ? -10 : 0), 30, 100),
+    diseases: inheritedDiseases,
+    lateParent: kid.age >= 40,
+  };
+  kid.children.push(grandkid);
+  c.grandkidCount = (c.grandkidCount || 0) + 1;
+  c.happiness = clamp(c.happiness + 8, 0, 100);
+  pushEvent('milestone', '👶 Your ' + (kid.sex==='f'?'daughter':'son') + ' ' + kid.name + ' had a baby — ' + name + '. You\'re a grandparent (#' + c.grandkidCount + ').');
+  if(grandkid.lateParent && grandkid.diseases.length){
+    pushEvent('bad', '🧬 ' + grandkid.name + ' was born to a late-parent and carries elevated genetic risk.');
+  }
 }
 
 function fireAutoMilestone(){
@@ -4018,13 +4075,29 @@ function renderFamily(){
   if(c.children.length){
     html += c.children.map(k => {
       const av = !k.alive ? '🕯' : k.age < 1 ? '👶' : k.age < 13 ? '🧒' : k.age < 18 ? '🧑' : k.sex==='m'?'👨':'👩';
+      const gkBadge = (k.children && k.children.length)
+        ? '<div class="fam-meta" style="color:var(--gold);">👶 ' + k.children.filter(g => g.alive).length + ' grandkid' + (k.children.filter(g => g.alive).length===1?'':'s') + '</div>'
+        : '';
       return '<div class="fam-row ' + (k.alive?'':'fam-deceased') + '">'
         + '<div class="fam-emoji">' + av + '</div>'
         + '<div class="fam-info"><div class="fam-name">' + k.name + '</div>'
-        + '<div class="fam-meta">Age ' + k.age + ' · ' + (k.sex==='m'?'Son':'Daughter') + '</div></div></div>';
+        + '<div class="fam-meta">Age ' + k.age + ' · ' + (k.sex==='m'?'Son':'Daughter') + '</div>'
+        + gkBadge + '</div></div>';
     }).join('');
   } else {
     html += '<div class="fam-empty">No children.</div>';
+  }
+  // Grandkids section — flatten across all kids
+  const allGrandkids = c.children.flatMap(k => (k.children||[]).map(g => ({...g, viaParent:k.name})));
+  if(allGrandkids.length){
+    html += '<div class="fam-section-h" style="margin-top:8px;">Grandchildren (' + allGrandkids.filter(g=>g.alive).length + ')</div>';
+    html += allGrandkids.map(g => {
+      const av = !g.alive ? '🕯' : g.age < 1 ? '👶' : g.age < 13 ? '🧒' : g.age < 18 ? '🧑' : g.sex==='m'?'👨':'👩';
+      return '<div class="fam-row ' + (g.alive?'':'fam-deceased') + '">'
+        + '<div class="fam-emoji">' + av + '</div>'
+        + '<div class="fam-info"><div class="fam-name">' + g.name + '</div>'
+        + '<div class="fam-meta">Age ' + g.age + ' · via ' + g.viaParent + '</div></div></div>';
+    }).join('');
   }
   html += '</div>';
 
@@ -4493,12 +4566,76 @@ function goOnDate(){
   saveLife();
 }
 
+// Map a player's religion key to the matching religious-law system
+// (RELIGIOUS_LAWS) where wedding rituals are defined.
+const RELIGION_TO_LAW = {
+  islam:     'islamic',
+  christian: 'canon',
+  catholic:  'canon',
+  jewish:    'judaic',
+  hindu:     'hindu',
+  buddhist:  'buddhist',
+};
+// Per-religion wedding ritual descriptors — what the player picks.
+const RELIGIOUS_WEDDINGS = {
+  islam:     {label:'Nikkah (Islamic Marriage Contract)', ico:'🕌', desc:'Formal Islamic ceremony with witnesses, agreed mahr (dowry), and the contract reading. Halal feast follows.', cost:5000,  happy:22, karma:+5, faith:+10, vow:'two witnesses, the mahr, and the contract'},
+  christian: {label:'Church Wedding (Christian Vows)',     ico:'⛪', desc:'A church ceremony with vows before God, exchange of rings, and a reception. White dress optional.', cost:12000, happy:22, karma:+4, faith:+8,  vow:'the vows before God and rings exchanged'},
+  catholic:  {label:'Catholic Mass Wedding',                ico:'⛪', desc:'A full Catholic Nuptial Mass with priest, Eucharist, and traditional vows. Big extended family expected.', cost:15000, happy:24, karma:+5, faith:+10, vow:'the Nuptial Mass and the priest\'s blessing'},
+  jewish:    {label:'Jewish Wedding (Chuppah + Ketubah)',  ico:'✡️', desc:'Chuppah canopy, signed ketubah, seven blessings, breaking of the glass. Hora to follow.', cost:14000, happy:24, karma:+5, faith:+10, vow:'the chuppah, the ketubah, and the breaking of the glass'},
+  hindu:     {label:'Hindu Wedding (Saptapadi)',            ico:'🕉️', desc:'Multi-day ceremony — mehndi, sangeet, the seven steps around the sacred fire, sindoor. Hundreds of guests minimum.', cost:25000, happy:28, karma:+6, faith:+12, vow:'the seven steps around the sacred fire and the sindoor'},
+  buddhist:  {label:'Buddhist Blessing Ceremony',           ico:'☸️', desc:'Sangha blessing, exchange of vows in a temple, alms-offering. Quiet, intentional.', cost:6000,  happy:18, karma:+6, faith:+10, vow:'the sangha\'s blessing and the temple offering'},
+};
+
 function proposeMarriage(){
   const c = LIFE.char;
   const p = c.partner;
   if(p.compat < 60){ toast(p.firstName + ' said no. Compat too low.'); p.compat = clamp(p.compat - 8, 0, 100); switchRelTab('partner'); return; }
-  // Open wedding planner — player picks venue / catering / guest tier
+  // If the player follows a religion with a matching wedding ritual,
+  // ask whether they want the religious ceremony or a secular wedding.
+  const religiousWedding = c.religion && RELIGIOUS_WEDDINGS[c.religion];
+  if(religiousWedding){
+    offerWeddingChoice();
+    return;
+  }
   openWeddingPlanner();
+}
+
+function offerWeddingChoice(){
+  const c = LIFE.char;
+  const rw = RELIGIOUS_WEDDINGS[c.religion];
+  let html = '<div style="color:var(--accent2);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">'
+    + 'You follow ' + (RELIGIONS[c.religion] && RELIGIONS[c.religion].name || c.religion) + '. How will you marry?</div>';
+  html += '<div class="card" onclick="closeModal();confirmReligiousWedding()" style="cursor:pointer;">'
+    + '<div class="card-ico">' + rw.ico + '</div>'
+    + '<div class="card-body"><div class="card-title">' + rw.label + '</div>'
+    + '<div class="card-meta">' + rw.desc + '</div>'
+    + '<div class="card-meta" style="margin-top:4px;color:var(--gold);">Cost ' + fmtMoney(rw.cost) + ' · Happiness +' + rw.happy + ' · Faith +' + rw.faith + '</div></div>'
+    + '<div class="card-act"><button class="card-btn green">Choose</button></div></div>';
+  html += '<div class="card" onclick="closeModal();openWeddingPlanner()" style="cursor:pointer;">'
+    + '<div class="card-ico">💍</div>'
+    + '<div class="card-body"><div class="card-title">Secular Wedding (Pick Venue + Catering)</div>'
+    + '<div class="card-meta">A civil ceremony — pick the venue, catering, and guest list yourself.</div></div>'
+    + '<div class="card-act"><button class="card-btn">Choose</button></div></div>';
+  openModal('💍 How Will You Marry?', html);
+}
+
+function confirmReligiousWedding(){
+  const c = LIFE.char;
+  const rw = RELIGIOUS_WEDDINGS[c.religion];
+  if(!rw) return openWeddingPlanner();
+  if(c.money < rw.cost){
+    toast('Need ' + fmtMoney(rw.cost) + ' for the ceremony.');
+    return openWeddingPlanner();
+  }
+  c.money -= rw.cost;
+  c.partner.married = true;
+  c.partner.weddingType = c.religion;
+  c.partner.weddingVenue = rw.label;
+  c.happiness = clamp(c.happiness + rw.happy, 0, 100);
+  c.karma = clamp(c.karma + (rw.karma || 0), 0, 100);
+  c.faith = clamp((c.faith || 0) + (rw.faith || 0), 0, 100);
+  pushEvent('romantic', rw.ico + ' You married ' + c.partner.firstName + ' ' + c.partner.lastName + ' through ' + rw.label + '. ' + rw.vow.charAt(0).toUpperCase() + rw.vow.slice(1) + ' sealed the marriage.');
+  switchRelTab('partner'); renderAll(); saveLife();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -11076,10 +11213,20 @@ function rollSpontaneousBaby(){
   if(c.age < 18) return;
   if(c.children && c.children.length >= 10) return;
   if(c.fertility === 'infertile') return;
-  // Birth-control flag check (if user explicitly turns it on, no babies)
   if(c.birthControl) return;
+  // Hard fertility cutoffs per user spec: women up to 55, men up to 70.
+  // The PLAYER character's sex sets one ceiling; the partner sex sets the other.
+  // If both are out of window, no roll fires.
+  const playerInWindow = (c.sex === 'f' ? c.age < 55 : c.age < 70);
+  const partnerSex = (c.partner.sex === 'm' || c.partner.sex === 'f')
+    ? c.partner.sex : (c.sex === 'm' ? 'f' : 'm');
+  const partnerAge = c.partner.age || (c.age + ((c.partner.ageDelta) || 0));
+  const partnerInWindow = (partnerSex === 'f' ? partnerAge < 55 : partnerAge < 70);
+  if(!playerInWindow || !partnerInWindow) return;
   // Married couples — much higher rate. Unmarried committed — lower.
-  const ageMod = c.age < 30 ? 1.0 : c.age < 38 ? 0.55 : c.age < 44 ? 0.20 : 0.05;
+  // Age tapers gradually; over-40 keeps a small but real chance.
+  const a = c.age;
+  const ageMod = a < 30 ? 1.0 : a < 38 ? 0.55 : a < 44 ? 0.25 : a < 50 ? 0.12 : 0.06;
   const fertMod = c.fertility === 'high' ? 1.4 : c.fertility === 'multiparous' ? 1.5 : c.fertility === 'low' ? 0.4 : 1.0;
   const marriedMod = (c.partner && c.partner.married) ? 1.0 : 0.35;
   const baseChance = 0.18 * ageMod * fertMod * marriedMod;
@@ -11107,13 +11254,31 @@ function rollSpontaneousBaby(){
         }
       });
     }
+    // Late-parenthood genetic-defect amplifier: at 40 the bonus risk
+    // begins, doubles by 45, triples by 50. Applies for whichever parent
+    // is over 40 (or both).
+    const lateParentRisk = (a >= 40 ? (a - 38) * 0.025 : 0)
+                         + (partnerAge >= 40 ? (partnerAge - 38) * 0.025 : 0);
+    if(lateParentRisk > 0 && typeof GENETIC_DISEASES !== 'undefined'){
+      GENETIC_DISEASES.forEach(d => {
+        if(inheritedDiseases.includes(d.id)) return;
+        // For each genetic disease, late-parent risk gives an extra
+        // de-novo mutation chance proportional to age over 38.
+        if(Math.random() < (lateParentRisk * 0.18)){
+          inheritedDiseases.push(d.id);
+        }
+      });
+    }
+    // Late-parent babies also start with slightly lower health baseline
+    const healthMod = (a >= 40 || partnerAge >= 40) ? -10 : 0;
     babies.push({
       name, sex, age:0, alive:true,
       lastName: c.lastName,
       smarts: Math.floor(((c.smarts + (c.partner.smarts||60))/2) + (Math.random()*20 - 10)),
       looks:  Math.floor(((c.looks + (c.partner.looks||60))/2) + (Math.random()*20 - 10)),
-      health: 60 + Math.floor(Math.random()*35),
+      health: clamp(60 + Math.floor(Math.random()*35) + healthMod, 30, 100),
       diseases: inheritedDiseases,
+      lateParent: (a >= 40 || partnerAge >= 40),
     });
   }
   if(!c.children) c.children = [];
@@ -11125,6 +11290,14 @@ function rollSpontaneousBaby(){
     : '👶👶 SURPRISE: ' + c.partner.firstName + ' gave birth to ' + babies.length + ' babies — '
       + babies.map(b => b.name).join(', ') + '!';
   pushEvent('milestone', text);
+  // Late-parent disclaimers + flagged conditions
+  babies.forEach(b => {
+    if(b.lateParent && b.diseases && b.diseases.length){
+      pushEvent('bad', '🧬 ' + b.name + ' was born with a heightened-risk genetic profile (late-parent age). Conditions: ' + b.diseases.length + ' carried.');
+    } else if(b.lateParent){
+      pushEvent('', '👶 ' + b.name + ' was born to older parents. They\'ll need closer monitoring.');
+    }
+  });
 }
 
 // Birth-control toggle so the player has agency

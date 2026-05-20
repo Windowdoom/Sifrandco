@@ -6,12 +6,13 @@
 <title>Lyfe · The Simulation by WindowDoom</title>
 <style>
 :root{
-  --bg:#0a0612;
-  --s1:#15102a;
-  --s2:#1f1840;
-  --b1:#2a2050;
-  --b2:#3d2e6e;
-  --t1:#f5f0ff;
+  /* Warmer base — less blue, more plum / coal so the vibrant accents pop */
+  --bg:#0c0710;
+  --s1:#1a1124;
+  --s2:#251534;
+  --b1:#3a1f4a;
+  --b2:#552a6e;
+  --t1:#fff5ec;
   --t2:#c4b8e0;
   --t3:#8a7ab8;
   /* Vibrant palette — saturated, neon-leaning */
@@ -230,37 +231,88 @@ input,select{font-family:inherit;}
 .date-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;}
 
 /* ─── Intro / character creation ─── */
-#intro{position:fixed;inset:0;background:radial-gradient(ellipse at center,#1a1428,#000);
+/* ═══ INTRO — animated aurora + wordmark + dropdown ═══ */
+#intro{position:fixed;inset:0;background:#0a0612;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  z-index:5000;padding:30px;overflow-y:auto;}
-.intro-title{font-family:var(--font-h);font-size:80px;font-weight:900;letter-spacing:.04em;
-  background:linear-gradient(180deg,var(--accent2),var(--accent));
-  -webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 60px rgba(157,107,255,.4);
-  margin-bottom:8px;}
-.intro-sub{font-family:var(--font-m);font-size:11px;letter-spacing:.4em;color:var(--t3);
-  text-transform:uppercase;margin-bottom:40px;}
-.intro-form{width:min(94vw,600px);background:var(--s1);border:1px solid var(--b1);
-  border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:14px;}
+  z-index:5000;padding:30px;overflow:hidden;}
+#intro::before{content:'';position:absolute;inset:-20%;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 50% at 18% 22%, rgba(251,191,36,.35), transparent 60%),
+    radial-gradient(ellipse 55% 50% at 82% 28%, rgba(236,72,153,.32), transparent 60%),
+    radial-gradient(ellipse 65% 50% at 22% 80%, rgba(34,211,238,.30), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 78% 72%, rgba(34,197,94,.28),  transparent 60%),
+    radial-gradient(ellipse 80% 65% at 50% 50%, rgba(168,85,247,.30), transparent 70%);
+  filter:blur(50px);
+  animation:aurora 18s ease-in-out infinite alternate;}
+#intro::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(2px 2px at 12% 18%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1px 1px at 78% 38%, rgba(255,255,255,.55), transparent 60%),
+    radial-gradient(1.5px 1.5px at 33% 73%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(2px 2px at 88% 88%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1px 1px at 56% 23%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1.2px 1.2px at 8% 65%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(2px 2px at 67% 91%, rgba(255,255,255,.7), transparent 60%);
+  opacity:.85;animation:twinkle 7s ease-in-out infinite alternate;}
+@keyframes aurora{
+  0%   {transform:translate(0,0) rotate(0deg)   scale(1);}
+  50%  {transform:translate(-3%,-2%) rotate(8deg) scale(1.06);}
+  100% {transform:translate(2%,3%)  rotate(-5deg) scale(1.03);}
+}
+@keyframes twinkle{
+  0%   {opacity:.6;}
+  50%  {opacity:.95;}
+  100% {opacity:.7;}
+}
+.intro-title{position:relative;z-index:2;font-family:var(--font-h);font-size:120px;
+  font-weight:900;letter-spacing:.02em;line-height:1;
+  background:linear-gradient(120deg,#fbbf24 0%,#ec4899 35%,#a855f7 65%,#22d3ee 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 30px rgba(168,85,247,.45)) drop-shadow(0 0 60px rgba(251,191,36,.25));
+  animation:hueShift 12s linear infinite;
+  margin-bottom:6px;}
+.intro-title::after{content:'';display:block;width:60%;height:2px;margin:14px auto 0;
+  background:linear-gradient(90deg,transparent,#fbbf24,#ec4899,#22d3ee,transparent);
+  opacity:.9;border-radius:2px;}
+@keyframes hueShift{
+  0%   {filter:drop-shadow(0 0 30px rgba(168,85,247,.45)) drop-shadow(0 0 60px rgba(251,191,36,.25)) hue-rotate(0deg);}
+  100% {filter:drop-shadow(0 0 30px rgba(168,85,247,.45)) drop-shadow(0 0 60px rgba(251,191,36,.25)) hue-rotate(360deg);}
+}
+.intro-sub{position:relative;z-index:2;font-family:var(--font-m);font-size:11px;
+  letter-spacing:.5em;color:var(--gold);text-shadow:0 0 18px rgba(251,191,36,.5);
+  text-transform:uppercase;margin-bottom:42px;
+  padding:3px 16px;border:1px solid rgba(251,191,36,.5);border-radius:30px;
+  background:rgba(0,0,0,.35);backdrop-filter:blur(4px);}
+.intro-form{position:relative;z-index:2;width:min(94vw,560px);
+  background:rgba(20,12,38,.78);border:1px solid rgba(216,180,254,.3);
+  border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:16px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 10px 50px rgba(0,0,0,.6),
+             0 0 1px rgba(251,191,36,.4) inset,
+             0 0 80px rgba(236,72,153,.15);}
 .intro-field{display:flex;flex-direction:column;gap:5px;}
-.intro-label{font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:var(--accent2);
+.intro-label{font-family:var(--font-m);font-size:10px;letter-spacing:.24em;color:var(--gold);
   text-transform:uppercase;}
-.intro-input,.intro-select{background:var(--bg);border:1px solid var(--b2);color:var(--t1);
-  padding:10px 12px;font-family:var(--font-s);font-size:14px;border-radius:3px;}
-.intro-input:focus,.intro-select:focus{outline:none;border-color:var(--accent);}
+.intro-input,.intro-select{background:rgba(10,6,18,.85);border:1px solid rgba(216,180,254,.25);
+  color:var(--t1);padding:11px 12px;font-family:var(--font-s);font-size:14px;border-radius:5px;
+  transition:border-color .15s, box-shadow .15s;}
+.intro-input:focus,.intro-select:focus{outline:none;border-color:var(--gold);
+  box-shadow:0 0 12px rgba(251,191,36,.4);}
+.intro-select{appearance:none;background-image:
+  linear-gradient(45deg,transparent 50%,var(--gold) 50%),
+  linear-gradient(135deg,var(--gold) 50%,transparent 50%);
+  background-position:calc(100% - 18px) center,calc(100% - 13px) center;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px;}
 .intro-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.country-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;}
-.country-btn{padding:10px;background:var(--s2);border:1px solid var(--b2);border-radius:4px;
-  cursor:pointer;text-align:center;transition:all .15s;}
-.country-btn.selected{border-color:var(--accent);background:#1a1428;
-  box-shadow:0 0 12px rgba(157,107,255,.3);}
-.country-btn:hover{border-color:var(--accent2);}
-.country-flag{font-size:30px;display:block;margin-bottom:4px;}
-.country-name{font-family:var(--font-m);font-size:9.5px;letter-spacing:.08em;color:var(--t2);}
-.intro-start{background:linear-gradient(90deg,var(--accent),#7d4be0);color:#fff;border:none;
-  padding:14px;font-family:var(--font-m);font-size:13px;letter-spacing:.28em;text-transform:uppercase;
-  font-weight:900;border-radius:4px;cursor:pointer;margin-top:6px;}
-.intro-start:hover{background:linear-gradient(90deg,#b08aff,var(--accent));
-  box-shadow:0 0 24px rgba(157,107,255,.5);}
+.intro-start{background:linear-gradient(90deg,#fbbf24 0%,#ec4899 50%,#a855f7 100%);color:#fff;border:none;
+  padding:16px;font-family:var(--font-m);font-size:13px;letter-spacing:.32em;text-transform:uppercase;
+  font-weight:900;border-radius:6px;cursor:pointer;margin-top:8px;
+  box-shadow:0 4px 20px rgba(236,72,153,.4);transition:transform .15s, box-shadow .15s;}
+.intro-start:hover{transform:translateY(-1px);
+  box-shadow:0 6px 28px rgba(251,191,36,.5),0 0 30px rgba(168,85,247,.4);}
+.intro-start.muted{background:rgba(30,20,55,.85);color:var(--t2);box-shadow:none;
+  font-size:11px;letter-spacing:.22em;}
+.intro-start.muted:hover{background:rgba(45,30,80,.9);box-shadow:0 0 14px rgba(216,180,254,.25);}
 
 /* ─── Death overlay ─── */
 #death-screen{position:fixed;inset:0;background:radial-gradient(ellipse at center,#1a0808,#000);
@@ -419,7 +471,7 @@ input,select{font-family:inherit;}
   <div class="intro-form">
     <div class="intro-field">
       <div class="intro-label">Where are you born?</div>
-      <div class="country-grid" id="intro-countries"></div>
+      <select class="intro-select" id="intro-country"></select>
     </div>
     <div class="intro-row">
       <div class="intro-field">
@@ -435,8 +487,7 @@ input,select{font-family:inherit;}
       </div>
     </div>
     <button class="intro-start" onclick="startNewLife()">Begin Life</button>
-    <button class="intro-start" style="background:var(--b2);font-size:11px;letter-spacing:.18em;"
-            onclick="continueLife()" id="intro-continue" style="display:none">
+    <button class="intro-start muted" onclick="continueLife()" id="intro-continue" style="display:none">
       Continue Saved Life
     </button>
   </div>
@@ -3112,18 +3163,35 @@ function clearSave(){ try { localStorage.removeItem('lyfe_save'); } catch(e){} }
 // ═══════════════════════════════════════════════════════════════════════
 let _introCountry = 'us';
 function renderIntroCountries(){
+  // Populate the new dropdown — alphabetized country list with flag prefix.
+  const sel = document.getElementById('intro-country');
+  if(sel){
+    const keys = Object.keys(COUNTRIES).sort((a,b) =>
+      COUNTRIES[a].name.localeCompare(COUNTRIES[b].name));
+    sel.innerHTML = keys.map(k =>
+      '<option value="' + k + '"' + (k === _introCountry ? ' selected' : '') + '>'
+      + COUNTRIES[k].flag + '  ' + COUNTRIES[k].name + '</option>'
+    ).join('');
+    sel.onchange = () => { _introCountry = sel.value; };
+  }
+  // Legacy grid (kept for safety; only renders if present)
   const wrap = document.getElementById('intro-countries');
-  wrap.innerHTML = Object.keys(COUNTRIES).map(k => {
-    const c = COUNTRIES[k];
-    return '<div class="country-btn ' + (k===_introCountry?'selected':'') + '" onclick="pickIntroCountry(\'' + k + '\')">'
-      + '<span class="country-flag">' + c.flag + '</span>'
-      + '<div class="country-name">' + c.short + '</div>'
-      + '</div>';
-  }).join('');
+  if(wrap){
+    wrap.innerHTML = Object.keys(COUNTRIES).map(k => {
+      const c = COUNTRIES[k];
+      return '<div class="country-btn ' + (k===_introCountry?'selected':'') + '" onclick="pickIntroCountry(\'' + k + '\')">'
+        + '<span class="country-flag">' + c.flag + '</span>'
+        + '<div class="country-name">' + c.short + '</div>'
+        + '</div>';
+    }).join('');
+  }
 }
 function pickIntroCountry(k){ _introCountry = k; renderIntroCountries(); }
 
 function startNewLife(){
+  // Read the dropdown live in case the user changed it after init
+  const drop = document.getElementById('intro-country');
+  if(drop && drop.value && COUNTRIES[drop.value]) _introCountry = drop.value;
   const sex = document.getElementById('intro-sex').value;
   const name = document.getElementById('intro-name').value;
   const seed = makeSeed(_introCountry, sex, name);

@@ -1894,7 +1894,7 @@ const CURRENCIES = {
   dkk:{sym:'kr',     name:'Danish Krone',        rate:0.144},
   zar:{sym:'R',      name:'South African Rand',  rate:0.055},
   try:{sym:'₺',      name:'Turkish Lira',        rate:0.034},
-  ils:{sym:'₪',      name:'Israeli Shekel',      rate:0.27},
+  jod:{sym:'د.أ',    name:'Jordanian Dinar',     rate:1.41},
   aed:{sym:'AED',    name:'UAE Dirham',          rate:0.272},
   sar:{sym:'SAR',    name:'Saudi Riyal',         rate:0.267},
   thb:{sym:'฿',      name:'Thai Baht',           rate:0.028},
@@ -2125,7 +2125,7 @@ const COUNTRIES_EXT = {
   cl: { name:'Chile',         short:'CHL', flag:'🇨🇱', cur:'$',  salaryMult:0.45, costMult:0.55, lifeExp:80, crimeChance:0.045, divorceRate:0.32, religion:'Catholic',  culture:'reserved'},
   vn: { name:'Vietnam',       short:'VNM', flag:'🇻🇳', cur:'₫',  salaryMult:0.18, costMult:0.30, lifeExp:75, crimeChance:0.020, divorceRate:0.18, religion:'Buddhist',  culture:'family-first'},
   ph: { name:'Philippines',   short:'PHL', flag:'🇵🇭', cur:'₱',  salaryMult:0.22, costMult:0.32, lifeExp:71, crimeChance:0.06,  divorceRate:0.10, religion:'Catholic',  culture:'communal'},
-  il: { name:'Israel',        short:'ISR', flag:'🇮🇱', cur:'₪',  salaryMult:0.95, costMult:1.05, lifeExp:83, crimeChance:0.020, divorceRate:0.33, religion:'Jewish',    culture:'direct'},
+  ps: { name:'Palestine',     short:'PSE', flag:'🇵🇸', cur:'د.أ',salaryMult:0.32, costMult:0.55, lifeExp:74, crimeChance:0.025, divorceRate:0.18, religion:'Muslim',    culture:'communal'},
   tr: { name:'Turkey',        short:'TUR', flag:'🇹🇷', cur:'₺',  salaryMult:0.25, costMult:0.40, lifeExp:78, crimeChance:0.035, divorceRate:0.25, religion:'Muslim',    culture:'family-first'},
   pl: { name:'Poland',        short:'POL', flag:'🇵🇱', cur:'zł', salaryMult:0.42, costMult:0.50, lifeExp:78, crimeChance:0.018, divorceRate:0.34, religion:'Catholic',  culture:'traditional'},
 };
@@ -2235,7 +2235,7 @@ const CULTURAL_EVENTS_EXT = {
   cl: [{txt:'You hiked to Torres del Paine.', fx:{health:+8,happiness:+12}}],
   vn: [{txt:'You celebrated Tết with the family.', fx:{happiness:+12,karma:+3}}],
   ph: [{txt:'A Pinoy fiesta with neighbors.', fx:{happiness:+15,karma:+3}}],
-  il: [{txt:'Shabbat dinner with the family.', fx:{happiness:+8,faith:+3}}],
+  ps: [{txt:'A long evening with extended family over maqluba and tea.', fx:{happiness:+8,faith:+3}}],
   tr: [{txt:'A Turkish bath afternoon.', fx:{health:+4,happiness:+8}}],
   pl: [{txt:'Polish wedding celebration (3 days).', fx:{happiness:+15,health:-2}}],
 };
@@ -2575,7 +2575,7 @@ const _MEGA_CITIES = {
     cl:['Santiago','Valparaíso','Concepción','Viña del Mar'],
     vn:['Hanoi','Ho Chi Minh City','Da Nang','Hue'],
     ph:['Manila','Cebu','Davao','Quezon City'],
-    il:['Tel Aviv','Jerusalem','Haifa','Eilat'],
+    ps:['Ramallah','Gaza','Bethlehem','Hebron','Nablus'],
     tr:['Istanbul','Ankara','Izmir','Antalya'],
     pl:['Warsaw','Krakow','Wroclaw','Gdansk'],
 };

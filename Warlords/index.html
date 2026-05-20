@@ -7316,6 +7316,599 @@ W.firstLoad();
   W.STATS = stats;
 })();
 
+
+/* =================================================================
+   WORLD MAP — proper continent SVG paths replacing dot scatter
+   ================================================================= */
+W.CONTINENTS = {
+  /* Stylised low-poly continent shapes on 1200x700 viewBox */
+  africa: "M 560,360 L 590,365 L 620,375 L 645,395 L 660,425 L 670,460 L 665,495 L 650,525 L 625,545 L 600,555 L 575,560 L 555,540 L 545,505 L 540,470 L 545,430 L 555,395 Z",
+  europe: "M 420,235 L 470,225 L 520,235 L 555,250 L 575,275 L 565,300 L 540,315 L 510,320 L 480,315 L 450,305 L 425,285 L 415,260 Z",
+  asia: "M 575,250 L 640,235 L 720,230 L 800,240 L 880,255 L 960,265 L 1040,275 L 1110,290 L 1160,315 L 1180,345 L 1175,375 L 1140,395 L 1090,400 L 1030,395 L 970,385 L 900,375 L 830,365 L 765,350 L 700,335 L 645,320 L 600,300 L 580,275 Z",
+  middle_east: "M 680,310 L 730,315 L 770,335 L 785,365 L 770,395 L 740,410 L 710,400 L 690,380 L 680,350 Z",
+  india: "M 870,375 L 905,385 L 925,415 L 920,445 L 900,460 L 875,455 L 860,430 L 860,400 Z",
+  southeast_asia: "M 1015,415 L 1060,420 L 1095,440 L 1110,470 L 1100,490 L 1070,495 L 1040,485 L 1020,460 L 1015,435 Z",
+  china_korea: "M 990,290 L 1090,290 L 1140,310 L 1150,345 L 1130,375 L 1090,385 L 1050,380 L 1010,365 L 985,335 L 985,305 Z",
+  japan: "M 1160,330 L 1190,340 L 1200,360 L 1195,380 L 1175,385 L 1160,365 L 1155,345 Z",
+  n_america: "M 130,205 L 200,195 L 270,205 L 290,230 L 285,270 L 270,310 L 250,335 L 220,350 L 195,345 L 175,325 L 155,295 L 135,260 L 125,230 Z",
+  c_america: "M 195,345 L 240,360 L 260,385 L 245,405 L 220,400 L 200,380 Z",
+  s_america: "M 220,400 L 270,415 L 300,445 L 320,485 L 315,520 L 295,545 L 270,555 L 245,545 L 225,515 L 215,475 L 215,435 Z",
+  oceania: "M 1090,510 L 1140,505 L 1180,520 L 1190,545 L 1175,565 L 1135,570 L 1100,560 L 1085,535 Z",
+  britain: "M 425,240 L 445,235 L 455,255 L 450,275 L 435,280 L 423,265 Z",
+  iberia: "M 410,310 L 445,315 L 460,335 L 450,355 L 425,360 L 410,345 L 405,325 Z",
+  italy: "M 530,310 L 545,320 L 560,345 L 565,375 L 555,380 L 545,365 L 535,340 Z",
+  scandinavia: "M 490,200 L 530,195 L 555,215 L 565,250 L 545,265 L 520,260 L 500,235 Z",
+  arabia: "M 720,395 L 770,400 L 795,430 L 790,465 L 765,485 L 735,480 L 715,455 L 710,420 Z",
+  greenland: "M 350,170 L 395,165 L 415,190 L 405,220 L 380,225 L 360,210 L 350,190 Z",
+  mediterranean_sea: null, // logical, not drawn
+};
+W.MAP_BG_PATHS = ["africa","europe","asia","middle_east","india","southeast_asia","china_korea","japan","n_america","c_america","s_america","oceania","britain","iberia","italy","scandinavia","arabia","greenland"];
+
+/* Reposition existing provinces to lie within continent silhouettes
+   (best-effort coords for the 1200x700 map). Earlier draft had clustered points; this spreads them. */
+W.REPOSITION = {
+  /* Ancient */
+  a_rome:[535,335],a_etrur:[525,320],a_sicily:[545,360],a_carth:[515,395],a_egypt:[695,420],a_upegypt:[710,455],
+  a_athens:[565,345],a_sparta:[565,360],a_macedon:[555,320],a_thrace:[575,310],a_persia:[760,355],a_lydia:[610,335],
+  a_babylon:[745,375],a_assur:[740,355],a_china:[1060,330],a_chu:[1080,365],a_india:[895,420],a_gandhara:[875,395],
+  a_gaul:[460,290],a_britain:[435,255],a_aksum:[715,475],a_yemen:[760,490],a_iberia:[425,335],a_phoen:[685,365],
+  a_pontus:[640,320],a_pergamum:[605,330],a_crete:[565,365],a_cyprus:[640,360],a_dacia:[580,300],a_armenia:[700,335],
+  a_arabia:[755,440],a_baetica:[430,355],a_palmyra:[720,395],
+  /* Medieval */
+  m_constantinople:[600,330],m_anatolia:[640,340],m_aachen:[490,280],m_bavaria:[510,290],m_london:[440,265],
+  m_wales:[425,265],m_paris:[465,290],m_aquitaine:[455,310],m_castile:[420,335],m_aragon:[445,330],
+  m_baghdad:[745,375],m_persia2:[800,375],m_bursa:[615,335],m_karakorum:[990,275],m_steppe:[940,290],
+  m_beijing:[1080,310],m_canton:[1075,395],m_kiev:[605,290],m_novgorod:[580,250],m_norway:[510,225],m_iceland:[400,205],
+  m_timbuktu:[490,455],m_djenne:[505,470],m_milan:[510,300],m_venice:[530,300],m_naples:[545,335],m_jerusalem:[700,390],
+  m_cairo:[690,425],m_cordoba:[420,355],m_dublin:[420,255],m_bohemia:[535,295],m_lithuania:[580,275],m_sicily:[550,360],
+  m_jerusalemA:[710,385],
+  /* Renaissance */
+  r_madrid:[420,335],r_mexico:[195,375],r_lisbon:[405,335],r_brazil:[280,460],r_versailles:[465,290],
+  r_london2:[440,265],r_virginia:[230,310],r_amsterdam:[485,275],r_indies:[1080,470],r_vienna:[535,290],
+  r_istanbul:[600,330],r_egypt2:[700,420],r_moscow:[640,250],r_siberia:[900,225],r_delhi:[890,400],
+  r_beijing2:[1080,310],r_edo:[1180,355],r_tenoch:[195,375],r_havana:[245,365],r_potosi:[260,485],
+  r_macau:[1095,395],r_goa:[875,425],r_capecolony:[615,540],r_newamsterdam:[230,310],r_canada:[235,260],
+  r_louisiana:[210,360],r_quebec:[245,255],r_cuzco:[245,485],r_mecca:[760,440],r_baghdad2:[745,375],
+  r_kazan:[695,260],r_agra:[895,400],
+  /* Industrial */
+  i_paris2:[465,290],i_london3:[440,265],i_india_br:[895,415],i_berlin:[510,280],i_ruhr:[495,290],
+  i_stpetersburg:[610,235],i_vienna2:[535,290],i_istanbul2:[600,330],i_rome2:[535,335],i_dc:[230,290],
+  i_pacific:[155,310],i_tokyo:[1185,355],i_peking:[1080,310],i_manchester:[435,260],i_birmingham:[440,265],
+  i_egypt_br:[700,425],i_canada:[235,260],i_australia:[1140,545],i_silesia:[530,290],i_baku:[745,330],
+  i_galicia:[580,290],i_balkans:[575,310],i_kentucky:[220,310],i_california:[155,320],i_alaska:[125,225],
+  i_korea:[1155,335],i_manchuria:[1115,310],
+  /* WW */
+  w_dc:[230,290],w_london:[440,265],w_moscow2:[640,250],w_berlin2:[510,280],w_rome3:[535,335],
+  w_tokyo2:[1185,355],w_chongqing:[1010,360],w_yanan:[1020,345],w_warsaw:[555,275],w_helsinki:[565,225],
+  w_belgrade:[575,310],w_london2:[440,265],w_ankara:[640,340],w_rio:[295,470],w_delhi:[895,400],
+  w_alaska:[125,225],w_hawaii:[120,400],w_philippines:[1090,440],w_egypt_uk:[700,420],w_singapore:[1070,470],
+  w_caucasus:[745,300],w_ukraine:[615,275],w_silesia:[530,290],w_lybia:[600,430],w_korea:[1155,335],
+  w_manchuria:[1115,310],w_indochina:[1060,440],w_kwangtung:[1095,385],
+  /* Cold War */
+  c_dc:[230,290],c_moscow3:[640,250],c_beijing3:[1080,310],c_london3:[440,265],c_paris3:[465,290],
+  c_delhi2:[895,400],c_telaviv:[695,390],c_brasilia:[290,460],c_belgrade2:[575,310],c_pretoria:[640,545],
+  c_tehran:[770,375],c_havana:[245,365],c_alaska:[125,225],c_california:[155,320],c_alabama:[225,320],
+  c_florida:[245,345],c_ukraine:[615,275],c_kazakhstan:[840,275],c_estonia:[575,250],c_xinjiang:[930,310],
+  c_tibet:[975,365],c_taiwan:[1130,395],c_punjab:[880,400],
+  /* Modern */
+  mo_dc:[230,290],mo_beijing:[1080,310],mo_moscow:[640,250],mo_brussels:[485,280],mo_london:[440,265],
+  mo_tokyo:[1185,355],mo_delhi:[895,400],mo_telaviv:[695,390],mo_seoul:[1155,335],mo_tehran:[770,375],
+  mo_pyongyang:[1145,325],mo_brasilia:[290,460],mo_jakarta:[1090,475],mo_ankara:[640,340],mo_disp:[520,400],
+  mo_alaska:[125,225],mo_california:[155,320],mo_texas:[200,335],mo_florida:[245,345],mo_xinjiang:[930,310],
+  mo_taiwan:[1130,395],mo_siberia:[920,235],mo_caucasus:[745,300],mo_bavaria:[510,290],mo_lyon:[470,300],
+  mo_yorkshire:[440,260],mo_busan:[1162,344],mo_kashmir:[885,395],
+  /* Future */
+  f_dc:[230,290],f_beijing:[1080,310],f_moscow:[640,250],f_brussels:[485,280],f_delhi:[895,400],
+  f_pacific:[1185,355],f_brasilia:[290,460],f_addis:[715,475],f_mars:[1100,640],f_agi:[600,640],
+  f_alaska:[125,225],f_california:[155,320],f_amazonia:[280,470],f_sahara:[600,460],f_nigeria:[580,485],
+  f_korea:[1155,335],f_japan:[1185,355],f_australia_pac:[1140,545],f_marspolar:[1080,650],
+  f_marsequator:[1100,645],f_moon:[1050,640],f_agi_node1:[580,640],f_agi_node2:[620,640],
+};
+(function(){
+  for(const id in W.REPOSITION){
+    if(W.PROVINCES[id]){
+      W.PROVINCES[id].x = W.REPOSITION[id][0];
+      W.PROVINCES[id].y = W.REPOSITION[id][1];
+    }
+  }
+})();
+
+/* =================================================================
+   PREHISTORIC ERA
+   ================================================================= */
+W.ERAS.prehistoric = {
+  id:"prehistoric",name:"Prehistoric",tag:"The First Fires",years:"5000 BC – 3000 BC",
+  startYear:-5000,endYear:-3000,symbol:"𓉕",diff:"Standard",palette:"era-prehistoric",
+  intro:"Mud-brick walls rise in Mesopotamia. Wheat is sown deliberately. Cattle are herded. The first cities, the first writing, the first kings — humanity's longest experiment begins.",
+  rsrcs:["food","wood","stone","grain","horses"],
+  factionCount:10,unitCount:12,buildingCount:8,techCount:20,eventCount:50};
+
+W.FACTIONS.prehistoric = [
+  {id:"sumer",  name:"Sumer",  flag:"𒈗",region:"Mesopotamia",blurb:"The first cities — Uruk, Ur, Lagash. Cuneiform on wet clay. Kings who built ziggurats and counted barley.",
+    bonuses:{civics:0.3,research:0.2,food:0.1},traits:["cul","tec"],colour:"#d97706",startPop:14,startGold:80,terrain:"plains"},
+  {id:"akkad",  name:"Akkadian Empire",flag:"☉",region:"Mesopotamia",blurb:"Sargon's empire — the world's first. Bronze, conquest, and a Semitic tongue replacing Sumerian.",
+    bonuses:{infantry:0.2,conquest:0.2},traits:["mil"],colour:"#b45309",startPop:12,startGold:90,terrain:"plains"},
+  {id:"egypt_pre",name:"Predynastic Egypt",flag:"☥",region:"Nile",blurb:"Two kingdoms along the Nile, awaiting Narmer. Cattle herders, fishermen, the first hieroglyphs.",
+    bonuses:{food:0.25,wonders:0.15},traits:["eco","cul"],colour:"#fbbf24",startPop:18,startGold:70,terrain:"desert"},
+  {id:"indus",  name:"Indus Valley",flag:"𑀰",region:"S.Asia",blurb:"Harappa, Mohenjo-daro — planned cities with sewers, standard weights, and a script no one has yet deciphered.",
+    bonuses:{civics:0.3,trade:0.2,stability:0.1},traits:["cul","eco"],colour:"#16a34a",startPop:22,startGold:90,terrain:"jungle"},
+  {id:"yangshao",name:"Yangshao",flag:"陶",region:"Yellow River",blurb:"Painted pottery, millet, jade. Villages along the Wei and Yellow rivers, ancestors of all later Chinese civilisation.",
+    bonuses:{population:0.25,food:0.15},traits:["eco","cul"],colour:"#dc2626",startPop:24,startGold:60,terrain:"plains"},
+  {id:"olmec",  name:"Olmec",flag:"⚉",region:"Mesoamerica",blurb:"Colossal stone heads. The mother civilisation of Mesoamerica — calendars, writing, jaguar gods.",
+    bonuses:{culture:0.3,stability:0.1},traits:["cul"],colour:"#84cc16",startPop:10,startGold:60,terrain:"jungle"},
+  {id:"norte",  name:"Norte Chico",flag:"⚞",region:"Andean Coast",blurb:"Caral, Aspero — pyramid-builders on the Pacific coast, contemporaneous with the pyramids of Giza.",
+    bonuses:{wonders:0.25,food:0.15},traits:["eco","cul"],colour:"#fb923c",startPop:8,startGold:50,terrain:"coast"},
+  {id:"vinca",  name:"Vinča",flag:"⚹",region:"Balkans",blurb:"Copper smelters of the Danube, perhaps the world's first metallurgists; possibly the first proto-writers.",
+    bonuses:{research:0.25,bronze:0.2},traits:["tec"],colour:"#7c3aed",startPop:8,startGold:50,terrain:"forest"},
+  {id:"minoan", name:"Minoan Crete",flag:"☉",region:"Aegean",blurb:"Knossos, the bull, the labyrinth. A maritime trading civilisation centuries before Mycenae.",
+    bonuses:{naval:0.3,trade:0.25},traits:["eco","dip"],colour:"#0ea5e9",startPop:9,startGold:80,terrain:"coast"},
+  {id:"catal",  name:"Çatalhöyük",flag:"⚭",region:"Anatolia",blurb:"A town of nine thousand, entered by ladder through the roof. Goddess figurines, wall paintings, no streets at all.",
+    bonuses:{stability:0.2,culture:0.15},traits:["cul"],colour:"#a16207",startPop:9,startGold:40,terrain:"hills"},
+];
+
+W.LEADERS.sumer = [
+  {id:"sum_gilg",name:"Gilgamesh",epithet:"King of Uruk",portrait:"𒀭",quote:"Who is there can rival his kingly standing? Like wild bulls he runs.",traits:["warlord","builder","ambitious"],bonus:"+25% wonder, +15% army"},
+  {id:"sum_enmer",name:"Enmerkar",epithet:"Founder of Uruk",portrait:"𒈗",quote:"Let the great house of Uruk shelter all.",traits:["builder","reformer","patient"],bonus:"+20% civic, +10% food"},
+  {id:"sum_dumuzi",name:"Dumuzid the Shepherd",epithet:"Priest-King",portrait:"⚜",quote:"My flocks, my city, my god.",traits:["zealot","charismatic","ascetic"],bonus:"+15% religion, +15% stability"},
+];
+W.LEADERS.akkad = [
+  {id:"akk_sargon",name:"Sargon",epithet:"the Great",portrait:"☉",quote:"Mighty mountain Enlil has given me sovereignty.",traits:["conqueror","ambitious","charismatic"],bonus:"+30% conquest"},
+  {id:"akk_naram",name:"Naram-Sin",epithet:"King of the Four Corners",portrait:"⚡",quote:"I am Naram-Sin, divine king.",traits:["warlord","divine","ruthless"],bonus:"+25% army, +10% influence"},
+  {id:"akk_enheduanna",name:"Enheduanna",epithet:"the First Author",portrait:"𒀭",quote:"My queen, the great mountain bowed to your name.",traits:["patron","scholar","charismatic"],bonus:"+25% culture, +15% research"},
+];
+W.LEADERS.egypt_pre = [
+  {id:"ep_narmer",name:"Narmer (proto)",epithet:"Unifier of Two Lands",portrait:"☥",quote:"Black land and red land, one crown.",traits:["conqueror","builder","divine"],bonus:"+25% unification"},
+  {id:"ep_scorpion",name:"King Scorpion",epithet:"the Mace-Bearer",portrait:"⚔",quote:"Where I strike, the earth remembers.",traits:["warlord","cruel","ambitious"],bonus:"+20% army"},
+  {id:"ep_anedjib",name:"Anedjib",epithet:"the Cattle-Counter",portrait:"𓃒",quote:"Wealth is in the herd, and the herd is in my name.",traits:["merchant","tax_reformer","patient"],bonus:"+20% food, +15% gold"},
+];
+W.LEADERS.indus = [
+  {id:"ind_priest",name:"The Priest-King",epithet:"Lord of Mohenjo-Daro",portrait:"⚜",quote:"Order is the city's only god.",traits:["lawgiver","builder","ascetic"],bonus:"+25% civic, +15% stability"},
+  {id:"ind_council",name:"The High Council",epithet:"Council of Harappa",portrait:"⚛",quote:"No one voice, but many.",traits:["diplomat","scholar","patient"],bonus:"+25% research, +15% relations"},
+  {id:"ind_merchant",name:"The Merchant Princess",epithet:"of Lothal",portrait:"♛",quote:"From the dockyard, the world.",traits:["merchant","navigator","ambitious"],bonus:"+30% trade"},
+];
+W.LEADERS.yangshao = [
+  {id:"ys_huang",name:"The Yellow Emperor",epithet:"Huangdi",portrait:"黃",quote:"All under heaven flows from one source.",traits:["builder","scholar","divine"],bonus:"+25% culture, +15% research"},
+  {id:"ys_yan",name:"The Flame Emperor",epithet:"Yandi",portrait:"火",quote:"With fire, the harvest. With fire, the war.",traits:["warlord","reformer","ambitious"],bonus:"+20% army, +10% food"},
+  {id:"ys_nuwa",name:"Nüwa",epithet:"Mender of Sky",portrait:"☯",quote:"I patch the heavens with five-coloured stones.",traits:["divine","patron","ascetic"],bonus:"+25% stability"},
+];
+W.LEADERS.olmec = [
+  {id:"olm_jaguar",name:"The Jaguar King",epithet:"of La Venta",portrait:"☼",quote:"The jaguar walks where I walk.",traits:["warlord","zealot","cruel"],bonus:"+20% army"},
+  {id:"olm_priest",name:"High Priest of San Lorenzo",epithet:"Carver of Heads",portrait:"⚜",quote:"In stone, my line shall outlive the rain.",traits:["builder","patron","divine"],bonus:"+30% wonders"},
+  {id:"olm_trader",name:"The Obsidian Trader",epithet:"of Tres Zapotes",portrait:"♛",quote:"From mountain glass, an empire of exchange.",traits:["merchant","navigator","patient"],bonus:"+25% trade"},
+];
+W.LEADERS.norte = [
+  {id:"nc_caral",name:"Lord of Caral",epithet:"Pyramid-Builder",portrait:"⚞",quote:"Stone before bronze. Stone before writing.",traits:["builder","ascetic","patient"],bonus:"+30% wonders"},
+  {id:"nc_aspero",name:"Aspero Sea-King",epithet:"Net-Caster",portrait:"⚓",quote:"The sea provides; the desert disciplines.",traits:["navigator","merchant","charismatic"],bonus:"+25% trade"},
+  {id:"nc_caralqueen",name:"The Caral Queen",epithet:"Quipu-Keeper",portrait:"♛",quote:"In knotted cord, every story.",traits:["scholar","patron","lawgiver"],bonus:"+20% culture, +10% civic"},
+];
+W.LEADERS.vinca = [
+  {id:"vin_smelter",name:"The First Smelter",epithet:"Lord of the Crucible",portrait:"⚙",quote:"From green stone, red metal.",traits:["inventor","scholar","patient"],bonus:"+30% research"},
+  {id:"vin_scribe",name:"The Vinča Scribe",epithet:"of Tărtăria",portrait:"⚹",quote:"Marks upon clay. Whether words or counts, none yet know.",traits:["scholar","ascetic","reclusive"],bonus:"+25% research, +10% culture"},
+  {id:"vin_chief",name:"Danube Chieftain",epithet:"the Trader",portrait:"⚜",quote:"Copper for grain, grain for salt.",traits:["merchant","diplomat","ambitious"],bonus:"+25% trade"},
+];
+W.LEADERS.minoan = [
+  {id:"min_minos",name:"King Minos",epithet:"the Bull-King",portrait:"☉",quote:"The labyrinth has but one centre, and the centre is me.",traits:["lawgiver","navigator","schemer"],bonus:"+25% navy, +10% stability"},
+  {id:"min_ariadne",name:"Ariadne",epithet:"the Priestess",portrait:"♛",quote:"The thread leads out, if you know where to look.",traits:["patron","scholar","diplomat"],bonus:"+25% culture, +15% relations"},
+  {id:"min_daedalus",name:"Daedalus",epithet:"the Craftsman",portrait:"⚙",quote:"I built the labyrinth. I also escaped it.",traits:["inventor","builder","scholar"],bonus:"+25% research, +15% wonders"},
+];
+W.LEADERS.catal = [
+  {id:"cat_mother",name:"The Mother Priestess",epithet:"of Çatalhöyük",portrait:"⚭",quote:"The goddess gives, the goddess takes.",traits:["divine","zealot","ascetic"],bonus:"+25% stability"},
+  {id:"cat_elder",name:"The Elder Council",epithet:"Roof-Walkers",portrait:"⚜",quote:"We climb the ladders our grandmothers built.",traits:["diplomat","patient","scholar"],bonus:"+20% stability, +15% culture"},
+  {id:"cat_artist",name:"The Wall-Painter",epithet:"Recorder of Hunts",portrait:"♛",quote:"In ochre, the past is kept.",traits:["patron","scholar","reclusive"],bonus:"+25% culture"},
+];
+
+/* Prehistoric provinces */
+(function(){const P=(o)=>{W.PROVINCES[o.id]=o;};
+  P({id:"p_uruk",name:"Uruk",era:"prehistoric",owner:"sumer",terrain:"plains",resource:"grain",pop:14,x:745,y:375,capital:1});
+  P({id:"p_ur",name:"Ur",era:"prehistoric",owner:"sumer",terrain:"plains",resource:"grain",pop:10,x:760,y:390});
+  P({id:"p_lagash",name:"Lagash",era:"prehistoric",owner:"sumer",terrain:"plains",resource:"food",pop:8,x:750,y:380});
+  P({id:"p_kish",name:"Kish",era:"prehistoric",owner:"akkad",terrain:"plains",resource:"bronze",pop:9,x:735,y:370,capital:1});
+  P({id:"p_akkad",name:"Akkad",era:"prehistoric",owner:"akkad",terrain:"plains",resource:"food",pop:11,x:740,y:365});
+  P({id:"p_memphis",name:"Memphis",era:"prehistoric",owner:"egypt_pre",terrain:"desert",resource:"grain",pop:15,x:690,y:425,capital:1});
+  P({id:"p_naqada",name:"Naqada",era:"prehistoric",owner:"egypt_pre",terrain:"desert",resource:"gold",pop:8,x:705,y:445});
+  P({id:"p_hierakon",name:"Hierakonpolis",era:"prehistoric",owner:"egypt_pre",terrain:"desert",resource:"food",pop:7,x:710,y:455});
+  P({id:"p_harappa",name:"Harappa",era:"prehistoric",owner:"indus",terrain:"plains",resource:"grain",pop:18,x:885,y:395,capital:1});
+  P({id:"p_mohenjo",name:"Mohenjo-Daro",era:"prehistoric",owner:"indus",terrain:"plains",resource:"food",pop:22,x:880,y:415});
+  P({id:"p_lothal",name:"Lothal",era:"prehistoric",owner:"indus",terrain:"coast",resource:"silk",pop:10,x:895,y:430});
+  P({id:"p_banpo",name:"Banpo",era:"prehistoric",owner:"yangshao",terrain:"plains",resource:"food",pop:14,x:1020,y:340,capital:1});
+  P({id:"p_jiangzhai",name:"Jiangzhai",era:"prehistoric",owner:"yangshao",terrain:"plains",resource:"grain",pop:12,x:1040,y:355});
+  P({id:"p_dawenkou",name:"Dawenkou",era:"prehistoric",owner:"yangshao",terrain:"plains",resource:"food",pop:10,x:1060,y:345});
+  P({id:"p_sanlorenzo",name:"San Lorenzo",era:"prehistoric",owner:"olmec",terrain:"jungle",resource:"food",pop:8,x:225,y:385,capital:1});
+  P({id:"p_laventa",name:"La Venta",era:"prehistoric",owner:"olmec",terrain:"jungle",resource:"stone",pop:9,x:235,y:395});
+  P({id:"p_caral",name:"Caral",era:"prehistoric",owner:"norte",terrain:"coast",resource:"food",pop:7,x:235,y:485,capital:1});
+  P({id:"p_aspero",name:"Aspero",era:"prehistoric",owner:"norte",terrain:"coast",resource:"food",pop:6,x:230,y:490});
+  P({id:"p_vinca",name:"Vinča",era:"prehistoric",owner:"vinca",terrain:"forest",resource:"bronze",pop:7,x:570,y:300,capital:1});
+  P({id:"p_tartar",name:"Tărtăria",era:"prehistoric",owner:"vinca",terrain:"hills",resource:"stone",pop:5,x:585,y:295});
+  P({id:"p_knossos",name:"Knossos",era:"prehistoric",owner:"minoan",terrain:"coast",resource:"food",pop:8,x:570,y:365,capital:1});
+  P({id:"p_phaistos",name:"Phaistos",era:"prehistoric",owner:"minoan",terrain:"coast",resource:"wood",pop:6,x:580,y:370});
+  P({id:"p_catal",name:"Çatalhöyük",era:"prehistoric",owner:"catal",terrain:"hills",resource:"stone",pop:9,x:660,y:340,capital:1});
+  P({id:"p_konya",name:"Konya Plain",era:"prehistoric",owner:"catal",terrain:"plains",resource:"food",pop:6,x:670,y:345});
+})();
+
+/* Prehistoric units */
+Object.assign(W.UNITS,{
+  warrior:    {id:"warrior",   era:"prehistoric",name:"Tribal Warrior",   tier:1,atk:3,def:2,spd:3,rng:1,hp:7, cost:{manpower:8,wood:4,stone:2},upkeep:1,counters:[],ability:"Charge: +1 atk on first round.",blurb:"Spear, sling, courage."},
+  axeman:     {id:"axeman",    era:"prehistoric",name:"Stone Axe-Bearer", tier:1,atk:4,def:1,spd:3,rng:1,hp:6, cost:{manpower:6,wood:2,stone:4},upkeep:1,counters:[],ability:"Cleave: bonus vs unarmoured.",blurb:"Flint, hafted, brutal."},
+  slinger:    {id:"slinger",   era:"prehistoric",name:"Slinger",          tier:1,atk:3,def:1,spd:4,rng:2,hp:5, cost:{manpower:6,stone:4},upkeep:1,counters:[],ability:"Stone Shot: ignores 1 armour.",blurb:"Lead bullets at 100 paces."},
+  hunter:     {id:"hunter",    era:"prehistoric",name:"Hunter Band",      tier:1,atk:3,def:2,spd:5,rng:2,hp:6, cost:{manpower:6,wood:4},upkeep:1,counters:[],ability:"Forage: free upkeep in forest.",blurb:"Bow, atlatl, patient eyes."},
+  bronze_ax:  {id:"bronze_ax", era:"prehistoric",name:"Bronze Axeman",    tier:2,atk:5,def:3,spd:3,rng:1,hp:9, cost:{manpower:8,bronze:4,wood:2},upkeep:2,counters:["axeman"],ability:"Bronze Edge: +1 atk.",blurb:"The new metal cuts the old."},
+  mudbrick:   {id:"mudbrick",  era:"prehistoric",name:"Mud-Brick Militia",tier:1,atk:2,def:4,spd:2,rng:1,hp:8, cost:{manpower:8,stone:4},upkeep:1,counters:[],ability:"Walls: +25% def in city.",blurb:"Defenders of the first cities."},
+  oxcart:     {id:"oxcart",    name:"Ox Cart",era:"prehistoric",tier:1,atk:2,def:2,spd:3,rng:0,hp:6,cost:{manpower:4,wood:6,grain:4},upkeep:1,counters:[],ability:"Supply: +1 unit support.",blurb:"Slow, sturdy, essential."},
+  spearman_p: {id:"spearman_p",era:"prehistoric",name:"Spearman",         tier:1,atk:3,def:3,spd:3,rng:1,hp:8, cost:{manpower:8,wood:4,stone:2},upkeep:1,counters:["axeman"],ability:"Brace: +20% def vs charge.",blurb:"Long shaft, sharp point."},
+  reedboat:   {id:"reedboat",  era:"prehistoric",name:"Reed Boat",        tier:1,atk:2,def:2,spd:4,rng:1,hp:6, cost:{manpower:8,wood:6},upkeep:1,counters:[],ability:"Coastal: trade-route bonus.",blurb:"Papyrus bundles, gulf trade."},
+  priestess:  {id:"priestess", era:"prehistoric",name:"Priestess",        tier:2,atk:0,def:2,spd:2,rng:1,hp:6, cost:{manpower:2,gold:10},upkeep:1,counters:[],ability:"Bless: +morale to nearby.",blurb:"Goddess of grain and rain."},
+  hill_clan:  {id:"hill_clan", era:"prehistoric",name:"Hill Clan",        tier:1,atk:4,def:3,spd:5,rng:1,hp:8, cost:{manpower:8,stone:2},upkeep:1,counters:[],ability:"Mountain: +30% in hills.",blurb:"Highland raiders."},
+  fisher_skirm:{id:"fisher_skirm",era:"prehistoric",name:"Fisher Skirmisher",tier:1,atk:3,def:2,spd:4,rng:2,hp:5, cost:{manpower:6,food:4},upkeep:1,counters:[],ability:"Net: snares one enemy.",blurb:"Throwing net, fish-spear."},
+});
+
+/* Prehistoric techs */
+(function(){const T=(o)=>{W.TECHS[o.id]=o;};
+  T({id:"fire",era:"prehistoric",name:"Fire-Keeping",cost:20,requires:[],unlocks:[],blurb:"The first technology.",x:1,y:2});
+  T({id:"flint",era:"prehistoric",name:"Flint Knapping",cost:25,requires:["fire"],unlocks:["warrior","axeman"],blurb:"Edge sharper than tooth.",x:2,y:2});
+  T({id:"agric_p",era:"prehistoric",name:"Agriculture",cost:40,requires:[],unlocks:[],blurb:"Domesticated wheat.",x:1,y:3});
+  T({id:"animal_dom",era:"prehistoric",name:"Animal Domestication",cost:40,requires:[],unlocks:["oxcart"],blurb:"Ox, sheep, goat — under the hand.",x:1,y:4});
+  T({id:"mudbrick_t",era:"prehistoric",name:"Mud-Brick",cost:50,requires:["agric_p"],unlocks:["mudbrick"],blurb:"Sun-baked walls.",x:2,y:3});
+  T({id:"writing_p",era:"prehistoric",name:"Proto-Writing",cost:80,requires:["mudbrick_t"],unlocks:[],blurb:"Marks on clay become words.",x:3,y:3});
+  T({id:"bronze_p",era:"prehistoric",name:"Copper Smelting",cost:90,requires:["flint"],unlocks:["bronze_ax"],blurb:"Greenstone yields red metal.",x:3,y:2});
+  T({id:"weaving",era:"prehistoric",name:"Weaving",cost:50,requires:["agric_p"],unlocks:[],blurb:"Flax, wool, the loom.",x:2,y:4});
+  T({id:"river_nav",era:"prehistoric",name:"River Navigation",cost:60,requires:["mudbrick_t"],unlocks:["reedboat"],blurb:"Where men cannot walk, the boat goes.",x:3,y:4});
+  T({id:"pottery_p",era:"prehistoric",name:"Pottery",cost:50,requires:[],unlocks:[],blurb:"Storage, cooking, trade.",x:1,y:5});
+  T({id:"calendar_p",era:"prehistoric",name:"Lunar Calendar",cost:80,requires:["writing_p"],unlocks:[],blurb:"Seasons numbered.",x:4,y:3});
+  T({id:"priesthood",era:"prehistoric",name:"Priesthood",cost:60,requires:["writing_p"],unlocks:["priestess"],blurb:"The first specialists.",x:4,y:2});
+  T({id:"village",era:"prehistoric",name:"Permanent Settlement",cost:40,requires:["agric_p","pottery_p"],unlocks:[],blurb:"The first villages.",x:2,y:5});
+  T({id:"chiefdom",era:"prehistoric",name:"Chiefdom",cost:80,requires:["village"],unlocks:[],blurb:"Power consolidated in one family.",x:3,y:5});
+  T({id:"early_kingship",era:"prehistoric",name:"Early Kingship",cost:120,requires:["chiefdom","priesthood"],unlocks:[],blurb:"The first kings.",x:4,y:4});
+  T({id:"plough",era:"prehistoric",name:"The Plough",cost:80,requires:["animal_dom","bronze_p"],unlocks:[],blurb:"A man's labour, multiplied tenfold.",x:3,y:4.5});
+  T({id:"wheel",era:"prehistoric",name:"The Wheel",cost:100,requires:["bronze_p"],unlocks:[],blurb:"Round, simple, world-changing.",x:4,y:2.5});
+  T({id:"sailing_p",era:"prehistoric",name:"Coastal Sailing",cost:120,requires:["river_nav"],unlocks:[],blurb:"Out of sight of land — barely.",x:4,y:4});
+  T({id:"obsidian_trade",era:"prehistoric",name:"Obsidian Trade",cost:80,requires:["flint"],unlocks:[],blurb:"Volcanic glass, traded across continents.",x:3,y:1.5});
+  T({id:"prehistoric_apex",era:"prehistoric",name:"Bronze Age Dawn",cost:200,requires:["early_kingship","plough","wheel"],unlocks:[],blurb:"An age ends. The next begins.",x:5,y:3.5});
+})();
+
+/* Era palette CSS */
+(function(){
+  const style = document.createElement("style");
+  style.textContent = `body.era-prehistoric{--accent:#92400e;--accent2:#fbbf24;--accent3:#451a03;--gold:#fde68a;}`;
+  document.head.appendChild(style);
+})();
+
+
+/* =================================================================
+   MAP RENDERER v2 — proper continent silhouettes + numbered provinces
+   ================================================================= */
+W.map.render = function(){
+  if(!W.GAME) return;
+  const svg = document.getElementById("map-svg");
+  const G = W.GAME;
+  const provs = Object.values(W.PROVINCES).filter(p=>p.era===G.era);
+  let html = `<defs>
+    <radialGradient id="ocean-bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1a2b4d"/><stop offset="60%" stop-color="#0a1530"/><stop offset="100%" stop-color="#04081a"/>
+    </radialGradient>
+    <linearGradient id="land-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3a2d1a" stop-opacity=".75"/>
+      <stop offset="100%" stop-color="#1f1a10" stop-opacity=".55"/>
+    </linearGradient>
+    <pattern id="ocean-dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="0.7" fill="#1a3a5e" opacity=".3"/>
+    </pattern>
+    <filter id="glow"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  <rect width="1200" height="700" fill="url(#ocean-bg)"/>
+  <rect width="1200" height="700" fill="url(#ocean-dots)"/>`;
+  /* draw continents */
+  W.MAP_BG_PATHS.forEach(cid=>{
+    const d = W.CONTINENTS[cid]; if(!d) return;
+    html += `<path d="${d}" fill="url(#land-gradient)" stroke="#5d4a2a" stroke-width="1.5" opacity="0.92"/>`;
+  });
+  /* faded grid lines for latitudes / longitudes */
+  for(let i=1;i<8;i++){
+    html += `<line x1="0" y1="${i*90}" x2="1200" y2="${i*90}" stroke="#2a3a55" stroke-width=".3" stroke-dasharray="2 6" opacity=".4"/>`;
+  }
+  for(let i=1;i<14;i++){
+    html += `<line x1="${i*90}" y1="0" x2="${i*90}" y2="700" stroke="#2a3a55" stroke-width=".3" stroke-dasharray="2 6" opacity=".4"/>`;
+  }
+  /* alliance/connection lines */
+  provs.forEach(p=>{
+    provs.forEach(q=>{
+      if(p===q) return;
+      if(p.owner===q.owner){
+        const d = Math.hypot(p.x-q.x, p.y-q.y);
+        if(d<140){
+          html += `<line x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}" stroke="${W.map.colourFor(p)}" stroke-opacity=".25" stroke-width="1.5"/>`;
+        }
+      }
+    });
+  });
+  /* provinces with dice numbers (Catan-style) */
+  G.diceMap = G.diceMap || (function(){
+    const dm = {}; provs.forEach((p,i)=>{ dm[p.id] = 2 + (i % 11); }); return dm;
+  })();
+  provs.forEach(p=>{
+    const fill = W.map.fillFor(p);
+    const stroke = W.map.strokeFor(p);
+    const r = p.capital ? 14 : 9;
+    const diceNum = G.diceMap[p.id] || 7;
+    const isLit = G.lastDiceTotal && G.lastDiceTotal === diceNum;
+    html += `<g class="province" data-id="${p.id}" onclick="W.map.click('${p.id}')" onmousemove="W.map.tip(event,'${p.id}')" onmouseleave="W.map.hideTip()" style="cursor:pointer;">
+      ${isLit?`<circle cx="${p.x}" cy="${p.y}" r="${r+6}" fill="none" stroke="${stroke}" stroke-width="2" opacity=".7" filter="url(#glow)"/>`:""}
+      <circle cx="${p.x}" cy="${p.y}" r="${r+1}" fill="#000" opacity=".5"/>
+      <circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${p.capital?2.5:1.2}"/>
+      ${p.capital?`<circle cx="${p.x}" cy="${p.y}" r="${r-4}" fill="${stroke}" opacity=".6"/>`:""}
+      <text x="${p.x}" y="${p.y+3}" text-anchor="middle" fill="#fff" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" style="pointer-events:none;">${diceNum}</text>
+      <text x="${p.x}" y="${p.y+r+12}" text-anchor="middle" fill="#f5f0ff" font-family="JetBrains Mono,monospace" font-size="9" style="pointer-events:none;text-shadow:0 0 3px #000;">${W.util.esc(p.name)}</text>
+    </g>`;
+  });
+  /* armies */
+  if(W.map.mode==="army" && G.armies){
+    G.armies.forEach(army=>{
+      const p = W.PROVINCES[army.province]; if(!p) return;
+      html += `<circle cx="${p.x+12}" cy="${p.y-12}" r="5" fill="#fbbf24" stroke="#000" stroke-width="1.5" filter="url(#glow)"/>
+        <text x="${p.x+12}" y="${p.y-9}" text-anchor="middle" fill="#000" font-size="7" font-weight="700" style="pointer-events:none;">A</text>`;
+    });
+  }
+  /* last roll banner */
+  if(G.lastDiceTotal){
+    html += `<g transform="translate(600, 30)">
+      <rect x="-60" y="-18" width="120" height="36" rx="6" fill="#1f1138" stroke="#fbbf24" stroke-width="2" opacity=".95"/>
+      <text x="0" y="6" text-anchor="middle" fill="#fbbf24" font-family="Cinzel,Georgia,serif" font-size="20" font-weight="700">⚂ ROLL: ${G.lastDiceTotal}</text>
+    </g>`;
+  }
+  svg.innerHTML = html;
+};
+
+/* =================================================================
+   DICE SYSTEM — Catan-style resource generation per turn
+   ================================================================= */
+W.dice = {
+  roll(){
+    const d1 = 1+Math.floor(Math.random()*6);
+    const d2 = 1+Math.floor(Math.random()*6);
+    const total = d1+d2;
+    return {d1, d2, total};
+  },
+  perTurn(){
+    if(!W.GAME) return;
+    const r = W.dice.roll();
+    W.GAME.lastDice = r;
+    W.GAME.lastDiceTotal = r.total;
+    /* Provinces with matching number generate bonus */
+    const P = W.GAME.player;
+    let yielded = [];
+    P.provinces.forEach(pid=>{
+      const num = W.GAME.diceMap[pid];
+      if(num === r.total){
+        const p = W.PROVINCES[pid];
+        const rsrc = p.resource || "food";
+        const amount = p.capital ? 12 : 6;
+        P.resources[rsrc] = (P.resources[rsrc]||0) + amount;
+        P.resources.treasury = (P.resources.treasury||0) + Math.floor(p.pop*0.5);
+        yielded.push(`${p.name} +${amount} ${(W.RESOURCES[rsrc]||{name:rsrc}).name}`);
+      }
+    });
+    /* AI also gets dice yields */
+    W.GAME.ai.forEach(a=>{
+      a.provinces.forEach(pid=>{
+        const num = W.GAME.diceMap[pid];
+        if(num === r.total){
+          const p = W.PROVINCES[pid];
+          const rsrc = p.resource || "food";
+          a.resources[rsrc] = (a.resources[rsrc]||0) + (p.capital?12:6);
+          a.resources.treasury = (a.resources.treasury||0) + Math.floor(p.pop*0.5);
+        }
+      });
+    });
+    /* On a 7, robber-style: lose 20% gold + raid event */
+    if(r.total === 7){
+      const loss = Math.floor((P.resources.treasury||0) * 0.2);
+      P.resources.treasury -= loss;
+      W.engine.log(`The Bandit King strikes! Lost ${loss}g.`,"bad");
+    }
+    if(yielded.length){
+      W.engine.log(`Rolled ${r.d1}+${r.d2}=${r.total}. Yields: ${yielded.join(" · ")}`,"good");
+      W.toast.show({title:`⚂ Rolled ${r.total}`,body:yielded.slice(0,3).join(", "),kind:"good"});
+    } else {
+      W.engine.log(`Rolled ${r.d1}+${r.d2}=${r.total}. No provinces yielded.`,"info");
+    }
+    return r;
+  },
+  /* manual reroll cost */
+  reroll(){
+    const P = W.GAME.player;
+    const cost = 50;
+    if((P.resources.treasury||0) < cost){ W.toast.show({title:"Cannot reroll",body:`Needs ${cost}g.`,kind:"bad"}); return; }
+    P.resources.treasury -= cost;
+    W.dice.perTurn();
+    W.ui.refreshAll();
+  },
+};
+
+/* Hook dice into end-turn */
+(function(){
+  const orig = W.engine.endTurn;
+  W.engine.endTurn = function(){
+    W.dice.perTurn();
+    orig.call(W.engine);
+  };
+})();
+
+/* =================================================================
+   BATTLESHIP-STYLE CONQUEST — hidden grid attack
+   ================================================================= */
+W.conquest = {
+  /* Each province has a hidden 5x5 defence grid; ships placed randomly.
+     Player rolls dice to attack coordinates. */
+  ensureGrid(pid){
+    if(!W.GAME) return;
+    W.GAME.grids = W.GAME.grids || {};
+    if(W.GAME.grids[pid]) return W.GAME.grids[pid];
+    const grid = { ships:[], hits:[], misses:[], conqueredBy:null };
+    const numShips = 3 + Math.floor(Math.random()*3);
+    const placed = new Set();
+    while(grid.ships.length < numShips){
+      const x = Math.floor(Math.random()*5);
+      const y = Math.floor(Math.random()*5);
+      const k = x+","+y;
+      if(!placed.has(k)){
+        placed.add(k);
+        grid.ships.push({x,y, hit:false, name:W.util.pick(["Garrison","Citadel","Watchtower","Fortress","Barracks","Armoury"])});
+      }
+    }
+    W.GAME.grids[pid] = grid;
+    return grid;
+  },
+  attack(pid, x, y){
+    const G = W.GAME, P = G.player;
+    const p = W.PROVINCES[pid]; if(!p) return;
+    if(p.owner === P.faction){ W.toast.show({title:"Already yours",body:p.name,kind:"warn"}); return; }
+    const grid = W.conquest.ensureGrid(pid);
+    /* cost to attack */
+    if((P.resources.manpower||0) < 2){ W.toast.show({title:"Need manpower",body:"At least 2.",kind:"bad"}); return; }
+    P.resources.manpower -= 2;
+    P.resources.treasury -= 20;
+    const ship = grid.ships.find(s=>s.x===x && s.y===y && !s.hit);
+    if(ship){
+      ship.hit = true;
+      grid.hits.push({x,y});
+      W.engine.log(`Hit! ${ship.name} at (${x},${y}) destroyed in ${p.name}.`,"good");
+      W.audio.success();
+      /* All ships sunk = conquest */
+      if(grid.ships.every(s=>s.hit)){
+        const prevOwner = p.owner;
+        G.ai.forEach(ai=>{ ai.provinces = ai.provinces.filter(id=>id!==pid); });
+        p.owner = P.faction;
+        P.provinces.push(pid);
+        grid.conqueredBy = P.faction;
+        W.engine.log(`${p.name} CONQUERED from ${prevOwner}!`,"good");
+        W.toast.show({title:"Province Conquered",body:p.name,kind:"good"});
+        W.audio.success();
+        W.ui.closeModal();
+        W.ui.refreshAll();
+        return {conquered:true};
+      }
+    } else {
+      grid.misses.push({x,y});
+      W.engine.log(`Miss at (${x},${y}) of ${p.name}.`,"warn");
+      W.audio.failure();
+    }
+    W.ui.openConquest(pid);
+    return {conquered:false};
+  },
+  rollAttack(pid){
+    /* roll 2 dice for coordinates: d1-1 = x, d2-1 = y but mapped to 5x5 */
+    const r1 = 1+Math.floor(Math.random()*5);
+    const r2 = 1+Math.floor(Math.random()*5);
+    const x = r1-1, y = r2-1;
+    W.engine.log(`Rolled coordinates (${r1},${r2}) → grid (${x},${y}).`,"info");
+    W.conquest.attack(pid, x, y);
+  },
+};
+
+W.ui.openConquest = function(pid){
+  const p = W.PROVINCES[pid]; if(!p) return;
+  const G = W.GAME;
+  if(p.owner === G.player.faction){ W.toast.show({title:"Yours already",body:p.name,kind:"warn"}); return; }
+  const grid = W.conquest.ensureGrid(pid);
+  const ownerName = (G.ai.find(a=>a.faction===p.owner)||{factionData:{name:p.owner}}).factionData.name;
+  let html = `<p style="color:var(--gold);font-family:var(--font-m);font-size:11px;letter-spacing:.18em;margin-bottom:8px;">TARGET: ${W.util.esc(p.name)} · OWNER: ${W.util.esc(ownerName)}</p>
+    <p style="color:var(--t2);font-size:12px;margin-bottom:14px;">Find and sink all hidden garrisons to conquer this province. Each attack costs <b>2 manpower</b> and <b>20 gold</b>. Roll dice for random coordinates, or click a cell.</p>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;max-width:340px;margin:0 auto 12px;">`;
+  for(let y=0;y<5;y++){
+    for(let x=0;x<5;x++){
+      const hit = grid.hits.find(h=>h.x===x&&h.y===y);
+      const miss = grid.misses.find(m=>m.x===x&&m.y===y);
+      const ship = grid.ships.find(s=>s.x===x&&s.y===y && s.hit);
+      let bg = "var(--bg2)", txt = "·";
+      if(hit){ bg = "var(--red)"; txt = "✕"; }
+      else if(miss){ bg = "var(--bg3)"; txt = "○"; }
+      const clickable = !hit && !miss;
+      html += `<button style="aspect-ratio:1;background:${bg};border:1px solid var(--line);border-radius:4px;color:var(--t1);font-family:var(--font-m);font-size:16px;cursor:${clickable?"pointer":"default"};" ${clickable?`onclick="W.conquest.attack('${pid}',${x},${y})"`:""}>${txt}</button>`;
+    }
+  }
+  html += `</div>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn-primary" onclick="W.conquest.rollAttack('${pid}')">⚂ Roll Dice Attack</button>
+      <button class="btn-ghost" onclick="W.ui.closeModal()">Withdraw</button>
+    </div>
+    <p style="text-align:center;color:var(--t3);font-size:11px;margin-top:10px;">Hits: ${grid.hits.length} / ${grid.ships.length} garrisons</p>`;
+  W.ui.openModal({title:`Assault on ${p.name}`,bodyHTML:html,wide:false});
+};
+
+/* Hook conquest into province click for foreign provinces */
+(function(){
+  const origClick = W.map.click;
+  W.map.click = function(pid){
+    const p = W.PROVINCES[pid]; if(!p) return;
+    const G = W.GAME;
+    if(p.owner === G.player.faction){
+      origClick.call(W.map, pid);
+    } else {
+      /* foreign province - offer conquest */
+      const ownerName = (G.ai.find(a=>a.faction===p.owner)||{factionData:{name:p.owner}}).factionData.name;
+      const bs = (G.grids && G.grids[pid] ? G.grids[pid] : null);
+      W.ui.openModal({
+        title: p.name,
+        bodyHTML: `<p style="color:var(--gold);font-family:var(--font-m);font-size:11px;letter-spacing:.18em;margin-bottom:8px;">${W.util.esc(ownerName.toUpperCase())} · ${W.util.esc((p.terrain||"").toUpperCase())} · DICE ${G.diceMap[pid]||"?"}</p>
+          <div class="rsrc-row"><div class="lbl">Population</div><div class="val">${p.pop}k</div></div>
+          <div class="rsrc-row"><div class="lbl">Resource</div><div class="val">${(W.RESOURCES[p.resource]||{name:p.resource||"—"}).name}</div></div>
+          <div class="rsrc-row"><div class="lbl">Terrain</div><div class="val">${p.terrain}</div></div>
+          ${bs?`<div class="rsrc-row"><div class="lbl">Garrisons sunk</div><div class="val">${bs.hits.length}/${bs.ships.length}</div></div>`:""}
+          ${p.capital?`<p style="color:var(--gold);font-style:italic;margin-top:10px;">⚜ Enemy capital — heavily defended.</p>`:""}`,
+        footHTML:`<button class="btn-secondary" onclick="W.ui.closeModal();W.ui.openConquest('${pid}')">⚔ Assault</button>
+                  <button class="btn-ghost" onclick="W.ui.closeModal();W.ui.openDiplo()">🕊 Diplomacy</button>
+                  <button class="btn-ghost" onclick="W.ui.closeModal()">Close</button>`,
+      });
+    }
+  };
+})();
+
+/* =================================================================
+   DICE WIDGET ON MAP TOOLBAR
+   ================================================================= */
+(function(){
+  const origRender = W.ui.renderActionBar;
+  W.ui.renderActionBar = function(){
+    origRender.call(W.ui);
+    /* Inject dice display into topbar */
+    const turnStamp = document.getElementById("top-turn");
+    if(turnStamp && W.GAME && W.GAME.lastDice){
+      const d = W.GAME.lastDice;
+      if(!document.getElementById("dice-display")){
+        const span = document.createElement("span");
+        span.id = "dice-display";
+        span.style.cssText = "font-family:var(--font-m);font-size:13px;color:var(--gold);letter-spacing:.18em;margin-left:10px;padding:4px 10px;border:1px solid var(--gold);border-radius:var(--r-s);background:rgba(251,191,36,.1);";
+        span.title = "Click to reroll for 50g";
+        span.style.cursor = "pointer";
+        span.onclick = ()=>W.dice.reroll();
+        turnStamp.parentElement.insertBefore(span, turnStamp.nextSibling);
+      }
+      document.getElementById("dice-display").innerHTML = `⚂ ${d.d1}+${d.d2}=${d.total}`;
+    }
+  };
+})();
+
+/* =================================================================
+   FIRST DICE ROLL ON GAME START
+   ================================================================= */
+(function(){
+  const origEnter = W.ui.enterGame;
+  W.ui.enterGame = function(){
+    if(W.GAME && !W.GAME.lastDice){
+      W.GAME.diceMap = W.GAME.diceMap || {};
+      const provs = Object.values(W.PROVINCES).filter(p=>p.era===W.GAME.era);
+      provs.forEach((p,i)=>{ if(!W.GAME.diceMap[p.id]) W.GAME.diceMap[p.id] = 2 + (i%11); });
+      W.dice.perTurn();
+    }
+    origEnter.call(W.ui);
+  };
+})();
+
+/* =================================================================
+   UI POLISH: tutorial mentions dice + assault
+   ================================================================= */
+W.HINTS.dice = "DICE HINT: Each End Turn rolls 2d6. Provinces whose dice number matches yield bonus resources. Reroll for 50g.";
+W.HINTS.assault = "ASSAULT HINT: Click any foreign province to attack. Find hidden garrisons by clicking grid cells or rolling dice. Sink all → conquest!";
+
 /* Auto-boot — splash visible by default; user clicks New Campaign */
 (function(){
   W.util.log(`Warlords v${W.VERSION} loaded — ${Object.keys(W.FACTIONS).reduce((s,k)=>s+W.FACTIONS[k].length,0)} factions, ${Object.keys(W.LEADERS).length} leader sets, ${Object.keys(W.UNITS).length} unit types, ${Object.keys(W.BUILDINGS).length} buildings, ${Object.keys(W.TECHS).length} techs, ${W.EVENTS.length} events.`);

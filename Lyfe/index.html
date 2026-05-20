@@ -892,7 +892,7 @@ const CAREERS = {
     ],
   },
   astronaut: {
-    name:'Astronaut', icon:'🚀', minSmarts:75, minHealth:80, requiresDegree:'cs',
+    name:'Astronaut', icon:'🚀', minSmarts:75, minHealth:80, requiresDegree:'cs', realityGate:'spaceage',
     rungs:[
       {title:'Astronaut Candidate',      salary:78000,  years:3, minSmarts:78, minHealth:80, prestige:9},
       {title:'Mission Specialist',       salary:165000, years:6, minSmarts:82, minHealth:78, prestige:10},
@@ -2844,17 +2844,38 @@ const LIFE_EVENTS = [
   // ALT-REALITY FLAVOR (magical)
   {minAge:18, maxAge:60, prob:0.03, text:'You levitated a teacup unintentionally.', fx:{happiness:+6, smarts:+2}, requires:{realityIs:'magical'}, tag:'good'},
   {minAge:20, maxAge:80, prob:0.02, text:'A dragon flew over your city today.', fx:{happiness:+4}, requires:{realityIs:'magical'}, tag:''},
+  {minAge:14, maxAge:80, prob:0.025, text:'You witnessed a small miracle at the local shrine.', fx:{faith:+8, happiness:+5}, requires:{realityIs:'magical'}, tag:'good'},
+  {minAge:18, maxAge:70, prob:0.020, text:'A coven offered to train you. You declined.', fx:{happiness:-3}, requires:{realityIs:'magical'}, tag:''},
+  {minAge:14, maxAge:99, prob:0.018, text:'You found a small enchanted object in a thrift shop for next to nothing.', fx:{money:+1200, happiness:+6}, requires:{realityIs:'magical'}, tag:'good'},
+  {minAge:18, maxAge:60, prob:0.015, text:'A talking cat followed you home. You let it stay.', fx:{happiness:+10, smarts:+2}, requires:{realityIs:'magical'}, tag:'good'},
 
   // ALT-REALITY FLAVOR (cyberpunk)
   {minAge:18, maxAge:60, prob:0.03, text:'You upgraded your retinal implant. The world looks sharper.', fx:{looks:+2, smarts:+1, money:-8000}, requires:{realityIs:'cyberpunk'}, tag:'good'},
   {minAge:18, maxAge:60, prob:0.02, text:'Mega-corp drones buzzed your apartment all night.', fx:{happiness:-4, health:-1}, requires:{realityIs:'cyberpunk'}, tag:'bad'},
+  {minAge:16, maxAge:80, prob:0.025, text:'A street doc installed black-market neural firmware. Risky but cheap.', fx:{smarts:+4, health:-3, money:-1200}, requires:{realityIs:'cyberpunk'}, tag:''},
+  {minAge:18, maxAge:60, prob:0.020, text:'You won a small payout in the corp-net dive tournament.', fx:{money:+2800, fame:+2}, requires:{realityIs:'cyberpunk'}, tag:'good'},
+  {minAge:14, maxAge:80, prob:0.022, text:'A megacorp ad popped into your visual cortex without consent.', fx:{happiness:-3, money:-50}, requires:{realityIs:'cyberpunk'}, tag:'bad'},
+  {minAge:18, maxAge:99, prob:0.018, text:'A friend\'s consciousness was forcibly uploaded to a corp server.', fx:{happiness:-12, karma:+2}, requires:{realityIs:'cyberpunk'}, tag:'bad'},
 
   // ALT-REALITY FLAVOR (apocalypse)
   {minAge:14, maxAge:80, prob:0.04, text:'You scavenged enough copper wire to trade for a week of food.', fx:{money:+200, health:-1}, requires:{realityIs:'apocalypse'}, tag:''},
   {minAge:14, maxAge:80, prob:0.03, text:'A radiation storm forced you into the shelter for three days.', fx:{health:-4, happiness:-3}, requires:{realityIs:'apocalypse'}, tag:'bad'},
+  {minAge:14, maxAge:80, prob:0.025, text:'Raiders tried to take your settlement\'s water. You held them off.', fx:{health:-5, karma:+4, happiness:+3}, requires:{realityIs:'apocalypse'}, tag:''},
+  {minAge:10, maxAge:80, prob:0.020, text:'You found a working pre-war book. You read it cover to cover.', fx:{smarts:+5, happiness:+8}, requires:{realityIs:'apocalypse'}, tag:'good'},
+  {minAge:14, maxAge:99, prob:0.022, text:'Your settlement traded with a caravan for medicine.', fx:{health:+6, money:-300}, requires:{realityIs:'apocalypse'}, tag:'good'},
 
   // ALT-REALITY FLAVOR (space age)
   {minAge:18, maxAge:80, prob:0.025, text:'You took the orbital elevator up just to see Earth from above.', fx:{happiness:+12, money:-2400}, requires:{realityIs:'spaceage'}, tag:'good'},
+  {minAge:14, maxAge:80, prob:0.022, text:'You watched a Mars-colony launch live from Cape Canaveral.', fx:{happiness:+8, smarts:+2}, requires:{realityIs:'spaceage'}, tag:'good'},
+  {minAge:18, maxAge:75, prob:0.020, text:'You booked a weekend at a lunar resort.', fx:{happiness:+15, money:-18000}, requires:{realityIs:'spaceage'}, tag:'good'},
+  {minAge:14, maxAge:99, prob:0.018, text:'Orbital debris caused a global GPS outage for 8 hours.', fx:{happiness:-4}, requires:{realityIs:'spaceage'}, tag:'bad'},
+  {minAge:16, maxAge:80, prob:0.020, text:'A cousin emigrated to the Mars colony. You may never see them again.', fx:{happiness:-6}, requires:{realityIs:'spaceage'}, tag:''},
+  {minAge:18, maxAge:99, prob:0.015, text:'You attended the Olympics on the Moon. Low-gravity gymnastics was unreal.', fx:{happiness:+10, money:-6000}, requires:{realityIs:'spaceage'}, tag:'good'},
+
+  // ALT-REALITY FLAVOR (mundane) — small but present, so picking mundane isn't empty
+  {minAge:14, maxAge:80, prob:0.020, text:'You noticed how ordinary the world is. There is a quiet kind of peace in that.', fx:{happiness:+4, faith:+1}, requires:{realityIs:'mundane'}, tag:''},
+  {minAge:18, maxAge:80, prob:0.018, text:'You read a long magazine piece about whether we\'re alone in the universe. Probably, you decide.', fx:{smarts:+2}, requires:{realityIs:'mundane'}, tag:''},
+  {minAge:14, maxAge:99, prob:0.020, text:'A bird died on your windowsill. You buried it in the yard. It mattered to you.', fx:{karma:+2, happiness:-1}, requires:{realityIs:'mundane'}, tag:''},
 
   // CHILDHOOD MILESTONES (automatic)
   {age:6, text:'You started elementary school.', fx:{smarts:+3}, tag:'milestone', auto:true},

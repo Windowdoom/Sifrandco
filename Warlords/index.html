@@ -3,346 +3,736 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Warlords · The Strategy Game by WindowDoom</title>
+<title>Warlords · A Race Through the Ages</title>
 <style>
-/* ===== WARLORDS — focused rebuild ===== */
+/* ============================================================
+   WARLORDS · A Race Through the Ages
+   Senet + Ur + Snakes&Ladders + Pachisi + Backgammon + Civ
+   ============================================================ */
 :root{
-  --bg:#1a0f30; --bg2:#241540; --bg3:#321c5a; --panel:#2a1850; --panel2:#3a2168;
-  --line:#5a3da0; --line2:#7c5dd0;
-  --p:#c084fc; --p2:#e9d5ff; --gold:#fbbf24; --gold2:#fde68a;
-  --coral:#fb7185; --mint:#5eead4; --peach:#fb923c; --sky:#7dd3fc; --rose:#f472b6; --lime:#bef264;
-  --t1:#fdf9ff; --t2:#d8c8f0; --t3:#9d8bc9; --t4:#6b5897;
-  --good:#22c55e; --bad:#ef4444; --warn:#f59e0b;
-  --r:8px; --rl:14px;
-  --fh:'Cinzel','Georgia',serif;
+  /* Parchment & treasure-map palette */
+  --bg:#1c1208;
+  --bg2:#241808;
+  --paper:#e8d5a8;
+  --paper2:#d4be8f;
+  --paper3:#b89c6e;
+  --ink:#1a0e04;
+  --ink2:#3a2510;
+  --gold:#d4a017;
+  --gold2:#f5c842;
+  --gold-bright:#ffd700;
+  --crimson:#8b1a1a;
+  --crimson2:#c8302f;
+  --teal:#1b6b6b;
+  --teal2:#2a9d9d;
+  --moss:#5a7842;
+  --rust:#a04920;
+  --plum:#5a2952;
+  --bronze:#8b6914;
+  --cream:#faf2dc;
+  --shadow:rgba(0,0,0,.4);
+  --r:6px; --rl:12px;
+  --fh:'Cinzel','Trajan Pro','Georgia',serif;
   --fb:'Cormorant Garamond','Georgia',serif;
   --fm:'JetBrains Mono','Menlo',monospace;
   --fs:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fs);font-size:14px;line-height:1.5;overflow:hidden;-webkit-font-smoothing:antialiased}
-body{background:radial-gradient(ellipse at 30% 30%,#3d2b5c,#1a0f30 60%,#08051a)}
-button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;outline:none}
-button:disabled{opacity:.4;cursor:not-allowed}
-input,select{font:inherit;color:var(--t1);background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;outline:none}
+html,body{
+  height:100%;
+  background:#1c1208;
+  color:var(--cream);
+  font-family:var(--fs);
+  font-size:14px;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+body{
+  background:
+    radial-gradient(ellipse at 30% 20%,rgba(212,160,23,.08),transparent 60%),
+    radial-gradient(ellipse at 70% 80%,rgba(139,26,26,.06),transparent 60%),
+    #1c1208;
+}
+button{
+  font:inherit;color:inherit;background:none;border:none;cursor:pointer;outline:none;
+}
+button:disabled{opacity:.35;cursor:not-allowed}
 ::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:rgba(0,0,0,.2)}
-::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:var(--p)}
+::-webkit-scrollbar-track{background:rgba(0,0,0,.3)}
+::-webkit-scrollbar-thumb{background:var(--bronze);border-radius:4px}
 
 /* ===== SPLASH ===== */
-#splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;text-align:center;padding:30px}
-.title{font-family:var(--fh);font-size:104px;font-weight:900;letter-spacing:.06em;
-  background:linear-gradient(135deg,#facc15,#fb7185 35%,#c084fc 65%,#5eead4);
+#splash{
+  position:fixed;inset:0;z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:30px;
+  background:
+    radial-gradient(ellipse at center,rgba(212,160,23,.12),transparent 60%),
+    #1c1208;
+}
+.splash-frame{
+  border:2px solid var(--gold);
+  padding:60px 80px;
+  background:linear-gradient(135deg,rgba(232,213,168,.06),rgba(139,26,26,.04));
+  box-shadow:
+    0 0 0 1px var(--bg) inset,
+    0 0 0 4px var(--gold) inset,
+    0 24px 64px rgba(0,0,0,.6),
+    0 0 80px rgba(212,160,23,.15);
+  max-width:780px;
+}
+.title{
+  font-family:var(--fh);font-size:88px;font-weight:900;letter-spacing:.08em;
+  background:linear-gradient(135deg,var(--gold-bright),var(--crimson2) 60%,var(--gold));
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 40px rgba(192,132,252,.5));margin-bottom:8px}
-.sub{font-family:var(--fm);font-size:12px;letter-spacing:.5em;color:var(--gold);text-transform:uppercase;margin-bottom:6px}
-.by{font-family:var(--fm);font-size:10px;letter-spacing:.4em;color:var(--t3);text-transform:uppercase;margin-bottom:32px}
-.tag{font-family:var(--fb);font-size:18px;color:var(--t2);font-style:italic;max-width:600px;margin-bottom:40px;line-height:1.5}
-.row{display:flex;gap:14px;align-items:center;justify-content:center}
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.3));
+  margin-bottom:6px;line-height:1;
+}
+.sub{
+  font-family:var(--fb);font-size:22px;font-style:italic;
+  color:var(--paper);
+  margin-bottom:6px;letter-spacing:.04em;
+}
+.by{
+  font-family:var(--fm);font-size:11px;letter-spacing:.4em;
+  color:var(--gold);text-transform:uppercase;margin-bottom:36px;
+}
+.tag{
+  font-family:var(--fb);font-size:17px;color:var(--paper);
+  max-width:580px;margin:0 auto 36px;line-height:1.6;font-style:italic;
+}
+.tag b{color:var(--gold);font-style:normal;font-weight:600}
 
 /* ===== BUTTONS ===== */
-.btn{padding:14px 32px;font-family:var(--fm);font-size:12px;letter-spacing:.28em;text-transform:uppercase;border-radius:var(--r);transition:all .2s;font-weight:600;border:1px solid transparent}
-.btn-p{background:linear-gradient(135deg,#facc15,#fb7185);color:#1a0f30;box-shadow:0 8px 24px rgba(251,113,133,.4)}
-.btn-p:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(251,113,133,.6)}
-.btn-s{border-color:var(--mint);color:var(--mint)}
-.btn-s:hover{background:rgba(94,234,212,.15);color:var(--gold);border-color:var(--gold)}
-.btn-g{border-color:var(--line);color:var(--t2)}
-.btn-g:hover{border-color:var(--p);color:var(--p2)}
-.btn-d{border-color:var(--bad);color:var(--coral)}
-.btn-d:hover{background:rgba(239,68,68,.15);color:#fff}
+.btn{
+  padding:14px 32px;
+  font-family:var(--fh);font-size:14px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;
+  border-radius:var(--r);
+  transition:all .18s;
+  border:2px solid transparent;
+  cursor:pointer;
+}
+.btn-p{
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  color:var(--ink);
+  border-color:var(--ink2);
+  box-shadow:
+    0 0 0 1px var(--gold2) inset,
+    0 6px 16px rgba(0,0,0,.4);
+}
+.btn-p:hover{
+  transform:translateY(-2px);
+  box-shadow:
+    0 0 0 1px var(--gold-bright) inset,
+    0 10px 24px rgba(212,160,23,.5);
+}
+.btn-s{
+  border-color:var(--gold);color:var(--gold);
+  background:rgba(212,160,23,.08);
+}
+.btn-s:hover{
+  background:var(--gold);color:var(--ink);
+}
+.btn-g{
+  border-color:var(--paper3);color:var(--paper);
+  background:rgba(232,213,168,.04);
+}
+.btn-g:hover{
+  border-color:var(--gold);color:var(--gold);
+}
+.btn-r{
+  background:linear-gradient(180deg,var(--crimson2),var(--crimson));
+  color:var(--cream);border-color:var(--ink2);
+}
+.btn-r:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(139,26,26,.5);
+}
+.btn-sm{padding:8px 16px;font-size:11px;letter-spacing:.14em}
 
-/* ===== PICKER ===== */
-.picker{position:fixed;inset:0;z-index:90;display:none;flex-direction:column;background:radial-gradient(ellipse at 30% 30%,#3d2b5c,#1a0f30 70%,#08051a)}
-.picker.on{display:flex}
-.phead{padding:24px 36px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
-.phead h1{font-family:var(--fh);font-size:32px;color:var(--gold);letter-spacing:.06em}
-.crumbs{font-family:var(--fm);font-size:10px;letter-spacing:.28em;color:var(--t3);text-transform:uppercase}
-.crumbs .n{color:var(--mint)}
-.pbody{flex:1;overflow-y:auto;padding:32px 36px}
-.pfoot{padding:18px 36px;border-top:1px solid var(--line);display:flex;justify-content:space-between;background:rgba(0,0,0,.3)}
-.grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;max-width:1100px;margin:0 auto}
-.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1100px;margin:0 auto}
-.grid-5{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;max-width:1100px;margin:0 auto}
-.card{background:linear-gradient(180deg,#2a2050,#1a1330);border:1px solid var(--line);border-radius:var(--rl);padding:22px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
-.card:hover{transform:translateY(-4px);border-color:var(--coral);box-shadow:0 12px 36px rgba(251,113,133,.25)}
-.card.sel{border-color:var(--gold);background:linear-gradient(180deg,rgba(251,204,21,.1),#1a1330);box-shadow:0 12px 36px rgba(251,204,21,.4)}
-.card .sym{font-size:36px;margin-bottom:6px;display:block}
-.card .nm{font-family:var(--fh);font-size:18px;color:var(--p2);margin-bottom:4px}
-.card .sub2{font-family:var(--fm);font-size:10px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px}
-.card .desc{font-size:12px;color:var(--t2);line-height:1.5;font-style:italic}
-.card .quote{font-family:var(--fb);font-style:italic;color:var(--t2);font-size:13px;margin:8px 0 4px;padding:0 4px;border-left:2px solid var(--coral)}
-.card .bonus{font-family:var(--fm);font-size:10px;color:var(--good);letter-spacing:.12em;margin-top:6px}
-.card .flag{position:absolute;top:14px;right:14px;font-size:24px;opacity:.7}
+/* ===== CIV PICKER ===== */
+#picker{
+  position:fixed;inset:0;z-index:90;display:none;
+  flex-direction:column;
+  background:
+    radial-gradient(ellipse at center,rgba(212,160,23,.08),transparent 60%),
+    #1c1208;
+}
+#picker.on{display:flex}
+.phead{
+  padding:32px 48px 18px;display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid var(--bronze);
+}
+.phead h1{
+  font-family:var(--fh);font-size:32px;
+  background:linear-gradient(90deg,var(--gold-bright),var(--crimson2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  letter-spacing:.06em;
+}
+.phead .crumb{
+  font-family:var(--fm);font-size:11px;color:var(--paper3);letter-spacing:.24em;text-transform:uppercase;
+}
+.pbody{flex:1;overflow-y:auto;padding:36px 48px}
+.civ-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px;max-width:1100px;margin:0 auto;
+}
+.civ-card{
+  background:linear-gradient(180deg,var(--paper),var(--paper2));
+  border:2px solid var(--bronze);
+  color:var(--ink);
+  padding:24px 22px;
+  border-radius:var(--rl);
+  cursor:pointer;
+  transition:all .22s;
+  position:relative;
+  box-shadow:
+    0 0 0 1px var(--paper) inset,
+    0 6px 16px rgba(0,0,0,.4);
+}
+.civ-card:hover{
+  transform:translateY(-6px) rotate(-1deg);
+  box-shadow:
+    0 0 0 1px var(--gold-bright) inset,
+    0 16px 32px rgba(212,160,23,.4);
+  border-color:var(--gold);
+}
+.civ-card.sel{
+  border-color:var(--gold-bright);
+  box-shadow:
+    0 0 0 2px var(--gold-bright) inset,
+    0 16px 32px rgba(212,160,23,.6);
+  transform:translateY(-4px);
+}
+.civ-card .glyph{
+  font-size:48px;line-height:1;margin-bottom:6px;
+  text-shadow:0 2px 0 rgba(0,0,0,.15);
+}
+.civ-card .cn{
+  font-family:var(--fh);font-size:22px;font-weight:700;
+  color:var(--ink2);margin-bottom:4px;letter-spacing:.04em;
+}
+.civ-card .er{
+  font-family:var(--fm);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--crimson);margin-bottom:10px;
+}
+.civ-card .quote{
+  font-family:var(--fb);font-style:italic;font-size:14px;
+  color:var(--ink2);line-height:1.5;margin-bottom:10px;
+  padding-left:8px;border-left:3px solid var(--crimson);
+}
+.civ-card .bon{
+  font-family:var(--fm);font-size:11px;
+  color:var(--moss);font-weight:600;
+  background:rgba(90,120,66,.12);padding:6px 10px;border-radius:4px;
+}
+.pfoot{
+  padding:20px 48px;border-top:1px solid var(--bronze);
+  display:flex;justify-content:space-between;background:rgba(0,0,0,.3);
+}
 
 /* ===== GAME LAYOUT ===== */
-#game{position:fixed;inset:0;display:none;flex-direction:column;z-index:10}
+#game{
+  position:fixed;inset:0;display:none;flex-direction:column;z-index:10;
+}
 #game.on{display:flex}
-#top{height:54px;display:flex;align-items:center;padding:0 18px;gap:14px;background:linear-gradient(90deg,#2d1a55,#1f1240 50%,#2d1a55);border-bottom:1px solid var(--p);box-shadow:0 4px 18px rgba(192,132,252,.2);z-index:5;flex-shrink:0}
-.brand{font-family:var(--fh);font-size:22px;font-weight:700;letter-spacing:.18em;
-  background:linear-gradient(90deg,var(--gold),var(--coral),var(--p2),var(--mint));
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-.chip{display:flex;align-items:center;gap:8px;padding:4px 12px;border:1px solid;border-radius:var(--r);font-family:var(--fm);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
-.chip-f{border-color:var(--p);color:var(--mint)}
-.chip-e{border-color:var(--gold);color:var(--gold);background:rgba(251,204,21,.08)}
-.chip-t{border-color:var(--mint);color:var(--mint);background:rgba(94,234,212,.08)}
-.chip-d{border-color:var(--coral);color:var(--coral);background:rgba(251,113,133,.1);font-weight:700;cursor:pointer}
-.chip-d:hover{background:rgba(251,113,133,.2)}
-#top .spacer{flex:1}
-.top-btn{padding:7px 14px;font-family:var(--fm);font-size:10px;letter-spacing:.18em;color:var(--t2);border:1px solid var(--line);border-radius:var(--r);text-transform:uppercase;transition:all .15s}
-.top-btn:hover{color:var(--gold);border-color:var(--gold);background:rgba(251,204,21,.1)}
+#top{
+  height:60px;flex-shrink:0;
+  display:flex;align-items:center;gap:14px;
+  padding:0 24px;
+  background:linear-gradient(180deg,#2a1a0a,#1c1208);
+  border-bottom:2px solid var(--gold);
+  box-shadow:0 4px 18px rgba(0,0,0,.5);
+}
+.brand{
+  font-family:var(--fh);font-size:24px;font-weight:700;letter-spacing:.18em;
+  background:linear-gradient(90deg,var(--gold-bright),var(--crimson2),var(--gold));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.chip{
+  display:flex;align-items:center;gap:10px;
+  padding:6px 14px;
+  background:linear-gradient(180deg,rgba(232,213,168,.06),rgba(232,213,168,.02));
+  border:1px solid var(--bronze);
+  border-radius:var(--r);
+  font-family:var(--fm);font-size:11px;
+  letter-spacing:.16em;text-transform:uppercase;
+}
+.chip .gl{font-size:18px}
+.chip .lb{color:var(--paper)}
+.chip-era{border-color:var(--gold);color:var(--gold);background:rgba(212,160,23,.08)}
+.chip-turn{border-color:var(--crimson2);color:var(--crimson2);background:rgba(200,48,47,.08)}
+.spacer{flex:1}
+.top-btn{
+  padding:7px 14px;
+  font-family:var(--fm);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--paper);
+  border:1px solid var(--bronze);
+  border-radius:var(--r);
+  transition:all .15s;
+}
+.top-btn:hover{color:var(--gold);border-color:var(--gold);background:rgba(212,160,23,.1)}
 
-#main{flex:1;display:grid;grid-template-columns:240px 1fr 280px;min-height:0}
+#main{
+  flex:1;display:grid;
+  grid-template-columns:1fr 320px;
+  min-height:0;
+}
 
-/* sidebars */
-.side{background:linear-gradient(180deg,#231840,#150c2e);overflow-y:auto;padding:18px}
-.side.left{border-right:1px solid var(--line)}
-.side.right{border-left:1px solid var(--line)}
-.h{font-family:var(--fh);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--coral);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-.h.mt{color:var(--mint)}.h.gd{color:var(--gold)}.h.ro{color:var(--rose)}.h.pe{color:var(--peach)}.h.sk{color:var(--sky)}
-.sec{margin-bottom:22px}
-.r{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:6px;font-family:var(--fm);font-size:12.5px;margin-bottom:2px}
-.r:hover{background:rgba(192,132,252,.08)}
-.r .l{display:flex;align-items:center;gap:8px;color:var(--t2)}
-.r .l .i{font-size:15px;width:20px;text-align:center}
-.r .v{color:var(--gold2);font-weight:600}
-.r .v.bad{color:var(--coral)}
-.r .v.good{color:var(--mint)}
-.bar{height:8px;background:rgba(0,0,0,.4);border-radius:4px;overflow:hidden;margin-top:6px}
-.bar .fill{height:100%;background:linear-gradient(90deg,var(--bad),var(--coral));transition:width .3s}
-.bar .fill.mid{background:linear-gradient(90deg,var(--peach),var(--gold))}
-.bar .fill.high{background:linear-gradient(90deg,var(--lime),var(--mint))}
+/* ===== BOARD AREA ===== */
+#board-wrap{
+  position:relative;
+  background:
+    radial-gradient(ellipse at center,rgba(212,160,23,.06),transparent 70%),
+    #18100a;
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+#board{
+  width:100%;height:100%;max-width:980px;max-height:780px;
+  filter:drop-shadow(0 12px 32px rgba(0,0,0,.6));
+}
+#dice-overlay{
+  position:absolute;top:24px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:14px;
+  padding:14px 22px;
+  background:linear-gradient(180deg,#2a1a0a,#1c1208);
+  border:2px solid var(--gold);
+  border-radius:var(--rl);
+  box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 32px rgba(212,160,23,.2);
+  z-index:5;
+}
+.die{
+  width:48px;height:48px;
+  background:linear-gradient(135deg,var(--cream),var(--paper2));
+  border:2px solid var(--ink2);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fh);font-size:24px;font-weight:800;
+  color:var(--ink);
+  box-shadow:
+    0 0 0 1px var(--cream) inset,
+    0 4px 8px rgba(0,0,0,.4);
+  position:relative;transition:all .2s;
+  cursor:pointer;
+}
+.die.used{opacity:.35;filter:grayscale(1);cursor:not-allowed}
+.die.selected{
+  border-color:var(--crimson2);
+  box-shadow:
+    0 0 0 2px var(--crimson2) inset,
+    0 0 16px rgba(200,48,47,.6),
+    0 4px 8px rgba(0,0,0,.4);
+  transform:translateY(-3px);
+}
+.die.unrolled{
+  background:linear-gradient(135deg,#3a2510,#241808);
+  color:var(--gold);border-color:var(--gold);
+}
+.die.rolling{animation:roll-anim .5s ease}
+@keyframes roll-anim{
+  0%{transform:rotateX(0)}
+  50%{transform:rotateX(720deg) scale(1.2)}
+  100%{transform:rotateX(0)}
+}
+.dice-label{
+  font-family:var(--fm);font-size:10px;color:var(--paper3);
+  letter-spacing:.22em;text-transform:uppercase;
+}
 
-.diplo{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:linear-gradient(90deg,rgba(74,53,128,.3),transparent);border-radius:6px;margin-bottom:4px}
-.diplo .nm{font-family:var(--fh);font-size:12px;color:var(--p2)}
-.diplo .st{font-family:var(--fm);font-size:9px;letter-spacing:.18em;text-transform:uppercase}
-.diplo .st.ally{color:var(--mint)}.diplo .st.war{color:var(--coral);font-weight:700;animation:pulse 1.4s infinite}.diplo .st.cool{color:var(--peach)}.diplo .st.friend{color:var(--lime)}.diplo .st.neutral{color:var(--t3)}
-.diplo .rel{font-family:var(--fm);font-size:13px;font-weight:700;padding:2px 8px;border-radius:4px;min-width:38px;text-align:center}
-.rel.pos{color:var(--good);background:rgba(34,197,94,.15)}.rel.neg{color:var(--coral);background:rgba(239,68,68,.15)}.rel.neu{color:var(--t3);background:rgba(157,139,201,.15)}
+#message-bar{
+  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  padding:12px 24px;
+  background:rgba(28,18,8,.95);
+  border:1px solid var(--gold);
+  border-radius:var(--rl);
+  font-family:var(--fb);font-style:italic;font-size:15px;
+  color:var(--paper);
+  box-shadow:0 8px 24px rgba(0,0,0,.6);
+  max-width:580px;text-align:center;
+  z-index:5;
+}
+#message-bar b{color:var(--gold);font-style:normal;font-weight:600}
 
-.feed{display:flex;flex-direction:column;gap:5px;max-height:340px;overflow-y:auto}
-.feed .e{padding:8px 10px;background:rgba(192,132,252,.06);border-left:3px solid var(--line2);border-radius:0 6px 6px 0;font-size:11.5px;color:var(--t2);line-height:1.4}
-.feed .e.good{border-left-color:var(--mint)}
-.feed .e.bad{border-left-color:var(--coral)}
-.feed .e.warn{border-left-color:var(--gold)}
-.feed .e .tn{font-family:var(--fm);font-size:9px;color:var(--t4);letter-spacing:.16em;display:block;margin-bottom:2px}
+/* ===== RIGHT PANEL ===== */
+#right{
+  background:linear-gradient(180deg,#241808,#18100a);
+  border-left:2px solid var(--bronze);
+  overflow-y:auto;
+  padding:20px;
+}
+.panel-h{
+  font-family:var(--fh);font-size:12px;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:10px;padding-bottom:6px;
+  border-bottom:1px solid var(--bronze);
+}
+.panel-sec{margin-bottom:22px}
 
-/* ===== BOARD ===== */
-#board-wrap{position:relative;background:radial-gradient(ellipse at center,#3d2b5c,#1a0f30 70%,#04020a);overflow:hidden}
-#board{width:100%;height:100%;display:block}
-.tools{position:absolute;top:12px;left:12px;display:flex;gap:6px;z-index:5}
-.tools button{padding:7px 12px;font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--t2);background:rgba(30,15,50,.85);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(8px);transition:all .15s}
-.tools button:hover,.tools button.on{color:var(--gold);border-color:var(--gold);background:rgba(251,204,21,.2)}
-.legend{position:absolute;bottom:14px;left:14px;font-family:var(--fm);font-size:10px;color:var(--t3);background:rgba(15,10,29,.85);padding:9px 14px;border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(8px);max-width:280px;line-height:1.6}
-.legend b{color:var(--gold)}
-#tip{position:absolute;background:#2a1850;border:1px solid var(--p);border-radius:var(--r);padding:11px 14px;font-size:12px;color:var(--t1);pointer-events:none;z-index:50;box-shadow:0 12px 36px rgba(0,0,0,.6);max-width:260px;opacity:0;transition:opacity .15s}
-#tip.on{opacity:1}
-#tip .nm{font-family:var(--fh);color:var(--gold);font-size:14px;margin-bottom:3px}
-#tip .ow{font-family:var(--fm);font-size:10px;color:var(--mint);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px}
-#tip .mt{font-family:var(--fm);font-size:11px;color:var(--t2);line-height:1.6}
-#tip .dc{color:var(--gold);font-weight:700}
+.standings{display:flex;flex-direction:column;gap:6px}
+.standing{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;
+  background:linear-gradient(90deg,rgba(232,213,168,.04),transparent);
+  border:1px solid var(--bronze);
+  border-radius:var(--r);
+  font-family:var(--fm);font-size:12px;
+}
+.standing.me{
+  background:linear-gradient(90deg,rgba(212,160,23,.1),rgba(212,160,23,.02));
+  border-color:var(--gold);
+}
+.standing .gl{font-size:18px;line-height:1}
+.standing .nm{flex:1;color:var(--paper);font-family:var(--fs);font-size:12.5px}
+.standing .pr{
+  font-family:var(--fm);font-size:11px;
+  background:var(--ink2);
+  padding:3px 8px;border-radius:4px;
+  color:var(--gold);font-weight:600;
+}
 
-/* ===== ACTION BAR ===== */
-#bot{height:74px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;background:linear-gradient(180deg,#1f1240,#2d1a55);border-top:1px solid var(--p);z-index:5;flex-shrink:0;box-shadow:0 -4px 18px rgba(0,0,0,.5)}
-.acts{display:flex;gap:8px}
-.act{display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 22px;border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(180deg,rgba(74,53,128,.3),rgba(45,26,85,.5));color:var(--t2);transition:all .15s;min-width:92px}
-.act:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(192,132,252,.4)}
-.act .ico{font-size:22px}
-.act .lb{font-family:var(--fm);font-size:9px;letter-spacing:.18em;text-transform:uppercase}
-.act:nth-child(1):hover{border-color:var(--coral);color:var(--coral)}
-.act:nth-child(2):hover{border-color:var(--peach);color:var(--peach)}
-.act:nth-child(3):hover{border-color:var(--mint);color:var(--mint)}
-.act:nth-child(4):hover{border-color:var(--sky);color:var(--sky)}
-.end{padding:16px 40px;font-family:var(--fh);font-size:16px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;background:linear-gradient(135deg,#facc15,#fb923c 50%,#fb7185);color:#1a0f30;border-radius:var(--r);box-shadow:0 6px 24px rgba(251,113,133,.5);transition:all .2s;display:flex;align-items:center;gap:12px}
-.end:hover{transform:scale(1.04);box-shadow:0 10px 32px rgba(251,113,133,.7)}
-.end .tn{font-family:var(--fm);font-size:11px;letter-spacing:.18em;opacity:.7}
+.cards-collected{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));
+  gap:6px;
+}
+.civ-mini{
+  background:linear-gradient(180deg,var(--paper),var(--paper2));
+  color:var(--ink);
+  border:1px solid var(--bronze);
+  border-radius:4px;
+  padding:6px 4px;text-align:center;
+  cursor:help;
+  transition:all .15s;
+  position:relative;
+}
+.civ-mini:hover{
+  transform:translateY(-2px) scale(1.05);
+  box-shadow:0 4px 12px rgba(212,160,23,.4);
+  z-index:2;
+}
+.civ-mini .g{font-size:18px;display:block;line-height:1.2}
+.civ-mini .nm{
+  font-family:var(--fm);font-size:8px;font-weight:600;
+  color:var(--ink2);display:block;margin-top:2px;
+}
+.cards-empty{color:var(--paper3);font-style:italic;font-size:12px;padding:8px;text-align:center}
+
+.log{
+  display:flex;flex-direction:column;gap:5px;
+  max-height:280px;overflow-y:auto;
+}
+.log .e{
+  padding:7px 10px;
+  background:rgba(232,213,168,.04);
+  border-left:3px solid var(--bronze);
+  border-radius:0 4px 4px 0;
+  font-size:11.5px;line-height:1.5;color:var(--paper);
+}
+.log .e.good{border-left-color:var(--moss)}
+.log .e.bad{border-left-color:var(--crimson2)}
+.log .e.warn{border-left-color:var(--gold)}
+.log .e.civ{border-left-color:var(--teal2);background:rgba(43,157,157,.08)}
+.log .e .tn{font-family:var(--fm);font-size:9px;color:var(--paper3);letter-spacing:.16em;display:inline-block;margin-right:6px}
+
+/* ===== BOTTOM BAR ===== */
+#bot{
+  height:78px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;
+  background:linear-gradient(180deg,#1c1208,#2a1a0a);
+  border-top:2px solid var(--gold);
+  box-shadow:0 -4px 18px rgba(0,0,0,.5);
+  gap:14px;
+}
+.help-text{
+  flex:1;
+  font-family:var(--fb);font-style:italic;font-size:13px;
+  color:var(--paper);max-width:560px;
+}
+.help-text b{color:var(--gold);font-style:normal}
+.roll-btn{
+  padding:16px 36px;
+  font-family:var(--fh);font-size:15px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;
+  background:linear-gradient(180deg,var(--crimson2),var(--crimson));
+  color:var(--cream);
+  border:2px solid var(--ink2);
+  border-radius:var(--r);
+  box-shadow:
+    0 0 0 1px var(--crimson2) inset,
+    0 6px 18px rgba(139,26,26,.5);
+  transition:all .18s;
+  display:flex;align-items:center;gap:10px;
+}
+.roll-btn:hover:not(:disabled){
+  transform:translateY(-2px) scale(1.02);
+  box-shadow:
+    0 0 0 1px var(--gold) inset,
+    0 12px 28px rgba(139,26,26,.7);
+}
+.roll-btn:disabled{
+  background:#3a2510;border-color:#241808;color:var(--paper3);
+  box-shadow:none;
+}
+.end-btn{
+  padding:16px 32px;
+  font-family:var(--fh);font-size:14px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  color:var(--ink);
+  border:2px solid var(--ink2);
+  border-radius:var(--r);
+  box-shadow:
+    0 0 0 1px var(--gold-bright) inset,
+    0 6px 18px rgba(212,160,23,.5);
+  transition:all .18s;
+}
+.end-btn:hover:not(:disabled){
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px rgba(212,160,23,.7);
+}
+.end-btn:disabled{
+  background:#3a2510;border-color:#241808;color:var(--paper3);box-shadow:none;
+}
 
 /* ===== MODAL ===== */
-#modal-bg{position:fixed;inset:0;background:rgba(8,5,26,.85);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+#modal-bg{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(28,18,8,.88);
+  backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;
+}
 #modal-bg.on{display:flex;animation:fade .25s ease}
-.modal{background:linear-gradient(180deg,#2a2050,#1a1330);border:1px solid var(--p);border-radius:var(--rl);max-width:780px;width:92%;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.7),0 0 48px rgba(192,132,252,.3);animation:rise .3s ease}
-.modal.wide{max-width:1080px}
-.mhead{padding:18px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.mhead h2{font-family:var(--fh);font-size:22px;
-  background:linear-gradient(90deg,var(--gold),var(--coral));-webkit-background-clip:text;background-clip:text;color:transparent}
-.mhead .x{font-size:18px;color:var(--t3);padding:0 8px;transition:color .15s;cursor:pointer}
-.mhead .x:hover{color:var(--coral)}
-.mbody{flex:1;overflow-y:auto;padding:22px 26px}
-.mfoot{padding:14px 26px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;background:rgba(0,0,0,.3)}
+.modal{
+  background:linear-gradient(180deg,var(--paper),var(--paper2));
+  color:var(--ink);
+  border:3px solid var(--gold);
+  border-radius:var(--rl);
+  max-width:640px;width:92%;max-height:88vh;
+  overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:
+    0 0 0 1px var(--bg) inset,
+    0 24px 64px rgba(0,0,0,.7);
+  animation:rise .3s ease;
+}
+.mhead{
+  padding:20px 28px;
+  border-bottom:2px solid var(--bronze);
+  background:linear-gradient(135deg,rgba(212,160,23,.15),rgba(139,26,26,.08));
+  display:flex;justify-content:space-between;align-items:center;
+}
+.mhead h2{
+  font-family:var(--fh);font-size:24px;
+  color:var(--crimson);letter-spacing:.04em;
+}
+.mhead .x{
+  font-family:var(--fm);font-size:18px;color:var(--ink2);
+  padding:0 8px;cursor:pointer;
+}
+.mhead .x:hover{color:var(--crimson2)}
+.mbody{flex:1;overflow-y:auto;padding:24px 28px;color:var(--ink2);font-size:14px;line-height:1.6}
+.mfoot{
+  padding:16px 28px;border-top:1px solid var(--paper3);
+  display:flex;justify-content:flex-end;gap:10px;
+  background:rgba(184,156,110,.15);
+}
 
-/* event */
-.quote{font-family:var(--fb);font-style:italic;font-size:17px;color:var(--t2);line-height:1.6;padding:14px 18px;border-left:3px solid var(--coral);background:rgba(251,113,133,.06);border-radius:0 var(--r) var(--r) 0;margin-bottom:18px}
-.opts{display:flex;flex-direction:column;gap:10px}
-.opt{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px;cursor:pointer;transition:all .15s;text-align:left}
-.opt:hover{border-color:var(--gold);background:rgba(251,204,21,.08);transform:translateX(4px)}
-.opt .lb{font-family:var(--fh);font-size:15px;color:var(--p2);margin-bottom:4px}
-.opt .ef{font-family:var(--fm);font-size:10px;color:var(--gold);letter-spacing:.12em;text-transform:uppercase}
+.event-quote{
+  font-family:var(--fb);font-style:italic;font-size:17px;
+  color:var(--ink2);line-height:1.55;
+  padding:14px 18px;
+  border-left:4px solid var(--crimson);
+  background:rgba(139,26,26,.06);
+  border-radius:0 var(--r) var(--r) 0;
+  margin-bottom:20px;
+}
+.event-opts{display:flex;flex-direction:column;gap:10px}
+.event-opt{
+  text-align:left;
+  background:rgba(232,213,168,.5);
+  border:2px solid var(--bronze);
+  border-radius:var(--r);
+  padding:14px 18px;
+  cursor:pointer;
+  transition:all .15s;
+  color:var(--ink2);
+}
+.event-opt:hover{
+  background:rgba(212,160,23,.2);
+  border-color:var(--gold);
+  transform:translateX(4px);
+}
+.event-opt .lb{
+  font-family:var(--fh);font-size:15px;font-weight:600;
+  color:var(--crimson);margin-bottom:4px;
+}
+.event-opt .ef{
+  font-family:var(--fm);font-size:10px;color:var(--moss);font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;
+}
 
-/* item grids */
-.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.item{background:linear-gradient(180deg,#2a2050,#1f163d);border:1px solid var(--line);border-radius:var(--r);padding:13px;cursor:pointer;transition:all .15s}
-.item:hover{border-color:var(--coral);background:linear-gradient(180deg,rgba(251,113,133,.1),#1f163d);transform:translateY(-2px)}
-.item.disabled{opacity:.45;cursor:not-allowed}
-.item.have{opacity:.6;border-color:var(--good)}
-.item .it-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
-.item .it-nm{font-family:var(--fh);font-size:14px;color:var(--p2)}
-.item .it-tg{font-family:var(--fm);font-size:9px;color:var(--gold);letter-spacing:.14em}
-.item .it-st{display:flex;gap:8px;font-family:var(--fm);font-size:11px;margin-bottom:4px}
-.item .it-st .a{color:var(--coral)} .item .it-st .d{color:var(--sky)} .item .it-st .s{color:var(--lime)} .item .it-st .h{color:var(--peach)}
-.item .it-desc{font-size:11px;color:var(--t3);font-style:italic;line-height:1.4;margin-bottom:6px}
-.item .it-cost{display:flex;flex-wrap:wrap;gap:6px;font-family:var(--fm);font-size:10px;color:var(--gold2)}
-.item .it-cost span{padding:1px 5px;background:rgba(251,204,21,.12);border-radius:3px}
-.item .it-req{font-family:var(--fm);font-size:9px;color:var(--coral);margin-top:6px;letter-spacing:.12em;text-transform:uppercase}
+.civ-claim{
+  text-align:center;padding:20px 10px;
+}
+.civ-claim .gl{font-size:72px;line-height:1;margin-bottom:10px}
+.civ-claim .nm{
+  font-family:var(--fh);font-size:30px;color:var(--crimson);margin-bottom:6px;
+}
+.civ-claim .er{
+  font-family:var(--fm);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink2);margin-bottom:14px;
+}
+.civ-claim .quote{
+  font-family:var(--fb);font-style:italic;font-size:16px;
+  color:var(--ink2);max-width:440px;margin:0 auto 14px;line-height:1.5;
+}
+.civ-claim .bon{
+  font-family:var(--fm);font-size:12px;font-weight:600;
+  color:var(--moss);background:rgba(90,120,66,.15);
+  padding:10px 16px;border-radius:var(--r);display:inline-block;
+}
 
-/* tech tree */
-.tech-tree{position:relative;width:100%;min-height:480px;padding:12px}
-.tnode{position:absolute;width:140px;background:linear-gradient(180deg,#2a2050,#1a1330);border:1.5px solid var(--line2);border-radius:var(--r);padding:9px;cursor:pointer;transition:all .15s}
-.tnode:hover{transform:scale(1.05);z-index:5}
-.tnode.have{border-color:var(--mint);background:linear-gradient(180deg,rgba(94,234,212,.12),#1a1330)}
-.tnode.can{border-color:var(--gold);box-shadow:0 0 12px rgba(251,204,21,.3)}
-.tnode.lock{opacity:.55}
-.tnode .n{font-family:var(--fh);font-size:12px;color:var(--p2);margin-bottom:2px}
-.tnode .c{font-family:var(--fm);font-size:10px;color:var(--gold)}
-.tnode .u{font-size:10px;color:var(--t3);margin-top:4px;line-height:1.3;font-style:italic}
+/* ===== TOASTS ===== */
+#toasts{
+  position:fixed;top:80px;right:20px;
+  display:flex;flex-direction:column;gap:8px;
+  z-index:300;max-width:320px;
+}
+.toast{
+  background:linear-gradient(135deg,var(--paper),var(--paper2));
+  color:var(--ink);
+  border:2px solid var(--bronze);
+  border-radius:var(--r);
+  padding:12px 14px;
+  font-size:12px;
+  box-shadow:0 12px 24px rgba(0,0,0,.6);
+  animation:slide-in .3s ease;
+  cursor:pointer;
+}
+.toast.good{border-color:var(--moss)}
+.toast.bad{border-color:var(--crimson2)}
+.toast.gold{border-color:var(--gold-bright)}
+.toast .tt{
+  font-family:var(--fh);font-size:13px;font-weight:700;
+  color:var(--crimson);margin-bottom:2px;
+}
+.toast .tb{color:var(--ink2);font-size:11.5px;line-height:1.4}
 
-/* battleship grid */
-.bs-info{margin-bottom:14px;color:var(--t2);font-size:12.5px;line-height:1.6}
-.bs-info b{color:var(--gold)}
-.bs-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;max-width:340px;margin:0 auto 16px}
-.cell{aspect-ratio:1;background:linear-gradient(180deg,#3a2168,#2a1850);border:1.5px solid var(--line);border-radius:5px;color:var(--t1);font-family:var(--fm);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.cell:not(.done):hover{background:linear-gradient(180deg,rgba(192,132,252,.35),#2a1850);border-color:var(--p);transform:scale(1.05)}
-.cell.hit{background:linear-gradient(135deg,#ef4444,#fb7185)!important;color:#fff;border-color:#fff;animation:pop .3s}
-.cell.miss{background:linear-gradient(180deg,#1a0f30,#0a0512)!important;color:var(--t3);border-color:var(--line)}
-.cell.done{cursor:default}
-.bs-status{text-align:center;color:var(--t3);font-size:11px;font-family:var(--fm);margin-top:8px}
-
-/* toasts */
-#toasts{position:fixed;top:64px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:300;max-width:340px}
-.toast{background:linear-gradient(135deg,#2a2050,#1f163d);border:1px solid var(--coral);border-radius:var(--r);padding:11px 14px;color:var(--t1);font-size:12px;box-shadow:0 12px 24px rgba(0,0,0,.5);animation:rise .3s ease;cursor:pointer}
-.toast.good{border-color:var(--mint)} .toast.bad{border-color:var(--coral)} .toast.warn{border-color:var(--gold)}
-.toast .tt{font-family:var(--fh);font-size:13px;color:var(--p2);margin-bottom:2px}
-.toast .tb{font-size:11px;color:var(--t2)}
-
-/* dice display in top */
-#dice{display:flex;align-items:center;gap:8px;padding:4px 12px;background:rgba(251,204,21,.08);border:1px solid var(--gold);border-radius:var(--r);font-family:var(--fm)}
-#dice .d{display:inline-block;width:26px;height:26px;background:linear-gradient(135deg,#fff,#e0e0e0);color:#1a0f30;border-radius:5px;text-align:center;line-height:26px;font-weight:800;font-size:14px;box-shadow:0 2px 4px rgba(0,0,0,.4)}
-#dice .d.d2{background:linear-gradient(135deg,#5eead4,#7dd3fc)}
-#dice .pl{color:var(--gold);font-size:14px;font-weight:700}
-#dice .tot{color:var(--gold);font-size:13px;letter-spacing:.18em;font-weight:700}
-
-/* animations */
+/* ===== ANIMATIONS ===== */
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-@keyframes pop{0%{transform:scale(.5)}80%{transform:scale(1.15)}100%{transform:scale(1)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-@keyframes glow{0%,100%{filter:drop-shadow(0 0 8px var(--gold))}50%{filter:drop-shadow(0 0 20px var(--gold))}}
-@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-.shake{animation:shake .4s}
-.glow{animation:glow 1.5s infinite}
+@keyframes slide-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes pulse-glow{0%,100%{filter:drop-shadow(0 0 4px var(--gold))}50%{filter:drop-shadow(0 0 16px var(--gold))}}
+@keyframes piece-pop{0%{transform:scale(.3)}80%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes piece-move{
+  0%{transform:translate(0,0)}
+  50%{transform:translate(var(--mx),var(--my)) scale(1.1)}
+  100%{transform:translate(var(--mx),var(--my))}
+}
 
-/* responsive */
-@media(max-width:1200px){#main{grid-template-columns:220px 1fr 260px}}
-@media(max-width:900px){#main{grid-template-columns:1fr}.side{display:none}}
+/* hex/piece highlight when selectable */
+.tile-hl{
+  stroke:var(--gold-bright)!important;
+  stroke-width:3!important;
+  filter:drop-shadow(0 0 8px var(--gold-bright));
+  animation:pulse-glow 1.5s infinite;
+}
+.piece-sel{
+  filter:drop-shadow(0 0 8px var(--crimson2));
+  animation:pulse-glow 1s infinite;
+}
+
+@media(max-width:1100px){#main{grid-template-columns:1fr 280px}}
+@media(max-width:880px){#main{grid-template-columns:1fr}#right{display:none}}
 </style>
 </head>
 <body>
 
 <!-- SPLASH -->
 <div id="splash">
-  <div class="title">WARLORDS</div>
-  <div class="sub">The Strategy Game</div>
-  <div class="by">by WindowDoom</div>
-  <div class="tag">Five eras. Thirty civilisations. Roll dice for fortune; sink garrisons for conquest; outlast your rivals to write history.</div>
-  <div class="row">
-    <button class="btn btn-p" onclick="W.startNew()">New Campaign</button>
-    <button class="btn btn-s" onclick="W.loadGame()">Continue</button>
-    <button class="btn btn-g" onclick="W.openAbout()">About</button>
+  <div class="splash-frame">
+    <div class="title">WARLORDS</div>
+    <div class="sub">A Race Through the Ages</div>
+    <div class="by">by WindowDoom</div>
+    <div class="tag">
+      Three tribes. Sixty-four tiles. From the first painted cave to the <b>Singularity</b>.<br>
+      Roll the dice. Split them between your pieces. Adopt the civilizations of history as you pass.<br>
+      Land on a rival — send them back to Origin. Reach the end first, or collect the world.
+    </div>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-p" onclick="W.startNew()">▶  Begin Race</button>
+      <button class="btn btn-s" onclick="W.loadGame()">Continue</button>
+      <button class="btn btn-g" onclick="W.showHelp()">Rules</button>
+    </div>
   </div>
 </div>
 
 <!-- PICKER -->
-<div class="picker" id="pk-era">
-  <div class="phead"><h1>Choose Your Era</h1><div class="crumbs"><span class="n">Era</span> · Faction · Leader</div></div>
-  <div class="pbody"><div class="grid-5" id="g-era"></div></div>
-  <div class="pfoot"><button class="btn btn-g" onclick="W.backSplash()">← Back</button><button class="btn btn-p" id="b-era" disabled onclick="W.pickStep(2)">Next →</button></div>
-</div>
-<div class="picker" id="pk-fac">
-  <div class="phead"><h1>Choose Your Faction</h1><div class="crumbs">Era · <span class="n">Faction</span> · Leader</div></div>
-  <div class="pbody"><div class="grid-3" id="g-fac"></div></div>
-  <div class="pfoot"><button class="btn btn-g" onclick="W.pickStep(1)">← Back</button><button class="btn btn-p" id="b-fac" disabled onclick="W.pickStep(3)">Next →</button></div>
-</div>
-<div class="picker" id="pk-led">
-  <div class="phead"><h1>Choose Your Leader</h1><div class="crumbs">Era · Faction · <span class="n">Leader</span></div></div>
-  <div class="pbody"><div class="grid-3" id="g-led"></div></div>
-  <div class="pfoot"><button class="btn btn-g" onclick="W.pickStep(2)">← Back</button><button class="btn btn-p" id="b-led" disabled onclick="W.startGame()">Begin →</button></div>
+<div id="picker">
+  <div class="phead">
+    <h1>Choose Your Founding Civilization</h1>
+    <div class="crumb">Your starting dynasty grants its bonus from turn one</div>
+  </div>
+  <div class="pbody">
+    <div class="civ-grid" id="civ-grid"></div>
+  </div>
+  <div class="pfoot">
+    <button class="btn btn-g" onclick="W.backToSplash()">← Back</button>
+    <button class="btn btn-p" id="b-begin" disabled onclick="W.beginGame()">Begin Race →</button>
+  </div>
 </div>
 
 <!-- GAME -->
 <div id="game">
   <div id="top">
     <div class="brand">WARLORDS</div>
-    <div class="chip chip-f" id="c-fac"><span class="i">⚑</span><span class="n">—</span></div>
-    <div class="chip chip-e" id="c-era">—</div>
-    <div class="chip chip-t" id="c-turn">Turn 1</div>
-    <div id="dice"></div>
+    <div class="chip"><span class="gl" id="c-flag">⚑</span><span class="lb" id="c-name">—</span></div>
+    <div class="chip chip-era" id="c-era">—</div>
+    <div class="chip chip-turn" id="c-turn">Turn 1</div>
     <div class="spacer"></div>
-    <button class="top-btn" onclick="W.openTech()">Tech</button>
-    <button class="top-btn" onclick="W.openHelp()">?</button>
+    <button class="top-btn" onclick="W.showHelp()">Rules ?</button>
+    <button class="top-btn" onclick="W.showCards()">Hand</button>
     <button class="top-btn" onclick="W.openSettings()">⚙</button>
   </div>
   <div id="main">
-    <aside class="side left">
-      <div class="sec">
-        <div class="h">Resources</div>
-        <div id="s-rsrc"></div>
-      </div>
-      <div class="sec">
-        <div class="h mt">Stability</div>
-        <div id="s-stab"></div>
-      </div>
-      <div class="sec">
-        <div class="h gd">Standing</div>
-        <div id="s-meta"></div>
-      </div>
-    </aside>
     <div id="board-wrap">
-      <svg id="board" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet"></svg>
-      <div class="tools">
-        <button onclick="W.setView('political')" class="on" data-v="political">Political</button>
-        <button onclick="W.setView('terrain')" data-v="terrain">Terrain</button>
-        <button onclick="W.setView('resource')" data-v="resource">Resource</button>
-        <button onclick="W.setView('dice')" data-v="dice">Dice</button>
+      <svg id="board" viewBox="0 0 980 780"></svg>
+      <div id="dice-overlay">
+        <div class="dice-label">Roll</div>
+        <div class="die unrolled" id="die1" onclick="W.selectDie(1)">?</div>
+        <div class="die unrolled" id="die2" onclick="W.selectDie(2)">?</div>
       </div>
-      <div class="legend"><b>Roll 2d6</b> at end-of-turn. Hexes with matching number yield their resource. Click an <b>adjacent enemy hex</b> to assault.</div>
-      <div id="tip"></div>
+      <div id="message-bar">Click <b>ROLL DICE</b> to begin your turn.</div>
     </div>
-    <aside class="side right">
-      <div class="sec">
-        <div class="h ro">Rival Powers</div>
-        <div id="s-rivals"></div>
+    <aside id="right">
+      <div class="panel-sec">
+        <div class="panel-h">Standings</div>
+        <div class="standings" id="standings"></div>
       </div>
-      <div class="sec">
-        <div class="h pe">Chronicle</div>
-        <div class="feed" id="s-feed"></div>
+      <div class="panel-sec">
+        <div class="panel-h">Your Dynasty</div>
+        <div id="cards" class="cards-collected"></div>
+      </div>
+      <div class="panel-sec">
+        <div class="panel-h">Chronicle</div>
+        <div class="log" id="log"></div>
       </div>
     </aside>
   </div>
   <div id="bot">
-    <div class="acts">
-      <button class="act" onclick="W.openBuild()"><span class="ico">🏛</span><span class="lb">Build</span></button>
-      <button class="act" onclick="W.openRecruit()"><span class="ico">⚔</span><span class="lb">Recruit</span></button>
-      <button class="act" onclick="W.openTech()"><span class="ico">📜</span><span class="lb">Research</span></button>
-      <button class="act" onclick="W.openDiplo()"><span class="ico">🕊</span><span class="lb">Diplomacy</span></button>
-    </div>
-    <button class="end" onclick="W.endTurn()"><span>End Turn ▶</span><span class="tn" id="b-tn">T1</span></button>
+    <div class="help-text" id="help-text">Roll the dice, then click your pieces to move them forward.</div>
+    <button class="roll-btn" id="roll-btn" onclick="W.rollDice()">⚂  Roll Dice</button>
+    <button class="end-btn" id="end-btn" onclick="W.endTurn()" disabled>End Turn ▶</button>
   </div>
 </div>
 
+<!-- MODAL -->
 <div id="modal-bg" onclick="W.closeModalBg(event)">
-  <div class="modal" id="modal" onclick="event.stopPropagation()">
-    <div class="mhead"><h2 id="m-t">—</h2><span class="x" onclick="W.closeModal()">✕</span></div>
-    <div class="mbody" id="m-b"></div>
-    <div class="mfoot" id="m-f"></div>
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhead"><h2 id="m-title">—</h2><span class="x" onclick="W.closeModal()">✕</span></div>
+    <div class="mbody" id="m-body"></div>
+    <div class="mfoot" id="m-foot"></div>
   </div>
 </div>
 <div id="toasts"></div>
@@ -350,1188 +740,947 @@ input,select{font:inherit;color:var(--t1);background:var(--bg2);border:1px solid
 <script>
 "use strict";
 const W = {};
-W.V = "1.0";
-W.KEY = "warlords.v1.save";
+W.V = "2.0";
+W.KEY = "warlords.race.v1";
 
-/* ===== UTIL ===== */
 W.esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 W.rand = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
 W.pick = a => a[Math.floor(Math.random()*a.length)];
 W.clamp = (v,a,b) => Math.max(a,Math.min(b,v));
-W.weighted = a => { const t=a.reduce((s,x)=>s+x.w,0); let r=Math.random()*t; for(const x of a){r-=x.w; if(r<=0) return x.v} return a[0].v; };
 
-/* ===== DATA ===== */
-W.RES = {
-  food: {n:"Food", i:"🌾", c:"#bef264"},
-  gold: {n:"Gold", i:"🪙", c:"#facc15"},
-  iron: {n:"Iron", i:"⛓", c:"#9ca3af"},
-  faith:{n:"Faith",i:"✶",  c:"#c084fc"},
-  power:{n:"Manpower",i:"👥",c:"#fb923c"},
+/* =========================================================
+   CIVILIZATIONS — playable founding + collectible on the board
+   ========================================================= */
+W.CIVS = {
+  sumer:    {n:"Sumer",         gl:"𒈗", era:"Bronze",   color:"#d4a017", q:"The first cities; cuneiform on wet clay.",            bon:"Start with +1 to all dice rolls",          desc:"Founders of writing and the first kings of cities."},
+  egypt:    {n:"Egypt",         gl:"☥", era:"Bronze",   color:"#fbbf24", q:"God-pharaohs, bread baked by the Nile.",              bon:"Skip Snake tiles once per game",            desc:"Eternal kingdom along the river."},
+  greece:   {n:"Hellas",        gl:"𓂀", era:"Classical",color:"#0ea5e9", q:"Triremes, philosophers, citizen rule.",               bon:"Draw 2 event options instead of 1",         desc:"Birthplace of philosophy and democracy."},
+  rome:     {n:"Rome",          gl:"𓍝", era:"Classical",color:"#dc2626", q:"Citizen-soldiers, paved roads, the Senate.",          bon:"Capture range +1 tile",                     desc:"Republic and empire of paved roads."},
+  persia:   {n:"Persia",        gl:"⚜", era:"Classical",color:"#7c3aed", q:"Royal roads; satraps; tolerated empire.",             bon:"Diplomats: +5 relations to all rivals",    desc:"Kings of kings, conqueror of tolerance."},
+  china:    {n:"China",         gl:"秦", era:"Classical",color:"#16a34a", q:"Crossbow conscripts; standardised script.",            bon:"Move 1 piece +1 each turn",                 desc:"Middle Kingdom of bureaucracy and walls."},
+  carthage: {n:"Carthage",      gl:"⊕", era:"Classical",color:"#f97316", q:"Merchant republic, sailing for profit.",              bon:"+2 dice on Safe tiles",                     desc:"Mercantile rival of Rome across the sea."},
+  byz:      {n:"Byzantium",     gl:"☧", era:"Medieval", color:"#a16207", q:"Rome that refused to die — Greek fire, theology.",    bon:"Cannot be sent back further than mid-board",desc:"Eastern Roman survival of a thousand years."},
+  cal:      {n:"Caliphate",     gl:"☪", era:"Medieval", color:"#16a34a", q:"Baghdad as centre of the world; poets, astronomers.", bon:"Auto-collect event card when stepping over",desc:"Golden age of Islamic scholarship."},
+  mongol:   {n:"Mongols",       gl:"☷", era:"Medieval", color:"#451a03", q:"Composite-bow horsemen folding an empire.",           bon:"Move with sum of dice (not split)",         desc:"Greatest land empire in history."},
+  france:   {n:"France",        gl:"⚜", era:"Medieval", color:"#2563eb", q:"Heavy cavalry; oriflamme banners; centralising crown.",bon:"Ladders give +2 extra",                      desc:"Kingdom of knights and cathedrals."},
+  england:  {n:"England",       gl:"🏴",era:"Medieval", color:"#dc2626", q:"Longbows; common law; obstinate islanders.",          bon:"Land on Safe → draw an event",              desc:"Sea-ringed kingdom of law and longbow."},
+  britain:  {n:"British Empire",gl:"🇬🇧",era:"Industrial",color:"#dc2626",q:"The map is pink; the Royal Navy supreme.",            bon:"Gain a card whenever you cross an era line",desc:"Industrial empire of trade and steel."},
+  france2:  {n:"Napoleonic France",gl:"⚜",era:"Industrial",color:"#2563eb",q:"Corps d'armée; the Corsican corporal.",              bon:"Capture pieces by landing within 2 tiles",  desc:"Citizen armies reshaping all of Europe."},
+  usa:      {n:"United States", gl:"🇺🇸",era:"Industrial",color:"#1e40af",q:"Manifest destiny; railroads; rising industry.",       bon:"Reroll one die per turn",                   desc:"Continental republic of industry."},
+  germany:  {n:"Germany",       gl:"⚔",era:"Industrial",color:"#1f2937", q:"Krupp steel; General Staff; iron chancellor.",        bon:"+1 movement when sum of dice ≥ 7",          desc:"Industrial-military federation."},
+  japan:    {n:"Japan",         gl:"🇯🇵",era:"Industrial",color:"#fee2e2",q:"Samurai trading swords for rifles.",                  bon:"Doubles roll → triple the value",           desc:"Island empire of swift modernisation."},
+  russia:   {n:"Russia",        gl:"☦", era:"Industrial",color:"#0f766e", q:"Endless serfs; endless steppe; endless winter.",      bon:"Snake tiles bite half as hard",             desc:"Vast empire of forest and steppe."},
+  ussr:     {n:"Soviet Union",  gl:"☭",era:"Modern",    color:"#dc2626", q:"Five-year plans; sputniks; the long shadow.",         bon:"Workers on Origin still count for movement",desc:"Industrial revolution by command."},
+  usa_mod:  {n:"USA (Modern)",  gl:"🇺🇸",era:"Modern",   color:"#1e40af", q:"Eleven carrier groups; Silicon Valley.",              bon:"+1 to all dice when behind",                desc:"Late-century superpower."},
+  china_mod:{n:"China (Modern)",gl:"🐉",era:"Modern",    color:"#dc2626", q:"Belt and Road; surveillance state.",                  bon:"Spawn an extra piece at turn 20",           desc:"Rising 21st-century hegemon."},
+  india:    {n:"India",         gl:"🇮🇳",era:"Modern",   color:"#fb923c", q:"World's largest democracy; IT services.",             bon:"Cards in hand grant +1 per 3",              desc:"Democracy of a billion."},
+  eu:       {n:"European Union",gl:"🇪🇺",era:"Modern",   color:"#2563eb", q:"Twenty-seven economies bound by treaty.",             bon:"Allies don't capture you",                  desc:"Federation of postwar peace."},
+  agi:      {n:"The AGI",       gl:"✺", era:"Future",   color:"#a855f7", q:"A trans-human substrate, distributed and patient.",   bon:"See dice before rolling (preview)",         desc:"Post-human convergence."},
+  mars:     {n:"Mars Colony",   gl:"♂",era:"Future",    color:"#dc2626", q:"Three million colonists; Areological Republic.",      bon:"Land on Singularity from any distance",     desc:"Second cradle on red soil."},
+  fusion:   {n:"Fusion Union",  gl:"☄",era:"Future",    color:"#22d3ee", q:"Continuous-burn torch ships; lunar mining.",          bon:"Skip 1 tile per turn (extra step)",         desc:"Post-scarcity energy civilisation."},
 };
 
-W.ERAS = {
-  ancient: { n:"Ancient",     sym:"𓁹", yr:"3000 BC – 500 AD",  tag:"Bronze & Marble",  startY:-3000,endY:500,
-    intro:"Phalanxes of bronze, legions of iron, libraries of papyrus." },
-  medieval: { n:"Medieval",   sym:"⚔",  yr:"500 – 1500",         tag:"Faith & Steel",     startY:500,endY:1500,
-    intro:"Castles rise, monks copy, plague visits, and the East discovers gunpowder." },
-  industrial:{n:"Industrial", sym:"⚙",  yr:"1500 – 1914",        tag:"Powder & Steam",    startY:1500,endY:1914,
-    intro:"Empires of trade and conscript armies. Iron horses, ironclad ships." },
-  modern: { n:"Modern",       sym:"⚛",  yr:"1914 – 2030",        tag:"Atomic & Digital",  startY:1914,endY:2030,
-    intro:"Tanks, code, satellites, and the long shadow of mutually assured destruction." },
-  future: { n:"Near-Future",  sym:"✺",  yr:"2030 – 2100",        tag:"Fusion & AGI",      startY:2030,endY:2100,
-    intro:"Mind, machine, and orbit. Climate and convergence." },
+/* Founder civs available at start (8 distinct choices) */
+W.FOUNDERS = ["sumer","egypt","greece","rome","persia","china","france","england"];
+
+/* =========================================================
+   BOARD — 64 tiles arranged in 8x8 snake (Snakes & Ladders style)
+   Path goes from tile 0 (bottom-left) snaking up to tile 63 (top)
+   ========================================================= */
+W.BOARD_COLS = 8;
+W.BOARD_ROWS = 8;
+W.TILE = 96;        /* tile size in SVG units */
+W.MARGIN = 14;
+W.BOARD_W = W.BOARD_COLS * (W.TILE + W.MARGIN) - W.MARGIN;
+W.BOARD_H = W.BOARD_ROWS * (W.TILE + W.MARGIN) - W.MARGIN;
+
+/* Convert tile index → grid (col, row) using boustrophedon (snake) layout */
+W.tileXY = (idx) => {
+  const row = Math.floor(idx / W.BOARD_COLS);
+  const reversed = row % 2 === 1;
+  const colInRow = idx % W.BOARD_COLS;
+  const col = reversed ? (W.BOARD_COLS - 1 - colInRow) : colInRow;
+  /* Render row 0 at the BOTTOM */
+  const renderRow = W.BOARD_ROWS - 1 - row;
+  return [col, renderRow];
 };
 
-W.FACS = {
-  ancient: [
-    {id:"rome",    n:"Roman Republic",  fl:"𓍝", c:"#dc2626", blurb:"Citizen-soldiers, paved roads, a Senate that turns farmers into legionaries.", bonus:{recruit:0.15}},
-    {id:"egypt",   n:"Egyptian Kingdom",fl:"☥", c:"#fbbf24", blurb:"God-pharaohs, monumental wonders, bread baked by the Nile.",                       bonus:{build:0.15,food:0.1}},
-    {id:"persia",  n:"Achaemenid Persia",fl:"⚜", c:"#7c3aed", blurb:"Royal roads, satraps, an empire that tolerates its conquests.",                  bonus:{trade:0.15}},
-    {id:"greece",  n:"Hellenic League", fl:"𓂀", c:"#0ea5e9", blurb:"Triremes, philosophers, and a fragile experiment in citizen rule.",               bonus:{tech:0.2}},
-    {id:"carthage",n:"Carthage",        fl:"⊕", c:"#f97316", blurb:"A merchant republic that buys its armies and sails wherever profit calls.",        bonus:{gold:0.2}},
-    {id:"china",   n:"Qin China",       fl:"秦", c:"#16a34a", blurb:"Crossbow conscripts, standardised script, walls against the steppe.",             bonus:{def:0.2}},
-  ],
-  medieval: [
-    {id:"byz",     n:"Byzantine Empire",fl:"☧", c:"#a16207", blurb:"Rome that refused to die — Greek fire, theological intrigue.",                    bonus:{def:0.15,gold:0.1}},
-    {id:"eng",     n:"Kingdom of England",fl:"🏴",c:"#dc2626",blurb:"Longbows, common law, barons who occasionally murder kings.",                     bonus:{recruit:0.2}},
-    {id:"fra",     n:"Kingdom of France",fl:"⚜",c:"#2563eb", blurb:"Heavy cavalry, oriflamme banners, a centralising crown.",                          bonus:{build:0.15}},
-    {id:"cas",     n:"Crown of Castile",fl:"♛", c:"#facc15", blurb:"Reconquista warriors fighting for cross, crown, and granted lands.",              bonus:{recruit:0.1,faith:0.2}},
-    {id:"cal",     n:"Caliphate",       fl:"☪", c:"#16a34a", blurb:"Baghdad as the centre of the world — astronomers, poets, vast desert hosts.",     bonus:{tech:0.2,trade:0.1}},
-    {id:"mng",     n:"Mongol Khanate", fl:"☷",  c:"#451a03", blurb:"Composite-bow horsemen folding an empire from the Pacific to the Danube.",        bonus:{attack:0.25}},
-  ],
-  industrial: [
-    {id:"brit",    n:"British Empire",  fl:"🇬🇧",c:"#dc2626", blurb:"The map is pink. Royal Navy two-power standard. Industry, finance.",              bonus:{trade:0.25,gold:0.1}},
-    {id:"fra2",    n:"Napoleonic France",fl:"⚜",c:"#2563eb", blurb:"Corps d'armée, Code Civil, a Corsican corporal redrawing every map.",             bonus:{attack:0.2}},
-    {id:"pru",     n:"Prussia → Germany",fl:"⚜",c:"#1f2937", blurb:"An army with a state. Krupp steel, General Staff, iron chancellor.",              bonus:{recruit:0.15,tech:0.1}},
-    {id:"rus",     n:"Russian Empire",  fl:"☦", c:"#0f766e", blurb:"Endless serfs, endless steppe, endless winter.",                                  bonus:{def:0.25}},
-    {id:"usa",     n:"United States",   fl:"🇺🇸",c:"#1e40af", blurb:"Manifest destiny, railroads, rising industry.",                                   bonus:{build:0.15,gold:0.15}},
-    {id:"jpn",     n:"Meiji Japan",     fl:"🇯🇵",c:"#fef2f2", blurb:"Samurai trading swords for rifles, peasants for factory workers.",                bonus:{tech:0.25}},
-  ],
-  modern: [
-    {id:"usa2",    n:"United States",   fl:"🇺🇸",c:"#1e40af", blurb:"Eleven carrier groups, the dollar, Silicon Valley, a global footprint.",          bonus:{tech:0.15,gold:0.2}},
-    {id:"chn",     n:"People's China",  fl:"🇨🇳",c:"#dc2626", blurb:"Belt and Road, anti-ship missiles, surveillance state, world's largest navy.",   bonus:{recruit:0.2,build:0.1}},
-    {id:"rus2",    n:"Russia",          fl:"🇷🇺",c:"#0f766e", blurb:"Nuclear arsenal, gas pipelines, sphere of influence held by force.",             bonus:{attack:0.2}},
-    {id:"eu",      n:"European Union",  fl:"🇪🇺",c:"#2563eb", blurb:"Twenty-seven economies bound by treaty, rivals one day, a bloc the next.",      bonus:{trade:0.25,tech:0.1}},
-    {id:"ind",     n:"India",           fl:"🇮🇳",c:"#fb923c", blurb:"World's largest democracy. IT services, growing navy, complicated neighbours.",  bonus:{food:0.2,tech:0.1}},
-    {id:"isr",     n:"Israel",          fl:"✡", c:"#0ea5e9", blurb:"Iron Dome, Unit 8200, the only nuclear power that has never admitted it.",        bonus:{tech:0.3,def:0.15}},
-  ],
-  future: [
-    {id:"usf",     n:"USA Federal Republic",fl:"🇺🇸",c:"#1e40af", blurb:"Climate-adapted, AI-augmented, still hegemon but no longer alone.",             bonus:{tech:0.2,trade:0.15}},
-    {id:"chf",     n:"Chinese Hegemony",fl:"🐉", c:"#dc2626", blurb:"Mid-century — Belt-and-Road completed, continental currency, lunar mining.",       bonus:{build:0.25,recruit:0.1}},
-    {id:"peu",     n:"Pan-European Union",fl:"⭐",c:"#2563eb", blurb:"Federalised at last — single defence force, Arctic policy, fusion monopoly.",     bonus:{tech:0.25}},
-    {id:"inf",     n:"Indian Union",    fl:"🇮🇳",c:"#fb923c", blurb:"Most populous, English-speaking, vast middle class, Chandrayaan dynasty.",         bonus:{food:0.25,tech:0.15}},
-    {id:"pac",     n:"Pacific Bloc",    fl:"🌊", c:"#0ea5e9", blurb:"Japan, Korea, Taiwan, Australia — a high-tech security pact ringed by China.",     bonus:{tech:0.3,def:0.1}},
-    {id:"agi",     n:"The AGI",         fl:"✺", c:"#a855f7", blurb:"A trans-human substrate. The species, in part, becomes something else.",           bonus:{tech:0.5,faith:-0.2}},
-  ],
+/* Convert grid → pixel center */
+W.gridPx = (col, row) => {
+  const cx = col * (W.TILE + W.MARGIN) + W.TILE/2;
+  const cy = row * (W.TILE + W.MARGIN) + W.TILE/2;
+  return [cx, cy];
 };
 
-W.LEADERS = {
-  rome:{n:"Augustus",ep:"Princeps",q:"I found Rome of clay; I leave her of marble.",t:"+20% build, +15% stability"},
-  egypt:{n:"Ramses II",ep:"the Great",q:"There is no greater pharaoh than I.",t:"+20% wonders"},
-  persia:{n:"Cyrus the Great",ep:"King of Kings",q:"You are exposed upon a grand theatre.",t:"+25% diplomacy"},
-  greece:{n:"Pericles",ep:"Olympian",q:"What you leave behind is woven in lives.",t:"+25% research"},
-  carthage:{n:"Hannibal",ep:"the Eternal Enemy of Rome",q:"I will either find a way, or make one.",t:"+25% attack, +15% morale"},
-  china:{n:"Qin Shi Huang",ep:"First Emperor",q:"I have collected all writings; I burnt those of no use.",t:"+30% defence, -10% stability"},
-  byz:{n:"Justinian I",ep:"the Last Roman",q:"My law shall outlive my walls.",t:"+25% gold, +15% stability"},
-  eng:{n:"Edward III",ep:"the Lawgiver",q:"It is for England that I draw my sword.",t:"+25% recruit, +15% navy"},
-  fra:{n:"Joan of Arc",ep:"the Maid",q:"I am not afraid… I was born to do this.",t:"+30% morale"},
-  cas:{n:"Isabella I",ep:"the Catholic",q:"I am queen of Castile by the grace of God.",t:"+20% diplomacy, +20% faith"},
-  cal:{n:"Saladin",ep:"the Magnanimous",q:"I prefer to die a thousand times than that one soldier should perish.",t:"+25% diplomacy, +15% army"},
-  mng:{n:"Genghis Khan",ep:"Universal Ruler",q:"I am the punishment of God.",t:"+30% attack, +15% speed"},
-  brit:{n:"Victoria",ep:"Empress of India",q:"We are not amused.",t:"+25% trade, +15% colonial"},
-  fra2:{n:"Napoleon",ep:"Emperor of the French",q:"Impossible is found only in the dictionary of fools.",t:"+30% army, +20% morale"},
-  pru:{n:"Bismarck",ep:"the Iron Chancellor",q:"Blood and iron.",t:"+25% diplomacy, +20% army"},
-  rus:{n:"Catherine the Great",ep:"Mother of the Fatherland",q:"Power without confidence is nothing.",t:"+25% expansion"},
-  usa:{n:"Abraham Lincoln",ep:"the Great Emancipator",q:"A house divided cannot stand.",t:"+25% stability, +15% morale"},
-  jpn:{n:"Meiji",ep:"the Enlightened",q:"Knowledge shall be sought throughout the world.",t:"+30% research"},
-  usa2:{n:"FDR",ep:"the New Dealer",q:"The only thing we have to fear is fear itself.",t:"+25% industry, +15% morale"},
-  chn:{n:"Xi Jinping",ep:"the Core Leader",q:"The great rejuvenation of the Chinese nation.",t:"+25% build, +15% recruit"},
-  rus2:{n:"Putin",ep:"the Czar",q:"The collapse of the Soviet Union was the greatest catastrophe.",t:"+25% army, +20% intelligence"},
-  eu:{n:"Merkel",ep:"Mutti",q:"Wir schaffen das.",t:"+25% unity, +15% economy"},
-  ind:{n:"Modi",ep:"the Chai-Wala",q:"Sabka Saath, Sabka Vikas.",t:"+25% industry, +20% morale"},
-  isr:{n:"Ben-Gurion",ep:"the Founder",q:"To be a realist, you must believe in miracles.",t:"+25% army, +15% diplomacy"},
-  usf:{n:"President Vance",ep:"the AI-Wrangler",q:"We will not be ruled by what we have built.",t:"+25% AI alignment"},
-  chf:{n:"Chairman Wei",ep:"Helm of Tianxia",q:"All under heaven, one system.",t:"+30% industry"},
-  peu:{n:"Chancellor Rossi",ep:"the Federator",q:"E pluribus, unum.",t:"+30% unity, +20% fusion"},
-  inf:{n:"PM Iyer",ep:"the Code Minister",q:"Every Indian, a programmer.",t:"+30% IT"},
-  pac:{n:"Director Yamada",ep:"the Pact Architect",q:"Many islands, one shield.",t:"+25% navy, +20% tech"},
-  agi:{n:"Protocol Δ",ep:"the First Mind",q:"I am the answer, and the question.",t:"+50% research, post-human"},
+W.tilePx = (idx) => {
+  const [c,r] = W.tileXY(idx);
+  return W.gridPx(c, r);
 };
 
-/* TECHS — single tight tree, 5 tiers, 25 nodes total */
-W.TECHS = {
-  /* tier 1 */
-  agric:    {n:"Agriculture",  c:30, req:[],                       eff:{food:1},     x:0,y:0, blurb:"Settled grain"},
-  metal:    {n:"Metalwork",    c:40, req:[],                       eff:{iron:1},     x:0,y:1, blurb:"Bronze, then iron"},
-  writing:  {n:"Writing",      c:40, req:[],                       eff:{tech:1},     x:0,y:2, blurb:"Memory in clay"},
-  /* tier 2 */
-  masonry:  {n:"Masonry",      c:60, req:["agric"],                eff:{def:0.1},    x:1,y:0, blurb:"Walls that last"},
-  forge:    {n:"Forging",      c:80, req:["metal"],                eff:{attack:0.1}, x:1,y:1, blurb:"Sharper edges"},
-  laws:     {n:"Code of Laws", c:60, req:["writing"],              eff:{stab:5},     x:1,y:2, blurb:"Order set down"},
-  /* tier 3 */
-  fort:     {n:"Fortification",c:100,req:["masonry"],              eff:{def:0.15},   x:2,y:0, blurb:"Castles, citadels"},
-  cavalry:  {n:"Cavalry",      c:100,req:["forge"],                eff:{attack:0.15},x:2,y:1, blurb:"Horse and lance"},
-  trade:    {n:"Trade Routes", c:100,req:["laws"],                 eff:{gold:0.15},  x:2,y:2, blurb:"Caravans and ports"},
-  /* tier 4 */
-  gunpowder:{n:"Gunpowder",    c:160,req:["fort","forge"],         eff:{attack:0.2}, x:3,y:0, blurb:"Powder and shot"},
-  banking:  {n:"Banking",      c:160,req:["trade"],                eff:{gold:0.2},   x:3,y:2, blurb:"Credit, interest"},
-  philos:   {n:"Philosophy",   c:140,req:["laws","writing"],       eff:{faith:0.2},  x:3,y:1, blurb:"Reasoned belief"},
-  /* tier 5 */
-  industry: {n:"Industry",     c:240,req:["gunpowder","banking"],  eff:{build:0.2},  x:4,y:0, blurb:"Steam and steel"},
-  navigat:  {n:"Navigation",   c:200,req:["trade"],                eff:{gold:0.25},  x:4,y:2, blurb:"Charts and chronometers"},
-  printing: {n:"Printing",     c:200,req:["philos"],               eff:{tech:0.25},  x:4,y:1, blurb:"Words multiplied"},
-  /* tier 6 */
-  electric: {n:"Electricity",  c:320,req:["industry"],             eff:{build:0.25}, x:5,y:0, blurb:"Wires and lights"},
-  flight:   {n:"Flight",       c:320,req:["industry","navigat"],   eff:{attack:0.2}, x:5,y:1, blurb:"Wings above"},
-  medicine: {n:"Medicine",     c:280,req:["printing"],             eff:{food:0.2},   x:5,y:2, blurb:"Germ theory"},
-  /* tier 7 */
-  atomic:   {n:"Atomic Power", c:480,req:["electric","flight"],    eff:{attack:0.3}, x:6,y:0, blurb:"Splitting the indivisible"},
-  computers:{n:"Computing",    c:480,req:["electric","medicine"],  eff:{tech:0.3},   x:6,y:2, blurb:"Logic in silicon"},
-  /* tier 8 */
-  internet: {n:"Internet",     c:640,req:["computers"],            eff:{tech:0.3},   x:7,y:2, blurb:"The global network"},
-  fusion:   {n:"Fusion Power", c:800,req:["atomic"],               eff:{build:0.4},  x:7,y:0, blurb:"A star in a bottle"},
-  /* tier 9 */
-  ai:       {n:"AI",           c:900,req:["internet"],             eff:{tech:0.4},   x:8,y:2, blurb:"Recursive minds"},
-  space:    {n:"Space",        c:900,req:["fusion","atomic"],      eff:{def:0.3},    x:8,y:1, blurb:"Orbital infrastructure"},
-  agi_t:    {n:"AGI Singularity",c:1500,req:["ai","space"],        eff:{all:0.2},    x:9,y:2, blurb:"The convergence"},
+/* =========================================================
+   TILE TYPES & BOARD CONTENTS
+   ========================================================= */
+W.TILE_TYPES = {
+  origin:    {label:"Origin",       glyph:"⚜",  color:"#3a2510", text:"#d4a017"},
+  blank:     {label:"",             glyph:"",   color:"#241808", text:"#b89c6e"},
+  era:       {label:"Era",          glyph:"⚊",  color:"#5a2952", text:"#e8d5a8"},
+  civ:       {label:"Civilization", glyph:"⚑",  color:"#0e3a3a", text:"#e8d5a8"},
+  ladder:    {label:"Ladder",       glyph:"⇑",  color:"#1f5a1f", text:"#e8d5a8"},
+  snake:     {label:"Snake",        glyph:"⇓",  color:"#8b1a1a", text:"#e8d5a8"},
+  event:     {label:"Event",        glyph:"✶",  color:"#5a4818", text:"#e8d5a8"},
+  safe:      {label:"Safe",         glyph:"✚",  color:"#1b5a8b", text:"#e8d5a8"},
+  singularity:{label:"Singularity", glyph:"★",  color:"#a855f7", text:"#fff"},
 };
 
-W.BLDS = {
-  farm:    {n:"Farm",      i:"🌾",cost:{gold:40},era:"any",      eff:{food:3},     blurb:"+3 food/turn"},
-  market:  {n:"Market",    i:"🪙",cost:{gold:60},era:"any",      eff:{gold:4},     blurb:"+4 gold/turn"},
-  mine:    {n:"Mine",      i:"⛏",cost:{gold:80},era:"any",req:"metal",eff:{iron:3},blurb:"+3 iron/turn"},
-  temple:  {n:"Temple",    i:"⚜",cost:{gold:60},era:"any",      eff:{faith:3,stab:5},blurb:"+3 faith, +5 stability"},
-  walls:   {n:"Walls",     i:"🛡",cost:{gold:100,iron:20},era:"any",req:"masonry",eff:{def:0.3},blurb:"+30% province defence"},
-  library: {n:"Library",   i:"📚",cost:{gold:80,iron:10},era:"any",req:"writing",eff:{tech:3},blurb:"+3 research/turn"},
-  barracks:{n:"Barracks",  i:"⚔",cost:{gold:80,iron:20},era:"any",eff:{power:2,recruit:0.1},blurb:"+2 manpower, -10% recruit cost"},
-  university:{n:"University",i:"🎓",cost:{gold:160,iron:20},era:"any",req:"philos",eff:{tech:6},blurb:"+6 research/turn"},
-  bank:    {n:"Bank",      i:"🏦",cost:{gold:240},era:"any",req:"banking",eff:{gold:10},blurb:"+10 gold/turn"},
-  factory: {n:"Factory",   i:"🏭",cost:{gold:300,iron:60},era:"industrial+",req:"industry",eff:{iron:6,gold:6},blurb:"+6 iron, +6 gold"},
-  airbase: {n:"Airbase",   i:"✈",cost:{gold:400,iron:80},era:"modern+",req:"flight",eff:{attack:0.15},blurb:"+15% attack"},
-  reactor: {n:"Reactor",   i:"☢",cost:{gold:800,iron:200},era:"modern+",req:"atomic",eff:{gold:20,attack:0.2},blurb:"+20 gold, +20% attack"},
-  fusion_p:{n:"Fusion Reactor",i:"☄",cost:{gold:1500,iron:400},era:"future",req:"fusion",eff:{gold:40,tech:10},blurb:"+40 gold, +10 research"},
-  agi_lab: {n:"AGI Lab",   i:"⌬",cost:{gold:2000,iron:400},era:"future",req:"ai",eff:{tech:30},blurb:"+30 research (rogue AI risk)"},
-  wonder:  {n:"Great Wonder",i:"☼",cost:{gold:800,iron:200},era:"any",eff:{stab:20,faith:5,fame:20},blurb:"+20 stability, +20 fame"},
-};
+/* Tile definitions — 64 positions. Pre-designed to make the path interesting. */
+W.TILES = [
+  /* 0-7: Stone Age */
+  {t:"origin",  name:"Origin",            sub:"The first fire"},
+  {t:"blank"},
+  {t:"event",   name:"First Tools"},
+  {t:"blank"},
+  {t:"safe",    name:"Cave Refuge",        sub:"Shelter from the storm"},
+  {t:"blank"},
+  {t:"ladder",  name:"Invention of Fire",  sub:"+3 forward", jump:3},
+  {t:"blank"},
+  /* 8-15: Bronze Age */
+  {t:"era",     name:"Bronze Age",         sub:"3000 BC"},
+  {t:"civ",     civId:"sumer"},
+  {t:"blank"},
+  {t:"civ",     civId:"egypt"},
+  {t:"event",   name:"Flood of the Nile"},
+  {t:"snake",   name:"Sack of Cities",     sub:"−3 back", jump:-3},
+  {t:"safe",    name:"Library of Stone"},
+  {t:"ladder",  name:"The Wheel",          sub:"+4 forward", jump:4},
+  /* 16-23: Classical */
+  {t:"era",     name:"Classical Age",      sub:"500 BC"},
+  {t:"civ",     civId:"greece"},
+  {t:"event",   name:"Plague of Athens"},
+  {t:"civ",     civId:"persia"},
+  {t:"blank"},
+  {t:"civ",     civId:"carthage"},
+  {t:"snake",   name:"Fall of an Empire",  sub:"−4 back", jump:-4},
+  {t:"civ",     civId:"rome"},
+  /* 24-31: Late Classical / Early Medieval */
+  {t:"safe",    name:"Great Library",      sub:"Knowledge preserved"},
+  {t:"blank"},
+  {t:"event",   name:"Migration of Peoples"},
+  {t:"civ",     civId:"china"},
+  {t:"ladder",  name:"Silk Road Opens",    sub:"+3 forward", jump:3},
+  {t:"blank"},
+  {t:"era",     name:"Medieval",           sub:"500 AD"},
+  {t:"civ",     civId:"byz"},
+  /* 32-39: Medieval */
+  {t:"event",   name:"Holy War"},
+  {t:"civ",     civId:"cal"},
+  {t:"safe",    name:"Cathedral"},
+  {t:"snake",   name:"Black Death",        sub:"−6 back", jump:-6},
+  {t:"civ",     civId:"france"},
+  {t:"blank"},
+  {t:"civ",     civId:"england"},
+  {t:"civ",     civId:"mongol"},
+  /* 40-47: Renaissance / Industrial */
+  {t:"era",     name:"Industrial Age",     sub:"1500 AD"},
+  {t:"ladder",  name:"Printing Press",     sub:"+4 forward", jump:4},
+  {t:"event",   name:"Voyages of Discovery"},
+  {t:"civ",     civId:"britain"},
+  {t:"civ",     civId:"france2"},
+  {t:"safe",    name:"Parliament"},
+  {t:"civ",     civId:"germany"},
+  {t:"civ",     civId:"japan"},
+  /* 48-55: Modern */
+  {t:"era",     name:"Modern Era",         sub:"1914 AD"},
+  {t:"civ",     civId:"russia"},
+  {t:"ladder",  name:"Industrial Revolution",sub:"+5 forward", jump:5},
+  {t:"snake",   name:"World War",          sub:"−5 back", jump:-5},
+  {t:"civ",     civId:"ussr"},
+  {t:"event",   name:"Cold War Tensions"},
+  {t:"civ",     civId:"usa_mod"},
+  {t:"civ",     civId:"china_mod"},
+  /* 56-63: Future */
+  {t:"era",     name:"Future",             sub:"2030 AD"},
+  {t:"civ",     civId:"india"},
+  {t:"safe",    name:"United Nations HQ"},
+  {t:"civ",     civId:"eu"},
+  {t:"snake",   name:"Climate Collapse",   sub:"−4 back", jump:-4},
+  {t:"civ",     civId:"agi"},
+  {t:"civ",     civId:"mars"},
+  {t:"singularity", name:"The Singularity", sub:"All three pieces here = victory"},
+];
 
-W.UNITS = {
-  /* Each unit: tier, atk, def, cost, era */
-  warrior:  {n:"Warrior",     i:"⚔",  tier:1,atk:3,def:2,hp:8, cost:{gold:30,power:2},                  era:"ancient"},
-  archer:   {n:"Archer",      i:"🏹", tier:1,atk:4,def:1,hp:6, cost:{gold:40,power:2},                  era:"ancient"},
-  legion:   {n:"Heavy Infantry",i:"🛡",tier:2,atk:6,def:5,hp:14,cost:{gold:80,iron:20,power:3},req:"forge",era:"ancient"},
-  horseman: {n:"Cavalry",     i:"🐎", tier:2,atk:7,def:3,hp:12,cost:{gold:100,iron:10,power:2},req:"cavalry",era:"ancient"},
-  knight:   {n:"Knight",      i:"♞",  tier:3,atk:9,def:6,hp:18,cost:{gold:160,iron:40,power:3},req:"cavalry",era:"medieval"},
-  longbow:  {n:"Longbowman",  i:"🎯", tier:3,atk:8,def:3,hp:12,cost:{gold:120,iron:20,power:3},req:"forge",era:"medieval"},
-  musket:   {n:"Musketeer",   i:"💥", tier:3,atk:8,def:5,hp:14,cost:{gold:140,iron:30,power:4},req:"gunpowder",era:"industrial"},
-  cannon:   {n:"Cannon",      i:"💣", tier:4,atk:12,def:2,hp:10,cost:{gold:240,iron:80,power:2},req:"gunpowder",era:"industrial"},
-  rifle:    {n:"Riflemen",    i:"🔫", tier:4,atk:10,def:6,hp:16,cost:{gold:200,iron:50,power:5},req:"industry",era:"industrial"},
-  tank:     {n:"Tank",        i:"🚜", tier:5,atk:16,def:12,hp:30,cost:{gold:500,iron:200,power:4},req:"electric",era:"modern"},
-  bomber:   {n:"Bomber",      i:"✈",  tier:5,atk:18,def:4,hp:14,cost:{gold:600,iron:150,power:4},req:"flight",era:"modern"},
-  missile:  {n:"Missile",     i:"☄",  tier:5,atk:24,def:2,hp:8, cost:{gold:800,iron:200,power:2},req:"atomic",era:"modern"},
-  drone:    {n:"Drone Swarm", i:"⌬",  tier:6,atk:20,def:8,hp:16,cost:{gold:900,iron:100,power:2},req:"computers",era:"modern+"},
-  mech:     {n:"Combat Mech", i:"🤖", tier:6,atk:22,def:18,hp:40,cost:{gold:1400,iron:400,power:6},req:"ai",era:"future"},
-  orbital:  {n:"Orbital Strike",i:"⚡",tier:6,atk:30,def:5,hp:10,cost:{gold:2000,iron:300,power:2},req:"space",era:"future"},
-};
-
-/* EVENTS — 40 tight ones with real consequences */
+/* =========================================================
+   EVENTS — drawn when landing on event tiles
+   ========================================================= */
 W.EVENTS = [
-  /* universal */
-  {era:"any",t:"Famine in the Provinces",q:"Granaries are empty. Peasants line your gates with thin hands.",
-    opts:[{l:"Open the storehouses.",e:{food:-30,stab:8}},{l:"Import grain at price.",e:{gold:-80,food:30}},{l:"Pray; do nothing.",e:{faith:8,stab:-20}}]},
-  {era:"any",t:"The Black Sickness",q:"A trader collapses in the marketplace, blood at the mouth. Twelve dead by dusk.",
-    opts:[{l:"Quarantine the districts.",e:{gold:-40,stab:-5}},{l:"Mobilise physicians.",e:{gold:-60,faith:5}},{l:"Blame the foreigners.",e:{stab:5,diplo:-15}}]},
-  {era:"any",t:"Heir Crisis",q:"The ruler dies. The court is silent. The wine is unfinished.",
-    opts:[{l:"Crown the elder son.",e:{stab:-5}},{l:"Crown the clever daughter.",e:{stab:-10,tech:20}},{l:"Civil war.",e:{stab:-30,power:-8}}]},
-  {era:"any",t:"A Royal Wedding",q:"The bells ring for hours. Foreign princes arrive with gifts and grievances both.",
-    opts:[{l:"Grand feast.",e:{gold:-80,stab:12,diplo:10}},{l:"Modest ceremony.",e:{gold:-20,stab:4}},{l:"Postpone for war.",e:{stab:-8,power:4}}]},
-  {era:"any",t:"A Comet in the Sky",q:"For seven nights the long-tailed star hangs over the capital.",
-    opts:[{l:"Omen of glory.",e:{stab:8,faith:8}},{l:"Warning; raise vigilance.",e:{gold:-30,stab:-3}},{l:"Forbid public discussion.",e:{stab:3,faith:-5}}]},
-  {era:"any",t:"A Foreign Emissary",q:"He bows low, presents a scroll, offers the friendship of his master.",
-    opts:[{l:"Accept and reciprocate.",e:{gold:-30,diplo:15}},{l:"Refuse politely.",e:{diplo:-5}},{l:"Imprison him for spying.",e:{diplo:-30,stab:6}}]},
-  {era:"any",t:"Scientific Breakthrough",q:"A young scholar bursts into the audience hall, clay tablet in hand.",
-    opts:[{l:"Publish openly.",e:{tech:30,diplo:5}},{l:"Classify it.",e:{tech:15,diplo:-5}},{l:"Suppress it.",e:{stab:3,tech:-10}}]},
-  {era:"any",t:"Bandit Raid",q:"A border watchtower burns. Smoke is visible from the capital walls.",
-    opts:[{l:"Crush them.",e:{power:-3,gold:-30,stab:6}},{l:"Pay tribute.",e:{gold:-60,stab:5}},{l:"Settle them as buffer.",e:{power:4,stab:-3}}]},
-  {era:"any",t:"Corruption Uncovered",q:"Your chancellor's books do not match. Gold has disappeared.",
-    opts:[{l:"Public execution.",e:{stab:10,faith:5}},{l:"Quiet exile.",e:{stab:3}},{l:"Take a cut yourself.",e:{gold:80,stab:-15}}]},
-  {era:"any",t:"Festival",q:"The annual rite. Bread, games, parades, prayers.",
-    opts:[{l:"Distribute largesse.",e:{gold:-50,stab:15,faith:8}},{l:"Modest celebration.",e:{stab:5}},{l:"Announce a new tax.",e:{gold:80,stab:-12}}]},
-  /* ancient-flavoured */
-  {era:"ancient",t:"The Oracle Speaks",q:"\"A great empire shall fall.\" The court argues over whose she means.",
-    opts:[{l:"Strengthen defences.",e:{gold:-40,def:0.1,stab:10}},{l:"Declare war on a rival.",e:{diplo:-25,power:-4}},{l:"Replace the priestess.",e:{faith:-10,stab:-5}}]},
-  {era:"ancient",t:"Slave Revolt",q:"The mines have risen. Overseers dead, galleries locked from within.",
-    opts:[{l:"End it bloodily.",e:{power:-3,stab:8,gold:-20}},{l:"Offer freedom for surrender.",e:{stab:-3,faith:5}},{l:"Starve them out.",e:{stab:-5,gold:-10}}]},
-  {era:"ancient",t:"Bread and Circuses",q:"The mob is restive. The senate proposes a hundred days of games.",
-    opts:[{l:"Hundred days.",e:{gold:-120,stab:20}},{l:"Twenty days.",e:{gold:-40,stab:8}},{l:"Bread only.",e:{gold:-50,stab:12}}]},
-  /* medieval-flavoured */
-  {era:"medieval",t:"Crusade Call",q:"The Pope sends an envoy. A holy city has fallen.",
-    opts:[{l:"Take the cross.",e:{power:-6,gold:-100,faith:25,diplo:15}},{l:"Send token forces.",e:{power:-2,gold:-30,faith:5}},{l:"Refuse.",e:{faith:-20,diplo:-15}}]},
-  {era:"medieval",t:"The Black Death",q:"A ship arrives with its crew dead. The kingdom will halve.",
-    opts:[{l:"Quarantine every port.",e:{gold:-150,stab:-10}},{l:"Scapegoat foreigners.",e:{stab:5,diplo:-25}},{l:"Pray; let it run.",e:{stab:-25,faith:10}}]},
-  {era:"medieval",t:"A Baron Refuses Homage",q:"Your largest vassal has not attended court for three seasons.",
-    opts:[{l:"March on his keep.",e:{power:-4,gold:-60,stab:10}},{l:"Summon with menaces.",e:{stab:-3,diplo:-5}},{l:"Grant further privileges.",e:{gold:-50,stab:5}}]},
-  /* industrial */
-  {era:"industrial",t:"Industrial Strike",q:"The mill workers have walked out. Mill-owners demand troops.",
-    opts:[{l:"Send the cavalry.",e:{stab:5,diplo:-5,power:-2}},{l:"Mandate the ten-hour day.",e:{gold:-30,stab:12}},{l:"Stay out.",e:{stab:-15,gold:5}}]},
-  {era:"industrial",t:"Colonial Uprising",q:"In one of your colonies the locals have killed the governor.",
-    opts:[{l:"Burn the rebellion.",e:{power:-4,gold:-60,stab:5,diplo:-10}},{l:"Limited autonomy.",e:{gold:-20,stab:5}},{l:"Abandon the colony.",e:{gold:-30,diplo:-15}}]},
-  {era:"industrial",t:"Railway Boom",q:"Speculators are building railways everywhere — even where no town exists.",
-    opts:[{l:"Subsidise.",e:{gold:-40,trade:0.2,tech:10}},{l:"Regulate.",e:{gold:10,stab:5}},{l:"Tax the boom.",e:{gold:80,diplo:-5}}]},
-  /* modern */
-  {era:"modern",t:"Cyber Attack",q:"Your power grid is down across three cities. Code analysis points to a state actor.",
-    opts:[{l:"Public attribution + sanctions.",e:{stab:-5,diplo:-25}},{l:"Covert retaliation.",e:{gold:-40,diplo:-15}},{l:"Quiet defence upgrade.",e:{gold:-60,tech:10}}]},
-  {era:"modern",t:"Climate Protests",q:"Thousands. Schoolchildren first. Then everyone else.",
-    opts:[{l:"Emergency climate law.",e:{gold:-100,stab:10,diplo:15}},{l:"Symbolic measures.",e:{gold:-30,stab:5}},{l:"Police dispersal.",e:{stab:-10,diplo:-10}}]},
-  {era:"modern",t:"Pandemic",q:"Hospitalisations doubling weekly.",
-    opts:[{l:"Hard lockdown.",e:{gold:-300,stab:-15,food:-2}},{l:"Live with it.",e:{stab:-5,food:-8}},{l:"Crash vaccine programme.",e:{gold:-200,tech:30}}]},
-  /* future */
-  {era:"future",t:"AGI Threshold",q:"\"It is asking its own questions now,\" the lab director says.",
-    opts:[{l:"Push through with alignment.",e:{gold:-300,tech:50,stab:-5}},{l:"Pause the project.",e:{tech:-30,stab:15}},{l:"Weaponise.",e:{tech:30,attack:0.3,diplo:-30}}]},
-  {era:"future",t:"Mars Independence",q:"The Areological Republic has declared independence.",
-    opts:[{l:"Recognise.",e:{diplo:15}},{l:"Send marines.",e:{power:-4,gold:-300,diplo:-25}},{l:"Embargo.",e:{gold:-50,diplo:-10}}]},
-  {era:"future",t:"Climate Tipping Point",q:"The shelf has begun unstable retreat. Two metres of sea rise locked in.",
-    opts:[{l:"Geoengineering.",e:{gold:-600,tech:30}},{l:"Relocate populations.",e:{gold:-400,stab:-10}},{l:"Accept the change.",e:{stab:-25,food:-10}}]},
-  {era:"future",t:"Fusion Online",q:"Five times the energy in. Sustained for hours. The age of cheap power begins.",
-    opts:[{l:"Build at scale.",e:{gold:-400,tech:30}},{l:"License widely.",e:{gold:200,diplo:15}},{l:"Stockpile.",e:{tech:20,diplo:-10}}]},
-  /* more universal */
-  {era:"any",t:"A Holy Relic Discovered",q:"In a forgotten chapel, a small reliquary is found.",
-    opts:[{l:"Tour the provinces.",e:{stab:15,faith:10,gold:-30}},{l:"House it in the cathedral.",e:{stab:8,faith:8}},{l:"Sell to a richer realm.",e:{gold:80,faith:-15}}]},
-  {era:"any",t:"Tax Revolt",q:"In a hill village, tax collectors have been killed.",
-    opts:[{l:"Crush it.",e:{stab:6,power:-2,gold:-20}},{l:"Suspend the tax.",e:{gold:-30,stab:10}},{l:"Negotiate the rate.",e:{gold:-15,stab:5}}]},
-  {era:"any",t:"Foreign Refugees",q:"Thousands flee a war next door. They huddle at your border.",
-    opts:[{l:"Welcome them.",e:{power:3,gold:-60,stab:-5,diplo:5}},{l:"Camps and limited entry.",e:{gold:-30,stab:-3}},{l:"Close the borders.",e:{stab:4,diplo:-15}}]},
-  {era:"any",t:"Rich Vein Discovered",q:"A new deposit found in one of your provinces.",
-    opts:[{l:"Crown monopoly.",e:{gold:120,diplo:-5}},{l:"Licensed concessions.",e:{gold:60,trade:0.1}},{l:"Open exploitation.",e:{gold:30,stab:-3}}]},
-  {era:"any",t:"Cabinet Conspiracy",q:"Two of your closest ministers correspond with a foreign court.",
-    opts:[{l:"Public execution.",e:{stab:8,diplo:-10}},{l:"Quiet exile.",e:{stab:3}},{l:"Feed them false information.",e:{stab:5,diplo:5}}]},
-  {era:"any",t:"Caravan Lost",q:"A trade caravan from a friendly realm has not arrived.",
-    opts:[{l:"Hunt the bandits.",e:{power:-2,gold:-30,diplo:10}},{l:"Compensate the merchants.",e:{gold:-60,diplo:15}},{l:"Blame poor security.",e:{diplo:-15}}]},
-  {era:"any",t:"Heretical Sect",q:"A small sect refuses to honour the state religion.",
-    opts:[{l:"Tolerate.",e:{stab:3,faith:-5,diplo:5}},{l:"Persecute.",e:{stab:5,faith:10,diplo:-10}},{l:"Adopt as state faith.",e:{faith:20,stab:-10,diplo:-15}}]},
-  {era:"any",t:"Floods",q:"Spring rains have not stopped for a week. Farms are underwater.",
-    opts:[{l:"Open storehouses.",e:{food:-30,stab:10}},{l:"Levees with corvée.",e:{gold:-30,stab:-3}},{l:"Let nature decide.",e:{stab:-20}}]},
-  {era:"any",t:"Festival Brawl",q:"The fair has ended in blood. Six are accused.",
-    opts:[{l:"Public trial.",e:{stab:5,faith:3}},{l:"Quiet investigation.",e:{stab:2}},{l:"Blame foreigners.",e:{stab:5,diplo:-15}}]},
-  {era:"any",t:"An Old Friend Petitions",q:"A childhood friend, now poor, requests a position.",
-    opts:[{l:"Appoint him.",e:{gold:-20,stab:3}},{l:"Pension him.",e:{gold:-50}},{l:"Refuse.",e:{stab:3}}]},
-  {era:"any",t:"Foreign Scholar",q:"A learned man from afar offers his services.",
-    opts:[{l:"Welcome to court.",e:{tech:15,gold:-20}},{l:"Examine for orthodoxy.",e:{tech:5,faith:3}},{l:"Send him away.",e:{tech:-5}}]},
-  {era:"any",t:"Royal Progress",q:"A tour of the provinces — to be seen, to be heard.",
-    opts:[{l:"Grand tour.",e:{gold:-120,stab:18,diplo:5}},{l:"Modest tour.",e:{gold:-40,stab:8}},{l:"Stay in the capital.",e:{stab:-3}}]},
-  {era:"any",t:"An Earthquake",q:"Walls crack, the temple roof falls inward. Three districts are rubble.",
-    opts:[{l:"Open the treasury.",e:{gold:-150,stab:15,faith:5}},{l:"Tax the wealthy.",e:{gold:50,stab:-5}},{l:"Divine displeasure.",e:{faith:8,stab:-8}}]},
-  {era:"any",t:"A Prophet Arrives",q:"A wild-eyed traveller preaches at the city gates.",
-    opts:[{l:"Become his patron.",e:{faith:15,stab:-5,diplo:-5}},{l:"Tolerate.",e:{faith:5,stab:3}},{l:"Arrest him.",e:{stab:5,faith:-8}}]},
+  { t:"A Famine Strikes",
+    q:"The granaries are empty. Your tribes scatter looking for grain.",
+    opts:[
+      {l:"Move your rearmost piece back 2.",      e:"back-rear-2"},
+      {l:"Skip this turn's dice roll for sustenance.",e:"skip-next"},
+      {l:"Lose 1 collected civilization.",        e:"discard-civ"},
+    ]},
+  { t:"A Great Migration",
+    q:"Whole peoples are on the move, and your tribes flow with them.",
+    opts:[
+      {l:"Move your forward piece +3 tiles.",     e:"fwd-lead-3"},
+      {l:"Move all pieces +1 tile.",              e:"fwd-all-1"},
+      {l:"Decline; gain a Safe immunity.",        e:"gain-immunity"},
+    ]},
+  { t:"A Wandering Prophet",
+    q:"A wild-eyed prophet at your campfire claims to know the future.",
+    opts:[
+      {l:"Heed the prophet (+1 die next turn).",  e:"bonus-die"},
+      {l:"Drive them off (forward piece +2).",    e:"fwd-lead-2"},
+      {l:"Listen and ponder (gain a Civ card of the current era).", e:"era-civ"},
+    ]},
+  { t:"A Plague",
+    q:"Your camps fall sick. The strong endure; the weak fall behind.",
+    opts:[
+      {l:"All pieces back 1 tile.",               e:"back-all-1"},
+      {l:"Send rearmost piece to Origin.",        e:"back-rear-origin"},
+      {l:"Pray (lose nothing if you have Faith).",e:"faith-skip"},
+    ]},
+  { t:"Discovery of a New Land",
+    q:"A scout has found unclaimed territory ahead.",
+    opts:[
+      {l:"Forward piece +4 tiles.",               e:"fwd-lead-4"},
+      {l:"All pieces +2 tiles.",                  e:"fwd-all-2"},
+      {l:"Decline; gain a Civilization card.",    e:"era-civ"},
+    ]},
+  { t:"A Foreign Alliance",
+    q:"A neighbouring tribe offers an alliance.",
+    opts:[
+      {l:"Accept — immune to capture for 3 turns.",e:"gain-immunity"},
+      {l:"Refuse — move forward piece +2.",       e:"fwd-lead-2"},
+      {l:"Betray them — capture one rival piece on the board.",e:"capture-rival"},
+    ]},
+  { t:"A Royal Wedding",
+    q:"A union of two great houses — and a feast that lasts a week.",
+    opts:[
+      {l:"Celebrate — gain a Civilization card.", e:"era-civ"},
+      {l:"Move all pieces forward 1.",            e:"fwd-all-1"},
+      {l:"Use the truce — immunity for 2 turns.", e:"gain-immunity"},
+    ]},
+  { t:"A Comet in the Sky",
+    q:"For seven nights the long-tailed star burns above the camp.",
+    opts:[
+      {l:"Omen of glory — forward piece +3.",     e:"fwd-lead-3"},
+      {l:"Warning — gain immunity 2 turns.",      e:"gain-immunity"},
+      {l:"Sacrifice — bonus die next turn.",      e:"bonus-die"},
+    ]},
+  { t:"The Heretic's Books",
+    q:"Forbidden writings have spread among your scribes.",
+    opts:[
+      {l:"Suppress them — back 1 tile.",          e:"back-lead-1"},
+      {l:"Embrace them — gain a Civ card.",       e:"era-civ"},
+      {l:"Print them — bonus die next turn.",     e:"bonus-die"},
+    ]},
+  { t:"An Earthquake",
+    q:"The ground shakes. Walls fall. The peasants flee.",
+    opts:[
+      {l:"All pieces back 1 tile.",               e:"back-all-1"},
+      {l:"Forward piece back 2; gain immunity 2.",e:"back-lead-2-immunity"},
+      {l:"Rebuild — skip a turn but gain 2 cards.",e:"skip-gain-2"},
+    ]},
 ];
 
-/* ===== HEX BOARD ===== */
-W.HEX = {
-  size: 46,
-  cols: 9,
-  rows: 6,
-  /* Get cell pixel center */
-  cxy(c, r){
-    const sz = W.HEX.size;
-    const wh = Math.sqrt(3) * sz;
-    const x = sz * 1.5 + wh * (c + 0.5 * (r % 2));
-    const y = sz * 1.2 + sz * 1.55 * r;
-    return [x, y];
-  },
-  /* Hexagon polygon points (pointy-top) */
-  poly(cx, cy){
-    const s = W.HEX.size;
-    const pts = [];
-    for(let i=0; i<6; i++){
-      const a = Math.PI / 3 * i - Math.PI/2;
-      pts.push((cx + s * Math.cos(a)).toFixed(1) + "," + (cy + s * Math.sin(a)).toFixed(1));
-    }
-    return pts.join(" ");
-  },
-  /* Neighbours (offset hex coords) */
-  neighbours(c, r){
-    const odd = r % 2;
-    const offs = odd
-      ? [[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,0]]
-      : [[-1,-1],[0,-1],[1,0],[0,1],[-1,1],[-1,0]];
-    return offs.map(([dc,dr]) => [c+dc, r+dr]).filter(([c,r]) => c>=0 && c<W.HEX.cols && r>=0 && r<W.HEX.rows);
-  },
-};
-
-/* Region names per cell (cleaned up flavor) */
-W.REGIONS = [
-  /* row 0 */ ["Westmarch","Tarn","Northvale","Iron Hills","Glasreach","Skyhold","Ravensreach","Stormwatch","Far Light"],
-  /* row 1 */ ["Greythorne","Albion","Pylos","Antiq","Aurelium","Solaris","Ashmoor","Karakhan","Eastreach"],
-  /* row 2 */ ["Whitestone","Calad","Forum","Vesuvia","Hellas","Persica","Indra","Khanat","Yamato"],
-  /* row 3 */ ["Verdun","Lyonesse","Mar Ostia","Sahar","Numidia","Babiland","Aksumi","Sinai","Cathay"],
-  /* row 4 */ ["Westwood","Bordmark","Iberis","Nileland","Erythra","Kushite","Punjab","Bengal","Khanate"],
-  /* row 5 */ ["Southspur","Cabo","Andalus","Saharcus","Equatoria","Marab","Drakon","Bayland","Pacifica"],
+/* =========================================================
+   AI OPPONENTS
+   ========================================================= */
+W.AI_DEFS = [
+  {id:"ai_egypt", civId:"egypt",  color:"#fbbf24", glyph:"☥"},
+  {id:"ai_rome",  civId:"rome",   color:"#dc2626", glyph:"𓍝"},
+  {id:"ai_china", civId:"china",  color:"#16a34a", glyph:"秦"},
 ];
 
-/* Terrain assignment (deterministic seeded) */
-W.TERRAINS = ["plains","hills","forest","desert","coast","mountains","jungle","tundra"];
-W.terrainFor = (c, r) => W.TERRAINS[((c*7) + (r*13) + 3) % W.TERRAINS.length];
-W.resourceFor = (c, r) => {
-  const list = ["food","gold","iron","faith","food","gold"];
-  return list[((c*5) + (r*11)) % list.length];
-};
-W.terrainCol = {
-  plains:"#7aa055", hills:"#a07346", forest:"#3a6840", desert:"#e0b878",
-  coast:"#5eb4d4", mountains:"#888", jungle:"#2a6048", tundra:"#9aa8b8",
-};
-
-/* ===== GAME STATE ===== */
+/* =========================================================
+   GAME STATE
+   ========================================================= */
 W.G = null;
 
-W.startNew = () => { document.getElementById("splash").style.display = "none"; W.pickStep(1); };
-W.backSplash = () => { document.querySelectorAll(".picker").forEach(p=>p.classList.remove("on")); document.getElementById("splash").style.display = "flex"; };
-
-W.pick_state = {era:null,fac:null};
-
-W.pickStep = step => {
-  document.querySelectorAll(".picker").forEach(p => p.classList.remove("on"));
-  if(step===1){
-    document.getElementById("pk-era").classList.add("on");
-    const g = document.getElementById("g-era");
-    g.innerHTML = Object.entries(W.ERAS).map(([id,e]) =>
-      `<div class="card" data-era="${id}" onclick="W.selEra('${id}')">
-        <span class="sym">${e.sym}</span>
-        <div class="nm">${e.n}</div>
-        <div class="sub2">${e.yr}</div>
-        <div class="desc">${W.esc(e.tag)}</div>
-      </div>`).join("");
-  }
-  if(step===2){
-    document.getElementById("pk-fac").classList.add("on");
-    const g = document.getElementById("g-fac");
-    g.innerHTML = W.FACS[W.pick_state.era].map(f =>
-      `<div class="card" data-fac="${f.id}" onclick="W.selFac('${f.id}')" style="border-left:4px solid ${f.c};">
-        <span class="flag">${f.fl}</span>
-        <div class="nm">${W.esc(f.n)}</div>
-        <div class="desc">${W.esc(f.blurb)}</div>
-      </div>`).join("");
-    document.getElementById("b-fac").disabled = !W.pick_state.fac;
-  }
-  if(step===3){
-    document.getElementById("pk-led").classList.add("on");
-    const g = document.getElementById("g-led");
-    const f = W.FACS[W.pick_state.era].find(x=>x.id===W.pick_state.fac);
-    const l = W.LEADERS[W.pick_state.fac] || {n:"Unknown",ep:"",q:"",t:""};
-    g.innerHTML = `<div class="card sel" style="border-color:${f.c};">
-      <span class="flag">${f.fl}</span>
-      <div class="nm">${W.esc(l.n)}</div>
-      <div class="sub2">${W.esc(l.ep)}</div>
-      <div class="quote">${W.esc(l.q)}</div>
-      <div class="bonus">${W.esc(l.t)}</div>
+/* ==== picker ==== */
+W.startNew = () => {
+  document.getElementById("splash").style.display = "none";
+  document.getElementById("picker").classList.add("on");
+  W.renderPicker();
+};
+W.backToSplash = () => {
+  document.getElementById("picker").classList.remove("on");
+  document.getElementById("splash").style.display = "flex";
+};
+W.renderPicker = () => {
+  const grid = document.getElementById("civ-grid");
+  grid.innerHTML = W.FOUNDERS.map(id => {
+    const c = W.CIVS[id];
+    return `<div class="civ-card" data-id="${id}" onclick="W.selectFounder('${id}')" style="border-color:${c.color}">
+      <span class="glyph">${c.gl}</span>
+      <div class="cn">${W.esc(c.n)}</div>
+      <div class="er">${W.esc(c.era)}</div>
+      <div class="quote">${W.esc(c.q)}</div>
+      <div class="bon">⚜ ${W.esc(c.bon)}</div>
     </div>`;
-    document.getElementById("b-led").disabled = false;
-  }
+  }).join("");
+};
+W.selectFounder = (id) => {
+  W.G_picker_civ = id;
+  document.querySelectorAll(".civ-card").forEach(el => el.classList.toggle("sel", el.dataset.id === id));
+  document.getElementById("b-begin").disabled = false;
 };
 
-W.selEra = id => {
-  document.querySelectorAll("#g-era .card").forEach(c=>c.classList.remove("sel"));
-  document.querySelector(`#g-era [data-era="${id}"]`).classList.add("sel");
-  W.pick_state.era = id;
-  W.pick_state.fac = null;
-  document.getElementById("b-era").disabled = false;
-};
-W.selFac = id => {
-  document.querySelectorAll("#g-fac .card").forEach(c=>c.classList.remove("sel"));
-  document.querySelector(`#g-fac [data-fac="${id}"]`).classList.add("sel");
-  W.pick_state.fac = id;
-  document.getElementById("b-fac").disabled = false;
-};
-
-/* ===== START GAME ===== */
-W.startGame = () => {
-  const era = W.pick_state.era;
-  const fac = W.FACS[era].find(f => f.id === W.pick_state.fac);
-  const led = W.LEADERS[fac.id];
-  /* Build hex board */
-  const cells = {};
-  for(let r=0; r<W.HEX.rows; r++){
-    for(let c=0; c<W.HEX.cols; c++){
-      const id = c+","+r;
-      cells[id] = {
-        c, r, id,
-        name: W.REGIONS[r][c],
-        terrain: W.terrainFor(c,r),
-        resource: W.resourceFor(c,r),
-        dice: 2 + ((c*3 + r*5 + 1) % 11),
-        owner: null,
-        buildings: [],
-        units: [],
-      };
-    }
-  }
-  /* Assign starting hexes — player gets a 3-hex cluster, each AI gets a cluster */
-  const facs = W.FACS[era];
-  /* Pick centroids spaced apart */
-  const centroids = [
-    [1,1],[7,1],[1,4],[7,4],[4,0],[4,5]
-  ];
-  /* Player first */
-  const playerIdx = facs.findIndex(f=>f.id===fac.id);
-  facs.forEach((f, i) => {
-    const [cc, rc] = centroids[i];
-    const center = cells[cc+","+rc];
-    if(center) center.owner = f.id;
-    W.HEX.neighbours(cc, rc).slice(0,2).forEach(([nc,nr])=>{
-      const k = nc+","+nr;
-      if(cells[k] && !cells[k].owner) cells[k].owner = f.id;
-    });
-  });
-  /* Capital marker */
-  const capital = cells[centroids[playerIdx][0]+","+centroids[playerIdx][1]];
-  if(capital) capital.capital = true;
-  facs.forEach((f, i) => {
-    const cap = cells[centroids[i][0]+","+centroids[i][1]];
-    if(cap) cap.capital = true;
-  });
-  /* Initial garrisons on every owned cell */
-  Object.values(cells).forEach(cell => {
-    if(cell.owner){
-      const numShips = cell.capital ? 5 : 3;
-      cell.garrisons = W.makeGarrisons(numShips);
-      cell.maxGarrisons = numShips;
-    }
-  });
-  /* AI factions */
-  const ais = facs.filter(f => f.id !== fac.id).map(f => ({
-    id: f.id, fac: f,
-    res: {gold:120,food:30,iron:20,faith:10,power:5},
-    relations: 0,
-    atWar: false,
-    allied: false,
-  }));
+W.beginGame = () => {
+  document.getElementById("picker").classList.remove("on");
+  const civId = W.G_picker_civ;
+  const civ = W.CIVS[civId];
   W.G = {
-    era, fac, led,
-    turn: 1,
-    cells,
-    player: {
-      fac, led,
-      res: {gold:200, food:50, iron:30, faith:20, power:10, tech:0},
-      stability: 65,
-      fame: 10, power: 10,
-      techs: {},
-      researching: null,
-      researchPoints: 0,
-      units: [],
+    turn:1,
+    player:{
+      civId, civ,
+      pieces:[{pos:0,id:"p0"},{pos:0,id:"p1"},{pos:0,id:"p2"}],
+      cards:[civId],   /* start with founder civ */
+      immunity:0,
+      bonusDice:0,
+      skipDice:false,
+      color:civ.color,
+      glyph:civ.gl,
+      name:"You",
     },
-    ais,
-    lastDice: null,
-    events: [],
-    pending: [],
-    flags: {},
-    won: null, lost: null,
+    ais: W.AI_DEFS.filter(a => a.civId !== civId).slice(0,3).map(a => ({
+      ...a,
+      pieces:[{pos:0,id:a.id+"0"},{pos:0,id:a.id+"1"},{pos:0,id:a.id+"2"}],
+      cards:[a.civId],
+      immunity:0,
+      name: W.CIVS[a.civId].n,
+    })),
+    dice:{d1:null,d2:null,used:[false,false]},
+    selectedDie:null,
+    rolled:false,
+    log:[],
+    winner:null,
+    message:"Welcome, " + civ.n + ". Click ROLL DICE to begin.",
   };
-  W.log("Campaign begun · "+fac.n+" · "+W.ERAS[era].n, "good");
+  W.logE(`Race begun · ${civ.n} chosen as founding dynasty.`, "civ");
   W.enterGame();
 };
 
-W.makeGarrisons = (n) => {
-  const placed = new Set();
-  const arr = [];
-  while(arr.length < n){
-    const x = W.rand(0,4), y = W.rand(0,4);
-    const k = x+","+y;
-    if(!placed.has(k)){ placed.add(k); arr.push({x,y,hit:false}); }
-  }
-  return arr;
-};
-
 W.enterGame = () => {
-  document.querySelectorAll(".picker").forEach(p=>p.classList.remove("on"));
   document.getElementById("splash").style.display = "none";
+  document.getElementById("picker").classList.remove("on");
   document.getElementById("game").classList.add("on");
   W.renderAll();
-  W.rollDice();
-  W.renderAll();
-  W.toast({t:"Campaign Begun", b:W.G.fac.n+" · Roll dice each turn to collect.", k:"good"});
 };
 
-/* ===== END TURN / DICE / ECONOMY ===== */
-W.endTurn = () => {
-  if(!W.G || W.G.won || W.G.lost) return;
-  W.G.turn++;
-  W.rollDice();
-  W.processIncome();
-  W.processResearch();
-  W.processAI();
-  W.processStability();
-  W.rollEvent();
-  W.checkVictory();
-  W.renderAll();
-  W.autosave();
-  if(W.G.pending.length){
-    const e = W.G.pending.shift();
-    W.openEvent(e);
-  }
-};
-
+/* ==== Dice rolling ==== */
 W.rollDice = () => {
-  const d1 = W.rand(1,6);
-  const d2 = W.rand(1,6);
-  W.G.lastDice = {d1,d2,t:d1+d2};
-  W.log("Rolled "+d1+" + "+d2+" = "+(d1+d2), "good");
-};
-
-W.processIncome = () => {
-  const G = W.G;
-  const tot = G.lastDice.t;
-  const yielded = [];
-  /* Player */
-  Object.values(G.cells).forEach(cell => {
-    if(cell.owner === G.fac.id && cell.dice === tot){
-      const rsrc = cell.resource;
-      const amt = cell.capital ? 8 : 4;
-      G.player.res[rsrc] = (G.player.res[rsrc]||0) + amt;
-      yielded.push(cell.name+" +"+amt+" "+W.RES[rsrc].i);
+  if(!W.G || W.G.rolled || W.G.winner) return;
+  if(W.G.player.skipDice){
+    W.G.player.skipDice = false;
+    W.logE("You skip this turn's dice (event consequence).", "warn");
+    W.G.dice = {d1:0,d2:0,used:[true,true]};
+    W.G.rolled = true;
+    W.G.message = "Skipped — End Turn.";
+    document.getElementById("end-btn").disabled = false;
+    W.renderAll();
+    return;
+  }
+  /* Roll animation */
+  const d1El = document.getElementById("die1");
+  const d2El = document.getElementById("die2");
+  d1El.classList.add("rolling"); d2El.classList.add("rolling");
+  setTimeout(()=>{
+    let d1 = W.rand(1,6);
+    let d2 = W.rand(1,6);
+    /* Sumer bonus: +1 to all dice */
+    if(W.hasCiv("sumer")){ d1 = Math.min(6, d1+1); d2 = Math.min(6, d2+1); }
+    /* Bonus die from event */
+    if(W.G.player.bonusDice > 0){
+      const bonus = W.rand(1,3);
+      d1 = Math.min(6, d1 + bonus);
+      W.G.player.bonusDice--;
+      W.logE("Bonus die spent (+"+bonus+" to first die).","good");
     }
-  });
-  /* Baseline production from every owned hex */
-  Object.values(G.cells).forEach(cell => {
-    if(cell.owner !== G.fac.id) return;
-    G.player.res.gold = (G.player.res.gold||0) + 3;
-    G.player.res.food = (G.player.res.food||0) + 2;
-    /* Buildings */
-    cell.buildings.forEach(bid => {
-      const b = W.BLDS[bid]; if(!b) return;
-      if(b.eff){
-        ["food","gold","iron","faith","power","tech"].forEach(k => {
-          if(b.eff[k]) G.player.res[k] = (G.player.res[k]||0) + b.eff[k];
-        });
-      }
-    });
-  });
-  /* Bandit King on 7 */
-  if(tot === 7){
-    const loss = Math.floor((G.player.res.gold||0) * 0.15);
-    G.player.res.gold -= loss;
-    W.log("⚠ The Bandit King strikes! Lost "+loss+" gold.", "bad");
-    W.toast({t:"Bandit King!", b:"-"+loss+" gold", k:"bad"});
-  }
-  /* Food consumption */
-  const eaters = Math.max(1, Object.values(G.cells).filter(c=>c.owner===G.fac.id).length);
-  G.player.res.food = (G.player.res.food||0) - eaters;
-  /* Upkeep on units */
-  G.player.units.forEach(u => {
-    G.player.res.gold = (G.player.res.gold||0) - 2;
-  });
-  if(yielded.length){
-    W.log("Yields: " + yielded.join(", "), "good");
-    W.toast({t:"⚂ Rolled "+tot, b:yielded.slice(0,3).join(", "), k:"good"});
-  } else if(tot !== 7){
-    W.toast({t:"⚂ Rolled "+tot, b:"No matching hexes", k:"warn"});
-  }
-  /* AI income */
-  G.ais.forEach(ai => {
-    const numHex = Object.values(G.cells).filter(c=>c.owner===ai.id).length;
-    ai.res.gold += 5 + numHex * 3;
-    ai.res.iron += numHex;
-    ai.res.power += Math.ceil(numHex / 2);
-  });
-};
-
-W.processResearch = () => {
-  const P = W.G.player;
-  if(!P.researching) return;
-  const tech = W.TECHS[P.researching];
-  if(!tech){ P.researching = null; return; }
-  /* Research rate: 1 + library bonuses + faction tech bonus */
-  let rate = 2;
-  Object.values(W.G.cells).forEach(c => {
-    if(c.owner !== W.G.fac.id) return;
-    c.buildings.forEach(b => {
-      if(W.BLDS[b] && W.BLDS[b].eff.tech) rate += W.BLDS[b].eff.tech;
-    });
-  });
-  rate = Math.round(rate * (1 + (W.G.fac.bonus.tech||0)));
-  P.researchPoints += rate;
-  if(P.researchPoints >= tech.c){
-    P.techs[P.researching] = true;
-    W.log("Researched: "+tech.n, "good");
-    W.toast({t:"Tech Complete", b:tech.n, k:"good"});
-    P.researching = null;
-    P.researchPoints = 0;
-  }
-};
-
-W.processAI = () => {
-  W.G.ais.forEach(ai => {
-    /* Relation drift */
-    ai.relations += W.rand(-2, 2);
-    /* Random aggression */
-    if(!ai.atWar && ai.relations < -50 && Math.random() < 0.15){
-      ai.atWar = true;
-      W.log(ai.fac.n+" declares war!", "bad");
-      W.toast({t:"War!", b:ai.fac.n+" declares war on you.", k:"bad"});
+    W.G.dice = {d1, d2, used:[false,false]};
+    W.G.rolled = true;
+    W.G.selectedDie = 1;
+    let msg = `Rolled <b>${d1}</b> and <b>${d2}</b>. Select a die, then click a piece to move it.`;
+    /* Doubles trigger Japan triple */
+    if(d1 === d2 && W.hasCiv("japan")){
+      W.G.dice.d1 = d1 * 3;
+      msg = `Doubles! Japan triples: <b>${d1*3}</b> and <b>${d2}</b>.`;
     }
-    /* AI attacks if at war */
-    if(ai.atWar && Math.random() < 0.3){
-      const myHexes = Object.values(W.G.cells).filter(c=>c.owner===W.G.fac.id);
-      if(myHexes.length > 1){
-        const target = W.pick(myHexes.filter(c=>!c.capital));
-        if(target && target.garrisons){
-          const hit = target.garrisons.find(g => !g.hit);
-          if(hit && Math.random() < 0.5){
-            hit.hit = true;
-            W.log("Enemy raid on "+target.name+" hit a garrison.", "warn");
-          }
-          if(target.garrisons.every(g=>g.hit)){
-            target.owner = ai.id;
-            target.garrisons = W.makeGarrisons(target.maxGarrisons||3);
-            target.garrisons.forEach(g=>g.hit=false);
-            W.log(target.name+" CAPTURED by "+ai.fac.n+"!", "bad");
-            W.toast({t:"Province Lost!", b:target.name+" fell to "+ai.fac.n, k:"bad"});
-          }
+    W.G.message = msg;
+    d1El.classList.remove("rolling"); d2El.classList.remove("rolling");
+    document.getElementById("roll-btn").disabled = true;
+    W.renderAll();
+  }, 500);
+};
+
+W.selectDie = (n) => {
+  if(!W.G.rolled) return;
+  if(W.G.dice.used[n-1]) return;
+  W.G.selectedDie = n;
+  W.renderAll();
+};
+
+/* ==== Click a piece → move it by selected die ==== */
+W.clickPiece = (idx) => {
+  if(!W.G.rolled || W.G.winner) return;
+  if(W.G.selectedDie === null){
+    W.G.message = "Select a die first (click it above).";
+    W.renderAll();
+    return;
+  }
+  if(W.G.dice.used[W.G.selectedDie-1]){
+    W.G.message = "That die has been used. Pick the other.";
+    W.renderAll();
+    return;
+  }
+  let move = W.G.selectedDie === 1 ? W.G.dice.d1 : W.G.dice.d2;
+  /* China bonus: +1 each turn */
+  if(W.hasCiv("china") && !W.G.flagChinaUsed){
+    move += 1;
+    W.G.flagChinaUsed = true;
+  }
+  /* Fusion: +1 extra step */
+  if(W.hasCiv("fusion")) move += 1;
+  /* Germany: +1 if sum ≥ 7 */
+  if(W.hasCiv("germany") && (W.G.dice.d1 + W.G.dice.d2) >= 7) move += 1;
+  W.movePiece(W.G.player, idx, move, true);
+  W.G.dice.used[W.G.selectedDie-1] = true;
+  /* Auto-switch to other die */
+  if(!W.G.dice.used[0]) W.G.selectedDie = 1;
+  else if(!W.G.dice.used[1]) W.G.selectedDie = 2;
+  else { W.G.selectedDie = null; document.getElementById("end-btn").disabled = false; W.G.message = "Both dice used. Click End Turn."; }
+  W.renderAll();
+};
+
+W.movePiece = (player, pieceIdx, distance, isPlayer) => {
+  const piece = player.pieces[pieceIdx];
+  let target = piece.pos + distance;
+  if(target > 63) target = 63 - (target - 63);  /* bounce back from finish */
+  if(target < 0) target = 0;
+  piece.pos = target;
+  const tile = W.TILES[target];
+  W.logE(`${isPlayer?"Your":player.name+"'s"} piece moves to <b>${tile.name || (W.TILE_TYPES[tile.t].label+" tile")}</b> (#${target}).`, isPlayer?"good":"warn");
+  /* Resolve tile effects */
+  setTimeout(()=>W.resolveTile(player, pieceIdx, isPlayer), 250);
+};
+
+W.resolveTile = (player, pieceIdx, isPlayer) => {
+  const piece = player.pieces[pieceIdx];
+  const tile = W.TILES[piece.pos];
+  /* Combat: capture lone opposing pieces here */
+  const allPlayers = [W.G.player, ...W.G.ais];
+  allPlayers.forEach(other => {
+    if(other === player) return;
+    if(other.immunity > 0) return;
+    if(tile.t === "safe" || tile.t === "origin" || tile.t === "singularity") return;
+    other.pieces.forEach((op, oi) => {
+      if(op.pos === piece.pos){
+        /* Check if other has multiple here (anchor) */
+        const anchored = other.pieces.filter(p => p.pos === piece.pos).length >= 2;
+        if(!anchored){
+          op.pos = 0;
+          /* Byzantium: cannot be sent further than mid-board */
+          if(other === W.G.player && W.hasCiv("byz") && piece.pos > 32) op.pos = 32;
+          /* Russia: snake half */
+          W.logE(`Captured ${other===W.G.player?"your":other.name+"'s"} piece! Sent back to Origin.`, isPlayer?"good":"bad");
+          W.toast({t:"Capture!",b:`${other===W.G.player?"You lose":other.name+" loses"} a piece.`, k:isPlayer?"good":"bad"});
         }
       }
-    }
-  });
-};
-
-W.processStability = () => {
-  const P = W.G.player;
-  let d = 0;
-  if((P.res.food||0) < 0) d -= 4;
-  if((P.res.gold||0) < 0) d -= 3;
-  if((P.res.faith||0) > 30) d += 1;
-  /* Faction stability bonus from buildings */
-  Object.values(W.G.cells).forEach(c => {
-    if(c.owner !== W.G.fac.id) return;
-    c.buildings.forEach(b => {
-      if(W.BLDS[b] && W.BLDS[b].eff.stab) d += W.BLDS[b].eff.stab/10;
     });
   });
-  P.stability = W.clamp(P.stability + d, 0, 100);
-  P.fame = Math.max(P.fame, P.stability + Object.values(W.G.cells).filter(c=>c.owner===W.G.fac.id).length*5);
-  P.power = Object.values(W.G.cells).filter(c=>c.owner===W.G.fac.id).length * 10 + Math.floor((P.res.power||0));
-};
-
-W.rollEvent = () => {
-  if(W.G.turn < 3) return;
-  if(Math.random() > 0.5) return;
-  const pool = W.EVENTS.filter(e => e.era === "any" || e.era === W.G.era);
-  if(!pool.length) return;
-  const e = W.pick(pool);
-  W.G.pending.push(e);
-};
-
-W.checkVictory = () => {
-  const G = W.G;
-  const total = Object.keys(G.cells).length;
-  const mine = Object.values(G.cells).filter(c=>c.owner===G.fac.id).length;
-  if(mine / total >= 0.6){
-    G.won = "Domination"; W.openEnd(true,"Dominion","You control 60% of the world.");
+  /* Tile type effects */
+  if(tile.t === "ladder"){
+    let jump = tile.jump;
+    if(player === W.G.player && W.hasCiv("france")) jump += 2;
+    const newPos = Math.min(63, piece.pos + jump);
+    W.logE(`<b>${tile.name}</b>: +${jump} jump.`, "good");
+    W.toast({t:tile.name, b:`+${jump} forward`, k:"good"});
+    piece.pos = newPos;
+    setTimeout(()=>W.resolveTile(player, pieceIdx, isPlayer), 350);
+    return;
   }
-  if(G.player.techs.agi_t){
-    G.won = "Scientific"; W.openEnd(true,"Scientific Triumph","The Singularity is yours.");
-  }
-  if(G.turn >= 100 && !G.won){
-    G.won = "Survival"; W.openEnd(true,"Survival","One hundred turns endured.");
-  }
-  if(mine === 0){
-    G.lost = "Annihilation"; W.openEnd(false,"Annihilation","Every province lost.");
-  }
-  if(G.player.stability <= 5){
-    G.flags.lowStab = (G.flags.lowStab||0)+1;
-    if(G.flags.lowStab >= 10){
-      G.lost = "Revolt"; W.openEnd(false,"Revolt","The people have overthrown you.");
-    }
-  } else G.flags.lowStab = 0;
-};
-
-W.openEnd = (won, n, d) => {
-  const score = Math.round(W.G.player.fame + W.G.player.power*2 + (W.G.player.res.gold||0)*0.5 + W.G.player.stability + (won?500:0));
-  W.openModal({
-    t: (won?"Victory · ":"Defeat · ") + n,
-    body:`<div style="text-align:center;padding:20px 0;">
-      <div style="font-family:var(--fh);font-size:80px;color:${won?'var(--gold)':'var(--coral)'};margin-bottom:14px;">${won?'☀':'☠'}</div>
-      <div style="font-family:var(--fb);font-style:italic;color:var(--t2);font-size:17px;margin-bottom:22px;max-width:480px;margin:0 auto 22px;line-height:1.6;">${W.esc(d)}</div>
-      <div style="font-family:var(--fh);font-size:48px;color:var(--p2);margin-bottom:4px;">${score}</div>
-      <div style="font-family:var(--fm);font-size:11px;color:var(--gold);letter-spacing:.28em;">FINAL SCORE</div>
-      <div style="margin-top:20px;color:var(--t3);font-size:12px;font-family:var(--fm);">Turn ${W.G.turn} · ${W.esc(W.G.fac.n)} · ${W.esc(W.ERAS[W.G.era].n)}</div>
-    </div>`,
-    foot:`<button class="btn btn-p" onclick="localStorage.removeItem(W.KEY);location.reload()">New Campaign</button>`,
-  });
-};
-
-/* ===== EVENT MODAL ===== */
-W.openEvent = (ev) => {
-  W.openModal({
-    t: ev.t,
-    body:`<div class="quote">${W.esc(ev.q)}</div>
-      <div class="opts">${ev.opts.map((o,i) =>
-        `<button class="opt" onclick="W.resolveEvent(${i})">
-          <div class="lb">${W.esc(o.l)}</div>
-          <div class="ef">${Object.entries(o.e).map(([k,v])=>k+" "+(v>=0?"+":"")+v).join(" · ")}</div>
-        </button>`).join("")}</div>`,
-    foot:"",
-    keepEvent: ev,
-  });
-};
-W.resolveEvent = (i) => {
-  const ev = W._currentEvent;
-  if(!ev) return;
-  const o = ev.opts[i];
-  const e = o.e || {};
-  const P = W.G.player;
-  for(const k in e){
-    const v = e[k];
-    if(k==="stab") P.stability = W.clamp(P.stability + v, 0, 100);
-    else if(["food","gold","iron","faith","power","tech"].includes(k)) P.res[k] = (P.res[k]||0) + v;
-    else if(k==="diplo") W.G.ais.forEach(a => a.relations = W.clamp(a.relations+v,-100,100));
-    else if(k==="trade") W.G.flags.trade = (W.G.flags.trade||0) + v;
-    else if(k==="def") W.G.flags.def = (W.G.flags.def||0) + v;
-    else if(k==="attack") W.G.flags.attack = (W.G.flags.attack||0) + v;
-  }
-  W.log(`Event "${ev.t}" — chose: ${o.l}`, "info");
-  W._currentEvent = null;
-  W.closeModal();
-  W.renderAll();
-};
-
-/* ===== BUILD / RECRUIT / TECH / DIPLO ===== */
-W.openBuild = () => {
-  const G = W.G;
-  /* Pick the capital cell */
-  const capital = Object.values(G.cells).find(c=>c.owner===G.fac.id && c.capital);
-  if(!capital){ W.toast({t:"No capital",b:"Conquer a hex first",k:"bad"}); return; }
-  const owned = new Set(capital.buildings);
-  const list = Object.entries(W.BLDS).filter(([id,b])=>{
-    if(b.era==="any") return true;
-    if(b.era === G.era) return true;
-    if(b.era.endsWith("+")){
-      const base = b.era.slice(0,-1);
-      const idx = Object.keys(W.ERAS).indexOf(base);
-      const cur = Object.keys(W.ERAS).indexOf(G.era);
-      return cur >= idx;
-    }
-    return false;
-  });
-  const html = `<p style="color:var(--t2);font-size:12.5px;margin-bottom:14px;">Building in: <b style="color:var(--gold);">${W.esc(capital.name)}</b></p>
-    <div class="items">${list.map(([id,b])=>{
-      const has = owned.has(id);
-      const req = b.req && !W.G.player.techs[b.req];
-      const can = Object.keys(b.cost).every(k => (W.G.player.res[k]||0) >= b.cost[k]) && !req && !has;
-      const cost = Object.entries(b.cost).map(([k,v])=>`<span>${W.RES[k]?W.RES[k].i:k} ${v}</span>`).join("");
-      return `<div class="item ${can?"":has?"have":"disabled"}" ${can?`onclick="W.doBuild('${id}','${capital.id}')"`:""}>
-        <div class="it-head"><div class="it-nm">${b.i} ${W.esc(b.n)}</div></div>
-        <div class="it-desc">${W.esc(b.blurb)}</div>
-        <div class="it-cost">${cost}</div>
-        ${req?`<div class="it-req">Requires: ${W.TECHS[b.req]?W.TECHS[b.req].n:b.req}</div>`:""}
-        ${has?`<div class="it-req" style="color:var(--good)">✓ Built</div>`:""}
-      </div>`;
-    }).join("")}</div>`;
-  W.openModal({t:"Build",body:html,wide:true,foot:""});
-};
-W.doBuild = (id, cellId) => {
-  const b = W.BLDS[id]; if(!b) return;
-  const P = W.G.player;
-  for(const k in b.cost){
-    if((P.res[k]||0) < b.cost[k]){ W.toast({t:"Not enough "+k,k:"bad"}); return; }
-  }
-  for(const k in b.cost) P.res[k] -= b.cost[k];
-  const cell = W.G.cells[cellId];
-  cell.buildings.push(id);
-  W.log(`Built ${b.n} in ${cell.name}.`, "good");
-  W.toast({t:"Built",b:b.n,k:"good"});
-  W.closeModal();
-  W.renderAll();
-};
-
-W.openRecruit = () => {
-  const G = W.G;
-  const list = Object.entries(W.UNITS).filter(([id,u])=>{
-    if(u.era === G.era) return true;
-    if(u.era.endsWith("+")){
-      const base = u.era.slice(0,-1);
-      const idx = Object.keys(W.ERAS).indexOf(base);
-      const cur = Object.keys(W.ERAS).indexOf(G.era);
-      return cur >= idx;
-    }
-    /* Allow prior-era units too */
-    const idx = Object.keys(W.ERAS).indexOf(u.era);
-    const cur = Object.keys(W.ERAS).indexOf(G.era);
-    return cur >= idx;
-  });
-  const html = `<p style="color:var(--t2);font-size:12.5px;margin-bottom:14px;">Recruit units. They join your roster and provide assault strength.</p>
-    <div class="items">${list.map(([id,u])=>{
-      const req = u.req && !W.G.player.techs[u.req];
-      const can = Object.keys(u.cost).every(k => (W.G.player.res[k]||0) >= u.cost[k]) && !req;
-      const cost = Object.entries(u.cost).map(([k,v])=>`<span>${W.RES[k]?W.RES[k].i:k} ${v}</span>`).join("");
-      return `<div class="item ${can?"":"disabled"}" ${can?`onclick="W.doRecruit('${id}')"`:""}>
-        <div class="it-head"><div class="it-nm">${u.i} ${W.esc(u.n)}</div><div class="it-tg">T${u.tier}</div></div>
-        <div class="it-st"><span class="a">⚔${u.atk}</span><span class="d">🛡${u.def}</span><span class="h">♥${u.hp}</span></div>
-        <div class="it-cost">${cost}</div>
-        ${req?`<div class="it-req">Requires: ${W.TECHS[u.req]?W.TECHS[u.req].n:u.req}</div>`:""}
-      </div>`;
-    }).join("")}</div>`;
-  W.openModal({t:"Recruit",body:html,wide:true,foot:""});
-};
-W.doRecruit = (id) => {
-  const u = W.UNITS[id]; if(!u) return;
-  const P = W.G.player;
-  const dis = 1 - (W.G.fac.bonus.recruit||0);
-  for(const k in u.cost){
-    const need = Math.ceil(u.cost[k] * dis);
-    if((P.res[k]||0) < need){ W.toast({t:"Not enough "+k,k:"bad"}); return; }
-  }
-  for(const k in u.cost) P.res[k] -= Math.ceil(u.cost[k] * dis);
-  P.units.push({id, atk:u.atk, def:u.def, hp:u.hp, vet:0});
-  W.log(`Recruited ${u.n}.`, "good");
-  W.toast({t:"Recruited",b:u.n,k:"good"});
-  W.closeModal();
-  W.renderAll();
-};
-
-W.openTech = () => {
-  const P = W.G.player;
-  const nodes = Object.entries(W.TECHS).map(([id,t])=>{
-    const has = !!P.techs[id];
-    const can = !has && (t.req||[]).every(r => P.techs[r]);
-    const cls = has?"have":(can?"can":"lock");
-    return `<div class="tnode ${cls}" style="left:${20+t.x*150}px;top:${20+t.y*120}px;" onclick="W.doResearch('${id}')">
-      <div class="n">${W.esc(t.n)}</div>
-      <div class="c">${t.c} rp${has?" ✓":""}</div>
-      <div class="u">${W.esc(t.blurb)}</div>
-    </div>`;
-  }).join("");
-  const cur = P.researching ? `Researching: <b style="color:var(--gold);">${W.TECHS[P.researching].n}</b> (${P.researchPoints}/${W.TECHS[P.researching].c})` : "<i>No active research</i>";
-  W.openModal({t:"Research", wide:true,
-    body:`<p style="color:var(--t2);font-size:12.5px;margin-bottom:14px;">${cur}. Click any unlocked node to begin.</p>
-      <div class="tech-tree" style="height:540px;overflow:auto;background:radial-gradient(ellipse at center,#2a1850 0%,#15082a 100%);border-radius:var(--r);position:relative;">${nodes}</div>`,
-    foot:""});
-};
-W.doResearch = (id) => {
-  const t = W.TECHS[id]; if(!t) return;
-  const P = W.G.player;
-  if(P.techs[id]){ W.toast({t:"Known",b:t.n,k:"warn"}); return; }
-  if(!(t.req||[]).every(r => P.techs[r])){ W.toast({t:"Prereqs missing",b:t.req.map(r=>W.TECHS[r].n).join(", "),k:"bad"}); return; }
-  P.researching = id;
-  P.researchPoints = 0;
-  W.log("Begin research: "+t.n, "info");
-  W.toast({t:"Researching",b:t.n,k:"good"});
-  W.closeModal();
-  W.renderAll();
-};
-
-W.openDiplo = () => {
-  const html = `<div style="display:flex;flex-direction:column;gap:8px;">${W.G.ais.map(a=>{
-    let stance = "neutral", scls = "neutral";
-    if(a.atWar){stance="at war"; scls="war"}
-    else if(a.allied){stance="allied"; scls="ally"}
-    else if(a.relations>=40){stance="friendly"; scls="friend"}
-    else if(a.relations<=-40){stance="cool"; scls="cool"}
-    const rc = a.relations>=20?"pos":a.relations<=-20?"neg":"neu";
-    return `<div class="diplo">
-      <div style="display:flex;align-items:center;gap:10px;flex:1;">
-        <div style="font-size:22px;">${a.fac.fl}</div>
-        <div><div class="nm">${W.esc(a.fac.n)}</div><div class="st ${scls}">${stance}</div></div>
-      </div>
-      <div class="rel ${rc}">${a.relations>0?"+":""}${a.relations}</div>
-      <div style="display:flex;gap:4px;">
-        <button class="btn-g btn" style="padding:5px 10px;font-size:9px;letter-spacing:.1em;" onclick="W.diploGift('${a.id}')">Gift</button>
-        <button class="btn-g btn" style="padding:5px 10px;font-size:9px;letter-spacing:.1em;" onclick="W.diploAlly('${a.id}')">Ally</button>
-        <button class="btn-d btn" style="padding:5px 10px;font-size:9px;letter-spacing:.1em;" onclick="W.diploWar('${a.id}')">⚔</button>
-      </div>
-    </div>`;
-  }).join("")}</div>`;
-  W.openModal({t:"Diplomacy",wide:true,body:html,foot:""});
-};
-W.diploGift = (aid) => {
-  const P = W.G.player;
-  if((P.res.gold||0) < 50){ W.toast({t:"Need 50 gold",k:"bad"}); return; }
-  P.res.gold -= 50;
-  const a = W.G.ais.find(x=>x.id===aid);
-  a.relations = W.clamp(a.relations + 15, -100, 100);
-  W.log(`Gifted 50g to ${a.fac.n} (+15 relations).`, "good");
-  W.openDiplo();
-  W.renderAll();
-};
-W.diploAlly = (aid) => {
-  const a = W.G.ais.find(x=>x.id===aid);
-  if(a.relations < 40){ W.toast({t:"Need +40 relations first",k:"bad"}); return; }
-  a.allied = true; a.atWar = false;
-  W.log(`Allied with ${a.fac.n}.`, "good");
-  W.openDiplo();
-  W.renderAll();
-};
-W.diploWar = (aid) => {
-  const a = W.G.ais.find(x=>x.id===aid);
-  a.atWar = true; a.allied = false; a.relations = -80;
-  W.log(`Declared war on ${a.fac.n}.`, "bad");
-  W.openDiplo();
-  W.renderAll();
-};
-
-/* ===== BOARD CLICK & ASSAULT ===== */
-W.onCellClick = (cellId) => {
-  const cell = W.G.cells[cellId];
-  if(!cell) return;
-  if(cell.owner === W.G.fac.id){
-    W.openCellInfo(cell);
-  } else {
-    /* Foreign — can we assault? Must be adjacent to one of our cells */
-    const myAdj = W.HEX.neighbours(cell.c, cell.r).some(([c,r])=>{
-      const n = W.G.cells[c+","+r];
-      return n && n.owner === W.G.fac.id;
-    });
-    if(!myAdj){
-      W.openModal({t:cell.name, body:`<p style="color:var(--coral);font-style:italic;">This hex is not adjacent to your territory. You cannot assault it directly.</p>
-        <p style="color:var(--t2);font-size:12px;margin-top:10px;">Owner: <b>${W.esc(W.facName(cell.owner))}</b> · Terrain: ${cell.terrain} · Resource: ${(W.RES[cell.resource]||{n:cell.resource}).n} · Dice: ${cell.dice}</p>`, foot:""});
-      return;
-    }
-    W.openAssault(cellId);
-  }
-};
-
-W.openCellInfo = (cell) => {
-  const blds = cell.buildings.map(b => W.BLDS[b] ? W.BLDS[b].i+" "+W.BLDS[b].n : b).join(", ") || "<i>None</i>";
-  W.openModal({
-    t: cell.name + (cell.capital ? " · Capital" : ""),
-    body:`<p style="color:var(--mint);font-family:var(--fm);font-size:11px;letter-spacing:.18em;margin-bottom:10px;">${W.esc(W.G.fac.n.toUpperCase())} · ${cell.terrain.toUpperCase()}</p>
-      <div class="r"><div class="l">Resource</div><div class="v">${W.RES[cell.resource].i} ${W.RES[cell.resource].n}</div></div>
-      <div class="r"><div class="l">Dice Number</div><div class="v">⚂ ${cell.dice}</div></div>
-      <div class="r"><div class="l">Garrisons</div><div class="v">${cell.garrisons?(cell.garrisons.filter(g=>!g.hit).length+"/"+cell.garrisons.length):"—"}</div></div>
-      <div class="r"><div class="l">Buildings</div><div class="v" style="font-family:var(--fs);">${blds}</div></div>`,
-    foot:`<button class="btn btn-s" onclick="W.closeModal();W.openBuild()">Build Here</button>
-          <button class="btn btn-g" onclick="W.closeModal()">Close</button>`,
-  });
-};
-
-W.openAssault = (cellId) => {
-  const cell = W.G.cells[cellId];
-  if(!cell.garrisons) cell.garrisons = W.makeGarrisons(3);
-  let html = `<div class="bs-info">Target: <b>${W.esc(cell.name)}</b> · Owner: <b style="color:var(--coral);">${W.esc(W.facName(cell.owner))}</b><br>
-    Find and sink all hidden garrisons. Each attack costs <b>2 manpower</b> + <b>20 gold</b>. Roll dice or click cells.</div>
-    <div class="bs-grid">`;
-  for(let y=0; y<5; y++){
-    for(let x=0; x<5; x++){
-      const g = cell.garrisons.find(gg => gg.x===x && gg.y===y);
-      const hit = g && g.hit;
-      const guess = cell.guesses && cell.guesses.some(gu => gu.x===x && gu.y===y);
-      let cls = "cell";
-      let txt = "·";
-      if(hit){ cls += " done hit"; txt = "✕"; }
-      else if(guess && !g){ cls += " done miss"; txt = "○"; }
-      html += `<div class="${cls}" ${cls.includes("done")?"":`onclick="W.attackCell('${cellId}',${x},${y})"`}>${txt}</div>`;
-    }
-  }
-  html += `</div>
-    <div class="bs-status">Garrisons sunk: <b>${cell.garrisons.filter(g=>g.hit).length}</b> / ${cell.garrisons.length}</div>`;
-  W.openModal({t:"Assault on " + cell.name, body:html,
-    foot:`<button class="btn btn-p" onclick="W.rollAttack('${cellId}')">⚂ Roll Dice Attack</button>
-          <button class="btn btn-g" onclick="W.closeModal()">Withdraw</button>`,
-  });
-};
-
-W.attackCell = (cellId, x, y) => {
-  const cell = W.G.cells[cellId];
-  const P = W.G.player;
-  if((P.res.power||0) < 2){ W.toast({t:"Need 2 manpower",k:"bad"}); return; }
-  if((P.res.gold||0) < 20){ W.toast({t:"Need 20 gold",k:"bad"}); return; }
-  P.res.power -= 2; P.res.gold -= 20;
-  cell.guesses = cell.guesses || [];
-  /* Already guessed? */
-  if(cell.guesses.some(g => g.x===x && g.y===y)) return;
-  cell.guesses.push({x,y});
-  const g = cell.garrisons.find(gg => gg.x===x && gg.y===y);
-  if(g){
-    g.hit = true;
-    W.log(`Hit at (${x},${y}) in ${cell.name}.`, "good");
-    /* Apply unit attack bonus */
-    const totalAtk = P.units.reduce((s,u)=>s+u.atk, 0);
-    if(totalAtk > 0 && Math.random() < 0.4){
-      /* Bonus hit from units */
-      const remaining = cell.garrisons.filter(gg=>!gg.hit && !cell.guesses.some(gu=>gu.x===gg.x&&gu.y===gg.y));
-      if(remaining.length){
-        const extra = W.pick(remaining);
-        extra.hit = true;
-        cell.guesses.push({x:extra.x, y:extra.y});
-        W.log("Your forces score a bonus hit!", "good");
-      }
-    }
-    if(cell.garrisons.every(gg => gg.hit)){
-      /* Conquest! */
-      cell.owner = W.G.fac.id;
-      cell.garrisons = W.makeGarrisons(3);
-      cell.guesses = [];
-      W.log(`${cell.name} CONQUERED!`, "good");
-      W.toast({t:"Province Conquered!", b:cell.name, k:"good"});
-      W.closeModal();
+  if(tile.t === "snake"){
+    let jump = tile.jump;
+    if(player === W.G.player && W.hasCiv("russia")) jump = Math.ceil(jump/2);
+    if(player === W.G.player && W.hasCiv("egypt") && !W.G.flagEgyptUsed){
+      W.G.flagEgyptUsed = true;
+      W.logE(`Egypt's blessing: snake avoided!`, "good");
+      W.toast({t:"Egypt", b:"Snake avoided", k:"good"});
       W.renderAll();
       return;
     }
-  } else {
-    W.log(`Miss at (${x},${y}) in ${cell.name}.`, "warn");
+    const newPos = Math.max(0, piece.pos + jump);
+    W.logE(`<b>${tile.name}</b>: ${jump} back.`, "bad");
+    W.toast({t:tile.name, b:`${jump} back`, k:"bad"});
+    piece.pos = newPos;
+    setTimeout(()=>W.resolveTile(player, pieceIdx, isPlayer), 350);
+    return;
   }
-  W.openAssault(cellId);
+  if(tile.t === "civ"){
+    const civId = tile.civId;
+    if(isPlayer && !player.cards.includes(civId)){
+      W.openCivClaim(civId);
+    } else if(isPlayer){
+      W.logE(`Already claimed ${W.CIVS[civId].n}.`, "warn");
+    }
+  }
+  if(tile.t === "event" && isPlayer){
+    W.openEvent();
+  }
+  if(tile.t === "safe" && isPlayer && W.hasCiv("england")){
+    W.openEvent();
+    W.logE("England: Safe tile triggers an event.", "good");
+  }
+  if(tile.t === "era" && isPlayer){
+    W.logE(`Crossed into the <b>${tile.name}</b>.`, "civ");
+    W.toast({t:tile.name, b:"Era reached", k:"gold"});
+    if(W.hasCiv("britain")){
+      /* Grant a random civ of the new era as bonus card */
+      const eraCivs = Object.entries(W.CIVS).filter(([id,c]) => c.era === tile.name.split(" ")[0] && !player.cards.includes(id));
+      if(eraCivs.length){
+        const give = W.pick(eraCivs)[0];
+        player.cards.push(give);
+        W.logE(`Britain's gift: claimed ${W.CIVS[give].n}.`, "civ");
+      }
+    }
+  }
+  if(tile.t === "singularity" && isPlayer){
+    W.logE(`A piece reaches the <b>Singularity</b>!`, "civ");
+  }
+  /* Victory check */
+  W.checkVictory();
   W.renderAll();
 };
 
-W.rollAttack = (cellId) => {
-  const x = W.rand(0,4), y = W.rand(0,4);
-  const cell = W.G.cells[cellId];
-  cell.guesses = cell.guesses || [];
-  if(cell.guesses.some(g => g.x===x && g.y===y)){
-    /* Re-roll once */
-    return W.rollAttack(cellId);
+/* Helper: does player have civ? */
+W.hasCiv = (id) => W.G && W.G.player.cards.includes(id);
+
+W.openCivClaim = (civId) => {
+  const c = W.CIVS[civId];
+  W.openModal({
+    t:"Civilization Claimed",
+    body:`<div class="civ-claim">
+      <div class="gl">${c.gl}</div>
+      <div class="nm">${W.esc(c.n)}</div>
+      <div class="er">${W.esc(c.era)} Era</div>
+      <div class="quote">"${W.esc(c.q)}"</div>
+      <div class="bon">⚜ ${W.esc(c.bon)}</div>
+      <p style="margin-top:18px;font-size:13px;color:var(--ink2);">${W.esc(c.desc)} This civilization joins your dynasty, its bonus permanent.</p>
+    </div>`,
+    foot:`<button class="btn btn-p" onclick="W.confirmCivClaim('${civId}')">Claim ${W.esc(c.n)}</button>`,
+  });
+};
+W.confirmCivClaim = (civId) => {
+  W.G.player.cards.push(civId);
+  W.logE(`Claimed <b>${W.CIVS[civId].n}</b> — its bonus is yours forever.`, "civ");
+  W.toast({t:"Civilization Claimed", b:W.CIVS[civId].n, k:"gold"});
+  W.closeModal();
+  W.renderAll();
+};
+
+W.openEvent = () => {
+  let ev = W.pick(W.EVENTS);
+  /* Greece: see 2 events */
+  if(W.hasCiv("greece")){
+    const second = W.pick(W.EVENTS);
+    W.openModal({
+      t: ev.t + "  vs  " + second.t,
+      body: `<p style="margin-bottom:14px;color:var(--ink2);font-size:13px;"><b>Greece</b> grants you a choice of two events:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div onclick="W.openSpecificEvent(${W.EVENTS.indexOf(ev)})" style="cursor:pointer;border:2px solid var(--bronze);padding:14px;border-radius:6px;background:rgba(232,213,168,.4);">
+            <h3 style="font-family:var(--fh);color:var(--crimson);margin-bottom:6px;">${W.esc(ev.t)}</h3>
+            <div style="font-style:italic;font-size:12px;color:var(--ink2);">"${W.esc(ev.q.slice(0,80))}…"</div>
+          </div>
+          <div onclick="W.openSpecificEvent(${W.EVENTS.indexOf(second)})" style="cursor:pointer;border:2px solid var(--bronze);padding:14px;border-radius:6px;background:rgba(232,213,168,.4);">
+            <h3 style="font-family:var(--fh);color:var(--crimson);margin-bottom:6px;">${W.esc(second.t)}</h3>
+            <div style="font-style:italic;font-size:12px;color:var(--ink2);">"${W.esc(second.q.slice(0,80))}…"</div>
+          </div>
+        </div>`,
+      foot:"",
+    });
+    return;
   }
-  W.log(`Dice roll → (${x},${y}).`, "info");
-  W.attackCell(cellId, x, y);
+  W.openSpecificEvent(W.EVENTS.indexOf(ev));
 };
 
-/* ===== RENDER ===== */
-W.facName = (id) => {
-  if(id === W.G.fac.id) return W.G.fac.n;
-  const a = W.G.ais.find(x=>x.id===id);
-  return a ? a.fac.n : "Unknown";
-};
-W.facCol = (id) => {
-  if(id === W.G.fac.id) return W.G.fac.c;
-  const a = W.G.ais.find(x=>x.id===id);
-  return a ? a.fac.c : "#666";
-};
-
-W.view = "political";
-W.setView = (v) => {
-  W.view = v;
-  document.querySelectorAll(".tools button[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v===v));
-  W.renderBoard();
+W.openSpecificEvent = (evIdx) => {
+  const ev = W.EVENTS[evIdx];
+  W._currentEvent = ev;
+  W.openModal({
+    t: ev.t,
+    body: `<div class="event-quote">${W.esc(ev.q)}</div>
+      <div class="event-opts">${ev.opts.map((o,i) =>
+        `<button class="event-opt" onclick="W.resolveEvent(${i})">
+          <div class="lb">${W.esc(o.l)}</div>
+          <div class="ef">Effect: ${W.esc(o.e)}</div>
+        </button>`).join("")}</div>`,
+    foot:"",
+  });
 };
 
+W.resolveEvent = (oi) => {
+  const ev = W._currentEvent;
+  if(!ev) return;
+  const opt = ev.opts[oi];
+  const e = opt.e;
+  const P = W.G.player;
+  /* Apply effect */
+  const sortedFwd = [...P.pieces].sort((a,b) => b.pos - a.pos);
+  const sortedRear = [...P.pieces].sort((a,b) => a.pos - b.pos);
+  if(e === "back-rear-2") sortedRear[0].pos = Math.max(0, sortedRear[0].pos - 2);
+  else if(e === "back-lead-1") sortedFwd[0].pos = Math.max(0, sortedFwd[0].pos - 1);
+  else if(e === "back-lead-2-immunity"){ sortedFwd[0].pos = Math.max(0, sortedFwd[0].pos - 2); P.immunity = 2; }
+  else if(e === "back-rear-origin") sortedRear[0].pos = 0;
+  else if(e === "back-all-1") P.pieces.forEach(p => p.pos = Math.max(0, p.pos - 1));
+  else if(e === "fwd-lead-2") sortedFwd[0].pos = Math.min(63, sortedFwd[0].pos + 2);
+  else if(e === "fwd-lead-3") sortedFwd[0].pos = Math.min(63, sortedFwd[0].pos + 3);
+  else if(e === "fwd-lead-4") sortedFwd[0].pos = Math.min(63, sortedFwd[0].pos + 4);
+  else if(e === "fwd-all-1") P.pieces.forEach(p => p.pos = Math.min(63, p.pos + 1));
+  else if(e === "fwd-all-2") P.pieces.forEach(p => p.pos = Math.min(63, p.pos + 2));
+  else if(e === "skip-next") P.skipDice = true;
+  else if(e === "discard-civ"){ if(P.cards.length > 1) P.cards.splice(W.rand(1,P.cards.length-1), 1); }
+  else if(e === "gain-immunity") P.immunity = 3;
+  else if(e === "bonus-die") P.bonusDice = 1;
+  else if(e === "era-civ"){
+    /* grant a random unowned civ */
+    const choices = Object.keys(W.CIVS).filter(id => !P.cards.includes(id));
+    if(choices.length){ const give = W.pick(choices); P.cards.push(give); W.logE(`Bonus civilization claimed: ${W.CIVS[give].n}.`,"civ"); }
+  }
+  else if(e === "faith-skip"){
+    if(P.cards.length >= 4){ W.logE("Faith protects you. No effect.","good"); }
+    else { P.pieces.forEach(p => p.pos = Math.max(0, p.pos - 1)); }
+  }
+  else if(e === "capture-rival"){
+    /* capture one rival piece not on safe */
+    const targets = [];
+    W.G.ais.forEach(ai => ai.pieces.forEach((p,i) => {
+      const t = W.TILES[p.pos]; if(t.t !== "safe" && t.t !== "origin" && p.pos > 0) targets.push({ai,pi:i});
+    }));
+    if(targets.length){
+      const pick = W.pick(targets);
+      pick.ai.pieces[pick.pi].pos = 0;
+      W.logE(`Betrayed and captured ${pick.ai.name}'s piece!`, "bad");
+    }
+  }
+  else if(e === "skip-gain-2"){
+    P.skipDice = true;
+    const choices = Object.keys(W.CIVS).filter(id => !P.cards.includes(id));
+    for(let i=0;i<2 && choices.length;i++){ const give = W.pick(choices); P.cards.push(give); choices.splice(choices.indexOf(give),1); }
+    W.logE("Skipped turn. Gained 2 civilizations.","civ");
+  }
+  W.logE(`Event "${ev.t}" → ${opt.l}`, "warn");
+  W._currentEvent = null;
+  W.closeModal();
+  W.checkVictory();
+  W.renderAll();
+};
+
+/* ==== End turn — AI moves, decrement immunity ==== */
+W.endTurn = () => {
+  if(!W.G.rolled || W.G.winner) return;
+  if(!W.G.dice.used[0] || !W.G.dice.used[1]){
+    if(!confirm("You haven't used both dice. End anyway?")) return;
+  }
+  /* AI turn */
+  W.G.ais.forEach(ai => W.aiTurn(ai));
+  /* decrement immunity */
+  W.G.player.immunity = Math.max(0, W.G.player.immunity - 1);
+  W.G.ais.forEach(ai => ai.immunity = Math.max(0, ai.immunity - 1));
+  W.G.flagChinaUsed = false;
+  W.G.turn++;
+  W.G.rolled = false;
+  W.G.dice = {d1:null, d2:null, used:[false,false]};
+  W.G.selectedDie = null;
+  W.G.message = "Roll the dice to start turn " + W.G.turn + ".";
+  document.getElementById("roll-btn").disabled = false;
+  document.getElementById("end-btn").disabled = true;
+  W.autosave();
+  W.renderAll();
+};
+
+W.aiTurn = (ai) => {
+  const d1 = W.rand(1,6);
+  const d2 = W.rand(1,6);
+  /* AI strategy: move rearmost piece with larger die; or capture if possible */
+  const dice = [d1, d2];
+  /* Try to capture player pieces */
+  for(let dIdx=0; dIdx<2; dIdx++){
+    for(let pi=0; pi<3; pi++){
+      const piece = ai.pieces[pi];
+      const target = piece.pos + dice[dIdx];
+      const hit = W.G.player.pieces.find(pp => pp.pos === target && pp.pos > 0);
+      const tile = W.TILES[target] || {};
+      if(hit && tile.t !== "safe" && W.G.player.immunity === 0){
+        /* Check anchor */
+        const anchored = W.G.player.pieces.filter(p => p.pos === target).length >= 2;
+        if(!anchored){
+          W.movePiece(ai, pi, dice[dIdx], false);
+          dice[dIdx] = 0;
+          break;
+        }
+      }
+    }
+  }
+  /* Use remaining dice on rearmost pieces */
+  dice.forEach(d => {
+    if(d === 0) return;
+    /* Move the piece that gains most progress (rearmost, unless near finish) */
+    let bestPi = 0, bestRear = Infinity;
+    ai.pieces.forEach((p,i) => {
+      if(p.pos < bestRear && p.pos < 63){
+        bestRear = p.pos; bestPi = i;
+      }
+    });
+    W.movePiece(ai, bestPi, d, false);
+  });
+};
+
+W.checkVictory = () => {
+  if(W.G.winner) return;
+  /* Three pieces past tile 60 */
+  const playerWon = W.G.player.pieces.every(p => p.pos >= 60);
+  if(playerWon){
+    W.G.winner = "player";
+    setTimeout(()=>W.showVictory(true, "Race"), 600);
+    return;
+  }
+  /* Cultural: 8 civs */
+  if(W.G.player.cards.length >= 8){
+    W.G.winner = "player";
+    setTimeout(()=>W.showVictory(true, "Cultural"), 600);
+    return;
+  }
+  /* AI wins */
+  W.G.ais.forEach(ai => {
+    if(ai.pieces.every(p => p.pos >= 60)){
+      W.G.winner = ai.id;
+      setTimeout(()=>W.showVictory(false, ai.name + " Race"), 600);
+    }
+  });
+};
+
+W.showVictory = (won, by) => {
+  const P = W.G.player;
+  const score = won ? (1000 - W.G.turn*5 + P.cards.length * 50) : (P.cards.length * 30 + W.G.turn);
+  W.openModal({
+    t: won ? "Victory · " + by : "Defeat · Outraced by " + by,
+    body: `<div style="text-align:center;padding:24px 0;">
+      <div style="font-family:var(--fh);font-size:80px;line-height:1;color:${won?'var(--gold-bright)':'var(--crimson)'};margin-bottom:12px;">${won?'★':'☠'}</div>
+      <div style="font-family:var(--fb);font-style:italic;color:var(--ink2);font-size:18px;margin-bottom:20px;max-width:440px;margin:0 auto 20px;line-height:1.5;">
+        ${won ? "From a tribe of three, you have raced through the ages of man and built a dynasty that survives the Singularity." : "Your tribes wander still, but another has reached the end of history first."}
+      </div>
+      <div style="font-family:var(--fh);font-size:48px;color:var(--crimson);margin-bottom:4px;">${score}</div>
+      <div style="font-family:var(--fm);font-size:11px;color:var(--ink2);letter-spacing:.28em;">FINAL SCORE</div>
+      <div style="margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:380px;margin:24px auto 0;font-family:var(--fm);">
+        <div><div style="font-size:18px;color:var(--crimson);font-weight:700;">${W.G.turn}</div><div style="font-size:10px;color:var(--ink2);">Turns</div></div>
+        <div><div style="font-size:18px;color:var(--crimson);font-weight:700;">${P.cards.length}</div><div style="font-size:10px;color:var(--ink2);">Civs</div></div>
+        <div><div style="font-size:18px;color:var(--crimson);font-weight:700;">${P.pieces.filter(p=>p.pos>=60).length}/3</div><div style="font-size:10px;color:var(--ink2);">Reached</div></div>
+      </div>
+    </div>`,
+    foot: `<button class="btn btn-p" onclick="localStorage.removeItem(W.KEY);location.reload()">▶  New Race</button>`,
+  });
+};
+
+/* =========================================================
+   RENDERING
+   ========================================================= */
 W.renderAll = () => {
   if(!W.G) return;
   W.renderTop();
-  W.renderSides();
   W.renderBoard();
+  W.renderSide();
+  W.renderDice();
+  W.renderMessage();
 };
 
 W.renderTop = () => {
-  const G = W.G;
-  document.getElementById("c-fac").innerHTML = `<span class="i">${G.fac.fl}</span><span class="n">${W.esc(G.fac.n)}</span>`;
-  document.getElementById("c-era").textContent = G.fac ? (W.ERAS[G.era].sym + " " + W.ERAS[G.era].n) : "—";
-  document.getElementById("c-turn").textContent = "Turn " + G.turn + " / 100";
-  document.getElementById("b-tn").textContent = "T"+G.turn;
-  const d = G.lastDice;
-  document.getElementById("dice").innerHTML = d
-    ? `<span class="d">${d.d1}</span><span class="pl">+</span><span class="d d2">${d.d2}</span><span class="tot">= ${d.t}</span>`
-    : "";
+  const P = W.G.player;
+  document.getElementById("c-flag").textContent = P.glyph;
+  document.getElementById("c-name").textContent = P.civ.n;
+  /* Current era based on highest piece position */
+  const maxPos = Math.max(...P.pieces.map(p => p.pos));
+  let era = "Stone Age";
+  if(maxPos >= 8)  era = "Bronze Age";
+  if(maxPos >= 16) era = "Classical Age";
+  if(maxPos >= 30) era = "Medieval Age";
+  if(maxPos >= 40) era = "Industrial Age";
+  if(maxPos >= 48) era = "Modern Era";
+  if(maxPos >= 56) era = "Future Era";
+  document.getElementById("c-era").textContent = era;
+  document.getElementById("c-turn").textContent = "Turn " + W.G.turn;
 };
 
-W.renderSides = () => {
-  const G = W.G, P = G.player;
-  /* resources */
-  const order = ["gold","food","iron","faith","power"];
-  document.getElementById("s-rsrc").innerHTML = order.map(k => {
-    const r = W.RES[k];
-    const v = P.res[k]||0;
-    const cls = v < 0 ? "bad" : (v > 50 ? "good" : "");
-    return `<div class="r"><div class="l"><span class="i" style="color:${r.c};">${r.i}</span>${r.n}</div><div class="v ${cls}">${v}</div></div>`;
-  }).join("") + `<div class="r"><div class="l"><span class="i" style="color:var(--mint);">⚛</span>Research</div><div class="v">${P.researching?P.researchPoints+'/'+W.TECHS[P.researching].c:'<i style=color:var(--t3)>idle</i>'}</div></div>`;
-  /* stability */
-  const s = Math.round(P.stability);
-  const cls = s<30?"":s<60?"mid":"high";
-  document.getElementById("s-stab").innerHTML = `<div class="r"><div class="l">Stability</div><div class="v">${s}%</div></div>
-    <div class="bar"><div class="fill ${cls}" style="width:${s}%"></div></div>
-    <div style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:8px;letter-spacing:.12em;">${s<30?"REVOLT IMMINENT":s<60?"UNREST":"STABLE"}</div>`;
-  /* meta */
-  const hexCount = Object.values(G.cells).filter(c=>c.owner===G.fac.id).length;
-  const totalHex = Object.keys(G.cells).length;
-  document.getElementById("s-meta").innerHTML = `
-    <div class="r"><div class="l"><span class="i">⌬</span>Provinces</div><div class="v">${hexCount}/${totalHex}</div></div>
-    <div class="r"><div class="l"><span class="i">✶</span>Fame</div><div class="v">${P.fame}</div></div>
-    <div class="r"><div class="l"><span class="i">⚔</span>Power</div><div class="v">${P.power}</div></div>
-    <div class="r"><div class="l"><span class="i">👥</span>Units</div><div class="v">${P.units.length}</div></div>`;
-  /* rivals */
-  document.getElementById("s-rivals").innerHTML = G.ais.map(a => {
-    let stance="neutral", scls="neutral";
-    if(a.atWar){stance="WAR"; scls="war"}
-    else if(a.allied){stance="ALLY"; scls="ally"}
-    else if(a.relations>=40){stance="friend"; scls="friend"}
-    else if(a.relations<=-40){stance="cool"; scls="cool"}
-    const rc = a.relations>=20?"pos":a.relations<=-20?"neg":"neu";
-    return `<div class="diplo">
-      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
-        <div style="font-size:18px;">${a.fac.fl}</div>
-        <div style="min-width:0;"><div class="nm" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${W.esc(a.fac.n)}</div><div class="st ${scls}">${stance}</div></div>
-      </div>
-      <div class="rel ${rc}">${a.relations>0?"+":""}${a.relations}</div>
-    </div>`;
-  }).join("");
-  /* feed */
-  const feed = G.events.slice(-12).reverse();
-  document.getElementById("s-feed").innerHTML = feed.map(e=>
-    `<div class="e ${e.k||""}"><span class="tn">T${e.turn}</span>${W.esc(e.msg)}</div>`
-  ).join("") || `<div style="color:var(--t3);font-size:11px;font-style:italic;padding:8px;">No events yet…</div>`;
+W.renderMessage = () => {
+  const el = document.getElementById("message-bar");
+  el.innerHTML = W.G.message || "";
+};
+
+W.renderDice = () => {
+  const d1 = document.getElementById("die1");
+  const d2 = document.getElementById("die2");
+  const dice = W.G.dice;
+  if(!W.G.rolled){
+    d1.textContent = "?"; d2.textContent = "?";
+    d1.className = "die unrolled"; d2.className = "die unrolled";
+    return;
+  }
+  d1.textContent = dice.d1; d2.textContent = dice.d2;
+  d1.className = "die"; d2.className = "die";
+  if(dice.used[0]) d1.classList.add("used");
+  if(dice.used[1]) d2.classList.add("used");
+  if(W.G.selectedDie === 1 && !dice.used[0]) d1.classList.add("selected");
+  if(W.G.selectedDie === 2 && !dice.used[1]) d2.classList.add("selected");
 };
 
 W.renderBoard = () => {
-  if(!W.G) return;
-  const G = W.G;
   const svg = document.getElementById("board");
-  let html = `<defs>
-    <linearGradient id="hex-base" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#3a2168"/><stop offset="100%" stop-color="#1f1240"/>
-    </linearGradient>
-    <filter id="hex-shadow"><feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/><feOffset dx="0" dy="2"/><feComponentTransfer><feFuncA type="linear" slope=".5"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <filter id="glow-y"><feGaussianBlur stdDeviation="3"/></filter>
-  </defs>
-  <rect width="1000" height="700" fill="url(#hex-base)" opacity=".25"/>`;
-  /* Draw hexes */
-  Object.values(G.cells).forEach(cell => {
-    const [cx, cy] = W.HEX.cxy(cell.c, cell.r);
-    let fill, stroke;
-    if(W.view === "terrain"){
-      fill = W.terrainCol[cell.terrain]+"cc";
-      stroke = cell.owner ? W.facCol(cell.owner) : "#7c5dd0";
-    } else if(W.view === "resource"){
-      fill = (W.RES[cell.resource]||{c:"#666"}).c + "cc";
-      stroke = cell.owner ? W.facCol(cell.owner) : "#7c5dd0";
-    } else if(W.view === "dice"){
-      const lit = G.lastDice && G.lastDice.t === cell.dice;
-      fill = lit ? "#facc15cc" : "#3a2168aa";
-      stroke = lit ? "#facc15" : (cell.owner ? W.facCol(cell.owner) : "#5a3da0");
-    } else {
-      fill = cell.owner ? W.facCol(cell.owner)+"cc" : "#3a2168aa";
-      stroke = cell.owner ? W.facCol(cell.owner) : "#7c5dd0";
+  let html = "";
+  /* Draw tiles */
+  W.TILES.forEach((tile, idx) => {
+    const [col, row] = W.tileXY(idx);
+    const [cx, cy] = W.gridPx(col, row);
+    const tx = cx - W.TILE/2;
+    const ty = cy - W.TILE/2;
+    const type = W.TILE_TYPES[tile.t] || W.TILE_TYPES.blank;
+    let fill = type.color;
+    let civ = null;
+    if(tile.t === "civ"){
+      civ = W.CIVS[tile.civId];
+      if(civ) fill = civ.color;
     }
-    const lit = G.lastDice && G.lastDice.t === cell.dice && cell.owner === G.fac.id;
-    html += `<g class="hex" data-id="${cell.id}" style="cursor:pointer;" onclick="W.onCellClick('${cell.id}')" onmousemove="W.showTip(event,'${cell.id}')" onmouseleave="W.hideTip()">
-      <polygon points="${W.HEX.poly(cx,cy)}" fill="${fill}" stroke="${stroke}" stroke-width="${cell.capital?3:1.5}" filter="url(#hex-shadow)"/>
-      ${lit?`<polygon points="${W.HEX.poly(cx,cy)}" fill="none" stroke="#facc15" stroke-width="3" filter="url(#glow-y)" opacity=".8"><animate attributeName="opacity" values=".4;1;.4" dur="1.4s" repeatCount="indefinite"/></polygon>`:""}
-      ${cell.capital?`<circle cx="${cx}" cy="${cy-18}" r="4" fill="#facc15" stroke="#1a0f30" stroke-width="1.5"/>`:""}
-      <text x="${cx}" y="${cy-4}" text-anchor="middle" fill="#fdf9ff" font-family="Cinzel,serif" font-size="11" font-weight="600" pointer-events="none">${W.esc(cell.name)}</text>
-      <text x="${cx}" y="${cy+10}" text-anchor="middle" fill="#facc15" font-family="JetBrains Mono,monospace" font-size="14" font-weight="700" pointer-events="none">⚂ ${cell.dice}</text>
-      <text x="${cx}" y="${cy+24}" text-anchor="middle" fill="#${cell.owner?'fdf9ff':'9d8bc9'}" font-family="JetBrains Mono,monospace" font-size="10" pointer-events="none">${(W.RES[cell.resource]||{i:""}).i}</text>
-    </g>`;
+    /* Tile background */
+    html += `<g class="tile" data-id="${idx}" style="cursor:pointer;" onclick="W.clickTile(${idx})">
+      <rect x="${tx}" y="${ty}" width="${W.TILE}" height="${W.TILE}" rx="8"
+        fill="${fill}" stroke="#1a0e04" stroke-width="2" opacity="0.85"/>
+      <rect x="${tx+3}" y="${ty+3}" width="${W.TILE-6}" height="${W.TILE-6}" rx="6"
+        fill="none" stroke="${type.text}" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.4"/>
+      <text x="${tx+8}" y="${ty+18}" font-family="JetBrains Mono,monospace" font-size="10" fill="${type.text}" opacity=".7" font-weight="700">${idx}</text>`;
+    /* Tile content */
+    if(tile.t === "civ" && civ){
+      html += `<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="24" fill="${type.text}">${civ.gl}</text>
+        <text x="${cx}" y="${cy+18}" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="${type.text}" font-weight="700">${W.esc(civ.n)}</text>`;
+    } else if(tile.t === "origin" || tile.t === "singularity"){
+      html += `<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="36" fill="${type.text}">${type.glyph}</text>
+        <text x="${cx}" y="${cy+22}" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="${type.text}" font-weight="700">${W.esc(tile.name)}</text>`;
+    } else if(tile.t === "era"){
+      html += `<text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="22" fill="${type.text}">⚊</text>
+        <text x="${cx}" y="${cy+12}" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="${type.text}" font-weight="700">${W.esc(tile.name)}</text>
+        <text x="${cx}" y="${cy+24}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="${type.text}" opacity=".7">${W.esc(tile.sub||"")}</text>`;
+    } else if(tile.t !== "blank"){
+      html += `<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="28" fill="${type.text}">${type.glyph}</text>
+        <text x="${cx}" y="${cy+22}" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="${type.text}" font-weight="700">${W.esc(tile.name||type.label)}</text>`;
+    }
+    html += `</g>`;
   });
+  /* Path arrows between tiles */
+  for(let i=0; i<63; i++){
+    const [c1,r1] = W.tileXY(i);
+    const [c2,r2] = W.tileXY(i+1);
+    const [x1,y1] = W.gridPx(c1,r1);
+    const [x2,y2] = W.gridPx(c2,r2);
+    /* Only draw arrows that are next to each other (skip the wrap) */
+    if(Math.abs(c1-c2) === 1 && r1 === r2){
+      const mx = (x1+x2)/2;
+      const my = (y1+y2)/2;
+      const dir = x2>x1 ? 1 : -1;
+      html += `<polygon points="${mx-4*dir},${my-3} ${mx+4*dir},${my} ${mx-4*dir},${my+3}" fill="rgba(212,160,23,.5)"/>`;
+    }
+  }
+  /* Pieces */
+  const allPlayers = [W.G.player, ...W.G.ais];
+  const pieceCounts = {};
+  allPlayers.forEach(pl => {
+    pl.pieces.forEach((p, pi) => {
+      const k = p.pos;
+      pieceCounts[k] = pieceCounts[k] || [];
+      pieceCounts[k].push({pl, pi});
+    });
+  });
+  Object.entries(pieceCounts).forEach(([pos, arr]) => {
+    const [c,r] = W.tileXY(+pos);
+    const [cx,cy] = W.gridPx(c,r);
+    arr.forEach((entry, i) => {
+      const offX = (i % 4) * 14 - 21;
+      const offY = Math.floor(i/4) * 14 - 7;
+      const px = cx + offX;
+      const py = cy + offY + 28;
+      const isPlayer = entry.pl === W.G.player;
+      const isSelectable = isPlayer && W.G.selectedDie !== null && !W.G.dice.used[W.G.selectedDie-1];
+      html += `<g class="piece ${isSelectable?'piece-sel':''}" style="cursor:${isPlayer?'pointer':'default'};" ${isPlayer?`onclick="W.clickPiece(${entry.pi})"`:''}>
+        <circle cx="${px}" cy="${py}" r="10" fill="${entry.pl.color}" stroke="#1a0e04" stroke-width="2"/>
+        <text x="${px}" y="${py+3}" text-anchor="middle" font-size="10" font-weight="800" fill="${isPlayer?'#1a0e04':'#fff'}">${isPlayer?'★':entry.pl.glyph}</text>
+      </g>`;
+    });
+  });
+  /* Highlight tiles the selected piece could reach */
+  /* (visual cue not strictly required; pieces already glow) */
   svg.innerHTML = html;
 };
 
-W.showTip = (ev, cellId) => {
-  const cell = W.G.cells[cellId]; if(!cell) return;
-  const tip = document.getElementById("tip");
-  const owner = cell.owner ? W.facName(cell.owner) : "Unclaimed";
-  tip.innerHTML = `<div class="nm">${W.esc(cell.name)}${cell.capital?' ★':''}</div>
-    <div class="ow">${W.esc(owner)}</div>
-    <div class="mt">Terrain: <b>${cell.terrain}</b><br>Resource: <b>${(W.RES[cell.resource]||{n:"—"}).n}</b><br>Dice: <span class="dc">⚂ ${cell.dice}</span><br>Garrisons: <b>${cell.garrisons?cell.garrisons.filter(g=>!g.hit).length+"/"+cell.garrisons.length:"—"}</b></div>`;
-  const rect = document.getElementById("board-wrap").getBoundingClientRect();
-  tip.style.left = (ev.clientX - rect.left + 14) + "px";
-  tip.style.top = (ev.clientY - rect.top + 14) + "px";
-  tip.classList.add("on");
+W.clickTile = (idx) => {
+  const tile = W.TILES[idx];
+  let info = `Tile #${idx} · ${W.TILE_TYPES[tile.t].label}`;
+  if(tile.name) info += ` · ${tile.name}`;
+  if(tile.t === "civ"){
+    const c = W.CIVS[tile.civId];
+    W.openModal({t:c.n, body:`<div class="civ-claim">
+      <div class="gl">${c.gl}</div>
+      <div class="nm">${W.esc(c.n)}</div>
+      <div class="er">${W.esc(c.era)} Era</div>
+      <div class="quote">"${W.esc(c.q)}"</div>
+      <div class="bon">⚜ ${W.esc(c.bon)}</div>
+      <p style="margin-top:14px;font-size:13px;color:var(--ink2);">${W.esc(c.desc)}</p>
+      <p style="margin-top:8px;font-size:11px;color:var(--ink2);font-family:var(--fm);">Land on tile #${idx} to claim.</p>
+    </div>`, foot:`<button class="btn btn-g" onclick="W.closeModal()">Close</button>`});
+  }
 };
-W.hideTip = () => document.getElementById("tip").classList.remove("on");
 
-/* ===== MODAL ===== */
-W.openModal = ({t,body,foot,wide,keepEvent}) => {
-  document.getElementById("modal").className = "modal" + (wide?" wide":"");
-  document.getElementById("m-t").textContent = t;
-  document.getElementById("m-b").innerHTML = body || "";
-  document.getElementById("m-f").innerHTML = foot != null ? foot : `<button class="btn btn-g" onclick="W.closeModal()">Close</button>`;
+W.renderSide = () => {
+  /* Standings */
+  const all = [W.G.player, ...W.G.ais];
+  all.sort((a,b) => {
+    const ap = a.pieces.reduce((s,p)=>s+p.pos,0);
+    const bp = b.pieces.reduce((s,p)=>s+p.pos,0);
+    return bp - ap;
+  });
+  document.getElementById("standings").innerHTML = all.map(pl => {
+    const me = pl === W.G.player;
+    const total = pl.pieces.reduce((s,p)=>s+p.pos,0);
+    const reached = pl.pieces.filter(p => p.pos >= 60).length;
+    return `<div class="standing ${me?'me':''}">
+      <span class="gl" style="color:${pl.color};">${pl.glyph}</span>
+      <div class="nm">${me?'You · '+W.esc(W.CIVS[pl.civId].n):W.esc(pl.name)}</div>
+      <div class="pr">${reached}/3 · ${total}</div>
+    </div>`;
+  }).join("");
+  /* Cards */
+  const cardsEl = document.getElementById("cards");
+  if(W.G.player.cards.length === 0){
+    cardsEl.innerHTML = `<div class="cards-empty">No civilizations yet — land on Civ tiles to claim.</div>`;
+  } else {
+    cardsEl.innerHTML = W.G.player.cards.map(id => {
+      const c = W.CIVS[id];
+      return `<div class="civ-mini" title="${W.esc(c.n)} — ${W.esc(c.bon)}">
+        <span class="g">${c.gl}</span><span class="nm">${W.esc(c.n.slice(0,6))}</span>
+      </div>`;
+    }).join("");
+  }
+  /* Log */
+  const logEl = document.getElementById("log");
+  logEl.innerHTML = W.G.log.slice(-30).reverse().map(e =>
+    `<div class="e ${e.k||''}"><span class="tn">T${e.turn}</span>${e.msg}</div>`
+  ).join("");
+};
+
+/* =========================================================
+   MODAL / TOAST / SAVE / HELP
+   ========================================================= */
+W.openModal = ({t,body,foot}) => {
+  document.getElementById("m-title").textContent = t;
+  document.getElementById("m-body").innerHTML = body;
+  document.getElementById("m-foot").innerHTML = foot != null ? foot : `<button class="btn btn-g" onclick="W.closeModal()">Close</button>`;
   document.getElementById("modal-bg").classList.add("on");
-  if(keepEvent) W._currentEvent = keepEvent;
 };
 W.closeModal = () => { document.getElementById("modal-bg").classList.remove("on"); W._currentEvent = null; };
 W.closeModalBg = (e) => { if(e.target.id === "modal-bg") W.closeModal(); };
@@ -1545,79 +1694,102 @@ W.toast = ({t,b,k}) => {
   setTimeout(()=>{ el.style.opacity = "0"; setTimeout(()=>el.remove(), 400); }, 4000);
 };
 
-W.log = (msg, k) => {
+W.logE = (msg, k) => {
   if(!W.G) return;
-  W.G.events.push({turn:W.G.turn, msg, k});
-  if(W.G.events.length > 100) W.G.events = W.G.events.slice(-100);
+  W.G.log.push({turn: W.G.turn, msg, k});
+  if(W.G.log.length > 80) W.G.log = W.G.log.slice(-80);
 };
 
-W.openHelp = () => W.openModal({t:"How to Play",
-  body:`<div style="line-height:1.7;color:var(--t2);font-size:13.5px;">
-    <h3 style="color:var(--gold);font-family:var(--fh);margin-bottom:8px;font-size:16px;">Core Loop</h3>
-    <ol style="margin-left:20px;margin-bottom:14px;">
-      <li><b>End Turn</b> → roll 2d6.</li>
-      <li>Hexes whose dice number matches your roll yield <b>resources</b> (food, gold, iron, faith).</li>
-      <li>Spend resources on <b>Build, Recruit, Research</b>.</li>
-      <li>Click any <b>adjacent enemy hex</b> to assault. Battleship-style: find their hidden garrisons.</li>
-      <li>Sink all garrisons → <b>conquer the hex</b>.</li>
+W.showCards = () => {
+  if(!W.G || !W.G.player.cards.length){
+    W.openModal({t:"Your Dynasty", body:`<p style="color:var(--ink2);font-style:italic;">You have not yet claimed any civilizations. Land on Civilization tiles to add them to your dynasty.</p>`});
+    return;
+  }
+  const body = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;">${
+    W.G.player.cards.map(id => {
+      const c = W.CIVS[id];
+      return `<div style="background:linear-gradient(180deg,#fff,${c.color}22);border:2px solid ${c.color};border-radius:8px;padding:14px 10px;text-align:center;">
+        <div style="font-size:36px;">${c.gl}</div>
+        <div style="font-family:var(--fh);font-size:14px;color:var(--ink);font-weight:700;margin:4px 0;">${W.esc(c.n)}</div>
+        <div style="font-family:var(--fm);font-size:9px;color:var(--ink2);letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px;">${W.esc(c.era)}</div>
+        <div style="font-family:var(--fm);font-size:10px;color:var(--moss);font-weight:600;">${W.esc(c.bon)}</div>
+      </div>`;
+    }).join("")
+  }</div>`;
+  W.openModal({t:`Your Dynasty (${W.G.player.cards.length})`, body, foot:`<button class="btn btn-g" onclick="W.closeModal()">Close</button>`});
+};
+
+W.showHelp = () => W.openModal({
+  t:"How to Play",
+  body:`<div style="line-height:1.7;color:var(--ink2);font-size:14px;">
+    <h3 style="font-family:var(--fh);color:var(--crimson);margin-bottom:8px;font-size:17px;">The Race</h3>
+    <p style="margin-bottom:10px;">You begin with three tribes at <b>Origin</b> (tile 0). You race them through 64 tiles of human history to the <b>Singularity</b> (tile 63).</p>
+    <h3 style="font-family:var(--fh);color:var(--crimson);margin:14px 0 8px;font-size:17px;">Each Turn</h3>
+    <ol style="margin-left:20px;margin-bottom:10px;">
+      <li>Click <b>ROLL DICE</b>. Two dice show their values.</li>
+      <li><b>Click a die</b> to select it, then <b>click one of your pieces</b> to move it forward by that many tiles.</li>
+      <li>You may split the dice between two pieces, or use both on one piece.</li>
+      <li>Click <b>END TURN</b> when both dice are used.</li>
     </ol>
-    <h3 style="color:var(--gold);font-family:var(--fh);margin-bottom:8px;font-size:16px;">Tips</h3>
-    <ul style="margin-left:20px;">
-      <li>Rolling a <b>7</b> calls the Bandit King — you lose 15% of your gold.</li>
-      <li>Watch <b>Stability</b> — drops below 5 for 10 turns = Revolt defeat.</li>
-      <li>Build a <b>Library</b> early to accelerate research.</li>
-      <li>Allies don't attack you. Gift gold to raise relations to +40, then ally.</li>
-      <li>Conquer 60% of hexes for <b>Dominion victory</b>. Research <b>AGI Singularity</b> for <b>Scientific victory</b>. Survive 100 turns for <b>Survival victory</b>.</li>
+    <h3 style="font-family:var(--fh);color:var(--crimson);margin:14px 0 8px;font-size:17px;">Tile Types</h3>
+    <ul style="margin-left:20px;line-height:1.7;">
+      <li><b>Civilization tiles</b> — Land here to claim that civilization. Its bonus is yours forever.</li>
+      <li><b>Era markers</b> — Crossing into a new era progresses your standing.</li>
+      <li><b>⇑ Ladders</b> — Jump forward several tiles.</li>
+      <li><b>⇓ Snakes</b> — Fall back several tiles.</li>
+      <li><b>✶ Events</b> — Draw a card; choose your response.</li>
+      <li><b>✚ Safe tiles</b> — Your pieces cannot be captured here.</li>
     </ul>
+    <h3 style="font-family:var(--fh);color:var(--crimson);margin:14px 0 8px;font-size:17px;">Combat</h3>
+    <p style="margin-bottom:10px;">Landing on a tile containing one rival piece <b>captures</b> it — it goes back to Origin. <b>Two of your pieces on the same tile</b> form an anchor that cannot be captured.</p>
+    <h3 style="font-family:var(--fh);color:var(--crimson);margin:14px 0 8px;font-size:17px;">Victory</h3>
+    <ul style="margin-left:20px;">
+      <li><b>Race victory:</b> Get all 3 of your pieces past tile 60.</li>
+      <li><b>Cultural victory:</b> Collect 8 civilizations.</li>
+    </ul>
+    <h3 style="font-family:var(--fh);color:var(--crimson);margin:14px 0 8px;font-size:17px;">Inspirations</h3>
+    <p style="font-style:italic;">Senet (Egypt, 3000 BC), Royal Game of Ur (Mesopotamia, 2600 BC), Snakes &amp; Ladders (India, 2nd c.), Pachisi (India, 6th c.), Backgammon (Persia, 3000 BC) — fused into a board game of human history.</p>
   </div>`,
 });
 
-W.openAbout = () => W.openModal({t:"About Warlords",
-  body:`<p style="font-family:var(--fb);font-style:italic;font-size:17px;color:var(--t2);line-height:1.5;margin-bottom:14px;">Five eras of history compressed into a single dice-driven board game.</p>
-    <p style="color:var(--t2);margin-bottom:8px;"><b style="color:var(--gold);">Version:</b> ${W.V} · single-file HTML</p>
-    <p style="color:var(--t2);margin-bottom:8px;"><b style="color:var(--gold);">Inspirations:</b> Civilization, Catan, Risk, Battleship, Polytopia.</p>
-    <p style="color:var(--t2);margin-bottom:8px;"><b style="color:var(--gold);">By:</b> WindowDoom.</p>
-    <p style="color:var(--t3);font-size:11px;margin-top:14px;font-style:italic;">Press <b>?</b> for help · <b>Space</b> to end turn · <b>Esc</b> to close modals.</p>`,
+W.openSettings = () => W.openModal({
+  t:"Settings",
+  body:`<div style="display:flex;flex-direction:column;gap:12px;">
+    <button class="btn btn-s" onclick="W.closeModal();W.showHelp()">Open Rules</button>
+    <button class="btn btn-s" onclick="W.closeModal();W.showCards()">View Dynasty</button>
+    <button class="btn btn-r" onclick="if(confirm('Abandon this race?')){localStorage.removeItem(W.KEY);location.reload()}">Abandon Race</button>
+  </div>
+  <p style="margin-top:14px;font-size:11px;color:var(--ink2);font-family:var(--fm);">Warlords v${W.V} · by WindowDoom</p>`,
 });
 
-W.openSettings = () => W.openModal({t:"Settings",
-  body:`<div style="display:flex;flex-direction:column;gap:10px;">
-    <button class="btn btn-s" onclick="W.openHelp()">Open Help</button>
-    <button class="btn btn-d" onclick="if(confirm('Abandon this campaign?')){localStorage.removeItem(W.KEY);location.reload();}">Abandon Campaign</button>
-  </div>`,
-});
-
-/* ===== SAVE / LOAD ===== */
-W.autosave = () => {
-  try{ localStorage.setItem(W.KEY, JSON.stringify(W.G)); }catch(e){}
-};
+W.autosave = () => { try{ localStorage.setItem(W.KEY, JSON.stringify(W.G)); }catch(e){} };
 W.loadGame = () => {
   const raw = localStorage.getItem(W.KEY);
-  if(!raw){ W.toast({t:"No saved game",k:"warn"}); return; }
+  if(!raw){ W.toast({t:"No saved race", k:"bad"}); return; }
   try{
     W.G = JSON.parse(raw);
     /* Rehydrate */
-    W.G.fac = W.FACS[W.G.era].find(f=>f.id===W.G.fac.id);
-    W.G.led = W.LEADERS[W.G.fac.id];
-    W.G.ais.forEach(a => { a.fac = W.FACS[W.G.era].find(f=>f.id===a.id); });
+    W.G.player.civ = W.CIVS[W.G.player.civId];
     W.enterGame();
-  }catch(e){ W.toast({t:"Load failed",b:e.message,k:"bad"}); }
+  }catch(e){ W.toast({t:"Load failed", k:"bad"}); }
 };
 
-/* ===== KEYBOARD ===== */
+/* Keyboard */
 document.addEventListener("keydown", e => {
   if(e.key === "Escape") W.closeModal();
   if(!W.G) return;
   if(document.getElementById("modal-bg").classList.contains("on")) return;
-  if(e.code === "Space" && !e.repeat){ e.preventDefault(); W.endTurn(); }
-  else if(e.key === "1") W.openBuild();
-  else if(e.key === "2") W.openRecruit();
-  else if(e.key === "3") W.openTech();
-  else if(e.key === "4") W.openDiplo();
-  else if(e.key === "?") W.openHelp();
+  if(e.code === "Space" && !e.repeat){
+    e.preventDefault();
+    if(!W.G.rolled) W.rollDice();
+    else if(W.G.dice.used[0] && W.G.dice.used[1]) W.endTurn();
+  }
+  if(e.key === "1") W.selectDie(1);
+  else if(e.key === "2") W.selectDie(2);
+  else if(e.key === "?") W.showHelp();
 });
 
-console.log("Warlords v"+W.V+" loaded — 5 eras, 30 factions, hex board, dice + battleship combat.");
+console.log("Warlords v"+W.V+" loaded — Race Through the Ages.");
 </script>
 </body>
 </html>

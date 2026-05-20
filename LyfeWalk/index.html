@@ -1016,6 +1016,10 @@ function enterZone(zoneId){
     G.player.x = z.spawn.x;
     G.player.y = z.spawn.y;
   }
+  // Remember where we just spawned so checkZoneExits can suppress immediate
+  // re-triggering of the exit we just came through.
+  G._spawnPoint = { x: G.player.x, y: G.player.y };
+  G._spawnTime = Date.now();
   buildZoneDOM(zoneId);
   document.getElementById('hud-zone').textContent = zoneTitle(zoneId);
   renderPlayer();
@@ -1214,6 +1218,15 @@ function walkToAndInteract(x, y, buildingId){
 function checkZoneExits(){
   const z = WORLDS[G.zone];
   const px = G.player.x, py = G.player.y;
+  // Spawn grace: don't fire any exit while the player is still within ~2 tiles
+  // of where they just spawned. This prevents the back-and-forth bounce when
+  // an exit's trigger zone overlaps the destination zone's spawn point.
+  if(G._spawnPoint){
+    const dist = Math.hypot(px - G._spawnPoint.x, py - G._spawnPoint.y);
+    if(dist < 2.0) return;
+    // Player walked away — release the grace so future returns trigger normally
+    G._spawnPoint = null;
+  }
   for(const ex of (z.exits || [])){
     // Widened trigger margin (was 0.3, now 0.8) so an exit reliably fires when the player walks near it
     if(px >= ex.x - 0.8 && px <= ex.x + ex.w + 0.8 && py >= ex.y - 0.8 && py <= ex.y + ex.h + 0.8){

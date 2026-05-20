@@ -2893,6 +2893,25 @@ function defaultLife(){
     ancestors: [],         // [{name, born, died, occupation, finalWealth, country, generation}]
     generation: 1,
     seed: Math.random(),
+    // ─── WORLD STATE ───
+    // Persistent across generations. The actions of one ancestor leave
+    // marks on the world their descendants inherit. Each value is 0-100
+    // unless otherwise noted; ideology is -100 (hard left) to +100 (hard right).
+    world: {
+      economyHealth: 60,
+      peaceIndex:    70,
+      climateScore:  55,
+      ideology:      0,
+      techLevel:     50,
+      marsColonized: false,
+      agiAchieved:   false,
+      ww3Happened:   false,
+      stablecoinIssued: false,
+    },
+    // ─── LEGACY ───
+    // Permanent record of dynasty-shaping deeds. Each entry survives
+    // beyond death and is visible in the family-tree screen.
+    legacy: [],            // [{gen, age, name, deed, year}]
   };
 }
 function defaultChar(seed){
@@ -3015,6 +3034,12 @@ function loadLife(){
     if(s){
       LIFE = JSON.parse(s);
       // Migrate old saves — fill missing fields so new code paths don't crash
+      if(LIFE && !LIFE.world){
+        LIFE.world = { economyHealth:60, peaceIndex:70, climateScore:55, ideology:0,
+          techLevel:50, marsColonized:false, agiAchieved:false, ww3Happened:false,
+          stablecoinIssued:false };
+      }
+      if(LIFE && !LIFE.legacy) LIFE.legacy = [];
       if(LIFE && LIFE.char){
         const c = LIFE.char;
         if(!c.traits) c.traits = [];
@@ -3649,6 +3674,10 @@ function renderActionBar(){
   if(a >= 16) btns.push({lbl:'🏠 Assets', fn:'openShop()'});
   if(a >= 18) btns.push({lbl:'🏘️ Real Estate', fn:'openRealEstate()'});
   if(a >= 18) btns.push({lbl:'🏢 Companies', fn:'openCompanies()'});
+  // Office of Power unlocks at 35 once the politician career has been entered
+  if(a >= 35 && c.career && c.career.key === 'politician'){
+    btns.push({lbl:'🏛️ Office of Power', fn:'openOfficeOfPower()'});
+  }
   if(a >= 18) btns.push({lbl:'🏛️ Gov', fn:'openGovernment()'});
   // City + Faith for anyone who can leave the house
   if(a >= 6) btns.push({lbl:'🏙️ City', fn:'openCityMap()'});
@@ -8938,8 +8967,473 @@ function openCompanyDetail(cid){
     + '<div class="card-meta">High volatility. ~20% expected, ~40% variance.</div></div>'
     + '<div class="card-act"><button class="card-btn red" onclick="coTreasuryCrypto(\'' + co.cid + '\')">Allocate</button></div></div>';
 
+  // INDUSTRY-SPECIFIC BIG MOVES — defined per-industry below in INDUSTRY_MOVES.
+  const moves = (INDUSTRY_MOVES[co.industry] || []).filter(m => !m.requires || m.requires(co));
+  if(moves.length){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 8px;">⚡ Industry Power Moves</div>';
+    html += '<div style="background:#1a1428;border:1px solid var(--gold);border-radius:6px;padding:12px;margin-bottom:14px;">';
+    moves.forEach((m, i) => {
+      const affordable = !m.cost || LIFE.char.money >= m.cost;
+      const done = m.once && co._moves && co._moves[m.id];
+      html += '<div style="padding:10px;border-bottom:1px solid #2a1f3d;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px;">'
+        + '<div style="flex:1;">'
+        + '<div style="font-weight:700;color:var(--accent2);font-size:13px;">' + m.label + '</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:3px;line-height:1.45;">' + m.desc + '</div>'
+        + (m.cost ? '<div style="font-size:10px;color:var(--gold);margin-top:4px;">Cost: ' + fmtMoney(m.cost) + '</div>' : '')
+        + '</div>'
+        + (done
+            ? '<span style="font-size:10px;color:var(--green);align-self:center;">✓ DONE</span>'
+            : '<button class="card-btn ' + (affordable?'green':'muted') + '" '
+              + (affordable?'':'disabled') + ' style="align-self:center;flex:0 0 auto;" '
+              + 'onclick="industryMove(\'' + cid + '\',\'' + m.id + '\')">Execute</button>')
+        + '</div></div>';
+    });
+    html += '</div>';
+  }
+
   html += '<button class="card-btn muted" style="width:100%;margin-top:12px;padding:10px;" onclick="closeModal();openCompanies();">← Back to Portfolio</button>';
   openModal(co.name + ' · ' + ind.name, html);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  INDUSTRY POWER MOVES — deep, world-affecting choices per industry.
+//  These reshape the world state (LIFE.world) and persist across
+//  generations. Some are one-time; some can be repeated.
+// ═══════════════════════════════════════════════════════════════════════
+const INDUSTRY_MOVES = {
+  aerospace: [
+    {id:'mars_colony', label:'🚀 Establish a Mars Colony', cost:2000000000, once:true,
+      desc:'Build the first permanent self-sustaining settlement on Mars. Unlocks orbital revenue streams and lets your descendants be born off-world. ~$2B upfront, +40% revenue forever, +5 techLevel, marsColonized=true.',
+      requires: co => !LIFE.world.marsColonized,
+      exec: co => {
+        co.revenue = Math.floor(co.revenue * 1.4);
+        co.valuation = Math.floor(co.valuation * 2.2);
+        LIFE.world.marsColonized = true;
+        LIFE.world.techLevel = clamp(LIFE.world.techLevel + 5, 0, 100);
+        pushEvent('career', '🚀 ' + co.name + ' established the first Mars Colony. Humanity is now multi-planetary.');
+        recordLegacy('founded the first Mars Colony via ' + co.name);
+      },
+    },
+    {id:'orbital_factory', label:'🛰️ Orbital Manufacturing Hub', cost:600000000,
+      desc:'Build an orbital factory complex. +25% margin from low-gravity production.',
+      requires: co => LIFE.world.marsColonized,
+      exec: co => {
+        co.profitMargin = Math.min(0.6, co.profitMargin + 0.08);
+        pushEvent('career', '🛰️ Orbital factory operational. Margins expand.');
+      },
+    },
+    {id:'asteroid_mining', label:'☄️ Asteroid Mining Operation', cost:1200000000,
+      desc:'Capture a near-Earth asteroid. Massive rare-metal yields, but +risk.',
+      requires: co => LIFE.world.marsColonized,
+      exec: co => {
+        const haul = 800000000 + Math.floor(Math.random()*1200000000);
+        co.cash = (co.cash||0) + haul;
+        pushEvent('career', '☄️ Asteroid haul of ' + fmtMoney(haul) + ' delivered to orbit.');
+        recordLegacy('captured an asteroid worth ' + fmtMoney(haul));
+      },
+    },
+  ],
+  defense: [
+    {id:'lobby_war', label:'⚔️ Lobby for Military Action', cost:75000000,
+      desc:'Hire lobbyists and place stories. A foreign conflict erupts; your contracts go vertical for 3-5 years. Costs peaceIndex.',
+      exec: co => {
+        const years = 3 + Math.floor(Math.random()*3);
+        co.revenue = Math.floor(co.revenue * 2.5);
+        co.profitMargin = Math.min(0.5, co.profitMargin + 0.06);
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 18, 0, 100);
+        LIFE.char.karma = clamp(LIFE.char.karma - 12, 0, 100);
+        pushEvent('career', '⚔️ Conflict erupted. ' + co.name + ' revenue surged. Peace index dropped.');
+        recordLegacy('profiteered from a ' + years + '-year war via ' + co.name);
+      },
+    },
+    {id:'export_arms', label:'🔫 Push Arms Exports Abroad', cost:30000000,
+      desc:'Sell weapons to authoritarian regimes. Permanent revenue boost. Heavy karma cost.',
+      exec: co => {
+        co.revenue = Math.floor(co.revenue * 1.6);
+        LIFE.char.karma = clamp(LIFE.char.karma - 8, 0, 100);
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 6, 0, 100);
+        pushEvent('career', '🔫 Foreign arms-export contracts signed.');
+      },
+    },
+    {id:'classified_program', label:'🔒 Classified DOD Black Program', cost:200000000,
+      desc:'Win a black-budget contract. Margins inflate, but if exposed, criminal charges follow.',
+      exec: co => {
+        if(Math.random() < 0.25){
+          LIFE.char.money -= 80000000;
+          pushEvent('bad', '🚨 Black-program leak. Indictments and a record fine.');
+        } else {
+          co.profitMargin = Math.min(0.5, co.profitMargin + 0.12);
+          co.cash = (co.cash||0) + 320000000;
+          pushEvent('career', '🔒 Black program funded. Off-the-books margins ballooned.');
+        }
+      },
+    },
+  ],
+  pharma: [
+    {id:'rush_drug', label:'💊 Rush an Experimental Drug', cost:120000000,
+      desc:'Skip Phase III trials. Either a blockbuster (4× revenue) or a recall + class-action.',
+      exec: co => {
+        if(Math.random() < 0.55){
+          co.revenue = Math.floor(co.revenue * 4);
+          pushEvent('career', '💊 Drug approved. Blockbuster of the decade.');
+          recordLegacy('launched a blockbuster experimental drug');
+        } else {
+          LIFE.char.money -= 800000000;
+          LIFE.char.karma = clamp(LIFE.char.karma - 20, 0, 100);
+          pushEvent('bad', '🚨 Recall and class-action suit. Lives lost. Karma hammered.');
+          recordLegacy('was sued for an experimental drug disaster');
+        }
+      },
+    },
+    {id:'patent_evergreen', label:'📜 Patent-Evergreen a Drug', cost:40000000,
+      desc:'Extend a drug patent through minor reformulation. +30% revenue, −karma.',
+      exec: co => {
+        co.revenue = Math.floor(co.revenue * 1.3);
+        LIFE.char.karma = clamp(LIFE.char.karma - 6, 0, 100);
+        pushEvent('career', '📜 Patent extended. Generic competitors blocked another decade.');
+      },
+    },
+  ],
+  tech: [
+    {id:'agi_breakthrough', label:'🤖 Achieve AGI', cost:1500000000, once:true,
+      desc:'Crack artificial general intelligence. Civilization-altering. +10 techLevel. Possible existential risk.',
+      requires: co => !LIFE.world.agiAchieved,
+      exec: co => {
+        LIFE.world.agiAchieved = true;
+        LIFE.world.techLevel = clamp(LIFE.world.techLevel + 10, 0, 100);
+        co.valuation = Math.floor(co.valuation * 5);
+        co.revenue = Math.floor(co.revenue * 3);
+        if(Math.random() < 0.18){
+          // AGI catastrophe roll
+          LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 25, 0, 100);
+          pushEvent('bad', '⚠️ AGI deployment caused mass economic dislocation. Riots in 14 cities.');
+          recordLegacy('triggered the AGI economic crisis');
+        } else {
+          pushEvent('career', '🤖 ' + co.name + ' achieved AGI. The age of machine reasoning has begun.');
+          recordLegacy('achieved the world\'s first AGI');
+        }
+      },
+    },
+    {id:'monopoly_acquire', label:'🏢 Acquire Top Competitor', cost:800000000,
+      desc:'Buy your largest rival. Antitrust risk, but +60% revenue.',
+      exec: co => {
+        if(Math.random() < 0.20){
+          LIFE.char.money -= 400000000;
+          pushEvent('bad', '⚖️ Antitrust suit ordered divestiture. Painful settlement.');
+        } else {
+          co.revenue = Math.floor(co.revenue * 1.6);
+          pushEvent('career', '🏢 Competitor acquired. Market dominance.');
+        }
+      },
+    },
+  ],
+  energy: [
+    {id:'foreign_oilfield', label:'⛽ Acquire Foreign Oilfield', cost:600000000,
+      desc:'Pay a foreign government for drilling rights. +revenue, peace index falls.',
+      exec: co => {
+        co.revenue = Math.floor(co.revenue * 1.45);
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 5, 0, 100);
+        LIFE.world.climateScore = clamp(LIFE.world.climateScore - 4, 0, 100);
+        pushEvent('career', '⛽ Foreign drilling rights secured.');
+      },
+    },
+    {id:'fusion_breakthrough', label:'☢️ Fund a Fusion Breakthrough', cost:900000000,
+      desc:'Bet on fusion. If it works, +climateScore and +techLevel. If not, dead capital.',
+      exec: co => {
+        if(Math.random() < 0.4){
+          LIFE.world.climateScore = clamp(LIFE.world.climateScore + 12, 0, 100);
+          LIFE.world.techLevel = clamp(LIFE.world.techLevel + 6, 0, 100);
+          co.valuation = Math.floor(co.valuation * 2.5);
+          pushEvent('career', '☢️ Net-positive fusion achieved. Energy is now nearly free.');
+          recordLegacy('funded the fusion breakthrough that ended the energy crisis');
+        } else {
+          pushEvent('bad', '☢️ Fusion program stalled. Capital written off.');
+        }
+      },
+    },
+  ],
+  biotech: [
+    {id:'designer_organism', label:'🧬 Engineer a Designer Organism', cost:400000000,
+      desc:'Build a bespoke organism for industrial use. High reward, environmental risk.',
+      exec: co => {
+        if(Math.random() < 0.7){
+          co.revenue = Math.floor(co.revenue * 2);
+          LIFE.world.techLevel = clamp(LIFE.world.techLevel + 3, 0, 100);
+          pushEvent('career', '🧬 Designer organism deployed in industry.');
+        } else {
+          LIFE.world.climateScore = clamp(LIFE.world.climateScore - 10, 0, 100);
+          LIFE.char.karma = clamp(LIFE.char.karma - 15, 0, 100);
+          pushEvent('bad', '🧬 Designer organism escaped containment. Ecological damage.');
+          recordLegacy('caused the bio-containment disaster');
+        }
+      },
+    },
+  ],
+  crypto: [
+    {id:'national_stablecoin', label:'💎 Issue a National Stablecoin', cost:300000000, once:true,
+      desc:'Convince a small nation to adopt your stablecoin as legal tender. Massive recurring fees.',
+      requires: co => !LIFE.world.stablecoinIssued,
+      exec: co => {
+        LIFE.world.stablecoinIssued = true;
+        co.revenue = Math.floor(co.revenue * 3);
+        co.valuation = Math.floor(co.valuation * 4);
+        pushEvent('career', '💎 Your stablecoin is now legal tender in a small country.');
+        recordLegacy('issued a stablecoin adopted by a sovereign nation');
+      },
+    },
+  ],
+  finance: [
+    {id:'leveraged_buyout', label:'💼 Leveraged Buyout of a Rival', cost:500000000,
+      desc:'Pile on debt to take over another firm. +revenue, but +risk.',
+      exec: co => {
+        co.revenue = Math.floor(co.revenue * 1.5);
+        co.cash = (co.cash||0) - 200000000;
+        if(Math.random() < 0.2){
+          LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 4, 0, 100);
+          pushEvent('bad', '💼 LBO collapsed under debt. Layoffs ripple through the economy.');
+        } else {
+          pushEvent('career', '💼 LBO consolidated. Rival absorbed.');
+        }
+      },
+    },
+  ],
+  media: [
+    {id:'national_paper', label:'📰 Acquire a National Newspaper', cost:250000000,
+      desc:'Buy a top-3 national outlet. You can now shape public opinion (shifts ideology).',
+      exec: co => {
+        co.revenue = Math.floor(co.revenue * 1.4);
+        // Player picks direction next time they open Office of Power; for now, log it.
+        LIFE.char.flags.ownsNationalPaper = true;
+        pushEvent('career', '📰 You now own a national newspaper. Public opinion is yours to nudge.');
+        recordLegacy('acquired a national newspaper');
+      },
+    },
+  ],
+};
+
+function industryMove(cid, moveId){
+  const co = coFind(cid);
+  if(!co) return;
+  const moves = INDUSTRY_MOVES[co.industry] || [];
+  const m = moves.find(x => x.id === moveId);
+  if(!m) return;
+  if(m.cost && LIFE.char.money < m.cost){ toast('Need ' + fmtMoney(m.cost) + '.'); return; }
+  if(m.once && co._moves && co._moves[m.id]){ toast('Already done.'); return; }
+  if(m.cost) LIFE.char.money -= m.cost;
+  co._moves = co._moves || {};
+  if(m.once) co._moves[m.id] = true;
+  m.exec(co);
+  saveLife();
+  closeModal();
+  openCompanyDetail(cid);
+}
+
+function recordLegacy(deed){
+  if(!LIFE.legacy) LIFE.legacy = [];
+  const c = LIFE.char;
+  LIFE.legacy.push({
+    gen: LIFE.generation,
+    age: c.age,
+    name: c.firstName + ' ' + c.lastName,
+    deed,
+    year: c.born + c.age,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  OFFICE OF POWER — politician age 35+ gets nation-shaping choices.
+//  Each move alters LIFE.world; world state passes to descendants.
+// ═══════════════════════════════════════════════════════════════════════
+const POLITICAL_MOVES = [
+  {id:'sway_left', label:'⬅️ Push Nation Left', cost:50000,
+    desc:'Spend political capital to shift national policy left. -10 ideology, +economyHealth for workers.',
+    exec: () => {
+      LIFE.world.ideology = clamp(LIFE.world.ideology - 10, -100, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 2, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 4, 0, 100);
+      pushEvent('career', '⬅️ You pushed the nation left. Ideology now ' + LIFE.world.ideology + '.');
+      recordLegacy('pushed the nation leftward as a politician');
+    },
+  },
+  {id:'sway_right', label:'➡️ Push Nation Right', cost:50000,
+    desc:'Spend political capital to shift national policy right. +10 ideology, +economyHealth for capital, -climateScore.',
+    exec: () => {
+      LIFE.world.ideology = clamp(LIFE.world.ideology + 10, -100, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 2, 0, 100);
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore - 2, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 4, 0, 100);
+      pushEvent('career', '➡️ You pushed the nation right. Ideology now ' + LIFE.world.ideology + '.');
+      recordLegacy('pushed the nation rightward as a politician');
+    },
+  },
+  {id:'declare_war', label:'⚔️ Authorize Military Action', cost:0,
+    desc:'Order a foreign intervention. Defense companies surge. Peace index plummets. Karma hit.',
+    exec: () => {
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 25, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 5, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma - 18, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 12, 0, 100);
+      (LIFE.char.companies||[]).forEach(co => {
+        if(co.industry === 'defense' || co.industry === 'aerospace'){
+          co.revenue = Math.floor(co.revenue * 1.8);
+        }
+      });
+      pushEvent('career', '⚔️ You authorized military action. Defense contractors surged.');
+      recordLegacy('authorized a foreign war as head of state');
+    },
+  },
+  {id:'broker_peace', label:'🕊️ Broker Historic Peace Deal', cost:0,
+    desc:'Mediate a long-running conflict. Nobel-tier reputation. Peace index up sharply.',
+    requires: () => LIFE.world.peaceIndex < 60,
+    exec: () => {
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 25, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 15, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 18, 0, 100);
+      LIFE.char.happiness = clamp(LIFE.char.happiness + 12, 0, 100);
+      pushEvent('career', '🕊️ Historic peace accord signed. The world breathes easier.');
+      recordLegacy('brokered the peace accord that ended a major conflict');
+    },
+  },
+  {id:'climate_treaty', label:'🌍 Sign Global Climate Treaty', cost:0,
+    desc:'Lead a binding emissions accord. +climateScore, -economyHealth short-term.',
+    requires: () => LIFE.world.climateScore < 70,
+    exec: () => {
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore + 18, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 4, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 10, 0, 100);
+      pushEvent('career', '🌍 Global climate treaty signed.');
+      recordLegacy('signed the global climate treaty');
+    },
+  },
+  {id:'tax_progressive', label:'📊 Progressive Tax Overhaul', cost:0,
+    desc:'Tax the wealthy, fund services. -ideology, +economyHealth for working class, -personal wealth.',
+    exec: () => {
+      LIFE.world.ideology = clamp(LIFE.world.ideology - 5, -100, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 5, 0, 100);
+      if(LIFE.char.money > 500000) LIFE.char.money = Math.floor(LIFE.char.money * 0.85);
+      pushEvent('career', '📊 Progressive tax overhaul passed.');
+      recordLegacy('passed the progressive tax overhaul');
+    },
+  },
+  {id:'tax_flat', label:'📉 Flat Tax Overhaul', cost:0,
+    desc:'Slash taxes across the board. +ideology, +personal wealth, -services funding.',
+    exec: () => {
+      LIFE.world.ideology = clamp(LIFE.world.ideology + 5, -100, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 3, 0, 100);
+      LIFE.char.money += 200000;
+      pushEvent('career', '📉 Flat tax law passed. Top brackets celebrate.');
+      recordLegacy('passed the flat tax overhaul');
+    },
+  },
+  {id:'agi_treaty', label:'🤖 Negotiate AGI Treaty', cost:0,
+    desc:'Establish global oversight of artificial intelligence. Locks AGI risk.',
+    requires: () => LIFE.world.agiAchieved,
+    exec: () => {
+      LIFE.world.techLevel = clamp(LIFE.world.techLevel + 4, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 3, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 10, 0, 100);
+      pushEvent('career', '🤖 Global AGI treaty signed.');
+      recordLegacy('signed the AGI Governance Treaty');
+    },
+  },
+  {id:'mars_charter', label:'🚀 Sign Mars Colony Charter', cost:0,
+    desc:'Grant the Mars colony self-governing status. Your descendants can be born there.',
+    requires: () => LIFE.world.marsColonized && !LIFE.world.marsCharter,
+    exec: () => {
+      LIFE.world.marsCharter = true;
+      LIFE.world.techLevel = clamp(LIFE.world.techLevel + 2, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 10, 0, 100);
+      pushEvent('career', '🚀 Mars Charter signed. The first off-world citizenship is real.');
+      recordLegacy('signed the Mars Colony Charter');
+    },
+  },
+  {id:'authoritarian_turn', label:'🔒 Suspend Constitution (Emergency Powers)', cost:0,
+    desc:'Seize emergency powers indefinitely. Massive karma hit, but absolute control.',
+    exec: () => {
+      LIFE.world.ideology = clamp(LIFE.world.ideology + 15, -100, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 12, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma - 30, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 20, 0, 100);
+      LIFE.char.money += 5000000;
+      LIFE.world.authoritarian = true;
+      pushEvent('bad', '🔒 You suspended the constitution. Protests in the capital.');
+      recordLegacy('seized emergency powers and suspended the constitution');
+    },
+  },
+];
+
+function openOfficeOfPower(){
+  const c = LIFE.char;
+  if(!c.career || c.career.key !== 'politician' || c.age < 35){
+    toast('Need a political career and age 35+.');
+    return;
+  }
+  const w = LIFE.world;
+  const bar = (label, val, color) => {
+    return '<div style="margin:6px 0;">'
+      + '<div style="display:flex;justify-content:space-between;font-family:var(--font-m);font-size:10px;color:var(--t3);letter-spacing:.1em;">'
+      + '<span>' + label + '</span><span style="color:var(--t1);">' + val + '</span></div>'
+      + '<div style="height:5px;background:#0a0614;border-radius:3px;overflow:hidden;margin-top:3px;">'
+      + '<div style="height:100%;width:' + val + '%;background:' + color + ';"></div></div></div>';
+  };
+  let html = ''
+    + '<div style="padding:14px;background:#1a1428;border:1px solid var(--gold);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-h);font-size:18px;color:var(--gold);margin-bottom:8px;">⚖️ State of the Nation</div>'
+    + bar('Economy Health',  w.economyHealth, 'linear-gradient(90deg,#5ee27a,#9af090)')
+    + bar('Peace Index',     w.peaceIndex,    'linear-gradient(90deg,#1dd6c4,#9af0d8)')
+    + bar('Climate Score',   w.climateScore,  'linear-gradient(90deg,#5ee27a,#5ee2c4)')
+    + bar('Tech Level',      w.techLevel,     'linear-gradient(90deg,#9f6cf2,#c39cff)')
+    + '<div style="margin:6px 0;">'
+    +   '<div style="display:flex;justify-content:space-between;font-family:var(--font-m);font-size:10px;color:var(--t3);letter-spacing:.1em;">'
+    +     '<span>Ideology</span><span style="color:var(--t1);">' + (w.ideology<0?'Left ':'Right ') + Math.abs(w.ideology) + '</span></div>'
+    +   '<div style="height:5px;background:#0a0614;border-radius:3px;overflow:hidden;margin-top:3px;position:relative;">'
+    +     '<div style="position:absolute;left:50%;top:0;width:1px;height:5px;background:var(--t3);"></div></div></div>'
+    + (w.marsColonized ? '<div style="margin-top:8px;font-size:11px;color:var(--accent2);">🚀 Mars Colony exists' + (w.marsCharter?' (sovereign)':'') + '</div>' : '')
+    + (w.agiAchieved ? '<div style="font-size:11px;color:var(--accent2);">🤖 AGI achieved</div>' : '')
+    + (w.stablecoinIssued ? '<div style="font-size:11px;color:var(--accent2);">💎 National stablecoin in circulation</div>' : '')
+    + (w.authoritarian ? '<div style="font-size:11px;color:var(--crimson);">🔒 Under emergency rule</div>' : '')
+    + '</div>'
+    + '<div style="font-family:var(--font-m);font-size:10px;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;">⚡ Decisions of State</div>'
+    + '<div style="background:#1a1428;border:1px solid var(--gold);border-radius:6px;padding:12px;">';
+  POLITICAL_MOVES.forEach(m => {
+    if(m.requires && !m.requires()) return;
+    const affordable = !m.cost || c.money >= m.cost;
+    html += '<div style="padding:10px;border-bottom:1px solid #2a1f3d;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:start;gap:10px;">'
+      + '<div style="flex:1;">'
+      + '<div style="font-weight:700;color:var(--accent2);font-size:13px;">' + m.label + '</div>'
+      + '<div style="font-size:11px;color:var(--t3);margin-top:3px;line-height:1.45;">' + m.desc + '</div>'
+      + (m.cost ? '<div style="font-size:10px;color:var(--gold);margin-top:4px;">Cost: ' + fmtMoney(m.cost) + '</div>' : '')
+      + '</div>'
+      + '<button class="card-btn ' + (affordable?'green':'muted') + '" '
+      + (affordable?'':'disabled') + ' style="align-self:center;flex:0 0 auto;" '
+      + 'onclick="executePoliticalMove(\'' + m.id + '\')">Order</button>'
+      + '</div></div>';
+  });
+  html += '</div>';
+  if(LIFE.legacy && LIFE.legacy.length){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 8px;">📜 Dynasty Legacy</div>'
+      + '<div style="background:#1a1428;border:1px solid var(--accent);border-radius:6px;padding:12px;font-size:12px;color:var(--t2);">';
+    LIFE.legacy.slice().reverse().slice(0,10).forEach(l => {
+      html += '<div style="padding:4px 0;border-bottom:1px dotted #2a1f3d;">'
+        + '<span style="color:var(--t3);">Gen ' + l.gen + ' · ' + l.year + ' · </span>'
+        + '<b>' + l.name + '</b> ' + l.deed + '</div>';
+    });
+    html += '</div>';
+  }
+  openModal('🏛️ Office of Power', html);
+}
+
+function executePoliticalMove(id){
+  const m = POLITICAL_MOVES.find(x => x.id === id);
+  if(!m) return;
+  if(m.cost && LIFE.char.money < m.cost){ toast('Need ' + fmtMoney(m.cost) + '.'); return; }
+  if(m.cost) LIFE.char.money -= m.cost;
+  m.exec();
+  saveLife();
+  closeModal();
+  openOfficeOfPower();
 }
 
 function coInvestProduct(cid, idx){

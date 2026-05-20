@@ -4541,6 +4541,7 @@ function renderPartnerStatus(){
     html += '<button class="card-btn green" onclick="proposeMarriage()">💍 Propose</button>';
     html += '<button class="card-btn muted" onclick="goOnDate()">Date Night (−$80)</button>';
     html += '<button class="card-btn" onclick="tryForBabyPremarital()">👶 Try for Baby (Pre-marital)</button>';
+    html += '<button class="card-btn danger" onclick="breakUpPartner()">💔 Break Up</button>';
   } else {
     html += '<button class="card-btn muted" onclick="goOnDate()">Date Night (−$80)</button>';
     html += '<button class="card-btn green" onclick="tryForBaby()">Try for Baby</button>';
@@ -4807,11 +4808,41 @@ function initiateDivorce(){
   pushEvent('romantic', '💔 You divorced ' + c.partner.firstName + '. Assets were split 50/50.');
   c.money = Math.floor(c.money / 2);
   c.happiness = clamp(c.happiness - 25, 0, 100);
+  if(typeof addPartnerMemory === 'function'){
+    addPartnerMemory('divorced', 9, 'when you divorced them at age ' + c.age);
+  }
   c.partner = null;
   switchRelTab('partner');
   renderAll();
   saveLife();
 }
+
+// Break up with an unmarried partner. Cheaper than divorce — no asset
+// split, but still hurts. If you have shared kids, they're marked
+// out-of-wedlock and remain with you in c.children.
+function breakUpPartner(){
+  const c = LIFE.char;
+  if(!c.partner){ toast('Nobody to break up with.'); return; }
+  if(c.partner.married){ toast('Use Divorce instead — you\'re married.'); return; }
+  if(!confirm('Break up with ' + c.partner.firstName + '? This ends the relationship. Shared kids stay with you.')) return;
+  const name = c.partner.firstName + ' ' + c.partner.lastName;
+  // Sad parting: bigger happiness hit if compat was high (loved them)
+  const hit = c.partner.compat >= 70 ? -18 : c.partner.compat >= 50 ? -12 : -6;
+  c.happiness = clamp(c.happiness + hit, 0, 100);
+  // Any children of this relationship get tagged as out-of-wedlock + the
+  // partner's name recorded so paternity / co-parent events still work.
+  (c.children || []).forEach(k => {
+    if(!k.alive) return;
+    if(!k.otherParent) k.otherParent = name;
+    if(!('outOfWedlock' in k)) k.outOfWedlock = true;
+  });
+  pushEvent('romantic', '💔 You broke up with ' + name + '. ' + (hit <= -12 ? 'It hurt. ' : '') + 'Happiness ' + hit + '.');
+  c.partner = null;
+  switchRelTab('partner');
+  renderAll();
+  saveLife();
+}
+
 
 function renderFamilyTab(){
   const c = LIFE.char;

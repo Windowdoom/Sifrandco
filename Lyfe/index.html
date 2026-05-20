@@ -488,28 +488,7 @@ input,select{font-family:inherit;}
     <div id="timeline-wrap" style="padding:18px;flex:1;overflow-y:auto;">
       <div id="timeline"></div>
     </div>
-    <div id="actions-bar">
-      <button class="act-btn primary" onclick="ageUp()">Age Up › <span style="opacity:.6;font-size:9px;">[Space]</span></button>
-      <button class="act-btn" onclick="openOccupation()">💼 Career</button>
-      <button class="act-btn" onclick="openQuickJobs()">⚡ Quick Jobs</button>
-      <button class="act-btn" onclick="openCareerAction()">🎯 Career Action</button>
-      <button class="act-btn" onclick="openColleges()">🎓 College</button>
-      <button class="act-btn" onclick="openRelationships()">💕 Relationships</button>
-      <button class="act-btn" onclick="openActivities()">🏋️ Activities</button>
-      <button class="act-btn" onclick="openReligion()">🕊️ Faith</button>
-      <button class="act-btn" onclick="openBanking()">🏦 Bank</button>
-      <button class="act-btn" onclick="openShop()">🏠 Assets</button>
-      <button class="act-btn" onclick="openCrime()">🦹 Crime</button>
-      <button class="act-btn" onclick="openCityMap()">🏙️ City</button>
-      <button class="act-btn" onclick="openGovernment()">🏛️ Gov</button>
-      <button class="act-btn" onclick="openRealEstate()">🏘️ Real Estate</button>
-      <button class="act-btn" onclick="openCompanies()">🏢 Companies</button>
-      <button class="act-btn" onclick="openDatingPrefs()">💞 Prefs</button>
-      <button class="act-btn" onclick="openCheatMenu()">💋 Risky</button>
-      <button class="act-btn" onclick="openBabyMamaDrama()">👶 Drama</button>
-      <button class="act-btn" onclick="openReligiousCeremonies()">🕊️ Rituals</button>
-      <button class="act-btn" onclick="openMore()">✨ More</button>
-    </div>
+    <div id="actions-bar"></div>
   </div>
 
   <!-- RIGHT: family + assets -->
@@ -3639,6 +3618,41 @@ function renderAll(){
   renderTimeline();
   renderFamily();
   renderHomeScene();
+  renderActionBar();
+}
+
+// Age-gated dynamic action bar — progressive disclosure replaces the 20-button wall.
+function renderActionBar(){
+  const c = LIFE.char;
+  const a = c.age;
+  const bar = document.getElementById('actions-bar');
+  if(!bar) return;
+  const btns = [];
+  btns.push({pri:1, lbl:'Age Up › <span style="opacity:.6;font-size:9px;">[Space]</span>', fn:'ageUp()'});
+  // Activities + Family-ish always available (covers childhood)
+  btns.push({lbl:'🏋️ Activities', fn:'openActivities()'});
+  // Quick jobs unlocked at 13 (teen jobs), Career at 16+
+  if(a >= 13 && a < 16) btns.push({lbl:'💼 Teen Jobs', fn:'openQuickJobs()'});
+  if(a >= 16) btns.push({lbl:'💼 Career', fn:'openCareerHub()'});
+  if(a >= 13 && c.career && c.career.key) btns.push({lbl:'🎯 Work Action', fn:'openCareerAction()'});
+  if(a >= 13) btns.push({lbl:'💞 Relationships', fn:'openRelationships()'});
+  if(a >= 14) btns.push({lbl:'🦹 Crime', fn:'openCrime()'});
+  // School/college appears around HS/college age
+  if(a >= 14) btns.push({lbl:'🎓 Education', fn:'openColleges()'});
+  // Money + civic from adulthood
+  if(a >= 16) btns.push({lbl:'🏦 Bank', fn:'openBanking()'});
+  if(a >= 16) btns.push({lbl:'🏠 Assets', fn:'openShop()'});
+  if(a >= 18) btns.push({lbl:'🏘️ Real Estate', fn:'openRealEstate()'});
+  if(a >= 18) btns.push({lbl:'🏢 Companies', fn:'openCompanies()'});
+  if(a >= 18) btns.push({lbl:'🏛️ Gov', fn:'openGovernment()'});
+  // City + Faith for anyone who can leave the house
+  if(a >= 6) btns.push({lbl:'🏙️ City', fn:'openCityMap()'});
+  if(a >= 6) btns.push({lbl:'🕊️ Faith', fn:'openReligion()'});
+  // More: always, hosts everything else (Prefs/Risky/Drama/Rituals/etc)
+  btns.push({lbl:'✨ More', fn:'openMore()'});
+  bar.innerHTML = btns.map(b =>
+    '<button class="act-btn' + (b.pri?' primary':'') + '" onclick="' + b.fn + '">' + b.lbl + '</button>'
+  ).join('');
 }
 
 function renderTopbar(){
@@ -3689,9 +3703,10 @@ function renderStats(){
     {k:'smarts',    name:'Smarts',    v:c.smarts,    cls:'smarts'},
     {k:'looks',     name:'Looks',     v:c.looks,     cls:'looks'},
     {k:'karma',     name:'Karma',     v:c.karma,     cls:'karma'},
-    {k:'faith',     name:'Faith',     v:(c.faith||0),cls:'karma'},
-    {k:'fame',      name:'Fame',      v:(c.fame||0), cls:'looks'},
   ];
+  // Faith only shows once the player has picked a religion. Fame only after they're somewhat famous.
+  if(c.religion && c.religion !== 'none') stats.push({k:'faith', name:'Faith', v:(c.faith||0), cls:'karma'});
+  if((c.fame||0) > 0) stats.push({k:'fame', name:'Fame', v:(c.fame||0), cls:'looks'});
   wrap.innerHTML = stats.map(s => (
     '<div class="stat">'
     + '<div class="stat-row"><span class="stat-name">' + s.name + '</span><span class="stat-val">' + s.v + '</span></div>'
@@ -6081,6 +6096,20 @@ function applyToCollege(id){
   saveLife();
 }
 
+// Career hub — chooser between deep promotion-track careers and flat quick jobs.
+function openCareerHub(){
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;font-style:italic;">Two paths: a deep career with promotions, or a quick flat-pay job.</div>';
+  html += '<div class="card" onclick="closeModal();openOccupation()" style="cursor:pointer;">'
+    + '<div class="card-ico">🏢</div><div class="card-body"><div class="card-title">Careers (promotion ladders)</div>'
+    + '<div class="card-meta">Med, law, tech, finance, military, pilot, athletics…</div></div>'
+    + '<div class="card-act"><button class="card-btn">Browse</button></div></div>';
+  html += '<div class="card" onclick="closeModal();openQuickJobs()" style="cursor:pointer;">'
+    + '<div class="card-ico">⚡</div><div class="card-body"><div class="card-title">Quick Jobs (flat pay, no ladder)</div>'
+    + '<div class="card-meta">Variety jobs — barista, courier, tutor, rideshare, more.</div></div>'
+    + '<div class="card-act"><button class="card-btn">Browse</button></div></div>';
+  openModal('💼 Career', html);
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 //  QUICK JOBS — entry-level employment beyond the deep careers
 // ═══════════════════════════════════════════════════════════════════════
@@ -6464,6 +6493,10 @@ function openMore(){
     {label:'🍷 Substances',             fn:'openSubstances'},
     {label:'🛋️ Therapy Session ($180)', fn:'doTherapy'},
     {label:'🎟️ Buy Lottery Ticket ($5)',fn:'buyLottery'},
+    {label:'🕊️ Religious Rituals',      fn:'openReligiousCeremonies'},
+    {label:'💞 Dating Preferences',     fn:'openDatingPrefs'},
+    {label:'💋 Risky / Affair',         fn:'openCheatMenu'},
+    {label:'👶 Baby-Mama Drama',        fn:'openBabyMamaDrama'},
   ];
   // Trust fund only visible to the wealthy
   const netWorth = c.money + (c.savings||0) + (c.investments||0);

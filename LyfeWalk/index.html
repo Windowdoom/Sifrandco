@@ -50,13 +50,16 @@ button,input,select{font-family:inherit;cursor:pointer;}
 /* ── World ── */
 #world-wrap{flex:1;position:relative;overflow:hidden;background:#08050f;}
 #house{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  width:680px;height:500px;background:linear-gradient(180deg,#2a1f4a,#1a1330);
-  border:2px solid var(--accent);border-radius:8px;
-  box-shadow:0 0 40px rgba(159,108,242,.2),inset 0 0 60px rgba(0,0,0,.4);
+  width:800px;height:540px;background:linear-gradient(180deg,#2a1f4a,#1a1330);
+  border:2px solid var(--accent);border-radius:10px;
+  box-shadow:0 0 50px rgba(159,108,242,.25),inset 0 0 70px rgba(0,0,0,.45);
   overflow:hidden;}
-.room{position:absolute;border:1px dashed rgba(195,156,255,.15);}
-.room-label{position:absolute;bottom:3px;right:5px;font-family:var(--font-m);
-  font-size:9px;letter-spacing:.15em;color:rgba(195,156,255,.35);text-transform:uppercase;}
+.room{position:absolute;border:1px solid rgba(195,156,255,.18);border-radius:5px;
+  background-image:repeating-linear-gradient(45deg,transparent,transparent 16px,
+    rgba(255,255,255,.012) 16px,rgba(255,255,255,.012) 32px);}
+.room-label{position:absolute;top:4px;left:6px;font-family:var(--font-m);
+  font-size:9px;letter-spacing:.18em;color:rgba(195,156,255,.45);text-transform:uppercase;
+  background:rgba(15,10,28,.7);padding:1px 5px;border-radius:3px;}
 .furniture{position:absolute;display:flex;flex-direction:column;align-items:center;
   cursor:pointer;user-select:none;transition:transform .15s;}
 .furniture:hover{transform:translate(-50%,-50%) scale(1.1);z-index:5;}
@@ -67,8 +70,13 @@ button,input,select{font-family:inherit;cursor:pointer;}
 
 /* ── Characters ── */
 .actor{position:absolute;display:flex;flex-direction:column;align-items:center;
-  transform:translate(-50%,-100%);transition:left .8s linear,top .8s linear;cursor:pointer;
+  transform:translate(-50%,-100%);transition:left .25s linear,top .25s linear;cursor:pointer;
   user-select:none;z-index:10;}
+.actor:hover .a-emoji{filter:drop-shadow(0 0 6px var(--accent));}
+.actor.urgent .a-emoji{animation:urgentPulse 1s ease-in-out infinite;}
+@keyframes urgentPulse{0%,100%{filter:drop-shadow(0 0 4px var(--crimson));}50%{filter:drop-shadow(0 0 12px var(--crimson));}}
+.a-busy{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
+  font-size:14px;background:rgba(20,15,40,.9);padding:0 4px;border-radius:8px;border:1px solid var(--accent);}
 .actor.selected .a-emoji{filter:drop-shadow(0 0 8px var(--gold));}
 .a-emoji{font-size:34px;line-height:1;}
 .a-name{font-family:var(--font-m);font-size:9px;color:var(--t2);
@@ -285,39 +293,55 @@ const COUNTRIES = {
   mx:{name:'Mexico',flag:'🇲🇽',short:'MEX',cur:'$',salaryMult:0.32},
 };
 
-// 14 rooms. Each room belongs to a "zone" with named bounds (px).
-// House is 680×500. Coords are pixel offsets inside #house.
+// Rooms laid out as a 3×3 grid in an 800×540 house — furniture below
+// is placed inside its room's bounds so characters spread out
+// realistically rather than all bunching at the top.
 const ROOMS = [
-  {id:'kitchen',  name:'Kitchen',  x:10,  y:10,  w:200, h:140, color:'rgba(255,180,100,.04)'},
-  {id:'dining',   name:'Dining',   x:220, y:10,  w:200, h:140, color:'rgba(255,140,200,.04)'},
-  {id:'living',   name:'Living',   x:430, y:10,  w:240, h:200, color:'rgba(140,200,255,.04)'},
-  {id:'study',    name:'Study',    x:10,  y:160, w:200, h:140, color:'rgba(180,150,255,.04)'},
-  {id:'bath',     name:'Bath',     x:220, y:160, w:130, h:140, color:'rgba(120,220,255,.04)'},
-  {id:'play',     name:'Play',     x:360, y:160, w:300, h:50,  color:'rgba(255,220,100,.04)'},
-  {id:'bed1',     name:'Bedroom',  x:10,  y:310, w:220, h:180, color:'rgba(160,120,200,.04)'},
-  {id:'bed2',     name:'Nursery',  x:240, y:310, w:200, h:180, color:'rgba(255,160,200,.04)'},
-  {id:'garden',   name:'Garden',   x:450, y:220, w:220, h:270, color:'rgba(120,220,150,.04)'},
+  // Top row
+  {id:'kitchen', name:'Kitchen',  x:10,  y:10,  w:260, h:170, color:'rgba(255,180,100,.07)'},
+  {id:'dining',  name:'Dining',   x:280, y:10,  w:220, h:170, color:'rgba(255,140,200,.06)'},
+  {id:'living',  name:'Living',   x:510, y:10,  w:280, h:170, color:'rgba(140,200,255,.06)'},
+  // Middle row
+  {id:'study',   name:'Study',    x:10,  y:190, w:230, h:160, color:'rgba(180,150,255,.07)'},
+  {id:'bath',    name:'Bath',     x:250, y:190, w:170, h:160, color:'rgba(120,220,255,.07)'},
+  {id:'play',    name:'Play',     x:430, y:190, w:360, h:160, color:'rgba(255,220,100,.07)'},
+  // Bottom row
+  {id:'bed1',    name:'Bedroom',  x:10,  y:360, w:270, h:170, color:'rgba(160,120,200,.07)'},
+  {id:'bed2',    name:'Nursery',  x:290, y:360, w:220, h:170, color:'rgba(255,160,200,.07)'},
+  {id:'garden',  name:'Garden',   x:520, y:360, w:270, h:170, color:'rgba(120,220,150,.08)'},
 ];
 
-// Furniture / interactables. (x,y) is its center in pixels inside #house.
-// "act" determines the activity. "need" is what need it satisfies primarily.
+// Furniture / interactables. Each (x,y) is the piece's center inside #house,
+// placed inside its room's bounds so the household spreads across the floor.
 const FURNITURE = [
-  {id:'fridge',  ico:'🍱', label:'Fridge',   x:50,  y:80,  act:'eat',     need:'hunger',  cost:6,    dur:30},
-  {id:'stove',   ico:'🍳', label:'Stove',    x:120, y:80,  act:'cook',    need:'hunger',  cost:3,    dur:50,   gives:18},
-  {id:'sink',    ico:'🚰', label:'Sink',     x:180, y:80,  act:'drink',   need:'hunger',  cost:0,    dur:8,    gives:6},
-  {id:'table',   ico:'🍽️',label:'Table',    x:320, y:80,  act:'dine',    need:'social',  cost:0,    dur:40,   gives:20},
-  {id:'couch',   ico:'🛋️',label:'Couch',    x:500, y:90,  act:'relax',   need:'fun',     cost:0,    dur:40,   gives:14},
-  {id:'tv',      ico:'📺', label:'TV',       x:620, y:90,  act:'watch',   need:'fun',     cost:0,    dur:60,   gives:22},
-  {id:'desk',    ico:'💻', label:'Computer', x:60,  y:230, act:'work',    need:null,      cost:0,    dur:120,  gives:0},
-  {id:'books',   ico:'📚', label:'Books',    x:160, y:230, act:'study',   need:'fun',     cost:0,    dur:60,   gives:10},
-  {id:'shower',  ico:'🚿', label:'Shower',   x:260, y:230, act:'shower',  need:'hygiene', cost:0,    dur:25,   gives:55},
-  {id:'toilet',  ico:'🚽', label:'Toilet',   x:320, y:230, act:'toilet',  need:'hygiene', cost:0,    dur:10,   gives:15},
-  {id:'toys',    ico:'🧸', label:'Toys',     x:430, y:185, act:'play',    need:'fun',     cost:0,    dur:40,   gives:24},
-  {id:'piano',   ico:'🎹', label:'Piano',    x:560, y:185, act:'piano',   need:'fun',     cost:0,    dur:50,   gives:18},
-  {id:'bed',     ico:'🛏️',label:'Bed',      x:90,  y:400, act:'sleep',   need:'energy',  cost:0,    dur:240,  gives:90},
-  {id:'crib',    ico:'🛌', label:'Crib',     x:340, y:400, act:'crib',    need:'energy',  cost:0,    dur:120,  gives:80},
-  {id:'phone',   ico:'📞', label:'Phone',    x:540, y:90,  act:'call',    need:'social',  cost:0,    dur:30,   gives:25},
-  {id:'plant',   ico:'🌱', label:'Garden',   x:560, y:360, act:'garden',  need:'fun',     cost:0,    dur:60,   gives:10},
+  // Kitchen (top-left)
+  {id:'fridge',  ico:'🍱', label:'Fridge',   room:'kitchen', x:50,  y:60,  act:'eat',    need:'hunger',  cost:6,  dur:30},
+  {id:'stove',   ico:'🍳', label:'Stove',    room:'kitchen', x:140, y:60,  act:'cook',   need:'hunger',  cost:3,  dur:50,  gives:25},
+  {id:'sink',    ico:'🚰', label:'Sink',     room:'kitchen', x:220, y:60,  act:'drink',  need:'hunger',  cost:0,  dur:8,   gives:6},
+  // Dining (top-middle)
+  {id:'table',   ico:'🍽️',label:'Table',   room:'dining',  x:390, y:90,  act:'dine',   need:'social',  cost:0,  dur:40,  gives:25},
+  // Living (top-right)
+  {id:'couch',   ico:'🛋️',label:'Couch',   room:'living',  x:570, y:100, act:'relax',  need:'fun',     cost:0,  dur:40,  gives:14},
+  {id:'tv',      ico:'📺', label:'TV',       room:'living',  x:680, y:80,  act:'watch',  need:'fun',     cost:0,  dur:60,  gives:22},
+  {id:'phone',   ico:'📞', label:'Phone',    room:'living',  x:760, y:90,  act:'call',   need:'social',  cost:0,  dur:30,  gives:25},
+  // Study (middle-left)
+  {id:'desk',    ico:'💻', label:'Computer', room:'study',   x:80,  y:280, act:'work',   need:null,      cost:0,  dur:120, gives:0},
+  {id:'books',   ico:'📚', label:'Books',    room:'study',   x:190, y:280, act:'study',  need:'fun',     cost:0,  dur:60,  gives:10},
+  // Bathroom (middle-middle)
+  {id:'shower',  ico:'🚿', label:'Shower',   room:'bath',    x:290, y:260, act:'shower', need:'hygiene', cost:0,  dur:25,  gives:55},
+  {id:'toilet',  ico:'🚽', label:'Toilet',   room:'bath',    x:380, y:260, act:'toilet', need:'hygiene', cost:0,  dur:10,  gives:15},
+  // Play room (middle-right)
+  {id:'toys',    ico:'🧸', label:'Toys',     room:'play',    x:510, y:270, act:'play',   need:'fun',     cost:0,  dur:40,  gives:24},
+  {id:'piano',   ico:'🎹', label:'Piano',    room:'play',    x:620, y:270, act:'piano',  need:'fun',     cost:0,  dur:50,  gives:18},
+  {id:'gym',     ico:'🏋️',label:'Gym',     room:'play',    x:740, y:270, act:'exercise',need:null,     cost:0,  dur:45,  gives:0},
+  // Bedroom (bottom-left)
+  {id:'bed',     ico:'🛏️',label:'Bed',     room:'bed1',    x:100, y:450, act:'sleep',  need:'energy',  cost:0,  dur:240, gives:90},
+  {id:'dresser', ico:'🪞', label:'Dresser', room:'bed1',    x:230, y:430, act:'groom',  need:null,      cost:0,  dur:15,  gives:0},
+  // Nursery (bottom-middle)
+  {id:'crib',    ico:'🛌', label:'Crib',     room:'bed2',    x:380, y:440, act:'crib',   need:'energy',  cost:0,  dur:120, gives:80},
+  // Garden (bottom-right)
+  {id:'plant',   ico:'🌱', label:'Garden',   room:'garden',  x:600, y:440, act:'garden', need:'fun',     cost:0,  dur:60,  gives:10},
+  {id:'bench',   ico:'🪑', label:'Bench',    room:'garden',  x:720, y:440, act:'sit',    need:'social',  cost:0,  dur:30,  gives:18},
 ];
 
 // Careers — work from home computer, earn per hour
@@ -701,17 +725,20 @@ function planAction(m){
       return { furn: f, need: 'work' };
     }
   }
-  // Or socialize with another household member
+  // Or socialize with another household member — vary the spot
   if(m.needs.social < 80){
     const others = G.household.members.filter(o => o.id !== m.id && !o.deathDay);
     if(others.length && Math.random() < 0.3){
-      const f = FURNITURE.find(x => x.id === 'couch');
-      return { furn: f, need: 'social' };
+      const socialFurn = FURNITURE.filter(f => f.need === 'social');
+      return { furn: pick(socialFurn), need: 'social' };
     }
   }
-  // Wander idle
-  if(Math.random() < 0.2){
-    return { furn: pick(FURNITURE.filter(f => f.id === 'couch' || f.id === 'garden')), need: 'idle' };
+  // Wander idle — pick from many different leisure spots so the household
+  // spreads across the house instead of bunching in one room
+  if(Math.random() < 0.25){
+    const idleSpots = FURNITURE.filter(f =>
+      ['couch','plant','bench','piano','toys','books','dresser','gym'].includes(f.id));
+    return { furn: pick(idleSpots), need: 'idle' };
   }
   return null;
 }
@@ -719,12 +746,19 @@ function planAction(m){
 function chooseFurnitureForNeed(m, need){
   const opts = FURNITURE.filter(f => f.need === need);
   if(!opts.length) return null;
-  // Special: babies prefer crib
+  // Babies always use the crib for sleep, fridge for food
   if(m.isBaby){
     if(need === 'energy') return FURNITURE.find(f => f.id === 'crib');
     if(need === 'hunger') return FURNITURE.find(f => f.id === 'fridge');
   }
-  return pick(opts);
+  // Children and adults pick whichever option is closest, with randomness
+  // so they don't always travel to the far side of the house
+  const weighted = opts.map(f => {
+    const dx = f.x - m.pos.x, dy = f.y - m.pos.y;
+    const dist = Math.hypot(dx, dy);
+    return { f, score: 1 / (dist + 50) + Math.random() * 0.02 };
+  }).sort((a,b) => b.score - a.score);
+  return weighted[0].f;
 }
 
 function startActivity(m, plan){
@@ -1120,41 +1154,81 @@ function furnitureClick(fid){
   renderSide();
 }
 
+// Activity → emoji glyph shown as a "busy badge" under the character
+const ACT_ICON = {
+  walking:'🚶', eat:'🍴', cook:'🍳', drink:'💧', dine:'🍽️', relax:'😌',
+  watch:'📺', work:'💼', study:'📖', shower:'🚿', toilet:'🚽',
+  play:'🧸', piano:'🎵', sleep:'💤', crib:'💤', call:'📞',
+  garden:'🌱', exercise:'🏋️', groom:'💅', sit:'🪑',
+};
+
+function actorElId(id){ return 'actor-' + id; }
+
 function renderActors(){
   const wrap = document.getElementById('actors');
   wrap.innerHTML = G.household.members.map(m => {
-    if(m.deathDay) return ''; // gone
-    const sel = m.id === G.selected ? ' selected' : '';
-    const moodCol = m.mood > 70 ? '#5ee27a' : m.mood > 40 ? '#ffd060' : '#ff5e5e';
-    const moodIco = m.mood > 70 ? '😀' : m.mood > 40 ? '😐' : '😞';
-    const thought = (m.thought && m.thoughtUntil > 0)
-      ? '<div class="a-thought">' + m.thought + '</div>' : '';
-    return '<div class="actor' + sel + '" style="left:' + m.pos.x + 'px;top:' + m.pos.y + 'px;" onclick="selectActor(\'' + m.id + '\')">'
-      + thought
-      + '<div class="a-emoji">' + avatarFor(m) + (m.sick?'🤒':'') + '</div>'
-      + '<div class="a-name">' + m.name + '</div>'
-      + '<div class="a-mood" style="border-color:' + moodCol + ';color:' + moodCol + ';">' + moodIco + '</div>'
-      + '</div>';
+    if(m.deathDay) return '';
+    return actorHTML(m);
   }).join('');
+}
+function actorHTML(m){
+  const sel = m.id === G.selected ? ' selected' : '';
+  const urgent = anyUrgentNeed(m) ? ' urgent' : '';
+  const moodCol = m.mood > 70 ? '#5ee27a' : m.mood > 40 ? '#ffd060' : '#ff5e5e';
+  const moodIco = m.mood > 70 ? '😀' : m.mood > 40 ? '😐' : '😞';
+  const thought = (m.thought && m.thoughtUntil > 0)
+    ? '<div class="a-thought">' + m.thought + '</div>' : '';
+  const busyIco = (m.status && m.status !== 'idle' && ACT_ICON[m.status])
+    ? '<div class="a-busy">' + ACT_ICON[m.status] + '</div>' : '';
+  return '<div class="actor' + sel + urgent + '" id="' + actorElId(m.id) + '" '
+    + 'style="left:' + m.pos.x + 'px;top:' + m.pos.y + 'px;" '
+    + 'onclick="selectActor(\'' + m.id + '\')">'
+    + thought
+    + '<div class="a-emoji">' + avatarFor(m) + (m.sick?'🤒':'') + '</div>'
+    + '<div class="a-name">' + m.name + '</div>'
+    + '<div class="a-mood" style="border-color:' + moodCol + ';color:' + moodCol + ';">' + moodIco + '</div>'
+    + busyIco
+    + '</div>';
+}
+function anyUrgentNeed(m){
+  return m.needs.hunger < 18 || m.needs.energy < 18 || m.needs.hygiene < 12
+    || m.health < 25 || m.sick;
 }
 
 function renderActorsPositions(){
-  // Lightweight update — only positions/thoughts; called every tick
+  // Lightweight update — only mutate positions/thoughts/busy badge.
   G.household.members.forEach(m => {
-    if(m.deathDay) return;
-    const el = document.querySelector('.actor[onclick*="\'' + m.id + '\'"]');
-    if(!el) return;
+    if(m.deathDay){
+      const dead = document.getElementById(actorElId(m.id));
+      if(dead) dead.remove();
+      return;
+    }
+    const el = document.getElementById(actorElId(m.id));
+    if(!el){
+      // newly added member (e.g. baby just born) — full rerender
+      renderActors();
+      return;
+    }
     el.style.left = m.pos.x + 'px';
-    el.style.top = m.pos.y + 'px';
-    const t = el.querySelector('.a-thought');
+    el.style.top  = m.pos.y + 'px';
+    el.classList.toggle('urgent', anyUrgentNeed(m));
+    // thought bubble
+    let t = el.querySelector('.a-thought');
     if(m.thought && m.thoughtUntil > 0){
       if(!t){
-        const newT = document.createElement('div');
-        newT.className = 'a-thought';
-        newT.textContent = m.thought;
-        el.insertBefore(newT, el.firstChild);
-      } else { t.textContent = m.thought; }
+        t = document.createElement('div');
+        t.className = 'a-thought';
+        el.insertBefore(t, el.firstChild);
+      }
+      if(t.textContent !== m.thought) t.textContent = m.thought;
     } else if(t){ t.remove(); }
+    // busy badge
+    let b = el.querySelector('.a-busy');
+    const want = (m.status && m.status !== 'idle' && ACT_ICON[m.status]) ? ACT_ICON[m.status] : null;
+    if(want){
+      if(!b){ b = document.createElement('div'); b.className = 'a-busy'; el.appendChild(b); }
+      if(b.textContent !== want) b.textContent = want;
+    } else if(b){ b.remove(); }
   });
 }
 
@@ -1332,8 +1406,14 @@ function openModal(title, html, actions){
     aWrap.appendChild(b);
   });
   document.getElementById('modal').classList.add('show');
+  // Auto-pause while a modal is open so the player can deliberate without
+  // the household drifting through events.
+  if(G){ G._wasPaused = G.paused; G.paused = true; renderTopbar && renderTopbar(); }
 }
-function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+function closeModal(){
+  document.getElementById('modal').classList.remove('show');
+  if(G && G._wasPaused !== undefined){ G.paused = G._wasPaused; G._wasPaused = undefined; renderTopbar && renderTopbar(); }
+}
 let _toastT = null;
 function toast(msg){
   const t = document.getElementById('toast');

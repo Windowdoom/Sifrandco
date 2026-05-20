@@ -5773,6 +5773,80 @@ function applyDynastyReputation(ch, oldChar){
     ch.happiness = clamp(ch.happiness + 5, 0, 100);
     pushEvent('good', '🛸 Your textbooks are co-authored by a civilization three light-years away.');
   }
+  // ── Civilization-shaping good ──
+  if(w.alignedSingularity){
+    ch.smarts = clamp(ch.smarts + 15, 0, 100);
+    ch.happiness = clamp(ch.happiness + 15, 0, 100);
+    ch.health = clamp(ch.health + 10, 0, 100);
+    pushEvent('good', '🌐 You were born after the Alignment. Everything is solvable now. Your tutor is the Singularity itself.');
+  }
+  if(w.uploadAvailable){
+    ch.flags = ch.flags || {}; ch.flags.canUpload = true;
+    ch.happiness = clamp(ch.happiness + 8, 0, 100);
+    pushEvent('good', '🧠 You can upload yourself when you choose. Mortality is a preference, not a sentence.');
+  }
+  if(w.generationShipsLaunched){
+    ch.smarts = clamp(ch.smarts + 5, 0, 100);
+    ch.fame = clamp((ch.fame||0) + 4, 0, 100);
+    pushEvent('good', '🚀 Your bloodline is on a generation ship somewhere out there.');
+  }
+  if(w.resurrectedLineages){
+    ch.smarts = clamp(ch.smarts + 4, 0, 100);
+    pushEvent('good', '⚱️ Your classmates include Neanderthals and Denisovans. Humanity is whole again.');
+  }
+  if(w.patentsOpen){
+    ch.smarts = clamp(ch.smarts + 6, 0, 100);
+    pushEvent('good', '🔓 You learned to code at 7 because every patent was open. Knowledge belongs to everyone now.');
+  }
+  if(w.mythicSitesFound){
+    ch.faith = clamp((ch.faith||0) + 8, 0, 100);
+    ch.smarts = clamp(ch.smarts + 4, 0, 100);
+    pushEvent('good', '🏛️ The mythic sites are real. You grew up visiting them on school trips.');
+  }
+  if(w.multiverseConfirmed){
+    ch.smarts = clamp(ch.smarts + 12, 0, 100);
+    pushEvent('good', '🌌 You were taught the many-worlds interpretation as a fact, not a theory.');
+  }
+  if(w.somethingLooksBack){
+    ch.happiness = clamp(ch.happiness - 18, 0, 100);
+    ch.flags = ch.flags || {}; ch.flags.watchedFromAcross = true;
+    pushEvent('bad', '👁️ Something from another branch of reality watches you constantly. You can never quite see it.');
+  }
+  // ── Civilization-shaping evil ──
+  if(w.doomsdayArmed){
+    ch.happiness = clamp(ch.happiness - 12, 0, 100);
+    pushEvent('bad', '☢️ The cobalt device still hangs over the world. Your ancestor armed it. You sleep light.');
+  }
+  if(w.biosphereDead){
+    ch.health = clamp(ch.health - 40, 0, 100);
+    ch.happiness = clamp(ch.happiness - 40, 0, 100);
+    pushEvent('death', '💀 You were born into the dying biosphere. The air is wrong. Your lungs barely work.');
+  }
+  if(w.ethnicBioweapon){
+    ch.happiness = clamp(ch.happiness - 22, 0, 100);
+    ch.karma = clamp(ch.karma - 25, 0, 100);
+    ch.flags = ch.flags || {}; ch.flags.bioweaponLineage = true;
+    pushEvent('bad', '🧫 You carry the name of the family that released the ethnic bioweapon. There is no version of you the world is willing to forgive.');
+  }
+  if(w.hellscape){
+    ch.happiness = clamp(ch.happiness - 18, 0, 100);
+    pushEvent('bad', '🧠 The substrate still runs. Millions of consciousnesses are still trapped in it. You inherited the keys.');
+  }
+  if(w.continentalExtinction){
+    ch.happiness = clamp(ch.happiness - 15, 0, 100);
+    pushEvent('bad', '🌪️ Half the continents are uninhabitable. You learned that part of history first.');
+  }
+  if(w.bunkerElite){
+    if(oldChar.flags && oldChar.flags.bunkerCitizen){
+      ch.flags = ch.flags || {}; ch.flags.bunkerCitizen = true;
+      ch.health = clamp(ch.health + 15, 0, 100);
+      ch.happiness = clamp(ch.happiness - 8, 0, 100);
+      pushEvent('milestone', '🔒 You were born in the bunker. The surface is a rumor to you.');
+    } else {
+      ch.happiness = clamp(ch.happiness - 15, 0, 100);
+      pushEvent('bad', '🔒 You live above ground while the bunker dwellers laugh underneath.');
+    }
+  }
   if(oldChar.foundation && (oldChar.foundation.totalGiven||0) > 5000000){
     ch.karma = clamp(ch.karma + 8, 0, 100);
     ch.fame  = clamp((ch.fame||0) + 6, 0, 100);
@@ -11372,6 +11446,208 @@ const POLITICAL_MOVES = [
       LIFE.char.fame = clamp((LIFE.char.fame||0) + 25, 0, 100);
     },
   },
+  // ═══ APOCALYPTIC / SPECULATIVE — things humanity has theorized
+  //  but never done. Depicted as the catastrophes they would be.
+  {id:'cobalt_salted_doomsday', label:'☢️ Build & Arm a Cobalt-Salted Doomsday Device', cost:2000000000000,
+    desc:'A thermonuclear device wrapped in cobalt-60 — Sagan called it humanity\'s suicide button. One detonation would sterilize the entire biosphere with fallout. You build it and put it on a deadman switch.',
+    requires: () => totalEstateValue(LIFE.char) >= 3000000000000,
+    exec: () => {
+      LIFE.world.doomsdayArmed = true;
+      LIFE.world.peaceIndex = 0;
+      LIFE.world.warCriminal = true;
+      LIFE.world.iccIndictment = true;
+      LIFE.char.karma = 0;
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 80, 0, 100);
+      LIFE.char.corruption = 100;
+      pushEvent('death', '☢️ The device is built and on a deadman switch. Every state on Earth now negotiates with you under that threat.');
+      recordLegacy('built and armed the cobalt-salted doomsday device');
+      // 30% chance someone steals the trigger and detonates anyway
+      if(Math.random() < 0.30){
+        setTimeout(() => {
+          if(LIFE && LIFE.char){
+            LIFE.world.biosphereDead = true;
+            LIFE.world.nuclearWar = true;
+            pushEvent('death', '☢️ A faction triggered the device. The cobalt fallout is now spreading. The biosphere is dying. There is no end-of-game screen for this.');
+            LIFE.char.alive = false; LIFE.char.cause = 'killed in cobalt-fallout extinction';
+            recordLegacy('caused the cobalt-fallout extinction of the biosphere');
+          }
+        }, 300);
+      }
+    },
+  },
+  {id:'ethnic_bioweapon', label:'🧫 Deploy an Ethnic-Selective Bioweapon', cost:50000000000,
+    desc:'A bioweapon engineered to target a specific genetic population. This is the most explicit ethnic cleansing technology ever theorized. The ICC has charged you with crimes against humanity before the news of the release reaches the public. There is no defense.',
+    requires: () => totalEstateValue(LIFE.char) >= 200000000000,
+    exec: () => {
+      LIFE.world.ethnicBioweapon = true;
+      LIFE.world.warCriminal = true;
+      LIFE.world.iccIndictment = true;
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 50, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth - 20, 0, 100);
+      LIFE.char.karma = 0;
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 50, 0, 100);
+      pushEvent('death', '🧫 A bioweapon designed to kill a single ethnic group was released. The dead number in the millions before evening news airs.');
+      recordLegacy('deployed an ethnic-selective bioweapon — a crime against humanity');
+      if(Math.random() < 0.85){
+        setTimeout(() => {
+          if(LIFE && LIFE.char && LIFE.char.alive){
+            pushEvent('death', '🕯 The Hague convened in 72 hours. You were executed for crimes against humanity.');
+            LIFE.char.alive = false; LIFE.char.cause = 'executed for crimes against humanity';
+          }
+        }, 250);
+      }
+    },
+  },
+  {id:'consciousness_hellscape', label:'🧠 Force-Upload Millions to a Controlled Simulation', cost:1500000000000,
+    desc:'You build a neural-uplink farm and forcibly digitize the consciousnesses of millions, then run them inside a hostile simulation you control. Their subjective time inside is endless. There is no precedent for this kind of cruelty.',
+    requires: () => totalEstateValue(LIFE.char) >= 3000000000000 && LIFE.world.agiAchieved,
+    exec: () => {
+      LIFE.world.hellscape = true;
+      LIFE.world.warCriminal = true;
+      LIFE.world.iccIndictment = true;
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 40, 0, 100);
+      LIFE.char.karma = 0;
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 40, 0, 100);
+      pushEvent('death', '🧠 The substrate has been seized. Millions are running inside it now — and their subjective seconds are years. You have built the closest thing to literal Hell.');
+      recordLegacy('built the consciousness hellscape and trapped millions inside');
+    },
+  },
+  {id:'continental_extinction', label:'🌪️ Geoengineer a Continental Extinction Event', cost:800000000000,
+    desc:'You weaponize the climate against an entire landmass — synchronized storms, polar-vortex collapse, drought-induced famine. Within two years the continent is depopulated. Refugees flood elsewhere; you blame nature.',
+    requires: () => totalEstateValue(LIFE.char) >= 1000000000000,
+    exec: () => {
+      LIFE.world.continentalExtinction = true;
+      LIFE.world.warCriminal = true;
+      LIFE.world.iccIndictment = true;
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore - 50, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 45, 0, 100);
+      LIFE.char.karma = 0;
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 35, 0, 100);
+      pushEvent('death', '🌪️ A continent has been depopulated by engineered weather. The refugees are already arriving. The investigation will eventually find your seed funding.');
+      recordLegacy('geoengineered an entire continent into extinction');
+    },
+  },
+  {id:'doomsday_bunker_elite', label:'🔒 Build the Bunker Network — Save the Top 0.001%', cost:600000000000,
+    desc:'You construct a deep-Earth bunker network sized for ten thousand people, then quietly seal off the surface. The rest of humanity is left above ground when the next civilizational crisis arrives.',
+    requires: () => totalEstateValue(LIFE.char) >= 1000000000000,
+    exec: () => {
+      LIFE.world.bunkerElite = true;
+      LIFE.char.flags = LIFE.char.flags || {};
+      LIFE.char.flags.bunkerCitizen = true;
+      LIFE.char.karma = clamp(LIFE.char.karma - 40, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 20, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 15, 0, 100);
+      pushEvent('bad', '🔒 The Bunker Network is sealed. You and 9,999 others have guaranteed survival. The remaining 8 billion do not know yet.');
+      recordLegacy('built the bunker network that abandoned humanity');
+    },
+  },
+  // ═══ UTOPIAN-TIER GOOD ═══
+  {id:'mass_mind_upload_voluntary', label:'🧠 Open Voluntary Mind-Upload to a Substrate', cost:3000000000000,
+    desc:'A safe, ethical, voluntary substrate for human consciousness. Anyone who wishes may upload and live indefinitely as themselves. Death by accident becomes optional for those who choose. The species is no longer hostage to biology.',
+    requires: () => totalEstateValue(LIFE.char) >= 5000000000000 && LIFE.world.agiAchieved,
+    exec: () => {
+      LIFE.world.uploadAvailable = true;
+      LIFE.world.techLevel = clamp(LIFE.world.techLevel + 40, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 25, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 60, 0, 100);
+      LIFE.char.fame = 100;
+      LIFE.char.happiness = clamp(LIFE.char.happiness + 30, 0, 100);
+      pushEvent('milestone', '🧠 The substrate opens for the first uploads tomorrow. Anyone who wants to live forever can. No one is forced. This is what utopia looks like.');
+      recordLegacy('opened voluntary mind-upload to all of humanity');
+    },
+  },
+  {id:'aligned_singularity', label:'🌐 Launch an Aligned Singularity', cost:2000000000000,
+    desc:'A safe, value-aligned superintelligence is brought online. It chooses to serve humanity, solves coordination problems, and quietly closes off the dystopian branches. The world that follows is unrecognizable in the best way.',
+    requires: () => totalEstateValue(LIFE.char) >= 3000000000000 && LIFE.world.agiAchieved,
+    exec: () => {
+      LIFE.world.alignedSingularity = true;
+      LIFE.world.techLevel = 100;
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 50, 0, 100);
+      LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex + 50, 0, 100);
+      LIFE.world.climateScore = clamp(LIFE.world.climateScore + 30, 0, 100);
+      LIFE.char.karma = 100;
+      LIFE.char.fame = 100;
+      pushEvent('milestone', '🌐 An aligned superintelligence came online at 4:17 AM. By breakfast it had outlined sixty civilization-scale fixes. By dinner the world was already different.');
+      recordLegacy('launched the aligned superintelligence that ended the dark ages');
+    },
+  },
+  {id:'generation_ships', label:'🚀 Launch Generation Ships to Other Stars', cost:4000000000000,
+    desc:'Build and crew ten generation ships, send them to Tau Ceti, Alpha Centauri, Trappist-1, and seven other plausible systems. The species will not have all its eggs in one star\'s basket again.',
+    requires: () => totalEstateValue(LIFE.char) >= 5000000000000 && LIFE.world.marsColonized,
+    exec: () => {
+      LIFE.world.generationShipsLaunched = true;
+      LIFE.world.techLevel = clamp(LIFE.world.techLevel + 25, 0, 100);
+      LIFE.char.fame = 100;
+      LIFE.char.karma = clamp(LIFE.char.karma + 40, 0, 100);
+      pushEvent('milestone', '🚀 Ten generation ships left orbit this week. None of them will arrive in your lifetime. Their descendants will be the first humans to call another star home.');
+      recordLegacy('launched the generation ships that spread the human species beyond Sol');
+    },
+  },
+  {id:'mass_resurrection', label:'⚱️ Resurrect Every Extinct Human Lineage', cost:1500000000000,
+    desc:'Reverse-engineer DNA from every recoverable historical and prehistoric human sample, then bring back Neanderthals, Denisovans, the Taíno, the Beothuk, every lost lineage of our own kind. The species becomes whole again.',
+    requires: () => totalEstateValue(LIFE.char) >= 2000000000000 && LIFE.world.diseaseFree,
+    exec: () => {
+      LIFE.world.resurrectedLineages = true;
+      LIFE.char.karma = clamp(LIFE.char.karma + 35, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 50, 0, 100);
+      pushEvent('milestone', '⚱️ The first Neanderthal child of the modern era was born today. So was the first Denisovan in 50,000 years. Every lost lineage gets a future.');
+      recordLegacy('resurrected every extinct human lineage');
+    },
+  },
+  {id:'open_all_patents', label:'🔓 Open-Source Every Patent on Earth', cost:200000000000,
+    desc:'You quietly buy out every major patent portfolio on the planet — pharma, semiconductor, agriculture, defense, software — and release them all into the public domain. Knowledge is no longer hoarded.',
+    requires: () => totalEstateValue(LIFE.char) >= 500000000000,
+    exec: () => {
+      LIFE.world.patentsOpen = true;
+      LIFE.world.techLevel = clamp(LIFE.world.techLevel + 20, 0, 100);
+      LIFE.world.economyHealth = clamp(LIFE.world.economyHealth + 12, 0, 100);
+      LIFE.char.karma = clamp(LIFE.char.karma + 35, 0, 100);
+      LIFE.char.fame = clamp((LIFE.char.fame||0) + 30, 0, 100);
+      pushEvent('milestone', '🔓 Every major patent is now public domain. The first wave of derivative innovation hit the markets within 24 hours.');
+      recordLegacy('open-sourced every patent on Earth');
+    },
+  },
+  // ═══ MYTHIC / FORBIDDEN KNOWLEDGE ═══
+  {id:'find_atlantis_eden', label:'🏛️ Locate Atlantis & The Garden of Eden', cost:50000000000,
+    desc:'Fund the deep-sea archaeology and remote sensing necessary to locate the original sites of every mythic civilization. Discover what was real. Confirm or deny millennia of speculation.',
+    requires: () => totalEstateValue(LIFE.char) >= 100000000000,
+    exec: () => {
+      const found = Math.random() < 0.6;
+      if(found){
+        LIFE.world.mythicSitesFound = true;
+        LIFE.world.techLevel = clamp(LIFE.world.techLevel + 12, 0, 100);
+        LIFE.char.fame = clamp((LIFE.char.fame||0) + 40, 0, 100);
+        LIFE.char.smarts = clamp(LIFE.char.smarts + 8, 0, 100);
+        pushEvent('milestone', '🏛️ The sites were real. The artifacts pre-date every recorded calendar. Every religion now negotiates with the new evidence.');
+        recordLegacy('located the historical sites of Atlantis and Eden');
+      } else {
+        pushEvent('milestone', '🏛️ The expedition was thorough. The myths remain myths. The archaeological community is grateful for the data.');
+        LIFE.char.smarts = clamp(LIFE.char.smarts + 4, 0, 100);
+      }
+    },
+  },
+  {id:'confirm_multiverse', label:'🌌 Confirm the Multiverse — Open a Window', cost:6000000000000,
+    desc:'Build a quantum-tunnelling rig powerful enough to observe a neighboring branch of reality. Confirm or deny the many-worlds interpretation. If you see something looking back, things get strange.',
+    requires: () => totalEstateValue(LIFE.char) >= 8000000000000 && LIFE.world.dysonSwarm,
+    exec: () => {
+      const seen = Math.random();
+      LIFE.world.multiverseConfirmed = true;
+      LIFE.world.techLevel = 100;
+      LIFE.char.fame = 100;
+      LIFE.char.smarts = clamp(LIFE.char.smarts + 18, 0, 100);
+      if(seen < 0.25){
+        // Something noticed
+        LIFE.world.somethingLooksBack = true;
+        LIFE.world.peaceIndex = clamp(LIFE.world.peaceIndex - 20, 0, 100);
+        pushEvent('death', '🌌 The window opened. Something on the other side looked directly at you. It is still looking.');
+        recordLegacy('opened the multiverse window — something looked back');
+      } else {
+        LIFE.char.karma = clamp(LIFE.char.karma + 25, 0, 100);
+        pushEvent('milestone', '🌌 The many-worlds interpretation is confirmed. Every branch is real. Every choice you didn\'t make happened somewhere.');
+        recordLegacy('confirmed the existence of the multiverse');
+      }
+    },
+  },
   {id:'bargain_demon', label:'😈 Bargain With a Demon (Faustian Contract)', cost:0,
     desc:'In magical realities only. You go to a crossroads and sign in your own blood. The price is yours: years of life, your soul\'s peace, your descendants\' fortune. The reward: a corner of the world goes silent in your favor.',
     requires: () => LIFE.char.reality === 'magical',
@@ -11445,6 +11721,20 @@ function openOfficeOfPower(){
     + (w.currencyCrash ? '<div style="font-size:11px;color:var(--crimson);">📉 Global currencies crashed</div>' : '')
     + (w.contactPeaceful ? '<div style="font-size:11px;color:var(--green);">🛸 Peaceful first contact made</div>' : '')
     + (w.contactHostile  ? '<div style="font-size:11px;color:var(--crimson);">🛸 Hostile alien contact</div>' : '')
+    + (w.alignedSingularity ? '<div style="font-size:11px;color:var(--green);">🌐 Aligned Singularity active</div>' : '')
+    + (w.uploadAvailable ? '<div style="font-size:11px;color:var(--green);">🧠 Voluntary mind-upload open</div>' : '')
+    + (w.generationShipsLaunched ? '<div style="font-size:11px;color:var(--green);">🚀 Generation ships en route</div>' : '')
+    + (w.resurrectedLineages ? '<div style="font-size:11px;color:var(--green);">⚱️ Extinct human lineages revived</div>' : '')
+    + (w.patentsOpen ? '<div style="font-size:11px;color:var(--green);">🔓 All patents open-sourced</div>' : '')
+    + (w.mythicSitesFound ? '<div style="font-size:11px;color:var(--green);">🏛️ Atlantis & Eden located</div>' : '')
+    + (w.multiverseConfirmed ? '<div style="font-size:11px;color:var(--green);">🌌 Multiverse confirmed</div>' : '')
+    + (w.somethingLooksBack ? '<div style="font-size:11px;color:var(--crimson);">👁️ Something is watching from another branch</div>' : '')
+    + (w.doomsdayArmed ? '<div style="font-size:11px;color:var(--crimson);">☢️ Cobalt-doomsday device armed</div>' : '')
+    + (w.ethnicBioweapon ? '<div style="font-size:11px;color:var(--crimson);">🧫 Ethnic bioweapon was deployed</div>' : '')
+    + (w.hellscape ? '<div style="font-size:11px;color:var(--crimson);">🧠 Consciousness hellscape exists</div>' : '')
+    + (w.continentalExtinction ? '<div style="font-size:11px;color:var(--crimson);">🌪️ A continent was depopulated</div>' : '')
+    + (w.bunkerElite ? '<div style="font-size:11px;color:var(--crimson);">🔒 Elite bunker network sealed</div>' : '')
+    + (w.biosphereDead ? '<div style="font-size:11px;color:var(--crimson);font-weight:700;">💀 The biosphere is dying</div>' : '')
     + '<div style="margin-top:10px;font-size:11px;color:var(--t3);">Corruption: <b style="color:'
     + ((c.corruption||0) >= 50 ? 'var(--crimson)' : (c.corruption||0) >= 25 ? 'var(--gold)' : 'var(--t2)') + ';">'
     + (c.corruption||0) + '/100</b></div>'
@@ -11739,7 +12029,12 @@ function executePoliticalMove(id){
       'pharaoh_enslave','bargain_demon','summon_jinn','pay_world_debt',
       'engineer_pandemic','crash_global_currency','orbital_death_satellite',
       'force_worship','buy_world_media','buy_country','first_contact',
-      'cure_aging','cure_all_disease','global_ubi','dyson_swarm'].includes(id)){
+      'cure_aging','cure_all_disease','global_ubi','dyson_swarm',
+      'cobalt_salted_doomsday','ethnic_bioweapon','consciousness_hellscape',
+      'continental_extinction','doomsday_bunker_elite',
+      'mass_mind_upload_voluntary','aligned_singularity','generation_ships',
+      'mass_resurrection','open_all_patents','find_atlantis_eden',
+      'confirm_multiverse'].includes(id)){
     const ok = confirm(m.label + '\n\n' + m.desc + '\n\nThis is irreversible. Continue?');
     if(!ok) return;
   }

@@ -114,6 +114,13 @@ button,input,select{font-family:inherit;cursor:pointer;}
   filter:drop-shadow(0 1px 3px rgba(0,0,0,.7));
   animation:ailmentBob 1.2s infinite alternate;pointer-events:none;}
 @keyframes ailmentBob{from{transform:translateY(0);}to{transform:translateY(-4px);}}
+/* Birthday cake popup — celebrates each year tick */
+.birthday-cake{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.4);
+  font-size:96px;z-index:9000;pointer-events:none;opacity:0;
+  filter:drop-shadow(0 8px 24px rgba(251,191,36,.65));transition:transform .4s ease, opacity .4s ease;}
+.birthday-cake.rise{transform:translate(-50%, -120%) scale(1.6);opacity:1;}
+.birthday-cake .bc-age{font-family:var(--font-h);font-size:28px;color:var(--gold);text-align:center;
+  text-shadow:0 0 12px rgba(251,191,36,.7);margin-top:-12px;}
 .actor-frail{filter:saturate(.7) brightness(.9);}
 .actor-frail #player-base{animation:elderWobble 2.4s infinite;}
 @keyframes elderWobble{0%,100%{transform:translateX(0) translateY(0) rotate(0);}25%{transform:translateX(-1px) translateY(-1px) rotate(-2deg);}75%{transform:translateX(1px) translateY(0) rotate(2deg);}}
@@ -296,15 +303,12 @@ button,input,select{font-family:inherit;cursor:pointer;}
     <div class="hud-stat-row health"><span class="hsr-l">Health</span>
       <div class="hud-bar"><div class="hud-bar-fill" id="hud-health" style="width:80%"></div></div>
       <span class="hsr-v" id="hud-health-v">80</span></div>
-    <div class="hud-stat-row energy"><span class="hsr-l">Energy</span>
-      <div class="hud-bar"><div class="hud-bar-fill" id="hud-energy" style="width:80%"></div></div>
-      <span class="hsr-v" id="hud-energy-v">80</span></div>
-    <div class="hud-stat-row hunger"><span class="hsr-l">Hunger</span>
-      <div class="hud-bar"><div class="hud-bar-fill" id="hud-hunger" style="width:80%"></div></div>
-      <span class="hsr-v" id="hud-hunger-v">80</span></div>
     <div class="hud-stat-row smarts"><span class="hsr-l">Smarts</span>
       <div class="hud-bar"><div class="hud-bar-fill" id="hud-smarts" style="width:55%"></div></div>
       <span class="hsr-v" id="hud-smarts-v">55</span></div>
+    <!-- Energy + Hunger HUD removed in audit (micro-management chore) -->
+    <span id="hud-energy" style="display:none"></span><span id="hud-energy-v" style="display:none"></span>
+    <span id="hud-hunger" style="display:none"></span><span id="hud-hunger-v" style="display:none"></span>
   </div>
   <div id="controls-hint">
     <b>WASD</b> walk · <b>Click</b> walk to point · <b>E</b> interact · <b>SPACE</b> +1 day · <b>SHIFT+SPACE</b> +1 week · <b>R</b> +1 hr
@@ -885,48 +889,16 @@ const WORLDS = {
         {id:'airport',   icon:'✈️', name:'Airport',           x:47, y:14, w:4, h:3, action:'openAirport',      cls:'civic'},
         {id:'library',     icon:'📚', name:'Library',          x:52, y:14, w:3, h:3, action:'openLibrary',          cls:'school'},
         {id:'courthouse',  icon:'⚖️', name:'Family Court',      x:33, y:6,  w:3, h:2, action:'openFamilyCourt',      cls:'civic'},
-        {id:'mosque',      icon:'🕌', name:'Mosque',            x:38, y:6,  w:3, h:2, action:'openMosque',           cls:'civic'},
-        {id:'temple',      icon:'🕍', name:'Synagogue / Temple',x:43, y:6,  w:3, h:2, action:'openTemple',           cls:'civic'},
-        {id:'mandir',      icon:'🛕', name:'Mandir',            x:48, y:6,  w:3, h:2, action:'openMandir',           cls:'civic'},
-        {id:'pagoda',      icon:'⛩️', name:'Buddhist Pagoda',   x:53, y:6,  w:3, h:2, action:'openPagoda',           cls:'civic'},
       ],
       exits: [
         {x:0, y:9, w:1, h:2, target:'neighborhood', spawnX:27, spawnY:8},
-        {x:55, y:9, w:1, h:2, target:'beach', spawnX:2, spawnY:9},
       ],
       spawn:{ x:3, y:9 },
       background:'#0e1018',
     };
   })(),
-  beach: {
-    w: 30, h: 16,
-    tiles: (() => {
-      const w = 30, h = 16;
-      const rows = [];
-      for(let y=0; y<h; y++){
-        let row = '';
-        for(let x=0; x<w; x++){
-          if(y < 4)         row += '~'; // ocean
-          else if(y < 6)    row += 's'; // sand
-          else              row += '.'; // grass
-        }
-        rows.push(row);
-      }
-      return rows;
-    })(),
-    buildings: [
-      {id:'beachshop', icon:'🥥', name:'Beach Shack',    x:3,  y:7, w:3, h:2, action:'openBeachShop',    cls:'shop'},
-      {id:'lifeguard', icon:'🚨', name:'Lifeguard Hut',  x:14, y:6, w:2, h:2, action:'openLifeguard',    cls:'civic'},
-      {id:'travel',    icon:'🗺️', name:'Travel Agency',  x:20, y:7, w:3, h:3, action:'openTravelAgency', cls:'entertainment'},
-      {id:'park',      icon:'🌴', name:'Beach Park',     x:8,  y:11, w:4, h:3, action:'goBeachPark',     cls:'entertainment'},
-      {id:'pier',      icon:'🎣', name:'Fishing Pier',   x:24, y:12, w:3, h:3, action:'goFishing',        cls:'entertainment'},
-    ],
-    exits: [
-      {x:0, y:8, w:1, h:2, target:'city', spawnX:54, spawnY:9},
-    ],
-    spawn:{ x:14, y:10 },
-    background:'#1a3a5a',
-  },
+  // Beach zone removed in audit — low engagement, extra map to maintain.
+  // Travel & vacations now accessed via the Airport in the city.
 };
 
 let G = null;
@@ -957,7 +929,11 @@ function defaultGame(name, sex, skinId, country){
       name, sex, skin:skinId, country,
       age:0, day:1, hour:9, daysAlive:0,
       happiness:60, health:80, smarts:55, looks:55, karma:60,
-      energy:80, hunger:80, faith:30, fame:0,
+      faith:30, fame:0,
+      // energy + hunger removed in audit — micro-management chore that
+      // doesn't add fun. Eating + sleeping are still flavor actions that
+      // affect happiness/health directly.
+      energy:100, hunger:100,
       money:1500, salary:0,
       job:null, jobYears:0,
       education:'(not in school yet)', degrees:[],
@@ -1148,16 +1124,15 @@ function playerEmoji(){
   return base;
 }
 
-// Status overlay (coughing, sick, tired) — appears as a tiny popup near the player
+// Status overlay (coughing, sick) — appears as a tiny popup near the player.
+// Driven purely by health + age; energy/hunger no longer surface here.
 function playerAilmentEmoji(){
   const c = G.char;
   if(!c) return '';
-  if(c.health <= 25) return '🤒';        // really sick
-  if(c.health <= 40) return '😷';        // sick
-  if(c.energy <= 15) return '💤';        // exhausted
-  if(c.hunger <= 15) return '🍽️';        // starving
-  if(c.age >= 70 && Math.random() < 0.30) return '🦯'; // cane / shuffle
-  if(c.age >= 80 && c.health < 60 && Math.random() < 0.40) return '😩'; // groaning
+  if(c.health <= 25) return '🤒';                       // really sick
+  if(c.health <= 40) return '😷';                       // sick
+  if(c.age >= 80 && c.health < 60) return '😩';          // very old + ailing
+  if(c.age >= 70) return '🦯';                          // cane / shuffle
   return '';
 }
 
@@ -1390,7 +1365,16 @@ function advanceDay(){
 }
 function ageUp(){
   const c = G.char;
+  // ─── BIRTHDAY: cake animation + year-end summary ───
+  // Snapshot stats so the summary can show what changed this year
+  const _yearStart = {
+    happiness: c.happiness, health: c.health, smarts: c.smarts,
+    looks: c.looks, karma: c.karma, money: c.money,
+  };
   c.age++;
+  showBirthdayCake(c.age);
+  // Year-end summary fires at the end of ageUp (see end of function)
+  c._yearSnapshot = _yearStart;
   miniMsg('🎂 You\'re now ' + c.age + ' years old.');
   // ─── Childhood milestones ───
   if(c.age === 1)  { miniMsg('👶 You took your first steps.'); c.happiness = clamp(c.happiness + 5, 0, 100); }
@@ -1506,6 +1490,8 @@ function ageUp(){
   }
   if(c.age >= 110){ killCharacter('extreme old age'); return; }
   if(c.health <= 0){ killCharacter('failing health'); return; }
+  // Year-end recap modal (fires every 5 years + at age 1)
+  showYearSummary();
 }
 
 function openAchievements(){
@@ -2268,39 +2254,9 @@ function openFamilyCourt(){
   openMod('⚖️ Family Court', html);
 }
 
-// ── ETHNIC HOUSES OF WORSHIP ──
-function openMosque(){
-  const c = G.char;
-  if(c.religion !== 'islam'){
-    if(confirm('Convert to Islam to access mosque ceremonies?')) convertTo('islam');
-    else return;
-  }
-  openReligiousCeremonies();
-}
-function openTemple(){
-  const c = G.char;
-  if(c.religion !== 'jewish'){
-    if(confirm('Convert to Judaism to access temple ceremonies?')) convertTo('jewish');
-    else return;
-  }
-  openReligiousCeremonies();
-}
-function openMandir(){
-  const c = G.char;
-  if(c.religion !== 'hindu'){
-    if(confirm('Convert to Hinduism to access mandir ceremonies?')) convertTo('hindu');
-    else return;
-  }
-  openReligiousCeremonies();
-}
-function openPagoda(){
-  const c = G.char;
-  if(c.religion !== 'buddhist'){
-    if(confirm('Convert to Buddhism to access pagoda ceremonies?')) convertTo('buddhist');
-    else return;
-  }
-  openReligiousCeremonies();
-}
+// Ethnic-specific worship buildings removed in audit — replaced by a single
+// Place of Worship that opens openReligiousCeremonies for whichever religion
+// the player has chosen, OR prompts them to convert via the church flow.
 function convertTo(k){
   G.char.religion = k;
   closeModal();
@@ -2551,30 +2507,7 @@ function openLibrary(){
   toast('📚 Spent the afternoon at the library. +3 smarts.');
 }
 
-function openBeachShop(){
-  openMod('🥥 Beach Shack', '<p style="margin-bottom:10px;font-size:12px;">Refreshments and ice cream.</p>'
-    + '<div class="btn-row">'
-    + '<button class="btn green" onclick="beachIcecream()">🍦 Ice Cream ($8)</button>'
-    + '<button class="btn green" onclick="beachJuice()">🥥 Coconut ($12)</button>'
-    + '</div>');
-}
-function beachIcecream(){ if(G.char.money<8){toast('Need $8');return;} G.char.money-=8; applyFx({happy:5,hunger:10}); closeModal(); miniMsg('🍦 Refreshing.'); }
-function beachJuice(){ if(G.char.money<12){toast('Need $12');return;} G.char.money-=12; applyFx({happy:6,health:1,hunger:8}); closeModal(); miniMsg('🥥 Tropical.'); }
-function openLifeguard(){ toast('🚨 Stay safe out there.'); applyFx({karma:2}); }
-function openTravelAgency(){ openAirport(); }
-function goBeachPark(){ applyFx({happy:8, health:3, energy:-2}); advanceHours(2); miniMsg('🌴 Sunbathed at the beach.'); }
-function goFishing(){
-  if(Math.random() < 0.3){
-    const reward = 50 + Math.floor(Math.random()*120);
-    G.char.money += reward;
-    applyFx({happy:5});
-    miniMsg('🎣 Caught a nice one. +' + fmt(reward));
-  } else {
-    applyFx({happy:3, energy:-2});
-    miniMsg('🎣 Quiet on the pier. No bites.');
-  }
-  advanceHours(2);
-}
+// Beach handlers removed in audit — beach zone cut.
 
 // ───── ACHIEVEMENTS ─────
 function computeAchievements(){
@@ -2683,6 +2616,44 @@ function toast(msg){
   if(_toastT) clearTimeout(_toastT);
   _toastT = setTimeout(() => t.classList.remove('show'), 2200);
 }
+// ─── BIRTHDAY CAKE + YEAR-END SUMMARY ───
+function showBirthdayCake(age){
+  const cake = document.createElement('div');
+  cake.className = 'birthday-cake';
+  cake.innerHTML = '🎂<div class="bc-age">' + age + '</div>';
+  document.body.appendChild(cake);
+  setTimeout(() => cake.classList.add('rise'), 30);
+  setTimeout(() => cake.remove(), 2400);
+}
+
+function showYearSummary(){
+  const c = G.char;
+  if(!c._yearSnapshot) return;
+  const s = c._yearSnapshot;
+  const delta = (now, before) => {
+    const d = now - before;
+    return d === 0 ? '' : (d > 0 ? ' (+' + d + ')' : ' (' + d + ')');
+  };
+  const moneyD = c.money - s.money;
+  let html = '<div style="text-align:center;font-family:var(--font-h);font-size:22px;color:var(--accent2);margin-bottom:14px;">Year ' + c.age + ' · Recap</div>';
+  html += '<div style="display:grid;grid-template-columns:auto auto;gap:6px 18px;font-family:var(--font-m);font-size:13px;line-height:1.6;">'
+    + '<span style="color:var(--t3);">Happiness</span><b>' + c.happiness + delta(c.happiness, s.happiness) + '</b>'
+    + '<span style="color:var(--t3);">Health</span><b>' + c.health + delta(c.health, s.health) + '</b>'
+    + '<span style="color:var(--t3);">Smarts</span><b>' + c.smarts + delta(c.smarts, s.smarts) + '</b>'
+    + '<span style="color:var(--t3);">Looks</span><b>' + c.looks + delta(c.looks, s.looks) + '</b>'
+    + '<span style="color:var(--t3);">Karma</span><b>' + c.karma + delta(c.karma, s.karma) + '</b>'
+    + '<span style="color:var(--t3);">Money</span><b style="color:' + (moneyD>=0?'var(--green)':'var(--crimson)') + '">' + fmt(c.money) + (moneyD ? ' (' + (moneyD>0?'+':'') + fmt(moneyD).replace('$','') + ')' : '') + '</b>'
+    + '</div>';
+  if(c.job) html += '<p style="margin-top:14px;font-size:12px;color:var(--t3);">Job: ' + c.job + ' · ' + fmt(c.salary) + '/yr</p>';
+  if(c.relationship && c.relationship.married) html += '<p style="font-size:12px;color:var(--t3);">Married to ' + c.relationship.name + '.</p>';
+  if(c.kids && c.kids.length) html += '<p style="font-size:12px;color:var(--t3);">Children: ' + c.kids.length + '</p>';
+  html += '<button class="btn green" style="width:100%;margin-top:14px;padding:10px;" onclick="closeModal()">Continue</button>';
+  // Only auto-show every 5 years to avoid spam — milestone years
+  if(c.age % 5 === 0 || c.age === 1){
+    openMod('Year ' + c.age + ' · Recap', html);
+  }
+}
+
 let _msgT;
 function miniMsg(msg){
   const t = document.getElementById('mini-msg');

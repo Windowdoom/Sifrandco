@@ -3451,6 +3451,11 @@ function ageUp(){
   // banking interest tick
   processBankingInterest();
   processSideHustles();
+  // Reset annual practice counters + roll the rare talent burst
+  LIFE.char._practiceCount = {};
+  rollTalentBurst();
+  // Religious-practice auto-events for selected faith
+  rollFaithPracticeAnnual();
   // Identity layer — runs once per year after stats settle
   applyTraitDrifts();
   crystallizeTraits();
@@ -4009,7 +4014,13 @@ function renderActionBar(){
   if(a >= 18) btns.push({lbl:'🏛️ Gov', fn:'openGovernment()'});
   // City + Faith for anyone who can leave the house
   if(a >= 6) btns.push({lbl:'🏙️ City', fn:'openCityMap()'});
-  if(a >= 6) btns.push({lbl:'🕊️ Faith', fn:'openReligion()'});
+  // If you have a religion, the Faith button opens authentic per-religion
+  // practices (salah/zakat/hafiz for Islam, mass/tithe for Christianity,
+  // puja/diwali for Hindu, etc.). Otherwise it routes to religion picker.
+  if(a >= 6){
+    const faithFn = c.religion ? 'openFaithPractice()' : 'openReligion()';
+    btns.push({lbl:'🕊️ Faith', fn:faithFn});
+  }
   // More: always, hosts everything else (Prefs/Risky/Drama/Rituals/etc)
   btns.push({lbl:'✨ More', fn:'openMore()'});
   bar.innerHTML = btns.map(b =>
@@ -7736,6 +7747,213 @@ function rollFaithEvent(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+//  RELIGIOUS PRACTICES — authentic per-religion actions.
+//  Each religion has its own set of devotional / charitable / lifecycle
+//  actions. Selecting Islam unlocks Salah, Jumu'ah, Zakat, Sadaqah,
+//  Ramadan, Hajj, Da'wah, Hafiz progress, Build a Masjid. Other
+//  religions get their own authentic equivalents.
+// ═══════════════════════════════════════════════════════════════════════
+const RELIGIOUS_PRACTICES_BY_RELIGION = {
+  islam: [
+    {id:'salah',     ico:'🕌', name:'Perform Salah (5 daily prayers)',          desc:'Pray the five daily prayers — Fajr, Dhuhr, Asr, Maghrib, Isha.', cost:0,    fx:{faith:+4, happiness:+3, karma:+2}},
+    {id:'jumuah',    ico:'🕌', name:'Friday Jumu\'ah Prayer',                    desc:'Attend the congregational Friday prayer + khutbah at the masjid.', cost:0,   fx:{faith:+5, happiness:+4, karma:+2}},
+    {id:'ramadan',   ico:'🌙', name:'Fast Ramadan (full month)',                 desc:'Sunrise-to-sunset fasting for the entire month of Ramadan.',     cost:0,    fx:{faith:+12, karma:+8, happiness:+6}},
+    {id:'zakat',     ico:'💝', name:'Pay Zakat (2.5% of net worth)',            desc:'Mandatory alms — 2.5% of your nisab-eligible wealth, paid annually to the poor.', special:'zakat', fx:{faith:+10, karma:+12}},
+    {id:'sadaqah',   ico:'🤲', name:'Give Sadaqah (voluntary charity)',          desc:'Discretionary almsgiving. The Prophet ﷺ said: "Charity does not decrease wealth."', special:'sadaqah', fx:{faith:+4, karma:+5}},
+    {id:'hajj',      ico:'🕋', name:'Perform Hajj (lifetime pilgrimage)',        desc:'The pilgrimage to Mecca, obligatory once if able. Tawaf, Sa\'i, standing at Arafat.', cost:8000, fx:{faith:+25, karma:+15, happiness:+18, fame:+5}, oneShot:'hajjDone'},
+    {id:'umrah',     ico:'🕋', name:'Perform Umrah (lesser pilgrimage)',         desc:'The lesser pilgrimage. Can be performed any time outside Hajj season.',     cost:3500, fx:{faith:+10, happiness:+8}},
+    {id:'hafiz',     ico:'📖', name:'Memorize the Qur\'an (Hafiz)',             desc:'A 5-7 year journey memorizing all 30 juz. Click each year to advance your progress.', special:'hafiz', fx:{faith:+3, smarts:+2}},
+    {id:'dawah',     ico:'🗣️',name:'Da\'wah (Invite Others to Islam)',          desc:'Share your faith with neighbors, online, or through community work.', cost:200, fx:{faith:+5, karma:+4, fame:+2}},
+    {id:'build_masjid', ico:'🕌', name:'Build a Masjid',                          desc:'Endow construction of a community mosque. The Prophet ﷺ said: "Whoever builds a masjid, Allah builds for him a house in Paradise."', cost:500000, fx:{faith:+30, karma:+25, fame:+15}, oneShot:'masjidBuilt'},
+  ],
+  christian: [
+    {id:'sunday',    ico:'⛪', name:'Sunday Service',                            desc:'Weekly worship + scripture + community.',     cost:0,  fx:{faith:+5, happiness:+3, karma:+2}},
+    {id:'confession',ico:'🙏', name:'Confession',                               desc:'Reconciliation — acknowledge what you\'ve done and resolve to do better.', cost:0, fx:{faith:+4, karma:+5, happiness:+5}},
+    {id:'lent',      ico:'🌿', name:'Observe Lent (40-day fast)',               desc:'Forty days of self-denial leading up to Easter.', cost:0, fx:{faith:+8, karma:+5, happiness:+3}},
+    {id:'tithe',     ico:'💝', name:'Pay Tithe (10% of income)',                desc:'Voluntary 10% to the church and its work.', special:'tithe', fx:{faith:+8, karma:+10}},
+    {id:'mission',   ico:'✈️',name:'Mission Trip',                              desc:'Travel to a community in need and serve.',  cost:5000, fx:{faith:+12, karma:+12, happiness:+10}},
+    {id:'pilgrimage_holy_land', ico:'🚶', name:'Pilgrimage to the Holy Land',  desc:'Walk where He walked. Multi-week pilgrimage.', cost:7500, fx:{faith:+18, happiness:+10}, oneShot:'holyLandDone'},
+    {id:'build_church', ico:'⛪', name:'Build a Church',                          desc:'Fund construction of a parish church.',     cost:500000, fx:{faith:+25, karma:+20, fame:+12}, oneShot:'churchBuilt'},
+  ],
+  hindu: [
+    {id:'puja',      ico:'🪔', name:'Daily Puja at Home',                        desc:'Light incense, offer flowers and prayers to your chosen deity.', cost:0, fx:{faith:+4, happiness:+4}},
+    {id:'temple',    ico:'🕉️', name:'Visit the Mandir',                          desc:'Temple darshan + aarti. Receive prasad.',     cost:0, fx:{faith:+5, karma:+3, happiness:+4}},
+    {id:'diwali',    ico:'🪔', name:'Celebrate Diwali',                          desc:'Festival of lights. Diyas, sweets, family, prayers to Lakshmi.', cost:300, fx:{faith:+10, happiness:+18, karma:+5}},
+    {id:'kashi',     ico:'🛕', name:'Pilgrimage to Kashi (Varanasi)',           desc:'Bathe in the Ganges, ascend the ghats, attend the Ganga aarti.', cost:3200, fx:{faith:+16, happiness:+10}, oneShot:'kashiDone'},
+    {id:'yoga',      ico:'🧘', name:'Daily Yoga & Pranayama',                    desc:'Asana, breathwork, dharana. The discipline of the self.',          cost:0, fx:{faith:+3, health:+3, happiness:+4}},
+    {id:'daana',     ico:'💝', name:'Daana (Charitable Giving)',                desc:'Give to brahmins, the poor, or the temple.',  special:'sadaqah', fx:{faith:+6, karma:+8}},
+    {id:'build_mandir', ico:'🛕', name:'Build a Mandir',                          desc:'Sponsor construction of a temple in your community.', cost:500000, fx:{faith:+28, karma:+20, fame:+12}, oneShot:'mandirBuilt'},
+  ],
+  buddhist: [
+    {id:'meditation',ico:'🧘', name:'Daily Meditation',                          desc:'Vipassana or shamatha. Sit, observe, return.', cost:0, fx:{faith:+3, happiness:+5, health:+1}},
+    {id:'vesak',     ico:'🪷', name:'Vesak Celebration',                         desc:'Honor the Buddha\'s birth, enlightenment, and parinirvana.', cost:200, fx:{faith:+10, happiness:+8}},
+    {id:'retreat',   ico:'⛩️', name:'Monastic Retreat (Vipassana)',              desc:'A multi-day silent retreat at a monastery.', cost:1200, fx:{faith:+12, happiness:+10, smarts:+2}},
+    {id:'bodhgaya',  ico:'🌳', name:'Pilgrimage to Bodh Gaya',                  desc:'Sit beneath the Bodhi Tree where the Buddha attained enlightenment.', cost:3000, fx:{faith:+18, happiness:+12}, oneShot:'bodhgayaDone'},
+    {id:'daana_b',   ico:'💝', name:'Donate to the Sangha',                     desc:'Support the monastic community. The cycle of giving.', special:'sadaqah', fx:{faith:+8, karma:+10}},
+    {id:'precepts',  ico:'📜', name:'Take the Five Precepts',                   desc:'Commit anew to non-killing, non-stealing, non-lying, no sexual misconduct, no intoxicants.', cost:0, fx:{faith:+6, karma:+8}, oneShot:'preceptsTaken'},
+  ],
+  jewish: [
+    {id:'shabbat',   ico:'🕯️', name:'Observe Shabbat',                          desc:'Light candles Friday night, refrain from work until Saturday sundown.', cost:60, fx:{faith:+6, happiness:+6, karma:+2}},
+    {id:'torah',     ico:'📜', name:'Torah Study',                              desc:'Chevruta-style study with a partner — the text studied is itself a prayer.', cost:0, fx:{faith:+5, smarts:+3}},
+    {id:'yomkippur', ico:'✡️', name:'Yom Kippur Fast',                          desc:'25-hour fast for atonement. The holiest day of the year.', cost:0, fx:{faith:+12, karma:+8, happiness:+4}},
+    {id:'tzedakah',  ico:'💝', name:'Tzedakah (Righteous Giving)',              desc:'The Talmud teaches that tzedakah is greater than all the commandments. Give freely.', special:'sadaqah', fx:{faith:+6, karma:+10}},
+    {id:'barmitzvah',ico:'🕎', name:'Bar/Bat Mitzvah Ceremony',                 desc:'Coming of age at 13. Read from the Torah for the first time.', cost:8000, fx:{faith:+15, smarts:+4, fame:+3, happiness:+15}, oneShot:'barMitzvahDone'},
+    {id:'kotel',     ico:'🧱', name:'Pilgrimage to the Kotel',                  desc:'Place a folded prayer in the Western Wall.', cost:3500, fx:{faith:+16, happiness:+8}, oneShot:'kotelDone'},
+    {id:'build_synagogue', ico:'🕍', name:'Endow a Synagogue',                  desc:'Sponsor construction of a community synagogue.', cost:500000, fx:{faith:+25, karma:+20, fame:+12}, oneShot:'synagogueBuilt'},
+  ],
+  secular: [
+    {id:'volunteer', ico:'💝', name:'Volunteer at a Shelter',                    desc:'Show up. Stack chairs, serve meals, drive someone home.',  cost:0, fx:{faith:+2, karma:+8, happiness:+5}},
+    {id:'philosophy',ico:'📚', name:'Read Philosophy',                           desc:'Sit with Marcus Aurelius, Simone Weil, or Camus for an evening.', cost:30, fx:{smarts:+3, happiness:+2}},
+    {id:'community', ico:'🤝', name:'Community Organizing',                     desc:'Help organize a tenant union, mutual-aid network, or neighborhood watch.', cost:0, fx:{karma:+10, happiness:+5}},
+    {id:'meditate_s',ico:'🧘', name:'Sit Quietly for 20 Minutes',                desc:'No tradition required. Just sit. Watch your mind.', cost:0, fx:{happiness:+4, health:+1}},
+    {id:'donate_s',  ico:'💝', name:'Donate to a Cause',                        desc:'Voluntary donation to a cause that matters to you.', special:'sadaqah', fx:{karma:+8, happiness:+3}},
+  ],
+};
+
+function openFaithPractice(){
+  const c = LIFE.char;
+  if(!c.religion){ openReligion(); return; }
+  const r = RELIGIONS[c.religion];
+  const practices = RELIGIOUS_PRACTICES_BY_RELIGION[c.religion] || RELIGIOUS_PRACTICES_BY_RELIGION.secular;
+  c.flags = c.flags || {};
+  let html = '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;text-align:center;">'
+    + '<div style="font-size:42px;">' + r.icon + '</div>'
+    + '<div style="font-family:var(--font-h);font-size:20px;color:var(--accent2);margin-top:4px;">' + r.name + '</div>'
+    + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.22em;color:var(--gold);margin-top:6px;text-transform:uppercase;">Faith: ' + c.faith + ' / 100</div>';
+  // Hafiz progress (Islam-specific)
+  if(c.religion === 'islam'){
+    const hp = c.hafizProgress || 0;
+    html += '<div style="margin-top:10px;font-family:var(--font-m);font-size:10px;color:var(--t3);letter-spacing:.15em;text-transform:uppercase;">'
+      + (hp >= 100 ? '✓ HAFIZ AL-QUR\'AN' : 'Hafiz Progress: ' + hp + ' / 100') + '</div>';
+    if(c.flags.masjidBuilt) html += '<div style="font-size:10px;color:var(--green);margin-top:4px;">🕌 You built a masjid.</div>';
+    if(c.flags.hajjDone)    html += '<div style="font-size:10px;color:var(--green);margin-top:4px;">🕋 Hajj completed.</div>';
+  }
+  if(c.religion === 'christian' && c.flags.churchBuilt) html += '<div style="font-size:10px;color:var(--green);margin-top:6px;">⛪ You built a church.</div>';
+  if(c.religion === 'hindu'     && c.flags.mandirBuilt) html += '<div style="font-size:10px;color:var(--green);margin-top:6px;">🛕 You built a mandir.</div>';
+  if(c.religion === 'jewish'    && c.flags.synagogueBuilt) html += '<div style="font-size:10px;color:var(--green);margin-top:6px;">🕍 You endowed a synagogue.</div>';
+  html += '</div>';
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;">Practices · Pick One Per Year</div>';
+  practices.forEach(p => {
+    let costLabel = '';
+    if(p.special === 'zakat'){
+      const nw = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : c.money;
+      const owed = Math.floor(nw * 0.025);
+      costLabel = 'Owed: ' + fmtMoney(owed);
+    } else if(p.cost){
+      costLabel = '−' + fmtMoney(p.cost);
+    }
+    const done = p.oneShot && c.flags[p.oneShot];
+    html += '<div class="card" style="' + (done ? 'opacity:.5;' : '') + '">'
+      + '<div class="card-ico">' + p.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + p.name + (done ? ' ✓' : '') + '</div>'
+      + '<div class="card-meta">' + p.desc + '</div></div>'
+      + '<div class="card-act">'
+      + (costLabel ? '<div class="card-pay neg">' + costLabel + '</div>' : '')
+      + (done ? '<button class="card-btn muted" disabled>Done</button>'
+              : '<button class="card-btn" onclick="doReligiousPractice(\'' + p.id + '\')">Do It</button>')
+      + '</div></div>';
+  });
+  html += '<button class="card-btn muted" style="width:100%;margin-top:10px;padding:10px;" onclick="closeModal();openReligion();">Convert / Leave Religion</button>';
+  openModal(r.icon + ' ' + r.name + ' Practices', html);
+}
+
+function doReligiousPractice(id){
+  const c = LIFE.char;
+  const practices = RELIGIOUS_PRACTICES_BY_RELIGION[c.religion] || [];
+  const p = practices.find(x => x.id === id);
+  if(!p) return;
+  c.flags = c.flags || {};
+  if(p.oneShot && c.flags[p.oneShot]){ toast('Already completed.'); return; }
+  // Specials with their own logic
+  if(p.special === 'zakat'){
+    const nw = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : c.money;
+    const owed = Math.floor(nw * 0.025);
+    if(c.money < owed){ toast('Need ' + fmtMoney(owed) + ' liquid to pay zakat.'); return; }
+    c.money -= owed;
+    c.faith = clamp(c.faith + (p.fx.faith||0), 0, 100);
+    c.karma = clamp(c.karma + (p.fx.karma||0), 0, 100);
+    pushEvent('milestone', '💝 Zakat paid — ' + fmtMoney(owed) + ' to the poor. Faith +' + (p.fx.faith||0) + ', Karma +' + (p.fx.karma||0) + '.');
+    closeModal(); openFaithPractice(); saveLife(); return;
+  }
+  if(p.special === 'sadaqah' || p.special === 'tithe'){
+    const amt = prompt('How much would you like to give?', '500');
+    const n = parseInt(amt, 10);
+    if(!n || n <= 0){ closeModal(); openFaithPractice(); return; }
+    if(c.money < n){ toast('Not enough.'); return; }
+    c.money -= n;
+    // Faith / karma scales with how much (logarithmically)
+    const scale = Math.min(3, Math.log10(n / 100 + 1));
+    c.faith = clamp(c.faith + Math.floor((p.fx.faith||0) * scale), 0, 100);
+    c.karma = clamp(c.karma + Math.floor((p.fx.karma||0) * scale), 0, 100);
+    pushEvent('good', '💝 Gave ' + fmtMoney(n) + ' as ' + p.name + '.');
+    closeModal(); openFaithPractice(); saveLife(); return;
+  }
+  if(p.special === 'hafiz'){
+    if((c.hafizProgress || 0) >= 100){ toast('You are already a Hafiz.'); return; }
+    const progressYear = 10 + Math.floor(c.smarts/20); // ~10-15 per year of dedicated study
+    c.hafizProgress = Math.min(100, (c.hafizProgress || 0) + progressYear);
+    c.faith = clamp(c.faith + (p.fx.faith||0), 0, 100);
+    c.smarts = clamp(c.smarts + (p.fx.smarts||0), 0, 100);
+    if(c.hafizProgress >= 100 && !c.flags.hafizCompleted){
+      c.flags.hafizCompleted = true;
+      c.faith = clamp(c.faith + 20, 0, 100);
+      c.karma = clamp(c.karma + 15, 0, 100);
+      c.fame  = clamp((c.fame||0) + 10, 0, 100);
+      pushEvent('milestone', '🌟 You completed the memorization. You are now a Hafiz al-Qur\'an. Your community will know you by it.');
+      if(typeof recordLegacy === 'function') recordLegacy('became a Hafiz al-Qur\'an');
+    } else {
+      pushEvent('good', '📖 Hafiz progress: ' + c.hafizProgress + ' / 100.');
+    }
+    closeModal(); openFaithPractice(); saveLife(); return;
+  }
+  // Standard practice
+  if(p.cost && c.money < p.cost){ toast('Need ' + fmtMoney(p.cost) + '.'); return; }
+  if(p.cost) c.money -= p.cost;
+  Object.entries(p.fx || {}).forEach(([k, v]) => {
+    if(k === 'faith') c.faith = clamp(c.faith + v, 0, 100);
+    else if(k === 'fame') c.fame = clamp((c.fame||0) + v, 0, 100);
+    else if(c[k] != null) c[k] = clamp(c[k] + v, 0, 100);
+  });
+  if(p.oneShot){
+    c.flags[p.oneShot] = true;
+    if(typeof recordLegacy === 'function') recordLegacy('completed ' + p.name.toLowerCase());
+  }
+  pushEvent('good', p.ico + ' ' + p.name + ' — faith +' + (p.fx.faith||0) + '.');
+  closeModal(); openFaithPractice(); saveLife();
+}
+
+// Annual nudge: if Muslim and net worth > nisab threshold, remind that
+// zakat is due. Other religions get gentle annual prompts too.
+function rollFaithPracticeAnnual(){
+  const c = LIFE.char;
+  if(!c.religion) return;
+  c.flags = c.flags || {};
+  // Faith decays slightly each year without practice
+  if(Math.random() < 0.4){
+    c.faith = clamp(c.faith - 1, 0, 100);
+  }
+  // Islam: zakat reminder + auto-tithe if very faithful
+  if(c.religion === 'islam'){
+    const nw = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : c.money;
+    if(nw >= 10000 && (c.faith||0) >= 50 && !c.flags['zakatYear_' + c.age]){
+      c.flags['zakatYear_' + c.age] = true;
+      pushEvent('', '🕌 Zakat is due this year — ' + fmtMoney(Math.floor(nw * 0.025)) + ' on your wealth. Open Faith Practices to pay.');
+    }
+  }
+  // Christian: yearly tithe reminder
+  if(c.religion === 'christian' && (c.faith||0) >= 50 && c.career && c.career.currentSalary){
+    if(!c.flags['titheYear_' + c.age]){
+      c.flags['titheYear_' + c.age] = true;
+      pushEvent('', '⛪ Tithe season — 10% of your annual income would be ' + fmtMoney(Math.floor(c.career.currentSalary * 0.1)) + '. Open Faith Practices to give.');
+    }
+  }
+  // Bar/Bat Mitzvah auto-prompt at age 13 for Jewish
+  if(c.religion === 'jewish' && c.age === 13 && !c.flags.barMitzvahDone){
+    pushEvent('milestone', '🕎 You turned 13. Time for your Bar/Bat Mitzvah — open Faith Practices.');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 //  RELIGION MODAL
 // ═══════════════════════════════════════════════════════════════════════
 function openReligion(){
@@ -8605,13 +8823,65 @@ function rollScandal(amplified){
   }
   pushEvent('bad', '📰 SCANDAL: ' + s.desc + ' Fame ' + Math.round(fameHit) + '.');
 }
+// Rare talent-burst event: skill levels 70-94 can occasionally jump past
+// 95 through inspiration, mentorship, or breakthrough. Realism — most
+// people never reach world-class, but it does happen.
+function rollTalentBurst(){
+  const c = LIFE.char;
+  if(!c.skills) return;
+  Object.keys(c.skills).forEach(sid => {
+    const lvl = c.skills[sid];
+    if(lvl < 70) return;
+    // Roll a small chance scaled by how close to mastery you already are
+    const chance = lvl >= 90 ? 0.03 : lvl >= 80 ? 0.018 : 0.008;
+    if(Math.random() < chance){
+      const bonus = lvl >= 90 ? (1 + Math.floor(Math.random()*3)) : (2 + Math.floor(Math.random()*4));
+      c.skills[sid] = Math.min(100, lvl + bonus);
+      const events = [
+        '⚡ A mentor took you under their wing.',
+        '⚡ A late-night breakthrough — something just clicked.',
+        '⚡ A masterclass changed how you see this craft.',
+        '⚡ You watched a master at work and absorbed something.',
+        '⚡ A moment of pure flow that lasted hours.',
+      ];
+      pushEvent('good', pickRand(events) + ' ' + SKILLS.find(s=>s.id===sid).name + ' jumped +' + bonus + ' (' + c.skills[sid] + '/100).');
+    }
+  });
+}
+
 function practiceSkill(id){
   const c = LIFE.char;
   if(!c.skills) c.skills = {};
+  // Realism cap: 3 practice sessions per year. Resets each ageUp.
+  c._practiceCount = c._practiceCount || {};
+  c._practiceCount[id] = (c._practiceCount[id] || 0);
+  if(c._practiceCount[id] >= 3){
+    toast('You\'ve practiced this skill enough this year. Wait for next year.');
+    return;
+  }
+  const current = c.skills[id] || 0;
   const creative = (c.traits||[]).includes('creative');
-  const gain = (creative ? 6 : 3) + Math.floor(c.smarts/40);
-  c.skills[id] = Math.min(100, (c.skills[id]||0) + gain);
-  pushEvent('good', '🎯 Practiced ' + SKILLS.find(x=>x.id===id).name + '. +' + gain + ' to that skill.');
+  // Tiered gain — fast at the bottom, brutal at the top. World-class
+  // (95+) is unreachable through clicking alone; you need talent events.
+  let gain;
+  if(current < 25)      gain = (creative ? 4 : 3);
+  else if(current < 50) gain = (creative ? 3 : 2);
+  else if(current < 70) gain = (creative ? 2 : 1);
+  else if(current < 85) gain = (Math.random() < (creative ? 0.7 : 0.4) ? 1 : 0);
+  else if(current < 95) gain = (Math.random() < (creative ? 0.4 : 0.2) ? 1 : 0);
+  else                  gain = 0; // 95+ requires natural talent / breakthrough events
+  // Smarts gives a 0-1 nudge, not the old +smarts/40 (which was up to +2)
+  if(Math.random() < c.smarts/200) gain += 1;
+  // Tax it via the annual counter regardless of gain (you still spent the time)
+  c._practiceCount[id]++;
+  if(gain === 0){
+    pushEvent('', '🎯 You practiced ' + SKILLS.find(x=>x.id===id).name + '. No measurable progress this session — you\'re hitting the ceiling.');
+    closeModal();
+    openSkills();
+    return;
+  }
+  c.skills[id] = Math.min(current >= 95 ? current : 95, current + gain);
+  pushEvent('good', '🎯 Practiced ' + SKILLS.find(x=>x.id===id).name + '. +' + gain + ' (' + c.skills[id] + '/100). Sessions this year: ' + c._practiceCount[id] + '/3.');
   closeModal();
   openSkills();
   renderAll();

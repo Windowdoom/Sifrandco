@@ -3939,13 +3939,20 @@ function rollPartnerEvents(){
   if(Math.random() < 0.15){
     c.partner.compat = clamp(c.partner.compat + (Math.random()<0.5?-3:+3), 0, 100);
   }
-  // divorce chance if compat is low
-  if(c.partner.married && c.partner.compat < 25){
+  // Spouse-initiated dissolution if compat collapses. Islamic edition
+  // uses a lower coefficient — marriage is treated as weightier here, and
+  // arbitration/khula are the proper paths (Quran 4:35, 2:229). Iddah is
+  // recorded so a new nikkah cannot be contracted immediately.
+  if(c.partner.married && c.partner.compat < 22){
     const country = COUNTRIES[c.country];
-    if(Math.random() < country.divorceRate * 0.15){
-      pushEvent('romantic', '💔 ' + c.partner.firstName + ' filed for divorce. Assets were split.');
+    if(Math.random() < country.divorceRate * 0.07){
+      const verb = c.sex === 'f' ? 'pronounced talaq on you' : 'sought khula from you';
+      pushEvent('romantic', '💔 ' + c.partner.firstName + ' ' + verb + '. Iddah begins.');
       c.money = Math.floor(c.money / 2);
       c.happiness = Math.max(0, c.happiness - 30);
+      c.flags = c.flags || {};
+      c.flags.divorced = true;
+      c.flags.iddahUntil = c.age + 1;
       c.partner = null;
     }
   }
@@ -4766,6 +4773,18 @@ const RELIGIOUS_WEDDINGS = {
 function proposeMarriage(){
   const c = LIFE.char;
   const p = c.partner;
+  // Islamic edition: marriage is a weighty contract, not a toggle.
+  // A still-married player cannot take another spouse through this flow;
+  // Quran 4:3 permits more than one wife only on strict condition of just
+  // and equal treatment — a bar this game does not model casually.
+  if(p.married){ toast('You are already married. Honour the marriage you have.'); return; }
+  if(c.partner && c.partner.firstName){
+    // sanity: same partner just re-using button
+  }
+  if(c.flags && c.flags.iddahUntil && c.age < c.flags.iddahUntil){
+    toast('Iddah waiting period is not complete. Wait before contracting another nikkah.');
+    return;
+  }
   if(p.compat < 60){ toast(p.firstName + ' said no. Compat too low.'); p.compat = clamp(p.compat - 8, 0, 100); switchRelTab('partner'); return; }
   // If the player follows a religion with a matching wedding ritual,
   // ask whether they want the religious ceremony or a secular wedding.
@@ -4978,20 +4997,89 @@ function tryForBaby(){
   saveLife();
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  DIVORCE — shariah-aware flow.
+//  In Islam divorce is permitted but described in hadith as the most
+//  disliked of the lawful (Abu Dawud 2178). The flow reflects that
+//  weight: arbitration first (Quran 4:35), then either husband-initiated
+//  talaq with iddah (Quran 2:228) or wife-initiated khula by returning
+//  the mahr (Quran 2:229; the case of Habibah bint Sahl, Bukhari 5273).
+//  An iddah flag is set so a new nikkah cannot be contracted immediately.
+// ═══════════════════════════════════════════════════════════════════════
 function initiateDivorce(){
   const c = LIFE.char;
-  if(!confirm('Initiate divorce? Assets will be split.')) return;
-  pushEvent('romantic', '💔 You divorced ' + c.partner.firstName + '. Assets were split 50/50.');
-  c.money = Math.floor(c.money / 2);
-  c.happiness = clamp(c.happiness - 25, 0, 100);
-  if(typeof addPartnerMemory === 'function'){
-    addPartnerMemory('divorced', 9, 'when you divorced them at age ' + c.age);
+  if(!c.partner || !c.partner.married){ toast('You are not married.'); return; }
+  const p = c.partner;
+  const wifeInitiated = c.sex === 'f';
+  let html = '<div style="color:var(--accent2);font-size:12px;margin-bottom:12px;line-height:1.55;">'
+    + 'Divorce is permitted but heavy. Choose the path with care.</div>';
+  // Path 1: reconciliation via arbiters
+  html += '<div class="card" onclick="closeModal();divorceReconcile()" style="cursor:pointer;">'
+    + '<div class="card-ico">🤝</div>'
+    + '<div class="card-body"><div class="card-title">Send Arbiters to Reconcile</div>'
+    + '<div class="card-meta">One from your family, one from theirs. A first step before any pronouncement.</div></div>'
+    + '<div class="card-act"><button class="card-btn">Try</button></div></div>';
+  // Path 2: talaq or khula depending on sex
+  if(wifeInitiated){
+    html += '<div class="card" onclick="closeModal();divorceKhula()" style="cursor:pointer;">'
+      + '<div class="card-ico">📜</div>'
+      + '<div class="card-body"><div class="card-title">Seek Khula (Return the Mahr)</div>'
+      + '<div class="card-meta">A wife-initiated dissolution. You return the mahr and the marriage ends; an iddah of waiting follows.</div></div>'
+      + '<div class="card-act"><button class="card-btn danger">Proceed</button></div></div>';
+  } else {
+    html += '<div class="card" onclick="closeModal();divorceTalaq()" style="cursor:pointer;">'
+      + '<div class="card-ico">📜</div>'
+      + '<div class="card-body"><div class="card-title">Pronounce Talaq (with Iddah)</div>'
+      + '<div class="card-meta">A husband-initiated divorce. The wife keeps her mahr; an iddah of waiting follows before either remarries.</div></div>'
+      + '<div class="card-act"><button class="card-btn danger">Proceed</button></div></div>';
   }
-  c.partner = null;
-  switchRelTab('partner');
-  renderAll();
-  saveLife();
+  html += '<div class="card" onclick="closeModal()" style="cursor:pointer;opacity:.7;">'
+    + '<div class="card-ico">↩️</div>'
+    + '<div class="card-body"><div class="card-title">Step Back</div>'
+    + '<div class="card-meta">Take more time before deciding.</div></div></div>';
+  openModal('💔 ' + p.firstName + ' — End the Marriage?', html);
 }
+
+function divorceReconcile(){
+  const c = LIFE.char; const p = c.partner;
+  const base = (p.compat || 0) + (c.karma || 50) * 0.2;
+  const ok = Math.random() * 100 < Math.max(20, Math.min(85, base));
+  c.money -= 400;
+  if(ok){
+    p.compat = clamp((p.compat || 0) + 18, 0, 100);
+    c.happiness = clamp(c.happiness + 6, 0, 100);
+    c.karma = clamp((c.karma || 50) + 4, 0, 100);
+    pushEvent('romantic', '🤝 The arbiters helped. You and ' + p.firstName + ' chose to stay together.');
+  } else {
+    p.compat = clamp((p.compat || 0) - 4, 0, 100);
+    pushEvent('romantic', '💔 The arbiters tried but reconciliation failed. The matter remains open.');
+  }
+  switchRelTab('partner'); renderAll(); saveLife();
+}
+
+function _finalizeDivorce(label, mahrReturned){
+  const c = LIFE.char; const p = c.partner;
+  // Civil asset settlement still applies wherever the player lives;
+  // the shariah layer adds iddah + mahr treatment on top.
+  c.money = Math.floor(c.money / 2);
+  if(mahrReturned){
+    // Wife returns the mahr to free herself — symbolic cost on top.
+    c.money = Math.max(0, c.money - 3000);
+  }
+  c.happiness = clamp(c.happiness - 22, 0, 100);
+  c.flags = c.flags || {};
+  c.flags.divorced = true;
+  c.flags.iddahUntil = c.age + 1; // ~3 lunar months, rounded to the next yearly turn
+  if(typeof addPartnerMemory === 'function'){
+    addPartnerMemory('divorced', 9, 'when the marriage ended at age ' + c.age);
+  }
+  pushEvent('romantic', '💔 ' + label + ' from ' + p.firstName + '. Iddah begins; remarriage waits.');
+  c.partner = null;
+  switchRelTab('partner'); renderAll(); saveLife();
+}
+
+function divorceTalaq(){ _finalizeDivorce('Talaq pronounced', false); }
+function divorceKhula(){ _finalizeDivorce('Khula granted', true); }
 
 // Break up with an unmarried partner. Cheaper than divorce — no asset
 // split, but still hurts. If you have shared kids, they're marked
@@ -11510,11 +11598,11 @@ const LOVED_ONE_EVENTS = {
         {l:'Put them in a nursing home',           cost:35000, fx:{happiness:-12, karma:-5, parentHealth:-3}},
       ],
       need:p => p.alive && p.age >= 65},
-    {id:'parent_remarry', t:'%PARENT% is getting remarried.',
+    {id:'parent_remarry', t:'%PARENT% — a widow/widower — is contracting a new nikkah.',
       choices:[
-        {l:'Attend and bless the union',        cost:1200, fx:{happiness:+8, karma:+5}},
-        {l:'Skip the wedding',                  cost:0,    fx:{happiness:-6, karma:-5}},
-        {l:'Try to break it up',                cost:0,    fx:{happiness:-15, karma:-15}},
+        {l:'Attend and bless the union',         cost:1200, fx:{happiness:+10, karma:+8}},
+        {l:'Skip the walima',                    cost:0,    fx:{happiness:-6, karma:-5}},
+        {l:'Try to obstruct the marriage',       cost:0,    fx:{happiness:-18, karma:-22}},
       ],
       need:p => p.alive && (p.age >= 50 || p.age < 100)},
     {id:'parent_financial', t:'%PARENT% is broke and can\'t afford rent.',
@@ -12192,7 +12280,7 @@ const RELIGIOUS_LAWS = {
       },
       halal_divorce: {
         name:'Talaq (Divorce)', ico:'💔',
-        desc:'Pronouncement of divorce. Iddah waiting period required.',
+        desc:'Permitted but described in hadith as the most disliked of the lawful. Reconciliation is sought first (Quran 4:35); iddah waiting period follows. A wife may instead seek khula by returning the mahr.',
         cost:8000, effect:{happy:-15, karma:-3},
       },
       hajj: {

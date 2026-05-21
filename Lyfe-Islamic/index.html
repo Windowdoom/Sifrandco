@@ -16695,6 +16695,8 @@ function rulingBadgeColor(v){
        : v === 'makruh' ? '#ffb064'
        : v === 'wajib' ? '#a3e635'
        : v === 'mustahabb' ? '#7fd8ff'
+       : v === 'differing-views' ? '#c89cff'
+       : v === 'depends' ? '#d0d090'
        : '#9c9cb0';
 }
 
@@ -16841,6 +16843,286 @@ function openRuling(rulingId){
       +   '<button class="card-btn green" onclick="closeModal();openShariaBanking()" style="padding:5px 10px;font-size:10px;">☪ Islamic Banking</button>'
       + '</div>';
     body.insertBefore(notice, body.firstChild);
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  CAREERS PASS — classify the 92 careers against shariah and surface
+//  rulings via info chips on the career picker. Default for an unclassified
+//  career is mubah (permissible) — no chip is shown to keep the UI quiet.
+//  Where scholars genuinely differ (notably the entertainment industry and
+//  music), the verdict is "differing-views" and the citation says so
+//  honestly rather than forcing a single position.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+Object.assign(ISLAMIC_RULINGS, {
+  entertainment: {
+    verdict:'differing-views', label:'Music & Acted Entertainment',
+    summary:'A genuinely contested area. The majority position among classical jurists holds musical instruments and visual depictions of named persons impermissible — cited from a hadith in Sahih Bukhari\'s Book of Drinks describing a future generation who deem alcohol, silk, illicit relations, and musical instruments permissible. A minority position (held by some classical and modern scholars) permits song without instruments and acting that conveys benefit without indecency. This game tags entertainment careers under the majority caution while respecting that this is a real ikhtilaf.',
+    refs:[
+      {kind:'hadith', cite:'Sahih Bukhari, Book of Drinks (#5590 in common numbering)', url:'https://sunnah.com/bukhari:5590',
+       text:'"From among my followers there will be some people who will consider illegal sexual intercourse, the wearing of silk, the drinking of alcoholic drinks, and the use of musical instruments as lawful."'},
+      {kind:'quran', cite:'Quran 31:6', url:'https://quran.com/31/6'},
+    ],
+    halalAlternatives:['Nasheed (vocal recitation without instruments)', 'Documentary / educational film', 'Spoken-word and oratory', 'Writing and journalism'],
+  },
+  gharar: {
+    verdict:'haram', label:'Gharar — Excessive Uncertainty',
+    summary:'Contracts whose outcome is materially unknown to one or both parties: conventional insurance underwriting, speculative derivatives, short-selling, naked futures. Takaful (mutual risk-sharing) is the halal alternative to conventional insurance; sharia-screened equity is the alternative to speculative trading.',
+    refs:[
+      {kind:'hadith', cite:'Sahih Muslim 1513', url:'https://sunnah.com/muslim:1513',
+       text:'The Messenger of Allah ﷺ forbade the transaction determined by throwing stones, and the transaction which involves uncertainty (gharar).'},
+    ],
+    halalAlternatives:['Takaful (mutual insurance)', 'Sharia-screened equity funds', 'Direct asset ownership (no leverage)'],
+  },
+  khidmah: {
+    verdict:'mustahabb', label:'Khidmat al-Khalq — Service to People',
+    summary:'Medicine, firefighting, rescue, public-safety work. Saving one life is treated in the Quran as if one had saved all of humanity. The intention (niyyah) of seeking Allah\'s pleasure through service turns the daily work itself into worship.',
+    refs:[
+      {kind:'quran', cite:'Quran 5:32', url:'https://quran.com/5/32'},
+      {kind:'hadith', cite:'Sahih Bukhari 6011', url:'https://sunnah.com/bukhari:6011',
+       text:'The Prophet ﷺ said: "The believers in their mutual kindness, compassion, and sympathy are like one body — when any part of it suffers, the whole body responds."'},
+    ],
+  },
+  ilm: {
+    verdict:'mustahabb', label:'Ilm — Pursuit of Beneficial Knowledge',
+    summary:'Teaching, science, research that benefits people. Seeking knowledge is described as an obligation upon every Muslim; teaching it is among the three deeds whose reward continues after death (sadaqah jariyah).',
+    refs:[
+      {kind:'hadith', cite:'Sahih Muslim 1631', url:'https://sunnah.com/muslim:1631',
+       text:'"When a person dies, their deeds end except for three: a continuing charity, knowledge that benefits, and a righteous child who prays for them."'},
+      {kind:'hadith', cite:'Sunan Ibn Majah 224', url:'https://sunnah.com/ibnmajah:224',
+       text:'"Seeking knowledge is an obligation upon every Muslim."'},
+    ],
+  },
+  dawa: {
+    verdict:'mustahabb', label:'Dawah — Calling to Allah',
+    summary:'Imam, religious teacher, du\'aat (caller). Among the highest-ranked vocations when done with sincerity and sound knowledge. Requires authenticated learning — speaking without knowledge is itself a major sin (Quran 7:33).',
+    refs:[
+      {kind:'quran', cite:'Quran 41:33', url:'https://quran.com/41/33'},
+    ],
+  },
+  siyasah: {
+    verdict:'depends', label:'Siyasah — Governance & Politics',
+    summary:'The ruling depends entirely on what is enacted. Justice, protecting the oppressed, and consultative governance (shura) are mustahabb. Enforcing oppression, normalising haram, or sitting silent over injustice is sin in proportion to the post held.',
+    refs:[
+      {kind:'quran', cite:'Quran 4:58', url:'https://quran.com/4/58'},
+      {kind:'hadith', cite:'Sahih Muslim 49', url:'https://sunnah.com/muslim:49',
+       text:'"Whoever among you sees an evil, let him change it with his hand; if he cannot, then with his tongue; if he cannot, then with his heart — and that is the weakest of faith."'},
+    ],
+  },
+  qital: {
+    verdict:'depends', label:'Service of Arms — Combat & Enforcement',
+    summary:'Defensive combat, protecting innocents, and lawful enforcement of justice are permitted and at times obligatory. Unjust aggression, killing non-combatants, or enforcing oppression is forbidden. The classical conditions for engagement (no transgression, sparing women, children, elderly, monks, crops) are binding on the soldier regardless of orders.',
+    refs:[
+      {kind:'quran', cite:'Quran 2:190', url:'https://quran.com/2/190'},
+      {kind:'hadith', cite:'Sahih Muslim 1731', url:'https://sunnah.com/muslim:1731a'},
+    ],
+  },
+  sihr: {
+    verdict:'haram', label:'Sihr — Magic & Occult Trades',
+    summary:'Practicing magic, fortune-telling, and occult arts is one of the seven destructive sins. The Quran is explicit that the magicians of Pharaoh\'s court did not succeed.',
+    refs:[
+      {kind:'quran', cite:'Quran 2:102', url:'https://quran.com/2/102'},
+      {kind:'hadith', cite:'Sahih Bukhari 2766', url:'https://sunnah.com/bukhari:2766',
+       text:'"Avoid the seven destructive sins…" — magic (sihr) named among them.'},
+    ],
+  },
+  tajassus: {
+    verdict:'makruh', label:'Tajassus — Spying & Surveillance',
+    summary:'The Quran explicitly forbids spying on people\'s private affairs. Some surveillance roles can be permissible when the target is a credible threat and the means are lawful; pervasive surveillance of ordinary people is sinful.',
+    refs:[
+      {kind:'quran', cite:'Quran 49:12', url:'https://quran.com/49/12'},
+    ],
+  },
+  non_islamic_clergy: {
+    verdict:'haram', label:'Propagating Non-Islamic Creed',
+    summary:'For a Muslim character to take vows of priesthood, monasticism, or rabbinical office is a renunciation of tawhid (the foundational testimony that there is no god but Allah). This is the heaviest of the major sins.',
+    refs:[
+      {kind:'quran', cite:'Quran 4:48', url:'https://quran.com/4/48'},
+      {kind:'hadith', cite:'Sahih Bukhari 5976', url:'https://sunnah.com/bukhari:5976'},
+    ],
+  },
+  pork: {
+    verdict:'haram', label:'Pork & Carrion in Food Trade',
+    summary:'Trading in or preparing pork, blood, carrion, or food slaughtered other than in the name of Allah is forbidden. A chef, baker, or food-trade worker should be able to refuse handling these.',
+    refs:[
+      {kind:'quran', cite:'Quran 5:3', url:'https://quran.com/5/3'},
+      {kind:'hadith', cite:'Sahih Muslim 1933', url:'https://sunnah.com/muslim:1933'},
+    ],
+  },
+});
+
+// Map: career-key → primary ruling-id. Only careers with a clear or
+// notable shariah implication are listed. Unlisted careers default to
+// mubah (no chip rendered).
+const CAREER_RULINGS = {
+  // Clearly haram — work itself is forbidden
+  banker:           {ruling:'riba'},
+  hedge_fund:       {ruling:'riba',    note:'Conventional funds traffic in interest-bearing debt. Sharia-screened equity funds exist.'},
+  venture_capitalist:{ruling:'riba',   note:'Permissible only when the structure avoids riba and the portfolio screens out haram sectors.'},
+  private_equity:   {ruling:'riba',    note:'LBO models are debt-and-interest centred.'},
+  quant_trader:     {ruling:'gharar',  note:'High-frequency speculation and derivatives sit in gharar.'},
+  blockchain_dev:   {ruling:'gharar',  note:'The dev role itself is mubah; speculative token trading is not. Build infrastructure, not gambling.'},
+  vineyard_owner:   {ruling:'khamr'},
+  sommelier:        {ruling:'khamr'},
+  criminal:         {ruling:'halal_rizq'},
+  wizard:           {ruling:'sihr'},
+  priest_path:      {ruling:'non_islamic_clergy'},
+  rabbi_path:       {ruling:'non_islamic_clergy'},
+  buddhist_monk:    {ruling:'non_islamic_clergy'},
+
+  // Differing-views — entertainment industry
+  musician:         {ruling:'entertainment'},
+  pop_star:         {ruling:'entertainment'},
+  rap_artist:       {ruling:'entertainment'},
+  actor:            {ruling:'entertainment'},
+  filmmaker:        {ruling:'entertainment'},
+  screenwriter:     {ruling:'entertainment'},
+  reality_tv:       {ruling:'entertainment'},
+  influencer:       {ruling:'entertainment', note:'Permissibility depends entirely on content — beneficial, modest content is fine; the platform incentives often pull the other way.'},
+  youtuber:         {ruling:'entertainment', note:'Content-dependent.'},
+  live_streamer:    {ruling:'entertainment', note:'Content-dependent.'},
+  podcaster:        {ruling:'entertainment', note:'Spoken-word podcasting without music is generally permissible; check the bumper music.'},
+
+  // Surveillance — depends on target and means
+  fbi_agent:        {ruling:'tajassus', note:'Investigating credible threats is permissible; dragnet surveillance is not.'},
+  cia_officer:      {ruling:'tajassus'},
+  secret_service:   {ruling:'khidmah',  note:'Personal protection of a principal is service-of-people; covert intelligence work falls under tajassus.'},
+  private_investigator:{ruling:'tajassus'},
+
+  // Combat / arms-of-the-state
+  military:         {ruling:'qital'},
+  police:           {ruling:'qital'},
+
+  // Politics / diplomacy
+  politician:       {ruling:'siyasah'},
+  diplomat:         {ruling:'siyasah'},
+  un_official:      {ruling:'siyasah'},
+
+  // Clearly mustahabb / encouraged
+  doctor:           {ruling:'khidmah'},
+  surgeon:          {ruling:'khidmah'},
+  cardiologist:     {ruling:'khidmah'},
+  oncologist:       {ruling:'khidmah'},
+  neurosurgeon:     {ruling:'khidmah'},
+  psychiatrist:     {ruling:'khidmah'},
+  anesthesiologist: {ruling:'khidmah'},
+  radiologist:      {ruling:'khidmah'},
+  pediatrician:     {ruling:'khidmah'},
+  emergency_med:    {ruling:'khidmah'},
+  dermatologist:    {ruling:'khidmah'},
+  firefighter:      {ruling:'khidmah'},
+  bomb_disposal:    {ruling:'khidmah'},
+  marine_bio:       {ruling:'ilm'},
+  teacher:          {ruling:'ilm'},
+  scientist:        {ruling:'ilm'},
+  author:           {ruling:'ilm',     note:'Subject of the writing carries its own ruling — knowledge that benefits is sadaqah jariyah.'},
+  journalist:       {ruling:'ilm',     note:'Truthful reporting is wajib; slander and ghibah are haram.'},
+  imam_path:        {ruling:'dawa'},
+
+  // Mubah-with-caveats
+  chef:             {ruling:'pork',    note:'The career is mubah; the items prepared carry the ruling. A halal kitchen avoids pork, alcohol-cooked dishes, and non-zabiha meat.'},
+  baker:            {ruling:'pork',    note:'Bakery is mubah; watch for lard, alcohol-derived flavourings, and animal-rennet ingredients.'},
+  hotel_manager:    {ruling:'khamr',   note:'Hotel management itself is mubah; running a property whose primary revenue is the bar/casino is not.'},
+  corporate_lawyer: {ruling:'riba',    note:'Drafting and enforcing riba contracts is the consensus prohibition — Sahih Muslim 1598 equates the recorder of riba with the consumer.'},
+  family_lawyer:    {ruling:'marriage',note:'Civil divorce work where the shariah path was not followed first is heavy. Helping reconcile and mediating khula correctly is rewarded.'},
+
+  // Treasure / lost-property
+  treasure_hunter_pro:{ruling:'halal_rizq', note:'Lost property and ma\'adin (mineral finds) have specific rulings — luqata: announce for one year before keeping; rikaz: 20% khums where applicable.'},
+};
+
+// ─── Wire info chips into the existing career-hub modal.
+//  We walk the rendered modal post-render, match each card's title text
+//  back to a CAREERS entry, and append an info chip if there's a ruling.
+//  This avoids touching the existing render template.
+function _wireCareerRulingChips(){
+  const modal = document.getElementById('modal');
+  if(!modal || !modal.classList.contains('show')) return;
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam') return;
+  // Build a quick title→key lookup across all rungs (entry-level title only is shown).
+  const titleToKey = {};
+  if(typeof CAREERS === 'object'){
+    Object.keys(CAREERS).forEach(k => {
+      const cr = CAREERS[k];
+      if(cr && cr.rungs && cr.rungs[0]) titleToKey[cr.rungs[0].title] = k;
+    });
+  }
+  modal.querySelectorAll('.card').forEach(card => {
+    if(card.dataset.rulingWired) return;
+    const titleEl = card.querySelector('.card-title');
+    if(!titleEl) return;
+    const key = titleToKey[titleEl.textContent.trim()];
+    if(!key) return;
+    const cr = CAREER_RULINGS[key];
+    if(!cr) return;
+    const meta = card.querySelector('.card-meta');
+    if(!meta) return;
+    const chipWrap = document.createElement('div');
+    chipWrap.style.cssText = 'margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;';
+    chipWrap.innerHTML = infoButton(cr.ruling)
+      + (cr.note ? '<span style="font-size:10px;color:var(--t3);line-height:1.4;font-style:italic;">' + cr.note + '</span>' : '');
+    meta.parentNode.insertBefore(chipWrap, meta.nextSibling);
+    card.dataset.rulingWired = '1';
+  });
+}
+
+(function(){
+  if(typeof openCareerHub !== 'function') return;
+  const _orig = openCareerHub;
+  openCareerHub = function(){
+    _orig.apply(this, arguments);
+    setTimeout(_wireCareerRulingChips, 0);
+  };
+})();
+
+// Also wire chips into the in-game Occupation modal (the one rendered
+// at the bottom of openCareerAction / its sibling — same .card layout).
+(function(){
+  if(typeof openCareerAction !== 'function') return;
+  const _orig = openCareerAction;
+  openCareerAction = function(){
+    _orig.apply(this, arguments);
+    setTimeout(_wireCareerRulingChips, 0);
+  };
+})();
+
+// ─── Iman/karma drag when a Muslim character accepts a career whose
+//  verdict is haram or non_islamic_clergy. The existing HARAM_JOBS path
+//  already covers a small list; this widens it to the CAREER_RULINGS
+//  classifications. Differing-views does NOT trigger a penalty — only
+//  clear haram does, since gameplay should respect ikhtilaf.
+(function(){
+  if(typeof acceptJob !== 'function') return;
+  const _orig = acceptJob;
+  acceptJob = function(key){
+    const c = LIFE.char;
+    _orig.apply(this, arguments);
+    if(!c || c.religion !== 'islam') return;
+    const cr = CAREER_RULINGS[key];
+    if(!cr) return;
+    const ruling = ISLAMIC_RULINGS[cr.ruling];
+    if(!ruling) return;
+    if(ruling.verdict === 'haram'){
+      c.iman = clamp((c.iman||0) - 8, 0, 100);
+      c.karma = clamp((c.karma||50) - 4, 0, 100);
+      c.faith = c.iman;
+      c.kabairFlags = c.kabairFlags || {};
+      const flagKey = cr.ruling === 'riba' ? 'riba'
+                    : cr.ruling === 'khamr' ? 'khamr'
+                    : cr.ruling === 'sihr' ? 'sihr'
+                    : cr.ruling === 'non_islamic_clergy' ? 'shirk'
+                    : 'haram_rizq';
+      c.kabairFlags[flagKey] = (c.kabairFlags[flagKey]||0) + 1;
+      c.flags = c.flags || {};
+      c.flags.naslBurden = (c.flags.naslBurden||0) + 2;
+      pushEvent('bad', '🚫 This career carries a haram ruling (' + ruling.label + '). Iman -8.');
+    } else if(ruling.verdict === 'mustahabb'){
+      // Quiet positive nudge — no popup, just a small iman/karma lift
+      c.iman = clamp((c.iman||0) + 2, 0, 100);
+      c.karma = clamp((c.karma||50) + 1, 0, 100);
+      c.faith = c.iman;
+    }
   };
 })();
 

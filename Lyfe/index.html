@@ -6364,6 +6364,25 @@ function trustAmount(c){
   return 0;
 }
 
+// Zakat is owed on STORED wealth held for one lunar year above the nisab
+// threshold. NOT on primary residence, daily-use vehicle, working capital,
+// or fixed business assets. Per the Sunnah, the zakatable base is:
+//   - savings (held cash beyond a working balance)
+//   - investments (stocks, bonds, sukuk held for over a year)
+//   - trust fund principal
+// This function returns the player's zakatable wealth in dollars.
+function zakatableWealth(c){
+  if(!c) return 0;
+  let z = 0;
+  z += (c.savings || 0);
+  z += (c.investments || 0);
+  z += trustAmount(c);
+  return Math.max(0, z);
+}
+// Nisab threshold — roughly the dollar value of 85g of gold. ~$6,500 in
+// modern terms. Below this, no zakat is owed for the year.
+const NISAB_USD = 6500;
+
 function totalEstateValue(c){
   let n = (c.money||0) + (c.savings||0) + (c.investments||0) + trustAmount(c);
   if(c.properties && c.properties.length){
@@ -7834,7 +7853,7 @@ const RELIGIOUS_PRACTICES_BY_RELIGION = {
     {id:'salah',     ico:'🕌', name:'Perform Salah (5 daily prayers)',          desc:'Pray the five daily prayers — Fajr, Dhuhr, Asr, Maghrib, Isha.', cost:0,    fx:{faith:+4, happiness:+3, karma:+2}},
     {id:'jumuah',    ico:'🕌', name:'Friday Jumu\'ah Prayer',                    desc:'Attend the congregational Friday prayer + khutbah at the masjid.', cost:0,   fx:{faith:+5, happiness:+4, karma:+2}},
     {id:'ramadan',   ico:'🌙', name:'Fast Ramadan (full month)',                 desc:'Sunrise-to-sunset fasting for the entire month of Ramadan.',     cost:0,    fx:{faith:+12, karma:+8, happiness:+6}},
-    {id:'zakat',     ico:'💝', name:'Pay Zakat (2.5% of net worth)',            desc:'Mandatory alms — 2.5% of your nisab-eligible wealth, paid annually to the poor.', special:'zakat', fx:{faith:+10, karma:+12}},
+    {id:'zakat',     ico:'💝', name:'Pay Zakat (2.5% of stored wealth)',         desc:'Mandatory alms — 2.5% on stored wealth held above the nisab threshold for one lunar year. Calculated on savings, investments, and trust only; primary residence, daily-use car, working cash, and business operating capital are excluded.', special:'zakat', fx:{faith:+10, karma:+12}},
     {id:'sadaqah',   ico:'🤲', name:'Give Sadaqah (voluntary charity)',          desc:'Discretionary almsgiving. The Prophet ﷺ said: "Charity does not decrease wealth."', special:'sadaqah', fx:{faith:+4, karma:+5}},
     {id:'hajj',      ico:'🕋', name:'Perform Hajj (lifetime pilgrimage)',        desc:'The pilgrimage to Mecca, obligatory once if able. Tawaf, Sa\'i, standing at Arafat.', cost:8000, fx:{faith:+25, karma:+15, happiness:+18, fame:+5}, oneShot:'hajjDone'},
     {id:'umrah',     ico:'🕋', name:'Perform Umrah (lesser pilgrimage)',         desc:'The lesser pilgrimage. Can be performed any time outside Hajj season.',     cost:3500, fx:{faith:+10, happiness:+8}},
@@ -7912,8 +7931,8 @@ function openFaithPractice(){
   practices.forEach(p => {
     let costLabel = '';
     if(p.special === 'zakat'){
-      const nw = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : c.money;
-      const owed = Math.floor(nw * 0.025);
+      const zb = zakatableWealth(c);
+      const owed = zb >= NISAB_USD ? Math.floor(zb * 0.025) : 0;
       costLabel = 'Owed: ' + fmtMoney(owed);
     } else if(p.cost){
       costLabel = '−' + fmtMoney(p.cost);
@@ -7958,8 +7977,12 @@ function doReligiousPractice(id){
   if(p.oneShot && c.flags[p.oneShot]){ toast('Already completed.'); return; }
   // Specials with their own logic
   if(p.special === 'zakat'){
-    const nw = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : c.money;
-    const owed = Math.floor(nw * 0.025);
+    const zb = zakatableWealth(c);
+    if(zb < NISAB_USD){
+      toast('Your stored wealth is below the nisab threshold (' + fmtMoney(NISAB_USD) + '). No zakat is owed this year.');
+      return;
+    }
+    const owed = Math.floor(zb * 0.025);
     if(c.money < owed){ toast('Need ' + fmtMoney(owed) + ' liquid to pay zakat.'); return; }
     c.money -= owed;
     c.faith = clamp(c.faith + (p.fx.faith||0), 0, 100);
@@ -8047,11 +8070,13 @@ function rollAutoZakat(){
   if(!c || c.religion !== 'islam') return;
   // Default: auto-zakat ON for Muslims. Player can disable via Faith Practice.
   if(c.zakatAutoOff) return;
-  // Nisab threshold check — only deduct above a meaningful wealth level
-  const nw = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : c.money;
-  if(nw < 10000) return;
+  // Nisab threshold check — zakat is owed only on STORED wealth held above
+  // the nisab (savings + investments + trust). Primary residence, daily-use
+  // vehicle, working capital, and current-account checking are EXCLUDED.
+  const zb = zakatableWealth(c);
+  if(zb < NISAB_USD) return;
   // Liquid funds must cover the obligation
-  const owed = Math.floor(nw * 0.025);
+  const owed = Math.floor(zb * 0.025);
   if(c.money < owed){
     // Pull from savings if checking is short
     const fromSavings = Math.min((c.savings||0), owed - c.money);
@@ -8100,12 +8125,12 @@ function rollFaithPracticeAnnual(){
   if(Math.random() < 0.4){
     c.faith = clamp(c.faith - 1, 0, 100);
   }
-  // Islam: zakat reminder + auto-tithe if very faithful
+  // Islam: zakat reminder on STORED wealth above the nisab threshold
   if(c.religion === 'islam'){
-    const nw = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : c.money;
-    if(nw >= 10000 && (c.faith||0) >= 50 && !c.flags['zakatYear_' + c.age]){
+    const zb = zakatableWealth(c);
+    if(zb >= NISAB_USD && (c.faith||0) >= 50 && !c.flags['zakatYear_' + c.age]){
       c.flags['zakatYear_' + c.age] = true;
-      pushEvent('', '🕌 Zakat is due this year — ' + fmtMoney(Math.floor(nw * 0.025)) + ' on your wealth. Open Faith Practices to pay.');
+      pushEvent('', '🕌 Zakat is due — ' + fmtMoney(Math.floor(zb * 0.025)) + ' on your stored wealth (savings + investments + trust). Open Faith Practices to pay.');
     }
   }
   // Christian: yearly tithe reminder

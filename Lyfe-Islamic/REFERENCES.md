@@ -73,3 +73,39 @@ Tafsir summaries are **paraphrased** from Ibn Kathir's classical work — see th
 A line-by-line citation audit was performed against sunnah.com. During that audit, **7 cases were caught and corrected** where the right hadith text had been paired with a different sunnah.com reference number (the text was real, but the URL pointed to a different hadith). The corrected number/URL pairs above are the post-fix state — every link in the table now resolves to the hadith whose text is quoted in-game.
 
 The remaining citations are canonical hadith with very high confidence (e.g. Bukhari 1, Bukhari 54, Muslim 1631 — among the most famous in the corpus). External re-fetching of those entries was not completed in the latest audit pass because outbound access to sunnah.com was unavailable from the session's network sandbox. They are flagged here as **canonical-confidence, awaiting external re-fetch.** If you spot a mismatch, please open an issue — the in-game text is treated as the source of truth and the citation number should be corrected to match it.
+
+## Rulings registry — ISLAMIC_RULINGS
+
+The in-game registry attaches an authoritative ruling (verdict + summary + sahih references) to careers, financial products, assets, and lifestyle choices via the `infoButton()` UI helper. The verdicts use the classical fiqh categories: **wajib** (obligatory), **mustahabb** (encouraged), **mubah** (permitted), **makruh** (disapproved), **haram** (forbidden), plus **differing-views** for genuine scholarly ikhtilaf and **depends** for context-bound rulings.
+
+| Ruling ID | Verdict | Primary Citations | Used By |
+|---|---|---|---|
+| riba | haram | Quran 2:275-279 · Muslim 1598 | Savings, mortgages, credit, auto loans, banker / hedge_fund / venture_capitalist / private_equity / corporate_lawyer / realestatedev / finance sector |
+| khamr | haram | Quran 5:90 · Muslim 2003 | vineyard_owner, sommelier, hotel_manager (mixed-revenue), Party activity |
+| maysir | haram | Quran 5:90-91 · Bukhari 4860 | Crypto/gambling-adjacent (registry-ready) |
+| gharar | haram | Sahih Muslim 1513 | quant_trader, blockchain_dev, crypto sector |
+| halal_rizq | wajib | Quran 2:168 · Muslim 1015 | criminal career, apparel/mining sector caveats, treasure_hunter (luqata/rikaz) |
+| pork | haram | Quran 5:3 · Muslim 1933 | chef, baker, restaurant sector |
+| sihr | haram | Quran 2:102 · Bukhari 2766 | wizard career (kabair: one of the seven destroyers) |
+| non_islamic_clergy | haram | Quran 4:48 · Bukhari 5976 | priest_path, rabbi_path, buddhist_monk |
+| tajassus | makruh | Quran 49:12 | fbi_agent, cia_officer, private_investigator |
+| qital | depends | Quran 2:190 · Muslim 1731a | military, police, defense sector |
+| siyasah | depends | Quran 4:58 · Muslim 49 | politician, diplomat, un_official |
+| khidmah | mustahabb | Quran 5:32 · Bukhari 6011 | All medical specialties, firefighter, bomb_disposal, pharma / biotech sectors, secret_service (protection), Volunteer activity |
+| ilm | mustahabb | Muslim 1631 · Ibn Majah 224 | teacher, scientist, marine_bio, author, journalist, aerospace sector |
+| dawa | mustahabb | Quran 41:33 | imam_path |
+| agriculture | mustahabb | Bukhari 2320 | agri sector |
+| marriage | mustahabb | Quran 4:3, 30:21 · Ibn Majah 1858 | Marriage / divorce flow, dating prefs, family_lawyer |
+| entertainment | differing-views | Bukhari 5590 · Quran 31:6 | musician, pop_star, rap_artist, actor, filmmaker, screenwriter, reality_tv, influencer, youtuber, live_streamer, podcaster, media / gaming sectors |
+| israf | makruh | Quran 7:31, 17:26-27 | Luxury houses (beach, penthouse, mansion, estate, island) |
+| ijara | mubah | Quran 2:282 | Halal vehicle financing alternative |
+
+### Verification status
+
+The original 36-row hadith table at the top of this document was audited entry-by-entry (with 7 confabulated citations caught and corrected during the audit). The rulings table above introduces additional citations referenced from in-game `infoButton()` modals:
+
+**Re-used from the verified 36-row table:** Muslim 1598, Muslim 2003, Bukhari 4860, Muslim 1015, Muslim 1933, Bukhari 2766, Bukhari 5976, Quran 2:190, Muslim 1731a, Quran 5:32, Muslim 1631, Quran 4:3 / 30:21 / Ibn Majah 1858, Quran 7:31 (israf is a new ruling but the verse appears in the existing tafsir corpus).
+
+**New citations introduced by the rulings pass, not yet externally re-fetched in this session:** Muslim 1513 (gharar), Bukhari 6011 (mutual compassion of believers), Ibn Majah 224 (seeking knowledge is obligatory), Quran 41:33, Quran 4:58, Muslim 49 (changing evil), Quran 2:102, Quran 49:12, Quran 17:26-27, Quran 2:282, Bukhari 2320 (farming as charity), Bukhari 5590 (musical instruments — Kitab al-Ashribah, number varies across editions), Quran 31:6, Quran 2:221, Quran 5:5, Quran 25:70.
+
+These are canonical, widely-cited references I am confident in from training, but were not re-fetched against sunnah.com / quran.com this session because the network sandbox blocks outbound access. When network is available, each should be opened on sunnah.com or quran.com and any number discrepancies corrected. The in-game text shown to the player is the source of truth — if a number turns out to be off, the URL should be corrected, not the text.

@@ -16626,6 +16626,241 @@ const ZAKAT_AGE_OF_OBLIGATION = 15;
   };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  ISLAMIC RULINGS REGISTRY + UI
+//  A reusable verdict+citation lookup so any choice in the game — career,
+//  asset, financial product, lifestyle — can attach an authoritative
+//  ruling and a click-through "why" button. The pattern is intentionally
+//  silent in gameplay: halal/wajib choices quietly nudge iman/karma up,
+//  haram choices nudge them down + tag kabair where appropriate, and the
+//  player can always click the info chip to read the source.
+// ═══════════════════════════════════════════════════════════════════════════════════
+const ISLAMIC_RULINGS = {
+  riba: {
+    verdict:'haram', label:'Riba — Interest',
+    summary:'Any contractual increase on a loan of money or like-for-like exchange. Forbidden in both consumption (paying) and production (earning). Includes conventional savings interest, mortgages, credit-card APR, and bonds. The Quran declares war from Allah and His Messenger on those who do not desist (Quran 2:279).',
+    refs:[
+      {kind:'quran', cite:'Quran 2:275-279', url:'https://quran.com/2/275-279'},
+      {kind:'hadith', cite:'Sahih Muslim 1598', url:'https://sunnah.com/muslim:1598',
+       text:'The Messenger of Allah ﷺ cursed the consumer of riba, the one who pays it, the one who records it, and the two witnesses — saying: "They are all equal."'},
+    ],
+    halalAlternatives:['Mudaraba profit-share savings', 'Sukuk certificates', 'Murabaha (cost-plus) home finance', 'Ijara (lease-to-own)', 'Qard hasan (interest-free loan)'],
+  },
+  khamr: {
+    verdict:'haram', label:'Khamr — Intoxicants',
+    summary:'Any intoxicant — whether served, sold, transported, or consumed. Ten parties to the transaction are cursed in the hadith. Working in bars, breweries, or distribution of alcohol carries the same ruling.',
+    refs:[
+      {kind:'quran', cite:'Quran 5:90', url:'https://quran.com/5/90'},
+      {kind:'hadith', cite:'Sahih Muslim 2003', url:'https://sunnah.com/muslim:2003'},
+    ],
+  },
+  maysir: {
+    verdict:'haram', label:'Maysir — Gambling',
+    summary:'Any wager on uncertain outcomes — sports betting, casinos, lottery, speculative derivatives stripped of underlying asset. Paired with khamr in the Quranic prohibition. The "small bet" framing does not change the ruling.',
+    refs:[
+      {kind:'quran', cite:'Quran 5:90-91', url:'https://quran.com/5/90-91'},
+      {kind:'hadith', cite:'Sahih Bukhari 4860', url:'https://sunnah.com/bukhari:4860'},
+    ],
+  },
+  halal_rizq: {
+    verdict:'wajib', label:'Halal Rizq — Lawful Earnings',
+    summary:'Seeking lawful provision is itself an obligation. Earnings from haram trades (alcohol, riba, gambling, deception) corrupt the rest of the wealth and obstruct accepted supplication.',
+    refs:[
+      {kind:'quran', cite:'Quran 2:168', url:'https://quran.com/2/168'},
+      {kind:'hadith', cite:'Sahih Muslim 1015', url:'https://sunnah.com/muslim:1015',
+       text:'"Allah is Pure and accepts only what is pure."'},
+    ],
+  },
+  zakat: {
+    verdict:'wajib', label:'Zakat — Obligatory Almsgiving',
+    summary:'2.5% on wealth held above nisab for a full lunar year. The third pillar of Islam. Refusal once obligatory is a major sin; sincere payment purifies the rest of the wealth.',
+    refs:[
+      {kind:'quran', cite:'Quran 9:60', url:'https://quran.com/9/60'},
+      {kind:'hadith', cite:'Sahih Bukhari 1395', url:'https://sunnah.com/bukhari:1395'},
+    ],
+  },
+  marriage: {
+    verdict:'mustahabb', label:'Nikah — Marriage',
+    summary:'Marriage is half of the religion; the contract requires witnesses and a mahr from the groom to the bride. Polygyny is permitted only on strict condition of equal justice between wives (Quran 4:3); a man who cannot fulfil that is commanded to one. Divorce is permitted but described as the most disliked of the lawful.',
+    refs:[
+      {kind:'quran', cite:'Quran 4:3', url:'https://quran.com/4/3'},
+      {kind:'quran', cite:'Quran 30:21', url:'https://quran.com/30/21'},
+      {kind:'hadith', cite:'Ibn Majah 1858', url:'https://sunnah.com/ibnmajah:1858'},
+    ],
+  },
+};
+
+function rulingBadgeColor(v){
+  return v === 'haram' ? '#ff6464'
+       : v === 'makruh' ? '#ffb064'
+       : v === 'wajib' ? '#a3e635'
+       : v === 'mustahabb' ? '#7fd8ff'
+       : '#9c9cb0';
+}
+
+// Drop-in info chip. Place next to any choice to expose its ruling.
+function infoButton(rulingId, extraStyle){
+  const r = ISLAMIC_RULINGS[rulingId];
+  if(!r) return '';
+  const color = rulingBadgeColor(r.verdict);
+  const safeId = String(rulingId).replace(/'/g, "\\'");
+  return '<button class="ruling-chip" onclick="event.stopPropagation();openRuling(\'' + safeId + '\')" '
+    + 'style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;background:transparent;'
+    + 'border:1px solid ' + color + ';color:' + color + ';border-radius:10px;font-family:var(--font-m);'
+    + 'font-size:9px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;'
+    + (extraStyle||'') + '" title="Tap to read the ruling and its sources">'
+    + 'ⓘ ' + r.verdict + '</button>';
+}
+
+function openRuling(rulingId){
+  const r = ISLAMIC_RULINGS[rulingId];
+  if(!r){ toast('No ruling registered.'); return; }
+  const color = rulingBadgeColor(r.verdict);
+  let html = '<div style="padding:14px;background:#0d1a0e;border:1px solid ' + color + ';border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.22em;color:' + color + ';text-transform:uppercase;">Ruling · ' + r.verdict + '</div>'
+    + '<div style="font-family:var(--font-h);font-size:18px;color:var(--t1);margin-top:4px;">' + r.label + '</div>'
+    + '</div>'
+    + '<div style="padding:12px;background:#1a1428;border:1px solid #2a1f3d;border-radius:5px;margin-bottom:14px;font-size:13px;line-height:1.6;color:var(--t2);">' + r.summary + '</div>';
+  r.refs.forEach(ref => {
+    html += '<div style="padding:10px 12px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:5px;margin-bottom:8px;">'
+      + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.18em;color:#a3e635;text-transform:uppercase;margin-bottom:4px;">' + ref.cite + '</div>'
+      + (ref.text ? '<div style="font-size:13px;color:var(--t1);font-style:italic;line-height:1.5;margin-bottom:6px;">"' + ref.text + '"</div>' : '')
+      + '<a href="' + ref.url + '" target="_blank" style="font-family:var(--font-m);font-size:10px;color:#7fd8ff;letter-spacing:.12em;">Open source ↗</a>'
+      + '</div>';
+  });
+  if(r.halalAlternatives && r.halalAlternatives.length){
+    html += '<div style="margin-top:10px;padding:10px 12px;background:#1a1428;border:1px dashed #6fb878;border-radius:5px;">'
+      + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:#a3e635;text-transform:uppercase;margin-bottom:6px;">Halal alternatives</div>'
+      + '<div style="font-size:12px;color:#cfe8d4;line-height:1.6;">• ' + r.halalAlternatives.join('<br>• ') + '</div></div>';
+  }
+  html += '<div style="margin-top:12px;padding:8px;background:transparent;border-top:1px dashed #2a1f3d;font-size:10px;color:var(--t3);text-align:center;font-style:italic;line-height:1.5;">'
+    + 'Islam is meant to be lived in moderation and consistency. Worldly consequences are modeled here; the final reckoning is with Allah alone.'
+    + '</div>';
+  openModal('☪ ' + r.label, html);
+}
+
+// ─── RIBA ENFORCEMENT
+//  Wrap processBankingInterest so that whenever a Muslim character earns
+//  interest from a conventional (non-Sharia) savings/bond product, the
+//  riba ruling fires: iman drops, karma drops, kabairFlags.riba increments,
+//  and a nasl-burden counter is recorded on c.flags so that initIslamicChild
+//  passes the spiritual deficit to descendants. The player can avoid this
+//  entirely by routing wealth through the Sharia banking modal (mudaraba,
+//  sukuk, qard hasan, ijara, murabaha).
+(function(){
+  if(typeof processBankingInterest !== 'function') return;
+  const _orig = processBankingInterest;
+  processBankingInterest = function(){
+    const c = LIFE.char;
+    const savingsBefore = c ? (c.savings || 0) : 0;
+    const investBefore = c ? (c.investments || 0) : 0;
+    _orig.apply(this, arguments);
+    if(!c || c.religion !== 'islam') return;
+    const usingSharia = !!(c.flags && (c.flags.mudarabaActive || c.flags.sukukHoldings));
+    const interestEarned = Math.max(0, (c.savings||0) - savingsBefore);
+    // Conventional bond/fund yields also count if not held via sukuk
+    const conventionalYield = !usingSharia && interestEarned > 0;
+    if(conventionalYield){
+      c.iman = clamp((c.iman||0) - 3, 0, 100);
+      c.karma = clamp((c.karma||50) - 2, 0, 100);
+      c.faith = c.iman;
+      c.kabairFlags = c.kabairFlags || {};
+      c.kabairFlags.riba = (c.kabairFlags.riba||0) + 1;
+      c.flags = c.flags || {};
+      c.flags.naslBurden = (c.flags.naslBurden||0) + 1;
+      pushEvent('bad', '🚫 Interest of ' + fmtMoney(interestEarned) + ' is riba (Quran 2:275). Iman -3, karma -2.');
+    }
+  };
+})();
+
+// ─── Loans that charge APR are riba at the point of contracting. Hook
+//  the generic addLoan/takeLoan if present; otherwise the openBanking
+//  modal warning + the ruling chip make the cost visible at choice-time.
+(function(){
+  ['takeLoan','openLoan','addLoan'].forEach(name => {
+    if(typeof window[name] !== 'function') return;
+    const _orig = window[name];
+    window[name] = function(){
+      const c = LIFE.char;
+      const r = _orig.apply(this, arguments);
+      if(c && c.religion === 'islam'){
+        // Tag the most recently added loan as riba unless interest-free
+        const last = (c.loans||[]).slice(-1)[0];
+        if(last && last.apr && last.apr > 0){
+          c.iman = clamp((c.iman||0) - 6, 0, 100);
+          c.karma = clamp((c.karma||50) - 3, 0, 100);
+          c.faith = c.iman;
+          c.kabairFlags = c.kabairFlags || {};
+          c.kabairFlags.riba = (c.kabairFlags.riba||0) + 1;
+          c.flags = c.flags || {};
+          c.flags.naslBurden = (c.flags.naslBurden||0) + 2;
+          pushEvent('bad', '🚫 You signed a riba-bearing loan. Iman -6. A halal alternative (qard hasan, murabaha, ijara) was on offer.');
+        }
+      }
+      return r;
+    };
+  });
+})();
+
+// ─── Nasl burden — children of parents who lived on riba earnings start
+//  with a lower iman baseline. Extends the existing initIslamicChild hook.
+(function(){
+  if(typeof initIslamicChild !== 'function') return;
+  const _orig = initIslamicChild;
+  initIslamicChild = function(kid, parentChar){
+    _orig.apply(this, arguments);
+    if(!kid || !parentChar) return;
+    const burden = (parentChar.flags && parentChar.flags.naslBurden) || 0;
+    if(burden > 0 && kid.iman != null){
+      const drop = Math.min(20, Math.floor(burden / 2));
+      kid.iman = clamp(kid.iman - drop, 5, 90);
+    }
+  };
+})();
+
+// ─── Riba notice on the conventional banking modal. Wraps openBanking
+//  so the player sees the ruling chip + halal redirect before any deposit.
+(function(){
+  if(typeof openBanking !== 'function') return;
+  const _orig = openBanking;
+  openBanking = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const body = document.querySelector('#modal .modal-body');
+    if(!body) return;
+    const notice = document.createElement('div');
+    notice.style.cssText = 'padding:12px 14px;background:#2a0c0c;border:1px solid #ff6464;border-radius:6px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
+    notice.innerHTML =
+        '<div style="flex:1;min-width:220px;">'
+      +   '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:#ff9c9c;text-transform:uppercase;margin-bottom:4px;">Heads up</div>'
+      +   '<div style="font-size:12px;color:#ffd4d4;line-height:1.5;">Conventional savings, bonds, credit cards and mortgages here all bear riba. Each year of interest earned or paid affects iman and is recorded against your nasl.</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      +   infoButton('riba')
+      +   '<button class="card-btn green" onclick="closeModal();openShariaBanking()" style="padding:5px 10px;font-size:10px;">☪ Islamic Banking</button>'
+      + '</div>';
+    body.insertBefore(notice, body.firstChild);
+  };
+})();
+
+// ─── Add an info chip to the Sharia banking header (positive ruling).
+(function(){
+  if(typeof openShariaBanking !== 'function') return;
+  const _orig = openShariaBanking;
+  openShariaBanking = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const header = document.querySelector('#modal .modal-body > div:first-child');
+    if(!header) return;
+    const chipRow = document.createElement('div');
+    chipRow.style.cssText = 'margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;';
+    chipRow.innerHTML = infoButton('riba') + infoButton('halal_rizq');
+    header.appendChild(chipRow);
+  };
+})();
+
 </script>
 </body>
 </html>

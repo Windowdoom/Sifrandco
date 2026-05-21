@@ -17561,6 +17561,104 @@ function _wireIndustryRulingChips(){
   };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  LIFESTYLE PASS — activities, dating preferences, social choices.
+//  Hooks the existing Mind & Body activity menu (party / volunteer) and
+//  the Dating Preferences modal, adding info chips + iman effects.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+// Wrap doActivity to layer Islamic effects on existing activity outcomes.
+(function(){
+  if(typeof doActivity !== 'function') return;
+  const _orig = doActivity;
+  doActivity = function(id){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    if(id === 'party'){
+      // "Drink the night away" — khamr scenario by the action's own text.
+      c.iman = clamp((c.iman||0) - 5, 0, 100);
+      c.karma = clamp((c.karma||50) - 2, 0, 100);
+      c.faith = c.iman;
+      c.kabairFlags = c.kabairFlags || {};
+      c.kabairFlags.khamr = (c.kabairFlags.khamr||0) + 1;
+      pushEvent('bad', '🚫 The night involved khamr. Iman -5. (Quran 5:90)');
+    } else if(id === 'volunteer'){
+      // Service to people — Quran 5:32 territory.
+      c.iman = clamp((c.iman||0) + 3, 0, 100);
+      c.faith = c.iman;
+    }
+  };
+})();
+
+// Inject info chips into the activities modal.
+function _wireActivityRulingChips(){
+  const modal = document.getElementById('modal');
+  if(!modal || !modal.classList.contains('show')) return;
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam') return;
+  const titleRuling = {
+    'Go Out Partying': 'khamr',
+    'Volunteer at a Shelter': 'khidmah',
+    'Meditate': null, // intentionally none — broad practice
+  };
+  modal.querySelectorAll('.card').forEach(card => {
+    if(card.dataset.activityRulingWired) return;
+    const titleEl = card.querySelector('.card-title');
+    if(!titleEl) return;
+    const r = titleRuling[titleEl.textContent.trim()];
+    if(!r) return;
+    const meta = card.querySelector('.card-meta');
+    if(!meta) return;
+    const chipWrap = document.createElement('div');
+    chipWrap.style.cssText = 'margin-top:5px;';
+    chipWrap.innerHTML = infoButton(r);
+    meta.parentNode.insertBefore(chipWrap, meta.nextSibling);
+    card.dataset.activityRulingWired = '1';
+  });
+}
+(function(){
+  if(typeof openActivities !== 'function') return;
+  const _orig = openActivities;
+  openActivities = function(){
+    _orig.apply(this, arguments);
+    setTimeout(_wireActivityRulingChips, 0);
+  };
+})();
+
+// ─── Dating preferences: nikah-intent framing for Muslim characters.
+//  Adds a top notice that frames the dating system as the path toward
+//  nikah (no casual dating outside the contract). For mixed-religion
+//  selections, surface the spouse-religion guidance briefly.
+(function(){
+  if(typeof openDatingPrefs !== 'function') return;
+  const _orig = openDatingPrefs;
+  openDatingPrefs = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const body = document.querySelector('#modal .modal-body');
+    if(!body) return;
+    const notice = document.createElement('div');
+    notice.style.cssText = 'padding:12px 14px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:6px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
+    notice.innerHTML =
+        '<div style="flex:1;min-width:220px;">'
+      +   '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:#a3e635;text-transform:uppercase;margin-bottom:4px;">Looking with intent</div>'
+      +   '<div style="font-size:12px;color:#cfe8d4;line-height:1.55;">In Islam there is no casual dating outside the nikah. These filters shape the pool of people you might meet with the aim of contracting marriage — religion compatibility, character, and family standing weigh heaviest in the Prophet\'s ﷺ guidance.</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + infoButton('marriage') + '</div>';
+    body.insertBefore(notice, body.firstChild);
+    // Mixed-religion footer when "Any" religion is selected
+    const p = c.datingPrefs;
+    if(p && !p.religion){
+      const foot = document.createElement('div');
+      foot.style.cssText = 'margin-top:10px;padding:10px 12px;background:#2a1a0c;border:1px dashed #ffb064;border-radius:6px;font-size:11px;color:#ffd4a8;line-height:1.55;';
+      foot.innerHTML = 'Religion filter is set to <b>Any</b>. The Quran addresses cross-faith marriage with specific limits (see Quran 2:221, 5:5) — the chip above opens the ruling.';
+      body.appendChild(foot);
+    }
+  };
+})();
+
 </script>
 </body>
 </html>

@@ -316,6 +316,40 @@ input,select{font-family:inherit;}
 .intro-notice{margin-top:10px;font-family:var(--font-m);font-size:9.5px;letter-spacing:.08em;
   color:var(--t3);text-align:center;line-height:1.55;opacity:.85;}
 
+/* ── First-run overlay ── */
+#first-run-overlay{position:fixed;inset:0;background:rgba(10,6,18,.85);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;z-index:9000;padding:24px;
+  animation:froFade .35s ease-out;}
+@keyframes froFade{from{opacity:0;}to{opacity:1;}}
+.fro-card{width:min(94vw,680px);max-height:88vh;overflow-y:auto;
+  background:linear-gradient(160deg,rgba(30,20,55,.96),rgba(15,8,28,.96));
+  border:1px solid rgba(251,191,36,.5);border-radius:14px;padding:30px 28px;
+  box-shadow:0 20px 70px rgba(0,0,0,.7), 0 0 80px rgba(236,72,153,.2);}
+.fro-badge{font-family:var(--font-m);font-size:10px;letter-spacing:.4em;color:var(--gold);
+  text-align:center;margin-bottom:8px;text-transform:uppercase;}
+.fro-title{font-family:var(--font-h);font-size:28px;
+  background:linear-gradient(120deg,#fbbf24,#ec4899,#a855f7);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-align:center;margin-bottom:22px;font-weight:900;}
+.fro-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px;}
+@media(max-width:560px){.fro-grid{grid-template-columns:1fr;}}
+.fro-tip{display:flex;gap:11px;padding:11px;background:rgba(168,85,247,.08);
+  border:1px solid rgba(216,180,254,.15);border-radius:8px;}
+.fro-key{flex:0 0 42px;height:42px;display:flex;align-items:center;justify-content:center;
+  background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);border-radius:7px;
+  font-family:var(--font-m);font-size:11px;font-weight:700;color:var(--gold);
+  letter-spacing:.05em;}
+.fro-txt{font-size:12.5px;color:var(--t1);line-height:1.5;}
+.fro-txt b{color:var(--gold);}
+.fro-go{display:block;width:100%;padding:14px;
+  background:linear-gradient(90deg,#fbbf24,#ec4899,#a855f7);color:#fff;
+  border:none;border-radius:7px;font-family:var(--font-m);font-size:13px;
+  letter-spacing:.32em;text-transform:uppercase;font-weight:900;
+  cursor:pointer;box-shadow:0 6px 24px rgba(236,72,153,.4);
+  transition:transform .15s,box-shadow .15s;}
+.fro-go:hover{transform:translateY(-1px);
+  box-shadow:0 8px 32px rgba(251,191,36,.5),0 0 28px rgba(168,85,247,.4);}
+
 /* ─── Death overlay ─── */
 #death-screen{position:fixed;inset:0;background:radial-gradient(ellipse at center,#1a0808,#000);
   display:none;flex-direction:column;align-items:center;justify-content:center;
@@ -3227,6 +3261,43 @@ function startNewLife(){
   pushBirthEvents();
   renderAll();
   saveLife();
+  maybeShowFirstRunOverlay();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  FIRST-RUN OVERLAY — only shown on the player's very first new life.
+//  Sets a localStorage flag so subsequent runs skip it.
+// ═══════════════════════════════════════════════════════════════════════
+function maybeShowFirstRunOverlay(){
+  try { if(localStorage.getItem('lyfe_seenIntro') === '1') return; } catch(e){}
+  setTimeout(showFirstRunOverlay, 200);
+}
+function dismissFirstRunOverlay(){
+  try { localStorage.setItem('lyfe_seenIntro', '1'); } catch(e){}
+  const el = document.getElementById('first-run-overlay');
+  if(el) el.remove();
+}
+function showFirstRunOverlay(){
+  if(document.getElementById('first-run-overlay')) return;
+  const o = document.createElement('div');
+  o.id = 'first-run-overlay';
+  o.innerHTML =
+      '<div class="fro-card">'
+    +   '<div class="fro-badge">FIRST TIME HERE?</div>'
+    +   '<div class="fro-title">Live a life. Build a dynasty.</div>'
+    +   '<div class="fro-grid">'
+    +     '<div class="fro-tip"><div class="fro-key">SPACE</div><div class="fro-txt">Advance one year. <b>SHIFT+SPACE</b> rips through five.</div></div>'
+    +     '<div class="fro-tip"><div class="fro-key">💼</div><div class="fro-txt">Pick a <b>Career</b> at 13+. Climb its rungs. Each career has its own event pool.</div></div>'
+    +     '<div class="fro-tip"><div class="fro-key">💞</div><div class="fro-txt"><b>Relationships</b> — date, propose, marry, have kids. Religious weddings unlock if you have a faith.</div></div>'
+    +     '<div class="fro-tip"><div class="fro-key">🏢</div><div class="fro-txt"><b>Companies</b> at 18+. Found, run, IPO. Each industry has its own power moves.</div></div>'
+    +     '<div class="fro-tip"><div class="fro-key">🏛️</div><div class="fro-txt"><b>Office of Power</b> unlocks at age 35 with a political career — or when you cross \$500B net worth.</div></div>'
+    +     '<div class="fro-tip"><div class="fro-key">🌳</div><div class="fro-txt">When you die, <b>continue as a child</b>. They inherit your money, companies, heirlooms, foundation, even the world you shaped.</div></div>'
+    +     '<div class="fro-tip"><div class="fro-key">✨</div><div class="fro-txt">The <b>More</b> menu hides everything else — heirlooms, will, cult, black market, philanthropy.</div></div>'
+    +     '<div class="fro-tip"><div class="fro-key">🌐</div><div class="fro-txt">After your first political act, the <b>World Ledger</b> opens. Every act is recorded forever.</div></div>'
+    +   '</div>'
+    +   '<button class="fro-go" onclick="dismissFirstRunOverlay()">Begin Your Life</button>'
+    + '</div>';
+  document.body.appendChild(o);
 }
 
 function continueLife(){
@@ -5892,21 +5963,206 @@ function goToJail(years, reason){
 // ═══════════════════════════════════════════════════════════════════════
 //  FAMILY TREE (multi-generation)
 // ═══════════════════════════════════════════════════════════════════════
-function openFamilyTree(){
-  let html = '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:14px;">Generations · Most Recent First</div>';
-  if(LIFE.ancestors.length === 0){
-    html += '<div style="color:var(--t3);text-align:center;padding:30px;">No ancestors yet. They will appear here when you die and continue as your descendant.</div>';
+// ═══════════════════════════════════════════════════════════════════════
+//  FAMILY TREE — real SVG visualization of the lineage. Parents on top,
+//  self + partner in the middle, children below with their grandkids,
+//  ancestors stacked above. Click a node to see details (toast).
+// ═══════════════════════════════════════════════════════════════════════
+function familyTreeSVG(){
+  const c = LIFE.char;
+  const W = 660;
+  // ── Layout: compute every node position before rendering ──
+  // Use 5 rows: ancestors, parents, self+partner+siblings, children, grandchildren
+  const rows = {
+    ancestors:  { y: 50,  nodes: [] },
+    parents:    { y: 150, nodes: [] },
+    self:       { y: 280, nodes: [] },
+    children:   { y: 420, nodes: [] },
+    grandkids:  { y: 540, nodes: [] },
+  };
+  // Pull a few visible ancestors (most recent 3 from LIFE.ancestors)
+  const ancestors = (LIFE.ancestors || []).slice(-3);
+  const stepA = ancestors.length ? W / (ancestors.length + 1) : 0;
+  ancestors.forEach((a, i) => {
+    rows.ancestors.nodes.push({
+      x: Math.round(stepA * (i + 1)),
+      label: a.name, sub: a.born + '–' + a.died + ' · G' + a.generation,
+      emoji: '🕯', deceased: true, kind:'ancestor',
+    });
+  });
+  // Parents
+  const parents = [];
+  if(c.parents && c.parents.mom) parents.push({ ...c.parents.mom, role:'mom' });
+  if(c.parents && c.parents.dad) parents.push({ ...c.parents.dad, role:'dad' });
+  const stepP = W / (parents.length + 1 || 1);
+  parents.forEach((p, i) => {
+    rows.parents.nodes.push({
+      x: Math.round(stepP * (i + 1)),
+      label: p.firstName + ' ' + p.lastName,
+      sub: (p.alive ? 'age ' + p.age : '✝ deceased'),
+      emoji: p.role === 'mom' ? (p.alive ? '👩' : '🕯') : (p.alive ? '👨' : '🕯'),
+      deceased: !p.alive,
+      kind: 'parent',
+    });
+  });
+  // Self + partner — center the pair
+  const selfHasPartner = !!c.partner;
+  if(selfHasPartner){
+    rows.self.nodes.push({
+      x: Math.round(W/2 - 90),
+      label: c.firstName + ' ' + c.lastName, sub: 'age ' + c.age + ' · YOU',
+      emoji: c.sex === 'm' ? (c.age < 60 ? '🧑' : '👴') : (c.age < 60 ? '👩' : '👵'),
+      self: true, kind:'self',
+    });
+    rows.self.nodes.push({
+      x: Math.round(W/2 + 90),
+      label: c.partner.firstName + ' ' + c.partner.lastName,
+      sub: (c.partner.married ? '💍 ' : '💕 ') + 'age ' + c.partner.age,
+      emoji: c.partner.sex === 'f' ? '👩' : '👨',
+      kind: 'partner',
+    });
   } else {
-    html += LIFE.ancestors.slice().reverse().map(a => (
-      '<div class="gen-card">'
-      + '<div class="gen-card-h"><span class="gen-card-n">' + a.name + '</span><span class="gen-card-y">' + a.born + '–' + a.died + '</span></div>'
-      + '<div class="gen-card-occ">' + a.occupation + ' · ' + COUNTRIES[a.country].flag + ' ' + COUNTRIES[a.country].short + '</div>'
-      + '<div class="gen-card-wealth">Final wealth: ' + fmtMoney(a.finalWealth) + '</div>'
-      + '<div style="font-size:11px;color:var(--t3);margin-top:3px;">Died of ' + a.cause + ' · Generation ' + a.generation + (a.children.length ? ' · ' + a.children.length + ' children' : '') + '</div>'
-      + '</div>'
-    )).join('');
+    rows.self.nodes.push({
+      x: Math.round(W/2),
+      label: c.firstName + ' ' + c.lastName, sub: 'age ' + c.age + ' · YOU',
+      emoji: c.sex === 'm' ? (c.age < 60 ? '🧑' : '👴') : (c.age < 60 ? '👩' : '👵'),
+      self: true, kind:'self',
+    });
   }
-  openModal('Family Tree', html);
+  // Children
+  const kids = (c.children || []);
+  if(kids.length){
+    const stepK = W / (kids.length + 1);
+    kids.forEach((k, i) => {
+      rows.children.nodes.push({
+        x: Math.round(stepK * (i + 1)),
+        label: k.name, sub: (k.alive ? 'age ' + k.age : '✝ ' + (k.age || '?')),
+        emoji: !k.alive ? '🕯' : k.age < 1 ? '👶' : k.age < 13 ? '🧒' : k.sex === 'm' ? '👨' : '👩',
+        deceased: !k.alive, kind: 'child',
+        parentX: rows.self.nodes[0].x,  // line back to self
+      });
+    });
+    // Grandkids — flatten with parent-child linkage
+    const allGK = [];
+    kids.forEach((k, i) => {
+      (k.children || []).forEach(g => {
+        allGK.push({ ...g, _parentIdx: i });
+      });
+    });
+    if(allGK.length){
+      const stepG = W / (allGK.length + 1);
+      allGK.forEach((g, i) => {
+        rows.grandkids.nodes.push({
+          x: Math.round(stepG * (i + 1)),
+          label: g.name, sub: (g.alive ? 'age ' + g.age : '✝'),
+          emoji: !g.alive ? '🕯' : g.age < 1 ? '👶' : g.age < 13 ? '🧒' : g.sex === 'm' ? '👨' : '👩',
+          deceased: !g.alive, kind:'grandkid',
+          parentX: rows.children.nodes[g._parentIdx].x,
+        });
+      });
+    }
+  }
+  const totalH = rows.grandkids.nodes.length ? 600 : (rows.children.nodes.length ? 480 : 340);
+  // ── Build SVG ──
+  const parts = [];
+  parts.push('<svg viewBox="0 0 ' + W + ' ' + totalH + '" width="100%" '
+    + 'style="background:radial-gradient(ellipse at center,#1a1428,#0a0612);'
+    + 'border:1px solid var(--accent);border-radius:8px;display:block;">');
+  // Defs: glow filter
+  parts.push('<defs>'
+    + '<radialGradient id="nodeBg" cx="50%" cy="40%">'
+    + '<stop offset="0%" stop-color="#3a2a55"/>'
+    + '<stop offset="100%" stop-color="#1a1428"/>'
+    + '</radialGradient>'
+    + '<radialGradient id="nodeBgSelf" cx="50%" cy="40%">'
+    + '<stop offset="0%" stop-color="#fbbf24"/>'
+    + '<stop offset="100%" stop-color="#a85a08"/>'
+    + '</radialGradient>'
+    + '</defs>');
+  // ── Connection lines ──
+  const ROW_TOP = (row) => row.y - 36;
+  const ROW_BOT = (row) => row.y + 36;
+  const drawLine = (x1, y1, x2, y2, dim) => parts.push(
+    '<path d="M' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + ((y1+y2)/2) + ' ' + x2 + ' ' + ((y1+y2)/2) + ' ' + x2 + ' ' + y2 + '" '
+    + 'stroke="' + (dim ? 'rgba(216,180,254,.18)' : 'rgba(216,180,254,.45)') + '" '
+    + 'stroke-width="' + (dim ? 1 : 1.5) + '" fill="none"/>'
+  );
+  // Ancestor → first parent line (symbolic, not actual lineage since the
+  // ancestor list is generational not strict-parental)
+  if(rows.ancestors.nodes.length && rows.parents.nodes.length){
+    rows.ancestors.nodes.forEach(a => {
+      drawLine(a.x, ROW_BOT(rows.ancestors), rows.parents.nodes[0].x, ROW_TOP(rows.parents), true);
+    });
+  }
+  // Parents → self
+  rows.parents.nodes.forEach(p => {
+    drawLine(p.x, ROW_BOT(rows.parents), rows.self.nodes[0].x, ROW_TOP(rows.self), false);
+  });
+  // Self ↔ partner romance line
+  if(rows.self.nodes.length === 2){
+    const a = rows.self.nodes[0], b = rows.self.nodes[1];
+    parts.push('<line x1="' + (a.x + 30) + '" y1="' + rows.self.y + '" x2="' + (b.x - 30) + '" y2="' + rows.self.y + '" stroke="#ec4899" stroke-width="2" stroke-dasharray="4 3"/>');
+    // Heart in middle
+    parts.push('<text x="' + ((a.x + b.x) / 2) + '" y="' + (rows.self.y + 5) + '" font-size="16" text-anchor="middle">💞</text>');
+  }
+  // Self → each child
+  rows.children.nodes.forEach(k => {
+    drawLine(rows.self.nodes[0].x, ROW_BOT(rows.self), k.x, ROW_TOP(rows.children), false);
+  });
+  // Each child → its grandkids
+  rows.grandkids.nodes.forEach(g => {
+    drawLine(g.parentX, ROW_BOT(rows.children), g.x, ROW_TOP(rows.grandkids), false);
+  });
+  // ── Person nodes ──
+  const drawNode = (n, y) => {
+    const fill = n.self ? 'url(#nodeBgSelf)' : 'url(#nodeBg)';
+    const stroke = n.self ? '#fbbf24' : n.deceased ? '#552a6e' : '#a855f7';
+    const opacity = n.deceased ? '0.55' : '1';
+    parts.push('<g opacity="' + opacity + '">');
+    parts.push('<circle cx="' + n.x + '" cy="' + y + '" r="30" fill="' + fill + '" stroke="' + stroke + '" stroke-width="2"/>');
+    parts.push('<text x="' + n.x + '" y="' + (y + 11) + '" font-size="34" text-anchor="middle" dominant-baseline="middle">' + n.emoji + '</text>');
+    // Two lines of text below the node
+    parts.push('<text x="' + n.x + '" y="' + (y + 50) + '" font-size="11" text-anchor="middle" fill="#fff5ec" font-family="Georgia,serif" font-weight="700">' + n.label.slice(0, 18) + '</text>');
+    parts.push('<text x="' + n.x + '" y="' + (y + 64) + '" font-size="9" text-anchor="middle" fill="#c4b8e0" font-family="Courier New,monospace" letter-spacing="0.5">' + n.sub + '</text>');
+    parts.push('</g>');
+  };
+  rows.ancestors.nodes.forEach(n => drawNode(n, rows.ancestors.y));
+  rows.parents.nodes.forEach(n => drawNode(n, rows.parents.y));
+  rows.self.nodes.forEach(n => drawNode(n, rows.self.y));
+  rows.children.nodes.forEach(n => drawNode(n, rows.children.y));
+  rows.grandkids.nodes.forEach(n => drawNode(n, rows.grandkids.y));
+  // Row labels on the left
+  const rowLabel = (y, txt) => parts.push('<text x="6" y="' + y + '" font-size="9" fill="#7a6a96" font-family="Courier New,monospace" letter-spacing="2" dominant-baseline="middle">' + txt + '</text>');
+  if(rows.ancestors.nodes.length) rowLabel(rows.ancestors.y, 'ANCESTORS');
+  if(rows.parents.nodes.length)   rowLabel(rows.parents.y, 'PARENTS');
+  rowLabel(rows.self.y, 'YOU');
+  if(rows.children.nodes.length)  rowLabel(rows.children.y, 'CHILDREN');
+  if(rows.grandkids.nodes.length) rowLabel(rows.grandkids.y, 'GRANDKIDS');
+  parts.push('</svg>');
+  return parts.join('');
+}
+
+function openFamilyTree(){
+  const c = LIFE.char;
+  const aliveKids   = (c.children || []).filter(k => k.alive).length;
+  const aliveGrandkids = (c.children || []).reduce((s, k) => s + (k.children || []).filter(g => g.alive).length, 0);
+  let html = '<div style="font-family:var(--font-m);font-size:10px;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;">'
+    + 'Generation ' + LIFE.generation + ' · ' + aliveKids + ' children · ' + aliveGrandkids + ' grandchildren'
+    + '</div>';
+  html += familyTreeSVG();
+  // Ancestor list still useful for older generations beyond the SVG window
+  if(LIFE.ancestors && LIFE.ancestors.length > 3){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 8px;">Earlier Ancestors</div>';
+    LIFE.ancestors.slice(0, LIFE.ancestors.length - 3).reverse().forEach(a => {
+      html += '<div class="gen-card">'
+        + '<div class="gen-card-h"><span class="gen-card-n">' + a.name + '</span><span class="gen-card-y">' + a.born + '–' + a.died + '</span></div>'
+        + '<div class="gen-card-occ">' + a.occupation + ' · ' + (COUNTRIES[a.country] ? COUNTRIES[a.country].flag + ' ' + COUNTRIES[a.country].short : '?') + '</div>'
+        + '<div class="gen-card-wealth">Final wealth: ' + fmtMoney(a.finalWealth) + '</div>'
+        + '<div style="font-size:11px;color:var(--t3);margin-top:3px;">Died of ' + a.cause + ' · Gen ' + a.generation + '</div>'
+        + '</div>';
+    });
+  }
+  openModal('🌳 Family Tree', html);
 }
 
 // ═══════════════════════════════════════════════════════════════════════

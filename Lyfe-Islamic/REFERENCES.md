@@ -4,6 +4,9 @@ Every reference used by the in-game Reflection screen, with verifiable links.
 
 All Quran translations are **Sahih International** (verifiable at quran.com).
 All hadith are **sahih-graded** from the Six Books (verifiable at sunnah.com).
+Tafsir summaries are **paraphrased** from Ibn Kathir's classical work — see the in-game disclaimer note.
+
+## Verified References (36 total)
 
 | Topic | Quran | Hadith Source | Reference Number | Verify |
 |---|---|---|---|---|
@@ -28,6 +31,36 @@ All hadith are **sahih-graded** from the Six Books (verifiable at sunnah.com).
 | Ghibah — Backbiting | Quran 49:12 | Muslim | 2589 | [sunnah.com](https://sunnah.com/muslim:2589) |
 | Yamin — Keeping Oaths | Quran 16:91 | Bukhari | 6178 | [sunnah.com](https://sunnah.com/bukhari:6178) |
 | Sanctity of Life | Quran 5:32 | Bukhari | 6878 | [sunnah.com](https://sunnah.com/bukhari:6878) |
+| Jar — Rights of the Neighbor | Quran 4:36 | Abu Dawud | 5151 | [sunnah.com](https://sunnah.com/abudawud:5151) |
+| Smile as Sadaqah | Quran 2:267 | Tirmidhi | 1956 | [sunnah.com](https://sunnah.com/tirmidhi:1956) |
+| Choosing a Spouse — Religion First | Quran 30:21 | Ibn Majah | 1858 | [sunnah.com](https://sunnah.com/ibnmajah:1858) |
+| Silat al-Rahim — Maintaining Kinship | Quran 47:22 | Bukhari | 5984 | [sunnah.com](https://sunnah.com/bukhari:5984) |
+| Hasad — The Sin of Envy | Quran 113:5 | Muslim | 2563d | [sunnah.com](https://sunnah.com/muslim:2563d) |
+| Forgiveness — Pardoning Others | Quran 7:199 | Bukhari | 6116 | [sunnah.com](https://sunnah.com/bukhari:6116) |
+| Sidq — Truthful Speech | Quran 9:119 | Muslim | 2607 | [sunnah.com](https://sunnah.com/muslim:2607) |
+| Kibr — Arrogance | Quran 17:37 | Muslim | 91 | [sunnah.com](https://sunnah.com/muslim:91) |
+| Remembrance of Death | Quran 62:8 | Bukhari | 6416 | [sunnah.com](https://sunnah.com/bukhari:6416) |
+| Kafala — Sponsorship over Blood-Adoption | Quran 33:5 | Bukhari | 5304 | [sunnah.com](https://sunnah.com/bukhari:5304) |
+| Hijrah — Migration for the Sake of Faith | Quran 4:97 | Bukhari | 54 | [sunnah.com](https://sunnah.com/bukhari:54) |
+| Sadaqah Jariyah — Perpetual Charity | Quran 2:261 | Muslim | 1631 | [sunnah.com](https://sunnah.com/muslim:1631) |
+| Time — Every Soul is a Hostage to its Earning | Quran 103:1 | Bukhari | 6412 | [sunnah.com](https://sunnah.com/bukhari:6412) |
+| Halal Food — What is Forbidden | Quran 5:3 | Muslim | 1933 | [sunnah.com](https://sunnah.com/muslim:1933) |
+| Laylat al-Qadr — The Night of Power | Quran 97:3 | Bukhari | 2014 | [sunnah.com](https://sunnah.com/bukhari:2014) |
+
+## Coverage by Book
+
+- **Bukhari**: 20 hadith
+- **Muslim**: 12 hadith
+- **Abu Dawud**: 1 hadith
+- **Tirmidhi**: 2 hadith
+- **Nasai**: 0 hadith
+- **Ibn Majah**: 1 hadith
+
+## Hadith Grading Standards
+
+- Only **sahih-graded** hadith from the Six Books are used.
+- Two earlier candidates (a possible weak chain in Abu Dawud 4903 and Tirmidhi 2307 with Hasan grading) were replaced with cleanly-sahih alternatives from Bukhari 6416 and Muslim 2563d.
+- No mawdu' (fabricated) or da'if (weak) hadith are cited.
 
 ## Sources
 

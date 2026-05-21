@@ -15433,6 +15433,715 @@ function openReferencesIndex(){
   }
 })();
 
+
+// ════════════════════════════════════════════════════════════════════
+//  ISLAMIC EXPANSION — second module appended after the first. Adds:
+//   • 15 more verified sahih references (covering all 6 books)
+//   • Adoption / Kafala (Quran 33:5 — child keeps biological lineage)
+//   • Hijrah action — relocate to a Sharia-applying country
+//   • Haram-job warning wired into career picker + quick-jobs
+//   • Sharia-country legal consequences for alcohol/gambling
+//   • 15 more ethical-fork situations
+//   • Daily salah tracker w/ year-end audit
+//   • Eid al-Fitr + Eid al-Adha + Laylat al-Qadr annual events
+//   • Halal food preference toggle
+//   • Sadaqah Jariyah (waqf) — perpetual charity endowments
+// ════════════════════════════════════════════════════════════════════
+
+// ─── Expand the references library ────────────────────────────────
+Object.assign(ISLAMIC_REFERENCES, {
+  neighbor: {
+    label:'Jar — Rights of the Neighbor',
+    ayah: { sura:4, verse:36,
+      text:'And worship Allah and associate nothing with Him, and to parents do good, and to relatives, orphans, the needy, the near neighbor, the neighbor farther away, the companion at your side, the traveler...',
+      tafsir:'Ibn Kathir summary: Allah lists the rights of those around the believer in concentric circles — beginning with His own right (tawhid), then parents, then progressively wider rings of community. The "near neighbor" and "neighbor farther away" each have their own claim.' },
+    hadith: { book:'Abu Dawud', num:5151, collectionUrl:'https://sunnah.com/abudawud:5151',
+      text:'The Prophet ﷺ said: "Gabriel kept urging me to be good to the neighbor until I thought he would make him an heir."',
+      grade:'sahih' },
+  },
+  smile_charity: {
+    label:'Smile as Sadaqah',
+    ayah: { sura:2, verse:267,
+      text:'O you who have believed, spend from the good things which you have earned and from that which We have produced for you from the earth.',
+      tafsir:'Ibn Kathir summary: Charity extends beyond what is taken from wealth — every good act offered for the sake of Allah is a form of sadaqah, and the Prophet ﷺ included a smile to one\'s brother among them.' },
+    hadith: { book:'Tirmidhi', num:1956, collectionUrl:'https://sunnah.com/tirmidhi:1956',
+      text:'The Prophet ﷺ said: "Your smile to your brother is a charity for you; your enjoining of good and forbidding of evil is a charity; your guiding a man in a place where he can lose his way is a charity; your removing of a stone, thorn, or bone from the road is a charity for you."',
+      grade:'sahih' },
+  },
+  marriage: {
+    label:'Choosing a Spouse — Religion First',
+    ayah: { sura:30, verse:21,
+      text:'And of His signs is that He created for you from yourselves mates that you may find tranquility in them; and He placed between you affection and mercy. Indeed in that are signs for a people who give thought.',
+      tafsir:'Ibn Kathir summary: Marriage is one of the great signs of Allah. The two great gifts placed within it are mawaddah (affection) and rahmah (mercy) — affection in youth, mercy when familiarity replaces novelty.' },
+    hadith: { book:'Ibn Majah', num:1858, collectionUrl:'https://sunnah.com/ibnmajah:1858',
+      text:'The Prophet ﷺ said: "A woman may be married for four things: her wealth, her lineage, her beauty, or her religion. Choose the religious one, may your hands be rubbed with dust."',
+      grade:'sahih' },
+  },
+  family_ties: {
+    label:'Silat al-Rahim — Maintaining Kinship',
+    ayah: { sura:47, verse:22,
+      text:'So would you perhaps, if you turned away, cause corruption on earth and sever your [ties of] relationship?',
+      tafsir:'Ibn Kathir summary: Severing the bonds of kinship is paired with corruption on earth as among the gravest social ills. The believer is enjoined to maintain ties even with those who cut them off.' },
+    hadith: { book:'Bukhari', num:5984, collectionUrl:'https://sunnah.com/bukhari:5984',
+      text:'The Prophet ﷺ said: "Whoever wishes to have his provision expanded and his lifespan extended, let him maintain the ties of kinship."',
+      grade:'sahih' },
+  },
+  envy: {
+    label:'Hasad — The Sin of Envy',
+    ayah: { sura:113, verse:5,
+      text:'And from the evil of an envier when he envies.',
+      tafsir:'Ibn Kathir summary: Surah Al-Falaq seeks refuge from four evils, the fourth being the envier. Envy is not merely emotion — it is the active wish for another\'s blessing to be removed.' },
+    hadith: { book:'Muslim', num:'2563d', collectionUrl:'https://sunnah.com/muslim:2563d',
+      text:'The Prophet ﷺ said: "Do not nurse mutual hatred, do not envy each other, do not turn your backs on each other, and live as brothers as Allah has commanded you."',
+      grade:'sahih' },
+  },
+  forgive: {
+    label:'Forgiveness — Pardoning Others',
+    ayah: { sura:7, verse:199,
+      text:'Take what is given freely, enjoin what is good, and turn away from the ignorant.',
+      tafsir:'Ibn Kathir summary: When Allah revealed this verse, the Prophet ﷺ asked Gabriel for clarification. Gabriel said: "Allah commands you to maintain ties with the one who cuts you off, to give to the one who deprives you, and to pardon the one who wrongs you."' },
+    hadith: { book:'Bukhari', num:6116, collectionUrl:'https://sunnah.com/bukhari:6116',
+      text:'The Prophet ﷺ said: "The strong man is not the one who is good at wrestling, but the one who controls himself when angry."',
+      grade:'sahih' },
+  },
+  honest_speech: {
+    label:'Sidq — Truthful Speech',
+    ayah: { sura:9, verse:119,
+      text:'O you who have believed, fear Allah and be with those who are truthful.',
+      tafsir:'Ibn Kathir summary: Truthfulness is paired with taqwa. The believer is commanded not only to be truthful, but to keep the company of the truthful — environments shape habit.' },
+    hadith: { book:'Muslim', num:2607, collectionUrl:'https://sunnah.com/muslim:2607',
+      text:'The Prophet ﷺ said: "Truthfulness leads to righteousness, and righteousness leads to Paradise. A man keeps speaking the truth and seeking truthfulness until he is written before Allah as truthful. Lying leads to wickedness, and wickedness leads to the Fire. A man keeps lying and seeking falsehood until he is written before Allah as a liar."',
+      grade:'sahih' },
+  },
+  arrogance: {
+    label:'Kibr — Arrogance',
+    ayah: { sura:17, verse:37,
+      text:'And do not walk upon the earth exultantly. Indeed, you will never tear the earth, nor will you reach the mountains in height.',
+      tafsir:'Ibn Kathir summary: Allah pairs the prohibition with two reminders of human smallness — you cannot tear the earth with your foot, you cannot reach the mountains with your height. Arrogance is the disposition that does not fit the creature\'s actual size.' },
+    hadith: { book:'Muslim', num:91, collectionUrl:'https://sunnah.com/muslim:91',
+      text:'The Prophet ﷺ said: "No one with even an atom\'s weight of arrogance in his heart shall enter Paradise." A man asked: "What if a man likes his clothing and shoes to be nice?" He said: "Allah is Beautiful and loves beauty. Arrogance is rejecting the truth and looking down on people."',
+      grade:'sahih' },
+  },
+  death_remember: {
+    label:'Remembrance of Death',
+    ayah: { sura:62, verse:8,
+      text:'Say, "Indeed, the death from which you flee — it will surely meet you. Then you will be returned to the Knower of the unseen and the witnessed, and He will inform you about what you used to do."',
+      tafsir:'Ibn Kathir summary: Death cannot be evaded. The verse instructs the believer to keep death\'s certainty in view — not as a morbid preoccupation but as a frame for every choice.' },
+    hadith: { book:'Bukhari', num:6416, collectionUrl:'https://sunnah.com/bukhari:6416',
+      text:'Ibn Umar reported: The Messenger of Allah ﷺ took hold of my shoulder and said: "Be in this world as if you were a stranger or a traveler."',
+      grade:'sahih' },
+  },
+  adoption: {
+    label:'Kafala — Sponsorship over Blood-Adoption',
+    ayah: { sura:33, verse:5,
+      text:'Call them by [the names of] their fathers; it is more just in the sight of Allah. But if you do not know their fathers — then they are your brothers in religion and those entrusted to you.',
+      tafsir:'Ibn Kathir summary: Pre-Islamic Arab custom allowed an adopted child to take the adoptive father\'s name and inherit as a biological son. This verse abolished that. The adopted child keeps their lineage; the relationship becomes one of brotherhood in faith and trust (kafala), not name-replacement. Inheritance can still be arranged through bequest (wasiyya), capped at one-third.' },
+    hadith: { book:'Bukhari', num:5304, collectionUrl:'https://sunnah.com/bukhari:5304',
+      text:'The Prophet ﷺ said: "I and the one who looks after an orphan will be like this in Paradise," and he held his index and middle fingers close together.',
+      grade:'sahih' },
+  },
+  hijrah: {
+    label:'Hijrah — Migration for the Sake of Faith',
+    ayah: { sura:4, verse:97,
+      text:'Indeed, those whom the angels take [in death] while wronging themselves — [the angels] will say, "In what [condition] were you?" They will say, "We were oppressed in the land." The angels will say, "Was not the earth of Allah spacious [enough] for you to emigrate therein?"',
+      tafsir:'Ibn Kathir summary: One who cannot practice his faith in his land and has the means to leave bears responsibility before Allah. The "spacious earth of Allah" is the answer to those who claim necessity bound them to a place where their faith was suppressed.' },
+    hadith: { book:'Bukhari', num:54, collectionUrl:'https://sunnah.com/bukhari:54',
+      text:'The Prophet ﷺ said: "Actions are by intentions. Whoever\'s hijrah was for Allah and His Messenger, his hijrah was for Allah and His Messenger. And whoever\'s hijrah was for worldly gain or to marry a woman, his hijrah was for whatever he migrated for."',
+      grade:'sahih' },
+  },
+  waqf: {
+    label:'Sadaqah Jariyah — Perpetual Charity',
+    ayah: { sura:2, verse:261,
+      text:'The example of those who spend their wealth in the way of Allah is like a seed [of grain] which grows seven spikes; in each spike is a hundred grains. And Allah multiplies [His reward] for whom He wills.',
+      tafsir:'Ibn Kathir summary: One coin given for the sake of Allah may be multiplied seven-hundred-fold. Sadaqah Jariyah — continuing charity, such as endowing a water well or a school — keeps multiplying as long as people benefit from it.' },
+    hadith: { book:'Muslim', num:1631, collectionUrl:'https://sunnah.com/muslim:1631',
+      text:'The Prophet ﷺ said: "When a person dies, his deeds come to an end except for three: sadaqah jariyah (continuing charity), knowledge from which others benefit, or a righteous child who prays for him."',
+      grade:'sahih' },
+  },
+  fitrah: {
+    label:'Time — Every Soul is a Hostage to its Earning',
+    ayah: { sura:103, verse:1,
+      text:'By time. Indeed, mankind is in loss. Except for those who have believed and done righteous deeds and advised each other to truth and advised each other to patience.',
+      tafsir:'Ibn Kathir summary: Imam al-Shafi\'i said: "If Allah had not revealed any proof for His creation except this Surah, it would have been sufficient." Every human is at a loss by default; only four things rescue him — iman, righteous deeds, mutual exhortation to truth, mutual exhortation to patience.' },
+    hadith: { book:'Bukhari', num:6412, collectionUrl:'https://sunnah.com/bukhari:6412',
+      text:'The Prophet ﷺ said: "Two blessings which many people waste: good health and free time."',
+      grade:'sahih' },
+  },
+  pork: {
+    label:'Halal Food — What is Forbidden',
+    ayah: { sura:5, verse:3,
+      text:'Prohibited to you are dead animals, blood, the flesh of swine, and that which has been dedicated to other than Allah, and [those animals] killed by strangling or by a violent blow or by a head-long fall or by the goring of horns, and those from which a wild animal has eaten...',
+      tafsir:'Ibn Kathir summary: Allah enumerates the prohibitions clearly. The category-defining prohibitions are: carrion, flowing blood, swine, and what is sacrificed to other than Allah. Everything outside these and beyond what is specifically named is permitted.' },
+    hadith: { book:'Muslim', num:1933, collectionUrl:'https://sunnah.com/muslim:1933',
+      text:'Ibn Abbas reported: The Prophet ﷺ forbade every fanged beast of prey and every bird possessing talons.',
+      grade:'sahih' },
+  },
+  laylat_qadr: {
+    label:'Laylat al-Qadr — The Night of Power',
+    ayah: { sura:97, verse:3,
+      text:'The Night of Decree is better than a thousand months.',
+      tafsir:'Ibn Kathir summary: Worship on Laylat al-Qadr — sought in the last ten nights of Ramadan, especially the odd nights — outweighs worship of more than 83 years. The Prophet ﷺ taught the supplication: "Allahumma innaka \'Afuwwun tuhibbul \'afwa fa\'fu \'anni" (O Allah, You are Pardoning and You love to pardon, so pardon me).' },
+    hadith: { book:'Bukhari', num:2014, collectionUrl:'https://sunnah.com/bukhari:2014',
+      text:'The Prophet ﷺ said: "Whoever prays during Laylat al-Qadr with faith and seeking reward, his previous sins will be forgiven."',
+      grade:'sahih' },
+  },
+});
+
+// ─── More ethical-fork situations ──────────────────────────────────
+const MORE_FORKS = [
+  {topic:'arrogance', situation:'You just landed a big promotion. A subordinate spoke up first to congratulate the team — you feel the urge to remind everyone whose win this really was.',
+    halalSummary:'Thank the team publicly.', haramSummary:'Take the credit clearly.',
+    halalFx:{iman:+3, karma:+4}, haramFx:{iman:-4, karma:-3}},
+  {topic:'forgive', situation:'A relative who hurt you years ago reached out, asking to repair the relationship.',
+    halalSummary:'Forgive. Repair what was broken.', haramSummary:'Hold the grudge.',
+    halalFx:{iman:+5, karma:+6, happiness:+5}, haramFx:{iman:-3, happiness:-3}},
+  {topic:'envy', situation:'A neighbor bought a new car you can\'t afford. Your chest tightened.',
+    halalSummary:'Pray for their blessing — masha\'Allah.', haramSummary:'Sit with the envy.',
+    halalFx:{iman:+3, karma:+2}, haramFx:{iman:-3, happiness:-2}},
+  {topic:'honest_speech', situation:'A friend asked your opinion on their dreadful business idea.',
+    halalSummary:'Tell them the truth gently.', haramSummary:'Encourage them to spare feelings.',
+    halalFx:{iman:+3, karma:+3, happiness:-1}, haramFx:{iman:-2, karma:-1}},
+  {topic:'family_ties', situation:'You haven\'t called your cousin in over a year. There was a fight, and you were in the right.',
+    halalSummary:'Call. Be the first to bridge it.', haramSummary:'Wait for them to reach out.',
+    halalFx:{iman:+5, karma:+5}, haramFx:{iman:-3, karma:-2}},
+  {topic:'neighbor', situation:'Your neighbor\'s elderly parent is sick. They asked if you could drive them to the hospital.',
+    halalSummary:'Drop everything. Drive them.', haramSummary:'Make an excuse — you\'re busy.',
+    halalFx:{iman:+5, karma:+8}, haramFx:{iman:-3, karma:-5}},
+  {topic:'smile_charity', situation:'Someone in the elevator looked sad. You could smile, ask, or stay in your phone.',
+    halalSummary:'Smile and ask if they\'re okay.', haramSummary:'Stay in your phone.',
+    halalFx:{iman:+2, karma:+3, happiness:+2}, haramFx:{iman:0}},
+  {topic:'salah', situation:'It\'s salah time. Your meeting is running 15 minutes long.',
+    halalSummary:'Excuse yourself to pray.', haramSummary:'Skip this one — pray later.',
+    halalFx:{iman:+4}, haramFx:{iman:-6}},
+  {topic:'fitrah', situation:'Three hours just disappeared scrolling.',
+    halalSummary:'Close the app. Open the Quran.', haramSummary:'Keep scrolling.',
+    halalFx:{iman:+2, smarts:+1}, haramFx:{iman:-1, happiness:-2}},
+  {topic:'pork', situation:'A coworker offered you a bite of their pulled-pork sandwich.',
+    halalSummary:'Politely decline.', haramSummary:'Take a bite.',
+    halalFx:{iman:+3}, haramFx:{iman:-8, kabair:'haram_food'}},
+  {topic:'death_remember', situation:'You attended a janazah today. Everyone left quickly.',
+    halalSummary:'Stay a while. Sit with the gravity.', haramSummary:'Leave with everyone else.',
+    halalFx:{iman:+4, happiness:-2}, haramFx:{iman:0}},
+  {topic:'tawbah', situation:'You\'ve been carrying a sin no one knows about for years.',
+    halalSummary:'Make sincere tawbah tonight.', haramSummary:'Keep carrying it.',
+    halalFx:{iman:+8, karma:+3, happiness:+4}, haramFx:{iman:-2, happiness:-3}},
+  {topic:'marriage', situation:'You\'re being introduced to a potential spouse. They\'re wealthy and well-connected. Their deen is shaky.',
+    halalSummary:'Ask about their relationship with Allah first.', haramSummary:'Move forward — it\'ll work out.',
+    halalFx:{iman:+3, karma:+2}, haramFx:{iman:-2, happiness:-5}},
+  {topic:'waqf', situation:'You inherited a windfall. A scholar suggested endowing a water well in a drought region.',
+    halalSummary:'Endow the well — sadaqah jariyah.', haramSummary:'Keep the money.',
+    halalFx:{iman:+8, karma:+10, money:-25000}, haramFx:{iman:-2}},
+  {topic:'modesty', situation:'A new colleague is openly flirting at the office holiday party. The drinks are flowing.',
+    halalSummary:'Leave the party. Both temptations are present.', haramSummary:'Stay and have one drink.',
+    halalFx:{iman:+5, karma:+3, happiness:-2}, haramFx:{iman:-8, kabair:'khamr'}},
+];
+ETHICAL_FORKS.push(...MORE_FORKS);
+
+// ─── Adoption / Kafala system ───────────────────────────────────────
+function openAdoption(){
+  const c = LIFE.char;
+  if(c.age < 18){ toast('Must be at least 18 to adopt.'); return; }
+  if((c.children||[]).length >= 10){ toast('You already have a large family.'); return; }
+  const isMuslim = c.religion === 'islam';
+  const cost = 12000;
+  let html = '<div style="padding:14px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-h);font-size:18px;color:var(--accent2);">' + (isMuslim ? '🤲 Kafala — Sponsoring an Orphan' : '👶 Adoption') + '</div>'
+    + '<div style="font-family:var(--font-m);font-size:11px;color:var(--t3);margin-top:6px;line-height:1.6;">'
+    + (isMuslim
+       ? 'You take on the care, upbringing, and provision of a child whose own family cannot raise them. Per Quran 33:5, the child keeps their biological lineage and name; you become their guardian (kafil), not their replacement parent. Inheritance can be arranged through wasiyya (bequest, capped at one-third of estate).'
+       : 'Bring a child into your family. They become legally yours — your last name, your inheritance rights, your full responsibility.')
+    + '</div></div>'
+    + '<div style="font-size:13px;color:var(--t2);margin-bottom:14px;text-align:center;">Initial cost: ' + fmtMoney(cost) + ' for paperwork + initial provision.</div>';
+  if(isMuslim){
+    html += '<div style="padding:12px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:5px;margin-bottom:14px;font-size:12px;color:#9ec8a4;font-style:italic;line-height:1.55;">'
+      + 'The Prophet ﷺ said: "I and the one who looks after an orphan will be like this in Paradise," and he held his index and middle fingers close together.'
+      + '<div style="margin-top:5px;font-family:var(--font-m);font-size:10px;color:#a3e635;letter-spacing:.15em;text-align:right;">— Sahih al-Bukhari 5304</div></div>';
+  }
+  html += '<button class="m-btn green" style="width:100%;padding:12px;" onclick="confirmAdoption()">' + (isMuslim ? 'Sponsor a Child (Kafala)' : 'Adopt a Child') + '</button>';
+  html += '<button class="m-btn muted" style="width:100%;margin-top:8px;padding:10px;" onclick="closeModal()">Cancel</button>';
+  openModal(isMuslim ? '🤲 Kafala' : '👶 Adoption', html);
+}
+function confirmAdoption(){
+  const c = LIFE.char;
+  const cost = 12000;
+  if(c.money < cost){ toast('Need ' + fmtMoney(cost) + '.'); return; }
+  c.money -= cost;
+  const isMuslim = c.religion === 'islam';
+  const sex = Math.random() < 0.5 ? 'm' : 'f';
+  const country = c.country;
+  // Pull name from country pool — for Muslim adopter, use Muslim name pool to suggest the child's origin
+  const namePool = isMuslim
+    ? MUSLIM_NAMES[sex]
+    : ((typeof NAMES === 'object' && NAMES[country] && NAMES[country][sex]) || ['Sara','Adam']);
+  const lastNamePool = isMuslim
+    ? MUSLIM_NAMES.l
+    : ((typeof NAMES === 'object' && NAMES[country] && NAMES[country].l) || ['Brown']);
+  const firstName = namePool[Math.floor(Math.random()*namePool.length)];
+  // Critical: in kafala the child KEEPS biological lineage. We use a different
+  // biological last name from the adopter's, signalling preserved lineage.
+  const biologicalLastName = lastNamePool[Math.floor(Math.random()*lastNamePool.length)];
+  const ageAtAdoption = 1 + Math.floor(Math.random() * 12);
+  const kid = {
+    name: firstName + ' ' + biologicalLastName,
+    sex,
+    age: ageAtAdoption,
+    alive: true,
+    lastName: biologicalLastName,                       // ← preserved bio lineage
+    adoptiveLastName: c.lastName,                       // record adopter's name for reference
+    adopted: true,
+    adoptedAt: c.age,
+    biologicalParent: 'unknown',
+    isKafala: isMuslim,                                 // marks the legal/Islamic distinction
+    smarts: 40 + Math.floor(Math.random() * 40),
+    looks: 40 + Math.floor(Math.random() * 40),
+    health: 60 + Math.floor(Math.random() * 30),
+    diseases: [],
+  };
+  // Seed Islamic state on the child
+  if(isMuslim && typeof initIslamicChild === 'function'){
+    initIslamicChild(kid, c);
+  }
+  if(!c.children) c.children = [];
+  c.children.push(kid);
+  c.karma = clamp(c.karma + (isMuslim ? 18 : 12), 0, 100);
+  c.iman = clamp((c.iman||0) + (isMuslim ? 10 : 0), 0, 100);
+  c.faith = c.iman || c.faith;
+  c.happiness = clamp(c.happiness + 15, 0, 100);
+  if(typeof recordLegacy === 'function'){
+    recordLegacy((isMuslim ? 'took on the kafala of ' : 'adopted ') + kid.name);
+  }
+  pushEvent('milestone',
+    (isMuslim ? '🤲 You took ' : '👶 You adopted ') + kid.name +
+    ' (age ' + ageAtAdoption + (isMuslim ? ', biological lineage preserved per Quran 33:5' : '') + ').');
+  if(isMuslim) setTimeout(() => {
+    const ok = confirm('Open the reflection on Kafala (Quran 33:5 + Sahih al-Bukhari 5304)?');
+    if(ok) openReflection('adoption');
+  }, 200);
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+// ─── Hijrah action — relocate to a Sharia-applying country ──────────
+function openHijrah(){
+  const c = LIFE.char;
+  if(c.religion !== 'islam'){
+    toast('Hijrah is for Muslims seeking to practice their faith more fully.');
+    return;
+  }
+  const candidates = Object.keys(SHARIA_COUNTRIES).filter(k =>
+    (SHARIA_COUNTRIES[k] === 'full' || SHARIA_COUNTRIES[k] === 'partial')
+    && k !== c.country
+    && COUNTRIES[k]
+  );
+  if(!candidates.length){
+    toast('No Sharia-applying destinations available from your current location.');
+    return;
+  }
+  let html = '<div style="padding:14px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:6px;margin-bottom:14px;text-align:center;">'
+    + '<div style="font-family:var(--font-h);font-size:18px;color:#a3e635;">🛤️ Hijrah</div>'
+    + '<div style="font-family:var(--font-m);font-size:11px;color:#9ec8a4;margin-top:6px;line-height:1.6;">'
+    + 'Relocate to a country where your faith can be practiced more openly. The journey is costly. Iman shifts at the start of a new life.'
+    + '</div></div>';
+  candidates.forEach(k => {
+    const cn = COUNTRIES[k];
+    const lvl = SHARIA_COUNTRIES[k];
+    html += '<div class="card">'
+      + '<div class="card-ico">' + cn.flag + '</div>'
+      + '<div class="card-body"><div class="card-title">' + cn.name + '</div>'
+      + '<div class="card-meta">Sharia application: <b style="color:#a3e635;">' + lvl + '</b> · Cost: ' + fmtMoney(15000) + '</div></div>'
+      + '<div class="card-act"><button class="card-btn green" onclick="performHijrah(\'' + k + '\')">Migrate</button></div></div>';
+  });
+  openModal('🛤️ Hijrah', html);
+}
+function performHijrah(destination){
+  const c = LIFE.char;
+  if(c.money < 15000){ toast('Need ' + fmtMoney(15000) + '.'); return; }
+  c.money -= 15000;
+  const oldCountry = COUNTRIES[c.country].name;
+  c.country = destination;
+  c.city = (typeof CITIES === 'object' && CITIES[destination]) ? CITIES[destination][0] : COUNTRIES[destination].name;
+  c.iman = clamp((c.iman||0) + 8, 0, 100);
+  c.faith = c.iman;
+  c.happiness = clamp(c.happiness + 5, 0, 100);
+  if(typeof recordLegacy === 'function') recordLegacy('made hijrah from ' + oldCountry + ' to ' + COUNTRIES[destination].name);
+  pushEvent('milestone', '🛤️ You made hijrah from ' + oldCountry + ' to ' + COUNTRIES[destination].name + '. Iman +8.');
+  closeModal();
+  setTimeout(() => { const ok = confirm('Reflect on the meaning of this hijrah (Quran 4:97 + Bukhari 54)?'); if(ok) openReflection('hijrah'); }, 200);
+  renderAll();
+  saveLife();
+}
+
+// ─── Sharia-country legal consequences for haram acts ──────────────
+function processShariaLegalConsequences(actType){
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam') return;
+  const lvl = shariaLevel(c.country);
+  if(lvl === 'none') return;
+  // 'partial' = small risk of legal trouble; 'full' = high risk
+  const catchProb = lvl === 'full' ? 0.45 : 0.18;
+  if(Math.random() >= catchProb) return;
+  let fine = 0, jailYears = 0, msg = '';
+  if(actType === 'khamr'){
+    fine = lvl === 'full' ? 3000 : 800;
+    if(lvl === 'full' && Math.random() < 0.3) jailYears = 1;
+    msg = '⚖️ Caught with alcohol in a Sharia-applying country. ';
+  } else if(actType === 'gambling'){
+    fine = lvl === 'full' ? 2500 : 600;
+    msg = '⚖️ Caught gambling in a Sharia-applying country. ';
+  } else if(actType === 'haram_business'){
+    fine = lvl === 'full' ? 15000 : 4000;
+    msg = '⚖️ Your haram business was shut down by authorities. ';
+  } else { return; }
+  c.money -= fine;
+  msg += 'Fined ' + fmtMoney(fine) + '.';
+  if(jailYears > 0 && typeof goToJail === 'function'){
+    goToJail(jailYears, actType + ' (Sharia jurisdiction)');
+    msg += ' Sentenced to ' + jailYears + ' year' + (jailYears===1?'':'s') + ' prison.';
+  }
+  pushEvent('bad', msg);
+}
+
+// ─── Hook ethical-fork resolution to also trigger legal consequences
+//    when player picks the haram option in a Sharia country
+(function(){
+  if(typeof resolveEthicalChoice !== 'function') return;
+  const _orig = resolveEthicalChoice;
+  resolveEthicalChoice = function(pick){
+    const opts = _pendingEthicalChoice;
+    _orig.apply(this, arguments);
+    if(pick === 'haram' && opts){
+      if(opts.topic === 'khamr')    processShariaLegalConsequences('khamr');
+      if(opts.topic === 'gambling') processShariaLegalConsequences('gambling');
+    }
+  };
+})();
+
+// ─── Wire haram-job warning into the career picker ──────────────────
+//    Adds a small warning row + confirm step before the player accepts
+//    a flagged role.
+(function(){
+  if(typeof acceptQuickJob !== 'function') return;
+  const _orig = acceptQuickJob;
+  acceptQuickJob = function(jobId){
+    const warning = checkHaramJob(jobId);
+    if(warning){
+      const ok = confirm('⚠️ ' + warning.label + '\n\n' + warning.detail + '\n\nTake the job anyway?');
+      if(!ok) return;
+      // Player chose the haram path — apply iman penalty + flag
+      const c = LIFE.char;
+      c.iman = clamp((c.iman||0) - 10, 0, 100);
+      c.faith = c.iman;
+      c.kabairFlags = c.kabairFlags || {};
+      c.kabairFlags.haram_rizq = (c.kabairFlags.haram_rizq||0) + 1;
+      pushEvent('bad', '☪ You accepted a haram job. Iman -10.');
+      processShariaLegalConsequences('haram_business');
+    }
+    return _orig.apply(this, arguments);
+  };
+})();
+
+// ─── Daily salah tracker — random check-in 4 times per year ─────────
+function rollSalahCheckin(){
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam' || c.age < 7) return;
+  // ~25% chance per year of a salah self-audit prompt
+  if(Math.random() >= 0.25) return;
+  if(document.getElementById('modal').classList.contains('show')) return;
+  const today = ['Fajr','Dhuhr','Asr','Maghrib','Isha'][Math.floor(Math.random()*5)];
+  openEthicalChoice({
+    topic:'salah',
+    situation:'It\'s ' + today + ' time. The adhan called. You\'re mid-task.',
+    halalSummary:'Stop. Make wudu. Pray.', haramSummary:'Push it back. I\'ll catch up later.',
+    halalFx:{iman:+3, karma:+1}, haramFx:{iman:-4},
+    onChoose:(pick) => {
+      if(pick === 'halal'){
+        c.salahDaily = Math.min(5, (c.salahDaily||0) + 1);
+      } else {
+        c.salahDaily = Math.max(0, (c.salahDaily||0) - 1);
+      }
+    },
+  });
+}
+
+// ─── Eid + Ramadan + Laylat al-Qadr annual events ──────────────────
+function rollIslamicCalendarEvents(){
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam') return;
+  c.flags = c.flags || {};
+  // Ramadan auto-event — once per year prompt to fast
+  if(!c.flags['ramadan_prompt_' + c.age]){
+    c.flags['ramadan_prompt_' + c.age] = true;
+    if(c.age >= 7 && Math.random() < 0.85){
+      const fasted = (c.health > 35);  // health gate — the Quran exempts the genuinely ill (2:184)
+      if(fasted){
+        c.flags['ramadan' + c.age] = true;
+        c.ramadanFastsKept = (c.ramadanFastsKept||0) + 1;
+        c.iman = clamp((c.iman||0) + 6, 0, 100);
+        c.faith = c.iman;
+        pushEvent('good', '🌙 You completed Ramadan this year. Iman +6. Lifetime Ramadans kept: ' + c.ramadanFastsKept + '.');
+      } else {
+        pushEvent('', '🌙 You couldn\'t complete Ramadan this year due to health. Qada (make-up) days owed.');
+      }
+    }
+  }
+  // Eid al-Fitr — after Ramadan
+  if(c.flags['ramadan' + c.age] && !c.flags['eidfitr_' + c.age]){
+    c.flags['eidfitr_' + c.age] = true;
+    c.happiness = clamp(c.happiness + 12, 0, 100);
+    c.money -= 200;  // small spending on Eid
+    pushEvent('good', '🌙 Eid al-Fitr! Happiness +12. Spent ~' + fmtMoney(200) + ' on family + sweets.');
+  }
+  // Eid al-Adha — yearly if Muslim
+  if(!c.flags['eidadha_' + c.age]){
+    c.flags['eidadha_' + c.age] = true;
+    if((c.faith||c.iman||0) >= 40 && c.age >= 18){
+      const udhiya = c.money >= 400;
+      if(udhiya){
+        c.money -= 400;
+        c.iman = clamp((c.iman||0) + 4, 0, 100);
+        c.faith = c.iman;
+        c.karma = clamp(c.karma + 5, 0, 100);
+        pushEvent('good', '🐑 Eid al-Adha — you performed udhiya (sacrifice) and distributed the meat. Iman +4, Karma +5.');
+      } else {
+        pushEvent('', '🐑 Eid al-Adha. Couldn\'t afford udhiya this year.');
+      }
+    }
+  }
+  // Laylat al-Qadr — special "Night of Power" check during last 10 nights
+  if(c.flags['ramadan_prompt_' + c.age] && !c.flags['laylatqadr_' + c.age]){
+    c.flags['laylatqadr_' + c.age] = true;
+    if((c.iman||0) >= 50 && Math.random() < 0.5){
+      c.iman = clamp((c.iman||0) + 8, 0, 100);
+      c.faith = c.iman;
+      pushEvent('good', '✨ You spent Laylat al-Qadr in qiyam. Worship better than a thousand months. Iman +8.');
+    }
+  }
+}
+
+// ─── Sadaqah Jariyah / Waqf — perpetual charity options ────────────
+const WAQF_PROJECTS = [
+  {id:'well',     ico:'💧', name:'Dig a Water Well',                  cost:8000,   yearly:{karma:+3, iman:+2}, label:'Well in a drought region'},
+  {id:'school',   ico:'🏫', name:'Endow a School',                    cost:50000,  yearly:{karma:+5, iman:+3}, label:'Children educated for generations'},
+  {id:'masjid',   ico:'🕌', name:'Build a Masjid',                    cost:300000, yearly:{karma:+8, iman:+5}, label:'Place of worship in a needy area'},
+  {id:'orphanage',ico:'🏠', name:'Endow an Orphanage',                cost:120000, yearly:{karma:+10,iman:+4}, label:'Care for orphans permanently'},
+  {id:'food',     ico:'🍲', name:'Soup Kitchen Endowment',            cost:25000,  yearly:{karma:+4, iman:+2}, label:'Hot meals daily, year-round'},
+  {id:'quran',    ico:'📖', name:'Print and Distribute Qur\'ans',     cost:5000,   yearly:{karma:+2, iman:+2}, label:'Mushafs delivered to communities'},
+];
+
+function openWaqf(){
+  const c = LIFE.char;
+  c.waqfs = c.waqfs || [];
+  let html = '<div style="padding:14px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:6px;margin-bottom:14px;text-align:center;">'
+    + '<div style="font-family:var(--font-h);font-size:18px;color:#a3e635;">🌊 Sadaqah Jariyah</div>'
+    + '<div style="font-family:var(--font-m);font-size:11px;color:#9ec8a4;margin-top:6px;line-height:1.55;">Perpetual charity — its reward continues after your death. The Prophet ﷺ said: "When a person dies, his deeds end except for three: sadaqah jariyah, knowledge from which others benefit, or a righteous child who prays for him." (Sahih Muslim 1631)</div>'
+    + '</div>';
+  if(c.waqfs.length){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:#a3e635;letter-spacing:.2em;margin-bottom:8px;text-transform:uppercase;">Your Active Endowments</div>';
+    c.waqfs.forEach(w => {
+      const project = WAQF_PROJECTS.find(p => p.id === w.id);
+      html += '<div class="card" style="border-color:#2d7a3f;"><div class="card-ico">' + project.ico + '</div>'
+        + '<div class="card-body"><div class="card-title">' + project.name + ' <span style="color:#a3e635;font-size:10px;">since age ' + w.foundedAt + '</span></div>'
+        + '<div class="card-meta">' + project.label + '</div></div>'
+        + '<div class="card-act"><div style="color:var(--green);font-size:11px;">+iman/yr</div></div></div>';
+    });
+  }
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:#a3e635;letter-spacing:.2em;margin:18px 0 8px;text-transform:uppercase;">Establish a New Endowment</div>';
+  WAQF_PROJECTS.forEach(p => {
+    const owned = c.waqfs.some(w => w.id === p.id);
+    html += '<div class="card" style="' + (owned?'opacity:.55;':'') + '"><div class="card-ico">' + p.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + p.name + (owned?' ✓':'') + '</div>'
+      + '<div class="card-meta">' + p.label + ' · Cost ' + fmtMoney(p.cost) + '</div></div>'
+      + '<div class="card-act">'
+      + (owned ? '<button class="card-btn muted" disabled>Established</button>'
+              : '<button class="card-btn green" onclick="endowWaqf(\'' + p.id + '\')">Endow</button>')
+      + '</div></div>';
+  });
+  openModal('🌊 Sadaqah Jariyah', html);
+}
+function endowWaqf(id){
+  const c = LIFE.char;
+  const p = WAQF_PROJECTS.find(x => x.id === id);
+  if(!p) return;
+  if(c.waqfs && c.waqfs.some(w => w.id === id)){ toast('Already established.'); return; }
+  if(c.money < p.cost){ toast('Need ' + fmtMoney(p.cost) + '.'); return; }
+  c.money -= p.cost;
+  c.waqfs = c.waqfs || [];
+  c.waqfs.push({ id: p.id, foundedAt: c.age });
+  c.iman = clamp((c.iman||0) + 8, 0, 100);
+  c.karma = clamp(c.karma + 15, 0, 100);
+  c.faith = c.iman;
+  if(typeof recordLegacy === 'function') recordLegacy('established a waqf — ' + p.name);
+  pushEvent('milestone', '🌊 You endowed: ' + p.name + '. Sadaqah jariyah established. Iman +8, Karma +15.');
+  setTimeout(() => { const ok = confirm('Reflect on the multiplied reward of charity (Quran 2:261 + Sahih Muslim 1631)?'); if(ok) openReflection('waqf'); }, 200);
+  closeModal();
+  saveLife();
+}
+
+// ─── Annual waqf reward — perpetual charity continues to pay ───────
+function processWaqfsAnnual(){
+  const c = LIFE.char;
+  if(!c || !c.waqfs || !c.waqfs.length) return;
+  c.waqfs.forEach(w => {
+    const p = WAQF_PROJECTS.find(x => x.id === w.id);
+    if(!p) return;
+    if(p.yearly.karma) c.karma = clamp(c.karma + p.yearly.karma, 0, 100);
+    if(p.yearly.iman)  c.iman  = clamp((c.iman||0) + p.yearly.iman, 0, 100);
+  });
+  c.faith = c.iman;
+}
+
+// ─── Hook the new systems into the annual loop ─────────────────────
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    if(LIFE && LIFE.char && LIFE.char.religion === 'islam' && LIFE.char.alive){
+      processWaqfsAnnual();
+      rollIslamicCalendarEvents();
+      rollSalahCheckin();
+    }
+  };
+})();
+
+// ─── Add new buttons to the action bar for Muslim characters ───────
+(function(){
+  if(typeof renderActionBar !== 'function') return;
+  const _orig = renderActionBar;
+  renderActionBar = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const bar = document.getElementById('actions-bar');
+    if(!bar) return;
+    // Append: Hijrah, Sadaqah Jariyah, Adoption
+    let extras = '';
+    extras += '<button class="act-btn" onclick="openAdoption()">🤲 Kafala</button>';
+    extras += '<button class="act-btn" onclick="openWaqf()">🌊 Waqf</button>';
+    if(c.age >= 18) extras += '<button class="act-btn" onclick="openHijrah()">🛤️ Hijrah</button>';
+    bar.insertAdjacentHTML('beforeend', extras);
+  };
+})();
+
+// ─── Islamic-themed color palette + intro typography ───────────────
+(function(){
+  const style = document.createElement('style');
+  style.textContent = `
+    :root{
+      --bg:#0a1812;
+      --s1:#102420;
+      --s2:#163029;
+      --b1:#234435;
+      --b2:#2d7a3f;
+      --t1:#f5edd6;
+      --t2:#cdc7ad;
+      --t3:#8a8a6e;
+      --accent:#2d7a3f;
+      --accent2:#a3e635;
+      --teal:#0d9488;
+      --gold:#d4af37;
+      --crimson:#b91c1c;
+      --green:#6fb878;
+      --orange:#c2410c;
+      --pink:#9d4b4b;
+      --blue:#1d4e89;
+      --cyan:#5fb8a3;
+      --magenta:#5e3a8e;
+      --lime:#a3e635;
+    }
+    body{background:radial-gradient(ellipse at top, #0d2620 0%, #050d0a 100%) !important;}
+    /* Topbar — green-deep */
+    #topbar{background:linear-gradient(180deg,#0d2018,#06120e) !important;border-bottom:1px solid #234435 !important;}
+    .brand-by{color:#d4af37 !important;}
+    .brand-by-wd{color:#5fb8a3 !important;border-color:#5fb8a3 !important;}
+    /* Intro — green-gold theme replaces purple-pink */
+    #intro::before{background:
+      radial-gradient(ellipse 65% 50% at 18% 22%, rgba(212,175,55,.30), transparent 60%),
+      radial-gradient(ellipse 55% 50% at 82% 28%, rgba(45,122,63,.40), transparent 60%),
+      radial-gradient(ellipse 65% 50% at 22% 80%, rgba(163,230,53,.20), transparent 60%),
+      radial-gradient(ellipse 55% 45% at 78% 72%, rgba(13,148,136,.25),  transparent 60%),
+      radial-gradient(ellipse 80% 65% at 50% 50%, rgba(45,122,63,.30), transparent 70%);}
+    .intro-title{font-family:Georgia,serif;letter-spacing:.04em;
+      background:linear-gradient(180deg,#d4af37 0%,#a3e635 50%,#2d7a3f 100%);
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+      text-shadow:0 0 60px rgba(45,122,63,.4) !important;}
+    .intro-title::after{content:'';display:block;width:60%;height:2px;margin:14px auto 0;
+      background:linear-gradient(90deg,transparent,#d4af37,#a3e635,#2d7a3f,transparent);
+      opacity:.85;border-radius:2px;}
+    .intro-sub{color:#d4af37 !important;text-shadow:0 0 18px rgba(212,175,55,.5) !important;
+      border-color:rgba(212,175,55,.5) !important;}
+    .intro-form{border:1px solid rgba(163,230,53,.3) !important;background:rgba(13,32,24,.85) !important;
+      box-shadow:0 10px 50px rgba(0,0,0,.65),0 0 1px rgba(212,175,55,.4) inset, 0 0 80px rgba(45,122,63,.25) !important;}
+    .intro-start{background:linear-gradient(90deg,#d4af37 0%,#a3e635 50%,#2d7a3f 100%) !important;}
+    .intro-start:hover{box-shadow:0 6px 28px rgba(163,230,53,.5),0 0 30px rgba(45,122,63,.45) !important;}
+    .intro-notice{color:#9bb59b !important;font-style:italic;}
+    .intro-label{color:#d4af37 !important;}
+    .intro-select:focus,.intro-input:focus{border-color:#d4af37 !important;
+      box-shadow:0 0 12px rgba(212,175,55,.4) !important;}
+    /* Modal */
+    .modal-title{color:#a3e635 !important;}
+    .modal-box{background:linear-gradient(180deg,#0f2620,#06120e) !important;border:1px solid #2d7a3f !important;}
+    /* Action bar buttons */
+    .act-btn{border-color:#2d7a3f !important;color:#cdc7ad !important;background:#0d2018 !important;}
+    .act-btn:hover{background:#163029 !important;border-color:#a3e635 !important;}
+    .act-btn.primary{background:linear-gradient(90deg,#2d7a3f,#a3e635) !important;color:#06120e !important;}
+    /* Stat bars — green health, gold karma, deep-green base */
+    .stat-fill{background:linear-gradient(90deg,#2d7a3f,#a3e635) !important;}
+    .stat-bar{background:#0d2018 !important;}
+    .stat-fill.smarts{background:linear-gradient(90deg,#1d4e89,#5fb8a3) !important;}
+    .stat-fill.karma{background:linear-gradient(90deg,#a3e635,#d4af37) !important;}
+    .stat-fill.looks{background:linear-gradient(90deg,#d4af37,#c2410c) !important;}
+    .stat-fill.happiness{background:linear-gradient(90deg,#0d9488,#a3e635) !important;}
+    .stat-fill.health{background:linear-gradient(90deg,#6fb878,#a3e635) !important;}
+    /* Cards */
+    .card{background:#0d2018 !important;border-color:#234435 !important;}
+    .card-title{color:#f5edd6 !important;}
+    .card-btn.green{background:#2d7a3f !important;color:#f5edd6 !important;}
+    .card-btn.danger{background:#b91c1c !important;}
+    /* Year-event tags */
+    .year-event{background:#0d2018 !important;border-color:#234435 !important;}
+    .year-event.good{border-color:#2d7a3f !important;color:#a3e635 !important;}
+    .year-event.bad{border-color:#b91c1c !important;color:#fca5a5 !important;}
+    .year-event.milestone{border-color:#d4af37 !important;color:#d4af37 !important;}
+    .year-event.career{border-color:#5fb8a3 !important;color:#5fb8a3 !important;}
+    .year-event.romantic{border-color:#9d4b4b !important;color:#fda4af !important;}
+    .year-event.death{border-color:#b91c1c !important;background:#1a0a0a !important;}
+    /* Char card */
+    .col-l, .col-r{background:linear-gradient(180deg,#0d2018,#06120e) !important;}
+    .col-head{color:#d4af37 !important;border-color:#234435 !important;}
+    /* Topbar chips */
+    .tb-chip{border-color:#234435 !important;color:#cdc7ad !important;background:#0d2018 !important;}
+    .tb-chip.gold,.tb-chip.money{color:#d4af37 !important;border-color:#d4af37 !important;}
+    .tb-chip.age{color:#a3e635 !important;border-color:#a3e635 !important;}
+    .tb-chip.country{color:#5fb8a3 !important;border-color:#5fb8a3 !important;}
+    .new-life-btn{border-color:#b91c1c !important;color:#fca5a5 !important;}
+    /* Death overlay green-themed */
+    #death-screen{background:radial-gradient(ellipse at center,#1a0a0a,#000) !important;}
+    .death-title{color:#a3e635 !important;}
+  `;
+  document.head.appendChild(style);
+})();
+
+// ─── Tafsir integrity disclaimer — appended to every reflection screen
+(function(){
+  if(typeof openReflection !== 'function') return;
+  const _orig = openReflection;
+  openReflection = function(topicKey){
+    _orig.apply(this, arguments);
+    // Inject the disclaimer below the existing content if not already present
+    setTimeout(() => {
+      const body = document.getElementById('mod-body');
+      if(!body || body._tafsirNoteAdded) return;
+      body._tafsirNoteAdded = true;
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top:14px;padding:10px;background:#0d2018;border:1px dashed #234435;border-radius:5px;font-size:10px;color:#8a8a6e;line-height:1.5;font-style:italic;text-align:center;';
+      note.innerHTML = 'Tafsir text above is a paraphrased summary drawn from Ibn Kathir\'s classical work, not a verbatim quotation. The hadith citation is sahih-graded; verify externally at sunnah.com. The Quran translation is Sahih International; verify at quran.com.';
+      body.appendChild(note);
+    }, 50);
+  };
+})();
+
 </script>
 </body>
 </html>

@@ -3501,6 +3501,7 @@ function ageUp(){
   // Class-driven hardship + fame decay
   rollHardshipEvent();
   rollFameDecay();
+  rollLovedOneEvents();
   // Identity layer — runs once per year after stats settle
   applyTraitDrifts();
   crystallizeTraits();
@@ -11265,6 +11266,266 @@ function rollHardshipEvent(){
     c.career.currentSalary = Math.floor(c.career.currentSalary * (1 + r.salaryHit));
   }
   pushEvent(r.cost > 0 ? 'bad' : 'milestone', e.ico + ' ' + text);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  LOVED-ONE EVENTS — kids, parents, spouse, exes, friends have their
+//  own crises and victories. The player chooses how to respond.
+//  Each response shifts money, rapport, happiness, karma.
+// ═══════════════════════════════════════════════════════════════════════
+const LOVED_ONE_EVENTS = {
+  kid: [
+    {id:'school_trouble', t:'%NAME% is being bullied at school.',
+      choices:[
+        {l:'Switch them to a private school', cost:18000, fx:{happiness:+6, karma:+3, kidHealth:+4}},
+        {l:'Coach them through it yourself',   cost:0,      fx:{happiness:+3, karma:+5, kidHealth:+2}},
+        {l:'Tell them to handle it alone',     cost:0,      fx:{happiness:-6, karma:-4, kidHealth:-6, kidResentment:8}},
+      ],
+      need:k => k.age >= 7 && k.age <= 17},
+    {id:'kid_arrest', t:'%NAME% was arrested for shoplifting.',
+      choices:[
+        {l:'Hire an expensive lawyer ($25k)', cost:25000, fx:{happiness:-4, karma:+2, kidRapport:+8}},
+        {l:'Let them deal with the courts',   cost:0,      fx:{happiness:-10, karma:-2, kidResentment:12, kidSmarts:+1}},
+        {l:'Bribe the officer ($5k)',         cost:5000,   fx:{happiness:-2, karma:-12, kidRapport:+3, fame:-5}},
+      ],
+      need:k => k.age >= 13 && k.age <= 21},
+    {id:'kid_award', t:'🏆 %NAME% won a major academic award.',
+      choices:[
+        {l:'Celebrate with a big family dinner ($800)', cost:800, fx:{happiness:+12, karma:+3, kidRapport:+8}},
+        {l:'A short congratulations and back to work',  cost:0,   fx:{happiness:+4, kidRapport:+2}},
+      ],
+      need:k => k.age >= 8 && k.age <= 24},
+    {id:'kid_addiction',  t:'%NAME% has developed a serious addiction.',
+      choices:[
+        {l:'Pay for rehab ($30k)',          cost:30000, fx:{happiness:-8, karma:+5, kidRapport:+10, kidHealth:+8}},
+        {l:'Stage an intervention yourself', cost:0,    fx:{happiness:-12, karma:+2, kidRapport:+4, kidHealth:+3}},
+        {l:'Cut them off',                   cost:0,    fx:{happiness:-18, karma:-8, kidResentment:25}},
+      ],
+      need:k => k.age >= 16},
+    {id:'kid_pregnancy', t:'%NAME% told you they\'re having a baby.',
+      choices:[
+        {l:'Set up a college fund for the grandkid ($30k)', cost:30000, fx:{happiness:+8, karma:+8, kidRapport:+10}},
+        {l:'Just be there for them',                         cost:0,    fx:{happiness:+5, kidRapport:+5}},
+        {l:'Express your disappointment',                    cost:0,    fx:{happiness:-8, kidResentment:18}},
+      ],
+      need:k => k.age >= 16 && k.age <= 35},
+    {id:'kid_runaway', t:'%NAME% ran away from home.',
+      choices:[
+        {l:'Hire a PI to find them ($8k)',  cost:8000, fx:{happiness:-6, kidRapport:+5}},
+        {l:'Wait for them to come back',     cost:0,    fx:{happiness:-15, kidResentment:10}},
+        {l:'Tell the police',                cost:0,    fx:{happiness:-3, karma:+2, kidRapport:+3}},
+      ],
+      need:k => k.age >= 14 && k.age <= 19},
+    {id:'kid_comingout', t:'%NAME% came out to you.',
+      choices:[
+        {l:'Fully embrace them',          cost:0, fx:{happiness:+10, karma:+8, kidRapport:+15}},
+        {l:'Need time to adjust',          cost:0, fx:{happiness:+2, kidRapport:+3, kidResentment:5}},
+        {l:'Reject them',                  cost:0, fx:{happiness:-20, karma:-25, kidResentment:40}},
+      ],
+      need:k => k.age >= 12 && k.age <= 30},
+  ],
+  parent: [
+    {id:'parent_hospital', t:'Your %PARENT% was hospitalized.',
+      choices:[
+        {l:'Pay for the best specialists ($40k)', cost:40000, fx:{happiness:+5, karma:+5, parentHealth:+15}},
+        {l:'Visit them daily, do what you can',   cost:0,      fx:{happiness:+3, karma:+8, parentHealth:+5}},
+        {l:'Send a card, you\'re too busy',       cost:0,      fx:{happiness:-12, karma:-10}},
+      ],
+      need:p => p.alive},
+    {id:'parent_dementia', t:'%PARENT% was diagnosed with dementia.',
+      choices:[
+        {l:'Move them in with you',                cost:5000,  fx:{happiness:-8, karma:+15, parentHealth:+4, ongoingCost:300}},
+        {l:'Hire a live-in caregiver ($45k/yr)',  cost:45000, fx:{happiness:-3, karma:+8, parentHealth:+6}},
+        {l:'Put them in a nursing home',           cost:35000, fx:{happiness:-12, karma:-5, parentHealth:-3}},
+      ],
+      need:p => p.alive && p.age >= 65},
+    {id:'parent_remarry', t:'%PARENT% is getting remarried.',
+      choices:[
+        {l:'Attend and bless the union',        cost:1200, fx:{happiness:+8, karma:+5}},
+        {l:'Skip the wedding',                  cost:0,    fx:{happiness:-6, karma:-5}},
+        {l:'Try to break it up',                cost:0,    fx:{happiness:-15, karma:-15}},
+      ],
+      need:p => p.alive && (p.age >= 50 || p.age < 100)},
+    {id:'parent_financial', t:'%PARENT% is broke and can\'t afford rent.',
+      choices:[
+        {l:'Pay their rent indefinitely ($12k/yr)', cost:12000, fx:{happiness:-2, karma:+10, parentRapport:+8}},
+        {l:'One-time help ($5k)',                    cost:5000,  fx:{karma:+5, parentRapport:+4}},
+        {l:'Say you\'re sorry but can\'t help',     cost:0,      fx:{happiness:-8, karma:-8, parentRapport:-15}},
+      ],
+      need:p => p.alive},
+  ],
+  partner: [
+    {id:'spouse_depression', t:'Your partner has been deeply depressed for months.',
+      choices:[
+        {l:'Pay for therapy + a long trip ($15k)', cost:15000, fx:{happiness:+5, karma:+8, partnerCompat:+15}},
+        {l:'Take time off to be present',           cost:5000,  fx:{happiness:+2, karma:+10, partnerCompat:+18, salaryHit:-0.10}},
+        {l:'Try to push them to snap out of it',   cost:0,      fx:{happiness:-10, partnerCompat:-20}},
+      ],
+      need:c => c.partner},
+    {id:'spouse_layoff', t:'Your partner lost their job.',
+      choices:[
+        {l:'Cover everything until they recover', cost:0,   fx:{partnerCompat:+15, happiness:-2}, household:'support'},
+        {l:'Encourage them to take any work',     cost:0,   fx:{partnerCompat:-5, happiness:-5}},
+      ],
+      need:c => c.partner},
+    {id:'spouse_promotion', t:'Your partner got a big promotion.',
+      choices:[
+        {l:'Throw them a celebration ($3k)',  cost:3000, fx:{happiness:+15, partnerCompat:+12, fame:+2}},
+        {l:'A quiet congratulations',          cost:0,    fx:{happiness:+5, partnerCompat:+5}},
+      ],
+      need:c => c.partner},
+    {id:'spouse_affair_signs', t:'You\'ve noticed signs your partner may be cheating.',
+      choices:[
+        {l:'Confront them directly',           cost:0, fx:{happiness:-8, partnerCompat:-10}},
+        {l:'Hire a PI ($5k)',                  cost:5000, fx:{happiness:-10}},
+        {l:'Ignore it and hope',               cost:0, fx:{happiness:-12, partnerCompat:-3}},
+      ],
+      need:c => c.partner && c.partner.compat < 60},
+  ],
+  ex: [
+    {id:'ex_custody', t:'Your ex is petitioning for primary custody of the kids.',
+      choices:[
+        {l:'Fight it with the best lawyer ($35k)', cost:35000, fx:{happiness:-8, kidRapport:-3}},
+        {l:'Try to settle out of court ($12k)',     cost:12000, fx:{happiness:-3, kidRapport:+2}},
+        {l:'Concede custody to them',              cost:0,      fx:{happiness:-18, kidResentment:8}},
+      ],
+      need:c => !c.partner && (c.children||[]).some(k => k.outOfWedlock)},
+    {id:'ex_demand_money', t:'Your ex is suing for back child support.',
+      choices:[
+        {l:'Pay everything owed (large lump)',  cost:25000, fx:{happiness:-5, karma:+5}},
+        {l:'Fight it in court ($10k)',          cost:10000, fx:{happiness:-8, karma:-3}},
+        {l:'Disappear / ignore',                cost:0,      fx:{happiness:-3, karma:-15, ongoingLegalRisk:true}},
+      ],
+      need:c => !c.partner && (c.children||[]).some(k => k.outOfWedlock)},
+    {id:'ex_reconcile', t:'Your ex reached out wanting to reconcile.',
+      choices:[
+        {l:'Hear them out over dinner', cost:200, fx:{happiness:+3}},
+        {l:'Politely decline',          cost:0,   fx:{happiness:+1}},
+        {l:'Block them everywhere',     cost:0,   fx:{happiness:-3}},
+      ],
+      need:c => !c.partner && (c.affairsHistory||[]).length > 0},
+  ],
+  friend: [
+    {id:'friend_crisis', t:'A close friend is going through a serious crisis.',
+      choices:[
+        {l:'Lend them money ($5k)',        cost:5000, fx:{happiness:+3, karma:+8}},
+        {l:'Show up emotionally — be present', cost:0, fx:{happiness:+5, karma:+10}},
+        {l:'Distance yourself from the drama', cost:0, fx:{happiness:-3, karma:-8}},
+      ],
+      need:c => (c.friends||[]).length > 0},
+    {id:'friend_funeral', t:'A close friend died unexpectedly.',
+      choices:[
+        {l:'Attend, give the eulogy, support the family', cost:500, fx:{happiness:-12, karma:+8}},
+        {l:'Attend quietly',                                cost:200, fx:{happiness:-8, karma:+3}},
+        {l:'Send flowers, skip the service',                cost:100, fx:{happiness:-5, karma:-3}},
+      ],
+      need:c => (c.friends||[]).length > 0},
+    {id:'friend_betrayal', t:'A close friend was caught spreading lies about you.',
+      choices:[
+        {l:'Confront them publicly', cost:0, fx:{happiness:-5, fame:-3, karma:-2}},
+        {l:'Cut them off silently',  cost:0, fx:{happiness:-3, karma:+1}},
+        {l:'Forgive them',           cost:0, fx:{happiness:+2, karma:+8}},
+      ],
+      need:c => (c.friends||[]).length > 0},
+  ],
+};
+
+let _pendingLovedOneEvent = null;
+function rollLovedOneEvents(){
+  const c = LIFE.char;
+  if(!c || c.inJail) return;
+  // ~22% chance per year that someone close has something happen
+  if(Math.random() >= 0.22) return;
+  // Pick which loved one is in scope
+  const opts = [];
+  (c.children||[]).filter(k => k.alive && k.age >= 6).forEach(k => opts.push({kind:'kid', who:k}));
+  ['mom','dad'].forEach(p => {
+    if(c.parents && c.parents[p] && c.parents[p].alive) opts.push({kind:'parent', who:c.parents[p], parentRole:p});
+  });
+  if(c.partner) opts.push({kind:'partner', who:c.partner});
+  if(!c.partner && (c.children||[]).some(k => k.outOfWedlock)) opts.push({kind:'ex'});
+  if((c.friends||[]).length > 0) opts.push({kind:'friend', who:pickRand(c.friends)});
+  if(!opts.length) return;
+  const target = pickRand(opts);
+  const pool = LOVED_ONE_EVENTS[target.kind] || [];
+  const eligible = pool.filter(ev => {
+    if(target.kind === 'kid') return ev.need(target.who);
+    if(target.kind === 'parent') return ev.need(target.who);
+    if(target.kind === 'partner') return ev.need(c);
+    if(target.kind === 'ex') return ev.need(c);
+    if(target.kind === 'friend') return ev.need(c);
+  });
+  if(!eligible.length) return;
+  const ev = pickRand(eligible);
+  // Render modal with choices
+  const name = target.kind === 'kid' ? target.who.name
+             : target.kind === 'parent' ? (target.parentRole === 'mom' ? 'mother' : 'father')
+             : target.kind === 'partner' ? c.partner.firstName
+             : target.kind === 'ex' ? 'your ex'
+             : target.who && target.who.firstName || 'your friend';
+  const text = ev.t.replace('%NAME%', name).replace('%PARENT%', name);
+  _pendingLovedOneEvent = { ev, target, text };
+  showLovedOneEvent();
+}
+
+function showLovedOneEvent(){
+  const e = _pendingLovedOneEvent; if(!e) return;
+  const c = LIFE.char;
+  let html = '<div style="padding:14px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;text-align:center;font-size:14px;line-height:1.55;color:var(--t1);">'
+    + e.text + '</div>';
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px;">How do you respond?</div>';
+  e.ev.choices.forEach((ch, i) => {
+    const affordable = !ch.cost || c.money >= ch.cost;
+    html += '<div class="card">'
+      + '<div class="card-ico">→</div>'
+      + '<div class="card-body"><div class="card-title">' + ch.l + '</div>'
+      + (ch.cost ? '<div class="card-meta" style="color:var(--crimson);">−' + fmtMoney(ch.cost) + '</div>' : '')
+      + '</div>'
+      + '<div class="card-act"><button class="card-btn ' + (affordable?'green':'muted') + '" '
+      + (affordable?'':'disabled') + ' onclick="resolveLovedOneEvent(' + i + ')">Choose</button></div></div>';
+  });
+  openModal('🫂 Family Crisis', html);
+}
+
+function resolveLovedOneEvent(idx){
+  const e = _pendingLovedOneEvent; if(!e) return;
+  const c = LIFE.char;
+  const choice = e.ev.choices[idx];
+  if(!choice) return;
+  if(choice.cost && c.money < choice.cost){ toast('Not enough.'); return; }
+  if(choice.cost) c.money -= choice.cost;
+  const fx = choice.fx || {};
+  if(fx.happiness) c.happiness = clamp(c.happiness + fx.happiness, 0, 100);
+  if(fx.karma)     c.karma     = clamp(c.karma + fx.karma, 0, 100);
+  if(fx.fame)      c.fame      = clamp((c.fame||0) + fx.fame, 0, 100);
+  // Apply target-specific effects
+  if(e.target.kind === 'kid' && e.target.who){
+    if(fx.kidHealth)     e.target.who.health = clamp((e.target.who.health||80) + fx.kidHealth, 0, 100);
+    if(fx.kidSmarts)     e.target.who.smarts = clamp((e.target.who.smarts||60) + fx.kidSmarts, 0, 100);
+    if(fx.kidRapport)    e.target.who.rapport = clamp((e.target.who.rapport||50) + fx.kidRapport, 0, 100);
+    if(fx.kidResentment) e.target.who.rapport = clamp((e.target.who.rapport||50) - fx.kidResentment, 0, 100);
+  }
+  if(e.target.kind === 'parent' && e.target.who){
+    if(fx.parentHealth)  e.target.who.health = (e.target.who.health||80) + fx.parentHealth;
+    if(fx.parentRapport) e.target.who.rapport = (e.target.who.rapport||50) + fx.parentRapport;
+  }
+  if(e.target.kind === 'partner' && c.partner){
+    if(fx.partnerCompat) c.partner.compat = clamp(c.partner.compat + fx.partnerCompat, 0, 100);
+  }
+  if(fx.salaryHit && c.career){
+    c.career.currentSalary = Math.floor(c.career.currentSalary * (1 + fx.salaryHit));
+  }
+  if(fx.ongoingCost){
+    c.flags = c.flags || {}; c.flags.parentCareCost = (c.flags.parentCareCost||0) + fx.ongoingCost;
+  }
+  if(fx.ongoingLegalRisk){
+    c.flags = c.flags || {}; c.flags.evadingChildSupport = true;
+  }
+  pushEvent('milestone', '🫂 ' + e.text + ' Your response: ' + choice.l + '.');
+  _pendingLovedOneEvent = null;
+  closeModal();
+  renderAll();
+  saveLife();
 }
 
 // ═══════════════════════════════════════════════════════════════════════

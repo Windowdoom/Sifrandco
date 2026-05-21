@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0c0710">
+<meta name="color-scheme" content="dark">
 <title>Lyfe · Islamic Edition</title>
 <style>
 :root{
@@ -398,7 +400,39 @@ input,select{font-family:inherit;}
   #main{grid-template-columns:1fr;}
   .col-l{display:none;}
   .intro-title{font-size:54px;}
+  #topbar{height:auto;min-height:54px;padding:6px 12px;gap:8px;flex-wrap:wrap;
+    padding-top:max(6px,env(safe-area-inset-top));
+    padding-left:max(12px,env(safe-area-inset-left));
+    padding-right:max(12px,env(safe-area-inset-right));}
+  .brand-sub,.brand-by-wd{display:none;}
+  .tb-chip{font-size:9px;padding:4px 8px;letter-spacing:.12em;}
+  .col-body{padding:12px;}
+  .modal{width:96vw!important;max-height:90vh;}
+  .modal-body{padding:14px 16px;}
 }
+@media (max-width:420px){
+  html,body{font-size:13px;}
+  .brand{font-size:18px;}
+  .intro-title{font-size:38px;}
+  .tb-btn{padding:6px 10px;font-size:9px;}
+}
+
+/* ─── Touch & accessibility polish ─── */
+*{-webkit-tap-highlight-color:transparent;}
+button,.tb-btn,.tb-chip,.choice-btn{touch-action:manipulation;}
+button:focus-visible,a:focus-visible,.tb-btn:focus-visible,.choice-btn:focus-visible{
+  outline:2px solid var(--accent2);outline-offset:2px;}
+@media (hover:none){
+  .tb-btn:hover{color:var(--t2);border-color:var(--b2);}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important;}
+}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:var(--accent);}
 
 /* ─── Home Scene (Virtual Families-style visual house) ─── */
 #home-scene-wrap{position:relative;flex-shrink:0;background:#0a0a14;}

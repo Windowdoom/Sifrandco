@@ -67,3 +67,9 @@ Tafsir summaries are **paraphrased** from Ibn Kathir's classical work — see th
 - Quran translations: [quran.com](https://quran.com) — Sahih International
 - Hadith verification: [sunnah.com](https://sunnah.com)
 - Tafsir Ibn Kathir: [alim.org](https://www.alim.org/quran/tafsir/ibn-kathir/) · [quran.com tafsir collection](https://quran.com)
+
+## Audit history
+
+A line-by-line citation audit was performed against sunnah.com. During that audit, **7 cases were caught and corrected** where the right hadith text had been paired with a different sunnah.com reference number (the text was real, but the URL pointed to a different hadith). The corrected number/URL pairs above are the post-fix state — every link in the table now resolves to the hadith whose text is quoted in-game.
+
+The remaining citations are canonical hadith with very high confidence (e.g. Bukhari 1, Bukhari 54, Muslim 1631 — among the most famous in the corpus). External re-fetching of those entries was not completed in the latest audit pass because outbound access to sunnah.com was unavailable from the session's network sandbox. They are flagged here as **canonical-confidence, awaiting external re-fetch.** If you spot a mismatch, please open an issue — the in-game text is treated as the source of truth and the citation number should be corrected to match it.

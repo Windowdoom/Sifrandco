@@ -3312,12 +3312,54 @@ function enterGame(){
   document.getElementById('main').style.display = 'grid';
 }
 
+// Assign socioeconomic class at birth based on country wealth proxies +
+// parents' occupations. Affects starting money, early-life events, school
+// quality, healthcare access. Five classes: poor / working / middle /
+// upper-middle / wealthy.
+function pickSocioClass(c){
+  const country = COUNTRIES[c.country];
+  // Country baseline — higher salaryMult = more middle/upper-middle weight
+  const sm = country.salaryMult || 0.5;
+  // Roll on a tilted distribution
+  const r = Math.random();
+  let cls;
+  if(sm <= 0.4){       // low-income country
+    cls = r < 0.55 ? 'poor' : r < 0.85 ? 'working' : r < 0.96 ? 'middle' : 'upper-middle';
+  } else if(sm <= 0.7){ // middle-income
+    cls = r < 0.20 ? 'poor' : r < 0.55 ? 'working' : r < 0.85 ? 'middle' : r < 0.97 ? 'upper-middle' : 'wealthy';
+  } else {              // high-income
+    cls = r < 0.10 ? 'poor' : r < 0.35 ? 'working' : r < 0.70 ? 'middle' : r < 0.92 ? 'upper-middle' : 'wealthy';
+  }
+  // Inheritance overrides — being born rich is being born rich
+  if((c.inheritance || 0) >= 50_000_000) cls = 'wealthy';
+  else if((c.inheritance || 0) >= 1_000_000) cls = 'upper-middle';
+  return cls;
+}
+const SOCIO_CLASS_PROFILES = {
+  poor:         { startMoney:0,     schoolQuality:-3, healthBonus:-5, ico:'🏚️', label:'Poor' },
+  working:      { startMoney:1500,  schoolQuality:-1, healthBonus:0,  ico:'🏘️', label:'Working Class' },
+  middle:       { startMoney:8000,  schoolQuality:0,  healthBonus:+2, ico:'🏡', label:'Middle Class' },
+  'upper-middle':{ startMoney:35000, schoolQuality:+2, healthBonus:+4, ico:'🏠', label:'Upper-Middle Class' },
+  wealthy:      { startMoney:250000,schoolQuality:+5, healthBonus:+6, ico:'🏰', label:'Wealthy' },
+};
+
 function pushBirthEvents(){
   const c = LIFE.char;
   const country = COUNTRIES[c.country];
+  // Assign socioeconomic class at birth — affects starting money + early
+  // school events. Five tiers, country-weighted distribution.
+  c.socioClass = pickSocioClass(c);
+  const profile = SOCIO_CLASS_PROFILES[c.socioClass];
+  c.money = Math.max(c.money, profile.startMoney);
+  if(profile.healthBonus) c.health = clamp(c.health + profile.healthBonus, 0, 100);
+  if(profile.schoolQuality > 0) c.smarts = clamp(c.smarts + profile.schoolQuality, 0, 100);
+  pushEvent('milestone', profile.ico + ' Born ' + profile.label + ' in ' + c.city + '.');
   // Seed earliest memory: born wealthy / born poor → shapes adult crystallized traits
   if((c.inheritance || 0) >= 5000000){
     if(typeof recordMemory === 'function') recordMemory('rich_at_birth', 5, 'inheritance');
+  }
+  if(c.socioClass === 'wealthy' || c.socioClass === 'upper-middle'){
+    if(typeof recordMemory === 'function') recordMemory('rich_at_birth', 4, 'class');
   }
   // Assign 2 random personality traits at birth (no conflicts: opt vs pess, intro vs extro)
   const conflicting = { optimist:'pessimist', pessimist:'optimist', introvert:'extrovert', extrovert:'introvert', generous:'greedy', greedy:'generous' };
@@ -3456,6 +3498,9 @@ function ageUp(){
   rollTalentBurst();
   // Religious-practice auto-events for selected faith
   rollFaithPracticeAnnual();
+  // Class-driven hardship + fame decay
+  rollHardshipEvent();
+  rollFameDecay();
   // Identity layer — runs once per year after stats settle
   applyTraitDrifts();
   crystallizeTraits();
@@ -3718,8 +3763,12 @@ function processCareer(){
       c.career.rungIdx++;
       c.career.yearsAtRung = 0;
       const newRung = cr.rungs[c.career.rungIdx];
-      c.career.currentSalary = Math.floor(newRung.salary * COUNTRIES[c.country].salaryMult);
-      pushEvent('career', '🎉 Promoted to ' + newRung.title + '! New salary: ' + fmtMoney(c.career.currentSalary) + '/yr');
+      const offered = Math.floor(newRung.salary * COUNTRIES[c.country].salaryMult);
+      // Negotiation roll — sometimes you walk away with more (or less)
+      c.career.currentSalary = (typeof negotiate === 'function')
+        ? negotiate('salary', offered, 'promotion salary')
+        : offered;
+      pushEvent('career', '🎉 Promoted to ' + newRung.title + '! Final salary: ' + fmtMoney(c.career.currentSalary) + '/yr');
       c.happiness = Math.min(100, c.happiness + 10);
     } else if(c.career.yearsAtRung > rung.years + 4){
       // Got passed over — small morale hit
@@ -8104,6 +8153,15 @@ function openBanking(){
     + '<div class="card-body"><div class="card-title">Short a Failing Company ($20k position)</div>'
     + '<div class="card-meta">Win if it crashes. Lose 2-5x if it squeezes.</div></div>'
     + '<div class="card-act"><button class="card-btn danger" onclick="tradeOptions(\'short\',20000)">Short</button></div></div>';
+  // ── Sharia-compliant banking option for Muslim characters / countries ──
+  if(typeof isShariaContext === 'function' && isShariaContext()){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--green);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 8px;">☪️ Islamic Banking Available</div>'
+      + '<div class="card" style="border-color:var(--green);">'
+      + '<div class="card-ico">🕌</div>'
+      + '<div class="card-body"><div class="card-title">Switch to Sharia-Compliant Finance</div>'
+      + '<div class="card-meta">Riba-free alternatives: Mudaraba savings, Murabaha home financing, Ijara leasing, Sukuk bonds, Takaful insurance, Qard Hasan (interest-free loans).</div></div>'
+      + '<div class="card-act"><button class="card-btn green" onclick="closeModal();openShariaBanking()">Open Islamic Bank</button></div></div>';
+  }
   openModal('🏦 Banking & Insurance', html);
 }
 
@@ -8342,6 +8400,50 @@ function studyHighSchool(){
   saveLife();
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  SCHOLARSHIPS — offered when you apply to a college you got into.
+//  Eligibility checks against the player's stats, background, country.
+// ═══════════════════════════════════════════════════════════════════════
+const SCHOLARSHIPS = [
+  {id:'full_merit',    name:'Full-Tuition Merit Scholarship',  ico:'🏆', cover:1.0,
+    desc:'Awarded to top academic candidates. Covers tuition fully for four years.',
+    eligible:(c, col) => c.smarts >= 92 && c.smarts >= col.minSmarts + 3},
+  {id:'half_merit',    name:'Half-Tuition Merit Award',         ico:'🎖️', cover:0.5,
+    desc:'Strong academics. Covers 50% of tuition.',
+    eligible:(c, col) => c.smarts >= 85 && c.smarts >= col.minSmarts},
+  {id:'need_based',    name:'Need-Based Pell Grant',            ico:'💝', cover:0.7,
+    desc:'Awarded to applicants from low-income households.',
+    eligible:(c) => (c.socioClass === 'poor' || c.socioClass === 'working')},
+  {id:'athletic',      name:'Athletic Scholarship',             ico:'🏈', cover:0.85,
+    desc:'For competitive student-athletes. Requires high health + dedication.',
+    eligible:(c) => c.health >= 88 && (c.skills && (c.skills.martialarts >= 50 || c.skills.dancing >= 50))},
+  {id:'arts',          name:'Fine Arts Talent Scholarship',     ico:'🎨', cover:0.6,
+    desc:'For students with high-level artistic talent.',
+    eligible:(c) => c.skills && (c.skills.music >= 70 || c.skills.painting >= 70 || c.skills.writing >= 70)},
+  {id:'first_gen',     name:'First-Generation College Award',   ico:'📚', cover:0.5,
+    desc:'For the first in your family to attend college.',
+    eligible:(c) => !c.parents || !(c.parents.mom && c.parents.mom.occupation && /Prof/.test(c.parents.mom.occupation))},
+  {id:'religious',     name:'Religious Community Scholarship',   ico:'🕊️', cover:0.4,
+    desc:'Offered by faith-based foundations to active community members.',
+    eligible:(c) => c.religion && c.religion !== 'secular' && c.faith >= 50},
+  {id:'rotc',          name:'Military / ROTC Scholarship',      ico:'🪖', cover:0.9,
+    desc:'Full tuition in exchange for 4 years of military service post-graduation.',
+    eligible:(c) => c.health >= 75, commitsToMilitary:true},
+  {id:'heritage',      name:'Diaspora Heritage Scholarship',    ico:'🌍', cover:0.35,
+    desc:'Awarded to international students with strong community ties.',
+    eligible:(c) => c.country !== 'us' && c.smarts >= 78},
+  {id:'state',         name:'State Residency Discount',         ico:'🏛️', cover:0.55,
+    desc:'In-state tuition rates for public universities.',
+    eligible:(c, col) => col.tuition < 50000, applicableOnlyIf:(col) => col.tuition < 50000},
+];
+
+function findScholarships(c, col){
+  return SCHOLARSHIPS.filter(s => {
+    if(s.applicableOnlyIf && !s.applicableOnlyIf(col)) return false;
+    try { return s.eligible(c, col); } catch(e){ return false; }
+  });
+}
+
 function applyToCollege(id){
   const c = LIFE.char;
   const col = COLLEGES.find(x => x.id === id);
@@ -8353,10 +8455,57 @@ function applyToCollege(id){
     c.college = id;
     pushEvent('milestone', '🎉 You got accepted to ' + col.name + '!');
     c.happiness = clamp(c.happiness + 12, 0, 100);
+    // Scan for scholarships available to this student at this school
+    const scholarships = findScholarships(c, col);
+    if(scholarships.length){
+      offerScholarships(col, scholarships);
+      return;
+    }
   } else {
     pushEvent('bad', '📪 ' + col.name + ' rejected your application.');
     c.happiness = clamp(c.happiness - 6, 0, 100);
   }
+  closeModal();
+  renderAll();
+  saveLife();
+}
+
+function offerScholarships(col, list){
+  const c = LIFE.char;
+  let html = '<div style="color:var(--t3);font-size:13px;margin-bottom:14px;text-align:center;">'
+    + '<b style="color:var(--gold);">' + col.name + '</b> offered ' + list.length + ' scholarship'
+    + (list.length===1?'':'s') + ' you\'re eligible for. Tuition: ' + fmtMoney(col.tuition) + '/yr.</div>';
+  list.forEach(s => {
+    const cover = Math.floor(col.tuition * s.cover);
+    html += '<div class="card">'
+      + '<div class="card-ico">' + s.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + s.name + '</div>'
+      + '<div class="card-meta">' + s.desc + '</div>'
+      + '<div class="card-meta" style="color:var(--green);">Covers ' + Math.round(s.cover*100) + '% · −' + fmtMoney(cover) + '/yr'
+      + (s.commitsToMilitary ? ' · ⚠ Commits you to military service post-graduation' : '')
+      + '</div></div>'
+      + '<div class="card-act"><button class="card-btn green" onclick="acceptScholarship(\'' + s.id + '\')">Accept</button></div></div>';
+  });
+  html += '<button class="card-btn muted" style="width:100%;margin-top:10px;padding:10px;" onclick="declineScholarships()">Pay Full Tuition (no scholarship)</button>';
+  openModal('🏆 Scholarships Available', html);
+}
+function acceptScholarship(sid){
+  const c = LIFE.char;
+  const s = SCHOLARSHIPS.find(x => x.id === sid);
+  const col = COLLEGES.find(x => x.id === c.college);
+  if(!s || !col) return;
+  c.scholarship = { id: sid, name: s.name, cover: s.cover, commitsToMilitary: !!s.commitsToMilitary };
+  pushEvent('good', '🏆 You accepted the ' + s.name + ' at ' + col.short + '. Covers ' + Math.round(s.cover*100) + '% of tuition.');
+  if(s.commitsToMilitary){
+    c.flags = c.flags || {}; c.flags.rotcCommit = true;
+    pushEvent('', '🪖 Post-graduation 4-year military commitment registered.');
+  }
+  closeModal();
+  renderAll();
+  saveLife();
+}
+function declineScholarships(){
+  pushEvent('', '📚 You declined the scholarships. Full tuition will be paid.');
   closeModal();
   renderAll();
   saveLife();
@@ -9068,6 +9217,7 @@ function openMore(){
     {label:'🍷 Substances',             fn:'openSubstances'},
     {label:'🛋️ Therapy Session ($180)', fn:'doTherapy'},
     {label:'🎟️ Buy Lottery Ticket ($5)',fn:'buyLottery'},
+    {label:'📱 Social Media & Fame',     fn:'openSocialMedia'},
     {label:'🕊️ Religious Rituals',      fn:'openReligiousCeremonies'},
     {label:'💞 Dating Preferences',     fn:'openDatingPrefs'},
     {label:'💋 Risky / Affair',         fn:'openCheatMenu'},
@@ -10915,6 +11065,372 @@ function rollCulturalEvent(){
 // ═══════════════════════════════════════════════════════════════════════
 //  TRUST FUND — $10M+ option to lock wealth for next 2 generations
 // ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+//  SHARIA / HALAL FINANCE — riba-free alternatives for Muslim characters
+//  or those in Muslim-majority countries. Replaces interest-bearing
+//  instruments with profit-share / lease / cost-plus structures.
+// ═══════════════════════════════════════════════════════════════════════
+const MUSLIM_MAJORITY_COUNTRIES = ['ps','in','ng','mx'].filter(k => false).concat(['ps']); // ps = Palestine
+function isShariaContext(){
+  const c = LIFE.char;
+  if(!c) return false;
+  if(c.religion === 'islam') return true;
+  if(MUSLIM_MAJORITY_COUNTRIES.includes(c.country)) return true;
+  return false;
+}
+const SHARIA_PRODUCTS = [
+  {id:'mudaraba_savings', ico:'🤝', name:'Mudaraba Savings Account',
+    desc:'Profit-share account — no fixed interest. Bank invests your deposit in halal ventures, profits are shared based on a pre-agreed ratio. Typical yield: 3-7% / yr based on bank performance.',
+    apr_min:0.03, apr_max:0.07, type:'savings'},
+  {id:'murabaha_home', ico:'🏠', name:'Murabaha Home Financing',
+    desc:'The bank buys the house and sells it back to you at cost-plus-markup, payable in fixed installments. No interest charged — a fixed profit margin instead.',
+    margin:0.06, type:'mortgage'},
+  {id:'ijara_lease', ico:'🚗', name:'Ijara (Leasing) Vehicle',
+    desc:'Bank leases the vehicle to you with optional purchase at lease end. No riba; the bank earns through rental.',
+    margin:0.05, type:'auto'},
+  {id:'sukuk_bonds', ico:'📜', name:'Sukuk (Islamic Bonds)',
+    desc:'Asset-backed certificates — you own a share of a tangible asset. Returns are tied to the asset\'s yield, not interest. Government and corporate sukuk available.',
+    apr_min:0.04, apr_max:0.06, type:'investment'},
+  {id:'takaful', ico:'🛡️', name:'Takaful (Cooperative Insurance)',
+    desc:'Mutual-risk pooling instead of conventional insurance. Members contribute, and claims are paid from the shared fund. Surplus returns to members.',
+    type:'insurance'},
+  {id:'qard_hasan', ico:'🤲', name:'Qard Hasan (Benevolent Loan)',
+    desc:'Interest-free emergency loan from a community fund. Repay only the principal. No profit charged.',
+    type:'loan', apr:0},
+];
+
+function openShariaBanking(){
+  const c = LIFE.char;
+  let html = '<div style="padding:14px;background:#1a1428;border:1px solid var(--green);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-h);font-size:18px;color:var(--green);margin-bottom:6px;">☪️ Islamic Banking — Riba-Free</div>'
+    + '<div style="font-family:var(--font-m);font-size:11px;color:var(--t3);">'
+    + 'Sharia-compliant alternatives to conventional finance. No interest (riba) charged or earned — '
+    + 'profits flow from real asset performance, leases, or cost-plus structures.'
+    + '</div></div>';
+  SHARIA_PRODUCTS.forEach(p => {
+    const yieldLine = p.apr_min !== undefined
+      ? 'Expected return: ' + (p.apr_min*100).toFixed(1) + '-' + (p.apr_max*100).toFixed(1) + '% / yr (profit-share)'
+      : p.margin
+      ? 'Bank markup: ' + (p.margin*100).toFixed(1) + '% (fixed, no compounding interest)'
+      : p.apr === 0 ? 'Interest-free' : '—';
+    html += '<div class="card">'
+      + '<div class="card-ico">' + p.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + p.name + '</div>'
+      + '<div class="card-meta">' + p.desc + '</div>'
+      + '<div class="card-meta" style="color:var(--green);">' + yieldLine + '</div></div>'
+      + '<div class="card-act"><button class="card-btn green" onclick="useShariaProduct(\'' + p.id + '\')">Use</button></div></div>';
+  });
+  openModal('☪️ Islamic Finance', html);
+}
+
+function useShariaProduct(id){
+  const c = LIFE.char;
+  const p = SHARIA_PRODUCTS.find(x => x.id === id);
+  if(!p) return;
+  if(p.id === 'mudaraba_savings'){
+    const amt = parseInt(prompt('How much to deposit in Mudaraba savings?', '5000'), 10);
+    if(!amt || amt <= 0){ return; }
+    if(c.money < amt){ toast('Not enough.'); return; }
+    c.money -= amt;
+    c.savings = (c.savings||0) + amt;
+    c.flags = c.flags || {}; c.flags.mudarabaActive = true;
+    pushEvent('good', '🤝 ' + fmtMoney(amt) + ' deposited in Mudaraba profit-share account.');
+  } else if(p.id === 'sukuk_bonds'){
+    const amt = parseInt(prompt('How much to allocate to Sukuk certificates?', '10000'), 10);
+    if(!amt || amt <= 0){ return; }
+    if(c.money < amt){ toast('Not enough.'); return; }
+    c.money -= amt;
+    c.investments = (c.investments||0) + amt;
+    c.flags = c.flags || {}; c.flags.sukukHoldings = true;
+    pushEvent('good', '📜 ' + fmtMoney(amt) + ' allocated to Sukuk (Islamic bonds).');
+  } else if(p.id === 'qard_hasan'){
+    const amt = parseInt(prompt('Borrow how much from the community fund? (No interest. Repay principal only.)', '5000'), 10);
+    if(!amt || amt <= 0){ return; }
+    c.money += amt;
+    c.loans = c.loans || [];
+    c.loans.push({type:'qard_hasan', balance:amt, apr:0, monthly:0, label:'Qard Hasan (interest-free)'});
+    pushEvent('good', '🤲 ' + fmtMoney(amt) + ' borrowed interest-free from the community fund.');
+  } else if(p.id === 'takaful'){
+    if(c.money < 800){ toast('Need $800 for the takaful contribution.'); return; }
+    c.money -= 800;
+    c.insurance = c.insurance || {};
+    c.insurance.takaful = true;
+    c.insurance.health = true;
+    pushEvent('good', '🛡️ Joined the Takaful pool. Health coverage active via mutual contribution.');
+  } else if(p.id === 'murabaha_home' || p.id === 'ijara_lease'){
+    pushEvent('', '☪️ This product is offered when buying a home / vehicle through Sharia banking. Use the Assets menu and select the Islamic financing option there.');
+    c.flags = c.flags || {}; c.flags.shariaFinancingEnabled = true;
+  }
+  closeModal();
+  openShariaBanking();
+  saveLife();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  NEGOTIATION — skill-vs-stat roll for salary, real estate, loans.
+//  Player can negotiate when they get a promotion, buy property, or
+//  take a loan. Success scales with smarts + happiness + boldness.
+// ═══════════════════════════════════════════════════════════════════════
+function negotiate(target, baseValue, context){
+  // target: 'salary' | 'price' | 'apr'
+  // baseValue: the initial number
+  // context: descriptive label
+  const c = LIFE.char;
+  const skill = (c.smarts||50) + ((c.happiness||50) * 0.3) + Math.random() * 30;
+  const roll = skill + (Math.random() * 30 - 15);
+  // Outcomes:
+  // < 50 → backfire (worse than base)
+  // 50-69 → no change
+  // 70-84 → small win
+  // 85-99 → solid win
+  // 100+ → big win
+  let multiplier, msg;
+  if(roll < 50){
+    multiplier = target === 'apr' ? 1.1 : 0.95;
+    msg = '⚠️ Negotiation backfired — they walked back the offer.';
+  } else if(roll < 70){
+    multiplier = 1.0;
+    msg = '— Negotiation: no change.';
+  } else if(roll < 85){
+    multiplier = target === 'apr' ? 0.93 : 1.05;
+    msg = '✓ Negotiation went well — small win.';
+  } else if(roll < 100){
+    multiplier = target === 'apr' ? 0.85 : 1.12;
+    msg = '✓✓ Negotiation succeeded — solid win.';
+  } else {
+    multiplier = target === 'apr' ? 0.72 : 1.20;
+    msg = '🏆 Killer negotiation — they came up significantly.';
+  }
+  const finalValue = target === 'apr'
+    ? Math.max(0, baseValue * multiplier)
+    : Math.floor(baseValue * multiplier);
+  pushEvent('', msg + ' (' + context + ': ' + (target === 'apr' ? (baseValue*100).toFixed(1)+'%→'+(finalValue*100).toFixed(1)+'%' : fmtMoney(baseValue)+'→'+fmtMoney(finalValue)) + ')');
+  return finalValue;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  REAL-WORLD HARDSHIP EVENTS — rolled each year, scaled by socioClass.
+//  Poor / working class face more frequent shocks; wealthy face fewer.
+// ═══════════════════════════════════════════════════════════════════════
+const HARDSHIP_EVENTS = [
+  {id:'medical_emergency', ico:'🏥', t:'A medical emergency. Hospital bill: %COST%.',
+    minAge:18, classes:['poor','working','middle'], compute:c => ({ cost: 8000 + Math.floor(Math.random()*22000), karma:0 })},
+  {id:'eviction',          ico:'🚫', t:'Eviction notice — fell behind on rent. Forced to move.',
+    minAge:18, classes:['poor','working'], compute:c => ({ cost: 0, happiness:-20, healthDrop:-4 })},
+  {id:'layoff',            ico:'📉', t:'Your job was eliminated in a restructuring.',
+    minAge:18, classes:['working','middle','upper-middle'], compute:c => ({ cost: 0, happiness:-15, removeJob:true })},
+  {id:'predatory_loan',    ico:'💀', t:'A predatory payday lender approached you. Took the loan in desperation.',
+    minAge:18, classes:['poor','working'], compute:c => ({ cost: -2000, addLoan: { type:'payday', balance:2400, apr:3.0, monthly:240, label:'Payday Loan (predatory)' }, karma:-2 })},
+  {id:'debt_collector',    ico:'📞', t:'Debt collectors started calling daily.',
+    minAge:18, classes:['poor','working'], compute:c => ({ cost: 600, happiness:-10 })},
+  {id:'union_strike',      ico:'🪧', t:'Your union called a strike. No pay for the duration; solidarity high.',
+    minAge:18, classes:['working','middle'], compute:c => ({ cost: 0, happinessGain:+5, salaryHit:-0.25, karma:+4 })},
+  {id:'wage_theft',        ico:'⚖️', t:'Your employer stole wages. You won a small settlement after a year.',
+    minAge:18, classes:['poor','working','middle'], compute:c => ({ cost: -3000 })},
+  {id:'identity_theft',    ico:'🪪', t:'Identity theft drained your accounts. Recovery took 6 months.',
+    minAge:18, classes:['middle','upper-middle','wealthy'], compute:c => ({ cost: 4500 })},
+  {id:'food_insecurity',   ico:'🍞', t:'You went hungry this month. Skipped meals to make rent.',
+    minAge:14, classes:['poor'], compute:c => ({ healthDrop:-6, happiness:-8 })},
+  {id:'inherit_legacy',    ico:'💰', t:'A distant relative left you a small inheritance.',
+    minAge:25, classes:['poor','working','middle'], compute:c => ({ cost: -(3000 + Math.floor(Math.random()*7000)) })},
+];
+function rollHardshipEvent(){
+  const c = LIFE.char;
+  if(!c.socioClass) return;
+  if(c.age < 14) return;
+  const pool = HARDSHIP_EVENTS.filter(e =>
+    e.classes.includes(c.socioClass) && (!e.minAge || c.age >= e.minAge)
+  );
+  if(!pool.length) return;
+  const prob = c.socioClass === 'poor' ? 0.10 : c.socioClass === 'working' ? 0.08 : c.socioClass === 'middle' ? 0.05 : 0.025;
+  if(Math.random() > prob) return;
+  const e = pickRand(pool);
+  const r = e.compute(c) || {};
+  let text = e.t;
+  if(r.cost && r.cost > 0){ c.money -= r.cost; text = text.replace('%COST%', fmtMoney(r.cost)); }
+  else if(r.cost && r.cost < 0){ c.money -= r.cost; text = text.replace('%COST%', 'gift of ' + fmtMoney(-r.cost)); }
+  if(r.happiness) c.happiness = clamp(c.happiness + r.happiness, 0, 100);
+  if(r.happinessGain) c.happiness = clamp(c.happiness + r.happinessGain, 0, 100);
+  if(r.healthDrop) c.health = clamp(c.health + r.healthDrop, 0, 100);
+  if(r.karma) c.karma = clamp(c.karma + r.karma, 0, 100);
+  if(r.addLoan){
+    c.loans = c.loans || [];
+    c.loans.push(r.addLoan);
+  }
+  if(r.removeJob){
+    c.career = null;
+    pushEvent('bad', '💼 Laid off. Job removed from your record.');
+  }
+  if(r.salaryHit && c.career && c.career.currentSalary){
+    c.career.currentSalary = Math.floor(c.career.currentSalary * (1 + r.salaryHit));
+  }
+  pushEvent(r.cost > 0 ? 'bad' : 'milestone', e.ico + ' ' + text);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SOCIAL MEDIA + FAME UPKEEP — fame decays without engagement. Players
+//  can post / tour / hire publicists / engage with fans to keep it up,
+//  or trigger their own fame drops (apologize, retire, scandals).
+// ═══════════════════════════════════════════════════════════════════════
+const SOCIAL_PLATFORMS = [
+  {id:'tiktok',    ico:'🎵', name:'Short-Video Platform', focus:'mass',  minPosts:50},
+  {id:'insta',     ico:'📸', name:'Photo Network',        focus:'looks', minPosts:30},
+  {id:'x',         ico:'💬', name:'Text Network',         focus:'smarts',minPosts:80},
+  {id:'youtube',   ico:'📺', name:'Long-Video Channel',   focus:'smarts',minPosts:12},
+  {id:'substack',  ico:'📝', name:'Newsletter Platform',  focus:'smarts',minPosts:24},
+];
+
+function openSocialMedia(){
+  const c = LIFE.char;
+  c.social = c.social || { platforms:[], followers:0, postingCount:0, scandals:0 };
+  let html = '<div style="padding:14px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;">'
+    + '<div style="font-family:var(--font-h);font-size:16px;color:var(--accent2);">📱 Social Media · Fame Management</div>'
+    + '<div style="font-family:var(--font-m);font-size:11px;color:var(--t3);margin-top:5px;">Fame: <b style="color:var(--gold);">' + (c.fame||0) + ' / 100</b> · Followers: <b style="color:var(--accent2);">' + fmtBig(c.social.followers) + '</b> · Active platforms: <b>' + c.social.platforms.length + '</b></div>'
+    + '</div>';
+  html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Platforms</div>';
+  SOCIAL_PLATFORMS.forEach(p => {
+    const active = c.social.platforms.includes(p.id);
+    html += '<div class="card">'
+      + '<div class="card-ico">' + p.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + p.name + (active ? ' ✓' : '') + '</div>'
+      + '<div class="card-meta">Strongest in: ' + p.focus + ' content. Realistic upkeep: ' + p.minPosts + ' posts / yr.</div></div>'
+      + '<div class="card-act"><button class="card-btn ' + (active?'danger':'green') + '" onclick="toggleSocialPlatform(\'' + p.id + '\')">'
+      + (active ? 'Quit' : 'Join') + '</button></div></div>';
+  });
+  if(c.social.platforms.length){
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:18px 0 8px;">Boost Fame</div>';
+    const actions = [
+      {id:'post',      ico:'📤', t:'Post Content',           desc:'Daily-ish posting. Variable result.', cost:0},
+      {id:'viral_try', ico:'🚀', t:'Try Going Viral',        desc:'Hire an editor, push controversial. Big upside.', cost:2500},
+      {id:'engage',    ico:'❤️', t:'Engage With Fans',        desc:'Reply, DM, livestream. Slow + steady.', cost:0},
+      {id:'tour',      ico:'🌍', t:'Go On Tour / Press Run', desc:'Real-world tour. Big fame, big cost.', cost:25000},
+      {id:'pub',       ico:'💼', t:'Hire Publicist',         desc:'Year of pro PR. Auto-buff next 4 events.', cost:40000},
+      {id:'charity',   ico:'💝', t:'Public Charitable Act',  desc:'Donate visibly. Karma + fame.', cost:10000},
+      {id:'endorse',   ico:'🏷️', t:'Endorsement Deal',        desc:'Brand collab. Fame + money + karma cost.', cost:0},
+      {id:'beef',      ico:'⚔️', t:'Pick a Public Feud',     desc:'Engineered drama. Fame +, karma -.', cost:0},
+    ];
+    actions.forEach(a => {
+      html += '<div class="card">'
+        + '<div class="card-ico">' + a.ico + '</div>'
+        + '<div class="card-body"><div class="card-title">' + a.t + '</div>'
+        + '<div class="card-meta">' + a.desc + '</div></div>'
+        + '<div class="card-act">'
+        + (a.cost ? '<div class="card-pay neg">−' + fmtMoney(a.cost) + '</div>' : '')
+        + '<button class="card-btn" onclick="doSocialAction(\'' + a.id + '\')">Do</button></div></div>';
+    });
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.2em;text-transform:uppercase;margin:18px 0 8px;">Deflect / Reduce Fame</div>';
+    const deflect = [
+      {id:'apologize', ico:'🙏', t:'Public Apology',         desc:'After a scandal. Recovers some karma, loses fame.', cost:0},
+      {id:'lay_low',   ico:'🤐', t:'Disappear From the Net', desc:'Take a break. Big fame drop.', cost:0},
+      {id:'retire',    ico:'🌅', t:'Retire From Public Life',desc:'Step away permanently. Fame → 5.', cost:0},
+    ];
+    deflect.forEach(a => {
+      html += '<div class="card">'
+        + '<div class="card-ico">' + a.ico + '</div>'
+        + '<div class="card-body"><div class="card-title">' + a.t + '</div>'
+        + '<div class="card-meta">' + a.desc + '</div></div>'
+        + '<div class="card-act"><button class="card-btn muted" onclick="doSocialAction(\'' + a.id + '\')">Do</button></div></div>';
+    });
+  }
+  openModal('📱 Social Media · Fame', html);
+}
+function toggleSocialPlatform(pid){
+  const c = LIFE.char;
+  c.social = c.social || { platforms:[], followers:0 };
+  const i = c.social.platforms.indexOf(pid);
+  if(i >= 0){
+    c.social.platforms.splice(i, 1);
+    pushEvent('', '📱 Quit ' + (SOCIAL_PLATFORMS.find(p=>p.id===pid)||{}).name + '.');
+  } else {
+    c.social.platforms.push(pid);
+    pushEvent('good', '📱 Joined ' + (SOCIAL_PLATFORMS.find(p=>p.id===pid)||{}).name + '.');
+  }
+  closeModal(); openSocialMedia(); saveLife();
+}
+function doSocialAction(id){
+  const c = LIFE.char;
+  c.social = c.social || { platforms:[], followers:0, postingCount:0, scandals:0 };
+  const looks = c.looks||50, smarts = c.smarts||50;
+  let fameDelta = 0, followerDelta = 0, money = 0, karma = 0, msg = '';
+  if(id === 'post'){
+    const roll = Math.random();
+    if(roll < 0.05){      fameDelta = 8 + Math.floor(Math.random()*10); followerDelta = 50000 + Math.floor(Math.random()*200000); msg = '🚀 A post unexpectedly went viral!'; }
+    else if(roll < 0.6){  fameDelta = 1; followerDelta = 100 + Math.floor(Math.random()*1000); msg = '📤 You posted. Modest pickup.'; }
+    else if(roll < 0.92){ followerDelta = 50; msg = '📤 You posted. It flopped.'; }
+    else {                fameDelta = -2; followerDelta = -200; msg = '⚠️ Your post aged badly within hours.'; }
+  } else if(id === 'viral_try'){
+    money = -2500;
+    if(c.money < 2500){ toast('Need $2,500.'); return; }
+    const roll = Math.random() + (looks + smarts)/300;
+    if(roll < 0.4){ fameDelta = -3; msg = '⚠️ The push backfired. Critics piled on.'; }
+    else if(roll < 0.8){ fameDelta = 6; followerDelta = 5000; msg = '🚀 The push worked. Solid bump.'; }
+    else { fameDelta = 18; followerDelta = 500000; msg = '🚀🚀 BLEW UP. Algorithm loved you.'; }
+  } else if(id === 'engage'){
+    fameDelta = 2; followerDelta = 1000 + Math.floor(Math.random()*2000); karma = 2;
+    msg = '❤️ Steady engagement with fans. Loyal core grew.';
+  } else if(id === 'tour'){
+    money = -25000;
+    if(c.money < 25000){ toast('Need $25,000.'); return; }
+    fameDelta = 12 + Math.floor(Math.random()*8); followerDelta = 50000;
+    msg = '🌍 Tour completed. Cities knew your name.';
+  } else if(id === 'pub'){
+    money = -40000;
+    if(c.money < 40000){ toast('Need $40,000.'); return; }
+    c.flags = c.flags||{}; c.flags.publicistActive = (c.age + 1);
+    msg = '💼 Publicist hired. Next year of events will be spun in your favor.';
+  } else if(id === 'charity'){
+    money = -10000;
+    if(c.money < 10000){ toast('Need $10,000.'); return; }
+    fameDelta = 5; karma = 8;
+    msg = '💝 Public charitable act covered. Karma + fame.';
+  } else if(id === 'endorse'){
+    if((c.fame||0) < 30){ toast('Need fame 30+ to attract endorsement deals.'); return; }
+    money = 50000 + Math.floor(Math.random() * 200000);
+    fameDelta = 3; karma = -2;
+    msg = '🏷️ Endorsement deal signed. Earned ' + fmtMoney(money) + '.';
+  } else if(id === 'beef'){
+    fameDelta = 8; karma = -5;
+    msg = '⚔️ Public feud started. Engagement through the roof, karma hit.';
+    if(Math.random() < 0.3){
+      fameDelta = -10; msg = '⚠️ The feud blew back on you. Fame dropped.';
+    }
+  } else if(id === 'apologize'){
+    fameDelta = -8; karma = 5;
+    msg = '🙏 Public apology issued. Lost fame, regained karma.';
+  } else if(id === 'lay_low'){
+    fameDelta = -20; karma = 2;
+    msg = '🤐 Stepped away from the spotlight. Fame dropped sharply.';
+  } else if(id === 'retire'){
+    c.fame = 5; karma = 4;
+    msg = '🌅 Retired from public life. Fame reset to 5.';
+    pushEvent('milestone', msg);
+    closeModal(); openSocialMedia(); saveLife(); return;
+  }
+  if(money) c.money += money;
+  c.fame = clamp((c.fame||0) + fameDelta, 0, 100);
+  c.karma = clamp(c.karma + karma, 0, 100);
+  c.social.followers = Math.max(0, c.social.followers + followerDelta);
+  pushEvent(fameDelta >= 0 ? 'good' : 'bad', msg + ' Fame ' + (fameDelta>=0?'+':'') + fameDelta + (followerDelta ? ' · Followers ' + (followerDelta>=0?'+':'') + fmtBig(followerDelta) : ''));
+  closeModal(); openSocialMedia(); saveLife();
+}
+
+// Fame decays each year unless the player keeps posting / touring / etc.
+function rollFameDecay(){
+  const c = LIFE.char;
+  if(!c.fame || c.fame <= 0) return;
+  c.social = c.social || { platforms:[], followers:0 };
+  // Decay scales inversely with platforms maintained
+  const platforms = c.social.platforms.length;
+  let decay = c.fame >= 80 ? 4 : c.fame >= 50 ? 3 : c.fame >= 20 ? 2 : 1;
+  decay -= platforms;
+  if(decay > 0){
+    c.fame = clamp(c.fame - decay, 0, 100);
+    if(decay >= 2){
+      pushEvent('', '📉 Fame drifted down ' + decay + ' from inactivity (' + c.fame + '/100).');
+    }
+  }
+}
+
 function setUpTrust(){
   const c = LIFE.char;
   const totalNetWorth = c.money + (c.savings||0) + (c.investments||0);

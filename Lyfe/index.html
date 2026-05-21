@@ -3502,6 +3502,12 @@ function ageUp(){
   rollHardshipEvent();
   rollFameDecay();
   rollLovedOneEvents();
+  // Family faith propagation (one-shot per year — only fills missing fields)
+  propagateFamilyFaith();
+  // Auto zakat deduction (Muslim characters with toggle on)
+  rollAutoZakat();
+  // Auto-trust top-up if enabled — moves 60% of liquid wealth into the trust
+  rollAutoTrustTopup();
   // Identity layer — runs once per year after stats settle
   applyTraitDrifts();
   crystallizeTraits();
@@ -7903,8 +7909,24 @@ function openFaithPractice(){
               : '<button class="card-btn" onclick="doReligiousPractice(\'' + p.id + '\')">Do It</button>')
       + '</div></div>';
   });
+  // Toggle: auto-zakat for Muslims (default ON). Player can switch off.
+  if(c.religion === 'islam'){
+    const on = !c.zakatAutoOff;
+    html += '<div class="card" style="border-color:' + (on?'var(--green)':'var(--t3)') + ';">'
+      + '<div class="card-ico">⚙️</div>'
+      + '<div class="card-body"><div class="card-title">Auto-Zakat Deduction · ' + (on ? '<span style="color:var(--green);">ON</span>' : '<span style="color:var(--crimson);">OFF</span>') + '</div>'
+      + '<div class="card-meta">When enabled, 2.5% of your net worth is automatically deducted each year as zakat — no manual click needed.</div></div>'
+      + '<div class="card-act"><button class="card-btn" onclick="toggleAutoZakat()">' + (on?'Turn Off':'Turn On') + '</button></div></div>';
+  }
   html += '<button class="card-btn muted" style="width:100%;margin-top:10px;padding:10px;" onclick="closeModal();openReligion();">Convert / Leave Religion</button>';
   openModal(r.icon + ' ' + r.name + ' Practices', html);
+}
+
+function toggleAutoZakat(){
+  const c = LIFE.char;
+  c.zakatAutoOff = !c.zakatAutoOff;
+  pushEvent('', '⚙️ Auto-zakat ' + (c.zakatAutoOff ? 'disabled' : 'enabled') + '.');
+  closeModal(); openFaithPractice(); saveLife();
 }
 
 function doReligiousPractice(id){
@@ -7974,6 +7996,82 @@ function doReligiousPractice(id){
 
 // Annual nudge: if Muslim and net worth > nisab threshold, remind that
 // zakat is due. Other religions get gentle annual prompts too.
+// Propagate the player's religion to family members who don't have one
+// yet. Kids and the partner inherit / share the player's faith. Existing
+// NPC religion choices (e.g. via convertTo for the partner separately)
+// are NOT overwritten.
+function propagateFamilyFaith(){
+  const c = LIFE.char;
+  if(!c || !c.religion) return;
+  // Kids: inherit parent religion
+  (c.children || []).forEach(k => {
+    if(k && !k.religion) k.religion = c.religion;
+  });
+  // Partner: most marriages share religion. 75% adopt the player's.
+  if(c.partner && !c.partner.religion){
+    c.partner.religion = c.religion;
+  }
+  // Parents and siblings get a religion at first call (legacy saves)
+  if(c.parents){
+    ['mom','dad'].forEach(p => {
+      if(c.parents[p] && !c.parents[p].religion) c.parents[p].religion = c.religion;
+    });
+  }
+  (c.siblings || []).forEach(s => { if(s && !s.religion) s.religion = c.religion; });
+}
+
+// Auto-zakat — if Muslim with the auto-zakat toggle on (default ON for
+// new Muslim characters), deduct 2.5% of net worth each year and log it.
+function rollAutoZakat(){
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam') return;
+  // Default: auto-zakat ON for Muslims. Player can disable via Faith Practice.
+  if(c.zakatAutoOff) return;
+  // Nisab threshold check — only deduct above a meaningful wealth level
+  const nw = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : c.money;
+  if(nw < 10000) return;
+  // Liquid funds must cover the obligation
+  const owed = Math.floor(nw * 0.025);
+  if(c.money < owed){
+    // Pull from savings if checking is short
+    const fromSavings = Math.min((c.savings||0), owed - c.money);
+    c.savings -= fromSavings;
+    c.money += fromSavings;
+  }
+  if(c.money < owed){
+    pushEvent('bad', '🕌 Zakat owed this year (' + fmtMoney(owed) + ') but liquid funds insufficient. Year carried over.');
+    return;
+  }
+  c.money -= owed;
+  c.faith = clamp(c.faith + 4, 0, 100);
+  c.karma = clamp(c.karma + 4, 0, 100);
+  c.flags = c.flags || {};
+  c.flags.zakatLifetimePaid = (c.flags.zakatLifetimePaid || 0) + owed;
+  pushEvent('good', '🕌 Annual Zakat: ' + fmtMoney(owed) + ' paid (auto). Lifetime: ' + fmtMoney(c.flags.zakatLifetimePaid) + '.');
+}
+
+// Auto-trust top-up — when enabled, sweeps 60% of (money + savings +
+// investments) into the trust each year. Player turns it on through the
+// trust setup; the toggle persists.
+function rollAutoTrustTopup(){
+  const c = LIFE.char;
+  if(!c || !c.trustAutoTopup) return;
+  if(typeof trustAmount !== 'function') return;
+  const liquid = (c.money || 0) + (c.savings || 0) + (c.investments || 0);
+  if(liquid <= 0) return;
+  const move = Math.floor(liquid * 0.60);
+  if(move <= 0) return;
+  // Convert trust to numeric form if needed
+  const currentTrust = trustAmount(c);
+  c.trust = currentTrust + move;
+  // Drain from cash first, then savings, then investments
+  let remain = move;
+  const takeMoney = Math.min(remain, c.money || 0); c.money -= takeMoney; remain -= takeMoney;
+  const takeSav   = Math.min(remain, c.savings || 0); c.savings -= takeSav; remain -= takeSav;
+  const takeInv   = Math.min(remain, c.investments || 0); c.investments -= takeInv;
+  pushEvent('good', '🏛️ Auto-trust topup: ' + fmtMoney(move) + ' moved into the family trust. Trust now ' + fmtMoney(c.trust) + '.');
+}
+
 function rollFaithPracticeAnnual(){
   const c = LIFE.char;
   if(!c.religion) return;
@@ -8154,6 +8252,16 @@ function openBanking(){
     + '<div class="card-body"><div class="card-title">Short a Failing Company ($20k position)</div>'
     + '<div class="card-meta">Win if it crashes. Lose 2-5x if it squeezes.</div></div>'
     + '<div class="card-act"><button class="card-btn danger" onclick="tradeOptions(\'short\',20000)">Short</button></div></div>';
+  // ── Auto-trust top-up toggle — visible once a trust exists ──
+  if(typeof trustAmount === 'function' && trustAmount(c) > 0){
+    const on = !!c.trustAutoTopup;
+    html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--accent2);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 8px;">Trust Fund Automation</div>'
+      + '<div class="card" style="border-color:' + (on?'var(--green)':'var(--t3)') + ';">'
+      + '<div class="card-ico">⚙️</div>'
+      + '<div class="card-body"><div class="card-title">Auto-Trust Top-Up · ' + (on?'<span style="color:var(--green);">ON</span>':'<span style="color:var(--crimson);">OFF</span>') + '</div>'
+      + '<div class="card-meta">Sweeps 60% of liquid wealth (cash + savings + investments) into the trust every year. Trust currently holds ' + fmtMoney(trustAmount(c)) + '.</div></div>'
+      + '<div class="card-act"><button class="card-btn" onclick="toggleAutoTrustTopup()">' + (on?'Turn Off':'Turn On') + '</button></div></div>';
+  }
   // ── Sharia-compliant banking option for Muslim characters / countries ──
   if(typeof isShariaContext === 'function' && isShariaContext()){
     html += '<div style="font-family:var(--font-m);font-size:10px;color:var(--green);letter-spacing:.22em;text-transform:uppercase;margin:18px 0 8px;">☪️ Islamic Banking Available</div>'
@@ -11707,9 +11815,24 @@ function setUpTrust(){
   else { const rem = move - c.savings; c.savings = 0; c.money -= rem; }
   pushEvent('milestone', '🏛️ You set up a family trust with ' + fmtMoney(move) + '. It will pass tax-free to your descendants for 2 generations.');
   c.karma = clamp(c.karma + 3, 0, 100);
+  // Default: auto top-up ON when the trust is first created. The player
+  // can disable it via Banking → toggle (added below).
+  c.trustAutoTopup = true;
+  pushEvent('', '⚙️ Auto-trust top-up enabled — 60% of liquid wealth will sweep into the trust each year. Toggle off in Banking.');
   closeModal();
   renderAll();
   saveLife();
+}
+
+function toggleAutoTrustTopup(){
+  const c = LIFE.char;
+  if(typeof trustAmount === 'function' && trustAmount(c) <= 0){
+    toast('Set up a trust first.');
+    return;
+  }
+  c.trustAutoTopup = !c.trustAutoTopup;
+  pushEvent('', '⚙️ Auto-trust top-up ' + (c.trustAutoTopup ? 'enabled — 60% of liquid wealth will sweep yearly' : 'disabled') + '.');
+  closeModal(); openBanking(); saveLife();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -11863,6 +11986,15 @@ function inheritAs(kidName, mode){
   // instead of every generation being reset to the real-world year.
   ch.born   = (oldChar.born || (new Date().getFullYear() - oldChar.age)) + (oldChar.age - kid.age);
   ch.diseases = kid.diseases || [];
+  // ─── GRANDKIDS NO LONGER VANISH ───
+  // The heir's own children (formerly the deceased's grandkids) become
+  // the new character's children. Deep clone so mutations on the new
+  // life don't ripple back into LIFE.ancestors snapshots.
+  if(kid.children && kid.children.length){
+    const dclone = v => (v == null ? v : JSON.parse(JSON.stringify(v)));
+    ch.children = dclone(kid.children);
+    pushEvent('milestone', '👶 ' + ch.children.length + ' grandchild' + (ch.children.length===1?'':'ren') + ' of ' + oldChar.firstName + ' are now your children.');
+  }
 
   // Inherit real assets
   if(inheritsHouse && oldChar.houseId && oldChar.houseId !== 'family') ch.houseId = oldChar.houseId;

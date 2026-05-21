@@ -17143,6 +17143,274 @@ function _wireCareerRulingChips(){
   };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  HOUSES & ASSETS PASS — financing choices, luxury-tier israf flag,
+//  ijara on vehicles. Surfaces the halal financing path as a first-class
+//  option at the point of purchase rather than as an afterthought.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+Object.assign(ISLAMIC_RULINGS, {
+  israf: {
+    verdict:'makruh', label:'Israf — Extravagance & Wastefulness',
+    summary:'Spending on what is permissible in itself, but in measure beyond what is needed or for ostentation, is disapproved. The Quran couples wastefulness with the act of devils. The point is not asceticism but proportion — own what serves you, not what announces you.',
+    refs:[
+      {kind:'quran', cite:'Quran 7:31', url:'https://quran.com/7/31',
+       text:'"Eat and drink, but be not excessive. Indeed, He likes not those who are excessive."'},
+      {kind:'quran', cite:'Quran 17:26-27', url:'https://quran.com/17/26-27',
+       text:'"Do not be a spendthrift — indeed, the wasteful are brothers of the devils."'},
+    ],
+  },
+  ijara: {
+    verdict:'mubah', label:'Ijara — Lease-to-Own',
+    summary:'A halal alternative to conventional vehicle and equipment financing. The lessor (often a Sharia bank) owns the asset and leases it to the user for a fixed rental fee. Title may transfer at the end of the lease. No interest is charged or compounded.',
+    refs:[
+      {kind:'quran', cite:'Quran 2:282', url:'https://quran.com/2/282', text:'(General principles for documenting and witnessing contracts.)'},
+    ],
+  },
+});
+
+// Luxury-tier houses carry the israf consideration. Lower tiers carry no
+// chip — the necessity / comfort line is around the "mansion" rung.
+const HOUSE_RULINGS = {
+  beach:     {ruling:'israf'},
+  penthouse: {ruling:'israf'},
+  mansion:   {ruling:'israf'},
+  estate:    {ruling:'israf'},
+  island:    {ruling:'israf'},
+};
+
+// ─── Financing choice modal — opened when a Muslim character wants to
+//  buy an asset they cannot fully pay for in cash. Offers murabaha (or
+//  ijara for vehicles) as the halal path with a transparent cost-plus
+//  markup, and conventional mortgage/loan with the riba penalty shown
+//  up front. Saving up is always available.
+function openShariahFinancingChoice(kind, label, id, price){
+  const isVehicle = (kind === 'vehicle');
+  const halalKey = isVehicle ? 'ijara' : 'murabaha';
+  const halalLabel = isVehicle ? 'Ijara (Lease-to-Own)' : 'Murabaha (Cost-Plus)';
+  const margin = isVehicle ? 0.08 : 0.06;
+  const totalHalal = Math.floor(price * (1 + margin));
+  const downConv = Math.floor(price * 0.20);
+  let html = '<div style="padding:12px 14px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;font-size:13px;line-height:1.55;color:var(--t1);">'
+    + 'You are short the full price for <b>' + label + '</b>. Choose how to finance.'
+    + '</div>';
+  // Halal path
+  const canHalal = LIFE.char.money >= totalHalal;
+  html += '<div class="card" ' + (canHalal ? 'onclick="closeModal();_doMurabaha(\'' + kind + '\',\'' + id + '\',' + totalHalal + ')" style="cursor:pointer;border-color:#2d7a3f;"' : 'style="border-color:#2d7a3f;opacity:.55;"') + '>'
+    + '<div class="card-ico">☪</div>'
+    + '<div class="card-body"><div class="card-title" style="color:#a3e635;">' + halalLabel + ' ' + infoButton(halalKey) + '</div>'
+    + '<div class="card-meta">Total payable: ' + fmtMoney(totalHalal) + ' (' + (margin*100).toFixed(0) + '% fixed markup, no compounding interest). Title and use transfer cleanly.</div>'
+    + (canHalal ? '' : '<div class="card-meta" style="color:var(--crimson);">You are short ' + fmtMoney(totalHalal - LIFE.char.money) + '.</div>')
+    + '</div>'
+    + '<div class="card-act"><button class="card-btn ' + (canHalal ? 'green' : 'muted') + '">' + (canHalal ? 'Use Halal' : 'Cannot Afford') + '</button></div></div>';
+  // Conventional path
+  const canConv = LIFE.char.money >= downConv;
+  html += '<div class="card" ' + (canConv ? 'onclick="closeModal();_doConventionalLoan(\'' + kind + '\',\'' + id + '\',' + price + ',' + downConv + ')" style="cursor:pointer;border-color:#552a6e;"' : 'style="border-color:#552a6e;opacity:.55;"') + '>'
+    + '<div class="card-ico">🏦</div>'
+    + '<div class="card-body"><div class="card-title">Conventional ' + (isVehicle ? 'Auto Loan' : 'Mortgage') + ' ' + infoButton('riba') + '</div>'
+    + '<div class="card-meta">Down payment ' + fmtMoney(downConv) + ' now; the bank carries the rest at APR. Each year of paid interest is riba — iman and karma drift, nasl burden recorded.</div>'
+    + (canConv ? '' : '<div class="card-meta" style="color:var(--crimson);">You cannot meet the down payment.</div>')
+    + '</div>'
+    + '<div class="card-act"><button class="card-btn ' + (canConv ? 'danger' : 'muted') + '">' + (canConv ? 'Sign Riba Contract' : 'No') + '</button></div></div>';
+  // Walk away
+  html += '<div class="card" onclick="closeModal()" style="cursor:pointer;opacity:.7;">'
+    + '<div class="card-ico">↩️</div>'
+    + '<div class="card-body"><div class="card-title">Save Up First</div>'
+    + '<div class="card-meta">Halal is discipline and consistency. Come back when you have the cash or the murabaha total in hand.</div></div></div>';
+  openModal('☪ How Will You Finance?', html);
+}
+
+function _doMurabaha(kind, id, total){
+  const c = LIFE.char;
+  if(c.money < total){ toast('Not enough.'); return; }
+  c.money -= total;
+  if(kind === 'vehicle'){
+    c.carId = id;
+    const car = CARS.find(x => x.id === id);
+    pushEvent('milestone', '🚗 You took ' + (car?car.name:'the vehicle') + ' on ijara — paid ' + fmtMoney(total) + ' all-in (no riba).');
+  } else {
+    ensureProperties();
+    const h = HOUSES.find(x => x.id === id);
+    const wasFamily = (c.houseId === 'family');
+    c.properties.push({
+      pid:'p' + Date.now() + '-' + Math.floor(Math.random()*9999),
+      houseId:id, nickname:h.name, purchasedAt:c.age, purchasePrice:total,
+      currentValue:Math.floor(h.price * COUNTRIES[c.country].costMult),
+      isPrimary: wasFamily || c.properties.length === 0,
+      rentedOut:false, monthlyRent:h.monthly?Math.floor(h.monthly*COUNTRIES[c.country].costMult):0,
+      occupied:false, tenant:null, developments:[], condition:100,
+      mortgageBalance:0, mortgageMonthly:0, financing:'murabaha',
+    });
+    if(c.properties.length === 1 || wasFamily) c.properties.forEach((p,i,arr)=>{p.isPrimary = (i===arr.length-1);});
+    c.houseId = id;
+    pushEvent('milestone', '🏠 You took ' + h.name + ' on murabaha — paid ' + fmtMoney(total) + ' all-in (no riba).');
+  }
+  // Quiet halal nudge
+  c.karma = clamp((c.karma||50) + 2, 0, 100);
+  c.iman = clamp((c.iman||0) + 1, 0, 100);
+  c.faith = c.iman;
+  renderAll(); saveLife();
+}
+
+function _doConventionalLoan(kind, id, price, down){
+  const c = LIFE.char;
+  if(c.money < down){ toast('Not enough for the down payment.'); return; }
+  c.money -= down;
+  const balance = price - down;
+  c.loans = c.loans || [];
+  c.loans.push({
+    type: kind === 'vehicle' ? 'auto_loan' : 'mortgage',
+    label: kind === 'vehicle' ? 'Conventional Auto Loan' : 'Conventional Mortgage',
+    balance: balance,
+    apr: kind === 'vehicle' ? 0.075 : 0.068,
+    monthly: Math.floor(balance * 0.006),
+    asset: id,
+  });
+  if(kind === 'vehicle'){
+    c.carId = id;
+    const car = CARS.find(x => x.id === id);
+    pushEvent('bad', '🚫 You signed a conventional auto loan for ' + (car?car.name:'the vehicle') + '. Riba penalty applies annually until paid.');
+  } else {
+    ensureProperties();
+    const h = HOUSES.find(x => x.id === id);
+    const wasFamily = (c.houseId === 'family');
+    c.properties.push({
+      pid:'p' + Date.now() + '-' + Math.floor(Math.random()*9999),
+      houseId:id, nickname:h.name, purchasedAt:c.age, purchasePrice:price,
+      currentValue:Math.floor(h.price * COUNTRIES[c.country].costMult),
+      isPrimary: wasFamily || c.properties.length === 0,
+      rentedOut:false, monthlyRent:h.monthly?Math.floor(h.monthly*COUNTRIES[c.country].costMult):0,
+      occupied:false, tenant:null, developments:[], condition:100,
+      mortgageBalance:balance, mortgageMonthly:Math.floor(balance*0.006), financing:'conventional',
+    });
+    if(c.properties.length === 1 || wasFamily) c.properties.forEach((p,i,arr)=>{p.isPrimary = (i===arr.length-1);});
+    c.houseId = id;
+    pushEvent('bad', '🚫 You signed a conventional mortgage on ' + h.name + '. Riba penalty applies annually until paid off.');
+  }
+  // Immediate riba hit (signing the contract itself is the entry point)
+  c.iman = clamp((c.iman||0) - 6, 0, 100);
+  c.karma = clamp((c.karma||50) - 3, 0, 100);
+  c.faith = c.iman;
+  c.kabairFlags = c.kabairFlags || {};
+  c.kabairFlags.riba = (c.kabairFlags.riba||0) + 1;
+  c.flags = c.flags || {};
+  c.flags.naslBurden = (c.flags.naslBurden||0) + 2;
+  renderAll(); saveLife();
+}
+
+// ─── Wrap buyHouse and buyCar — Muslim characters with insufficient cash
+//  see the financing choice; everyone else gets the original behaviour.
+//  Luxury-tier houses also pay a small israf cost up front.
+(function(){
+  if(typeof buyHouse !== 'function') return;
+  const _orig = buyHouse;
+  buyHouse = function(id){
+    const c = LIFE.char;
+    const h = HOUSES.find(x => x.id === id);
+    if(!h) return _orig.apply(this, arguments);
+    const price = Math.floor(h.price * COUNTRIES[c.country].costMult);
+    if(c.religion === 'islam' && c.money < price){
+      openShariahFinancingChoice('house', h.name, id, price);
+      return;
+    }
+    const r = _orig.apply(this, arguments);
+    // Luxury-tier israf nudge — applies to Muslim and non-Muslim characters,
+    // but the iman effect is Muslim-only.
+    if(HOUSE_RULINGS[id] && HOUSE_RULINGS[id].ruling === 'israf' && c.religion === 'islam'){
+      c.iman = clamp((c.iman||0) - 4, 0, 100);
+      c.karma = clamp((c.karma||50) - 2, 0, 100);
+      c.faith = c.iman;
+      pushEvent('bad', '🏰 Luxury beyond need carries the israf ruling. Iman -4. (Quran 7:31)');
+    }
+    return r;
+  };
+})();
+
+(function(){
+  if(typeof buyCar !== 'function') return;
+  const _orig = buyCar;
+  buyCar = function(id){
+    const c = LIFE.char;
+    const car = CARS.find(x => x.id === id);
+    if(!car || id === 'none') return _orig.apply(this, arguments);
+    const price = Math.floor(car.price * COUNTRIES[c.country].costMult);
+    if(c.religion === 'islam' && c.money < price && price > 0){
+      openShariahFinancingChoice('vehicle', car.name, id, price);
+      return;
+    }
+    return _orig.apply(this, arguments);
+  };
+})();
+
+// ─── Annual riba drag on outstanding conventional mortgages/auto loans.
+//  Hooks ageUp so each year a Muslim still carrying an APR-bearing loan
+//  takes an iman/karma drift. Pay off the loan to stop the bleed.
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const conventionalDebts = (c.loans||[]).filter(l => l.apr && l.apr > 0 && l.balance > 0);
+    if(conventionalDebts.length){
+      const yearlyInterest = conventionalDebts.reduce((s,l) => s + Math.floor(l.balance * l.apr), 0);
+      c.iman = clamp((c.iman||0) - 2, 0, 100);
+      c.karma = clamp((c.karma||50) - 1, 0, 100);
+      c.faith = c.iman;
+      c.flags = c.flags || {};
+      c.flags.naslBurden = (c.flags.naslBurden||0) + 1;
+      if(yearlyInterest > 0){
+        pushEvent('bad', '🚫 Riba paid this year: ~' + fmtMoney(yearlyInterest) + '. Iman -2.');
+      }
+    }
+  };
+})();
+
+// ─── Info chip on house buy cards.
+//  Walks the property modal after render and tags luxury tier with israf.
+//  The murabaha financing path is offered through openShariahFinancingChoice.
+function _wireHouseRulingChips(){
+  const modal = document.getElementById('modal');
+  if(!modal || !modal.classList.contains('show')) return;
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam') return;
+  modal.querySelectorAll('.card').forEach(card => {
+    if(card.dataset.houseRulingWired) return;
+    const titleEl = card.querySelector('.card-title');
+    if(!titleEl) return;
+    const title = titleEl.textContent.trim();
+    const h = HOUSES.find(x => x.name === title);
+    if(!h) return;
+    const hr = HOUSE_RULINGS[h.id];
+    if(!hr) return;
+    const meta = card.querySelector('.card-meta');
+    if(!meta) return;
+    const chip = document.createElement('div');
+    chip.style.cssText = 'margin-top:5px;';
+    chip.innerHTML = infoButton(hr.ruling);
+    meta.parentNode.insertBefore(chip, meta.nextSibling);
+    card.dataset.houseRulingWired = '1';
+  });
+}
+
+(function(){
+  // Try common modal-opening points where house cards may be rendered
+  ['openProperties','openHomeShop','openAssets','openHouseBuyModal'].forEach(fn => {
+    if(typeof window[fn] !== 'function') return;
+    const _orig = window[fn];
+    window[fn] = function(){
+      _orig.apply(this, arguments);
+      setTimeout(_wireHouseRulingChips, 0);
+    };
+  });
+  // Also poll briefly when any modal opens — covers the bottom panel
+  // that lists houses inline (the buyHouse buttons live on those cards)
+  document.addEventListener('click', function(){
+    setTimeout(_wireHouseRulingChips, 30);
+  }, true);
+})();
+
 </script>
 </body>
 </html>

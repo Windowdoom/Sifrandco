@@ -17411,6 +17411,156 @@ function _wireHouseRulingChips(){
   }, true);
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  COMPANIES PASS — sector classification, founding penalty, annual drag
+//  on haram-sector revenue. Same registry pattern; info chip wired into
+//  the industry picker.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+Object.assign(ISLAMIC_RULINGS, {
+  agriculture: {
+    verdict:'mustahabb', label:'Filaha — Farming & Food Production',
+    summary:'Cultivating land that feeds people is among the most blessed forms of earning. Anything eaten from a Muslim\'s crop — by people, animals, or birds — is counted as charity for them on the Day of Judgment.',
+    refs:[
+      {kind:'hadith', cite:'Sahih Bukhari 2320', url:'https://sunnah.com/bukhari:2320',
+       text:'"No Muslim plants a tree or sows a seed, then a bird, a person or an animal eats from it, except that it is a charity for him."'},
+    ],
+  },
+});
+
+const INDUSTRY_RULINGS = {
+  // Clearly haram sectors — the conventional model
+  finance:     {ruling:'riba',    note:'Conventional banking, insurance underwriting, and lending all turn on interest. A sharia-finance shop (mudaraba, sukuk, takaful, murabaha) is permissible — the sector is not condemned, the riba is.'},
+  crypto:      {ruling:'gharar',  note:'The underlying technology is mubah; running an exchange or token-launch operation is gharar/maysir. Building infrastructure (wallets, audit, halal payments rails) is fine.'},
+
+  // Content-dependent — default to differing-views for entertainment, with notes
+  media:       {ruling:'entertainment', note:'A documentary house, news outlet, or nasheed label sits very differently from a film studio producing indecent content. Tag the product, not the sector name.'},
+  gaming:      {ruling:'entertainment', note:'Educational and skill-based games are mubah. Gambling mechanics (loot boxes, real-money wagers) and indecency push the business into haram revenue.'},
+
+  // Mubah-with-caveats — what you do inside the sector matters
+  restaurant:  {ruling:'pork',    note:'A restaurant group is mubah; serving pork, alcohol, or non-zabiha meat is not. A halal menu and an alcohol-free bar make this a clean trade.'},
+  apparel:     {ruling:'halal_rizq', note:'Mubah by default; modest and dignified clothing is encouraged. Designing or marketing immodest garments takes the line into haram revenue.'},
+  defense:     {ruling:'qital',   note:'Producing arms for lawful defence is permitted; supplying regimes that target civilians is among the most serious sins.'},
+  mining:      {ruling:'halal_rizq', note:'Mineral and resource extraction is mubah, but environmental harm to people downstream (water, air, displacement) is its own claim against you.'},
+  realestatedev:{ruling:'riba',   note:'Development funded by conventional debt carries riba. Diminishing-musharaka and direct equity partnerships are halal alternatives.'},
+
+  // Clearly mustahabb / encouraged sectors
+  pharma:      {ruling:'khidmah', note:'Producing medicines that save lives is service to people; pricing them out of reach undermines the same.'},
+  biotech:     {ruling:'khidmah'},
+  agri:        {ruling:'agriculture'},
+  aerospace:   {ruling:'ilm'},
+
+  // tech / auto / energy / retail / logistics are mubah by default — no chip.
+};
+
+// ─── Wire info chips into the industry picker.
+function _wireIndustryRulingChips(){
+  const modal = document.getElementById('modal');
+  if(!modal || !modal.classList.contains('show')) return;
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam') return;
+  const titleToId = {};
+  INDUSTRIES.forEach(ind => { titleToId[ind.name] = ind.id; });
+  modal.querySelectorAll('.card').forEach(card => {
+    if(card.dataset.industryRulingWired) return;
+    const titleEl = card.querySelector('.card-title');
+    if(!titleEl) return;
+    const id = titleToId[titleEl.textContent.trim()];
+    if(!id) return;
+    const ir = INDUSTRY_RULINGS[id];
+    if(!ir) return;
+    const meta = card.querySelector('.card-meta');
+    if(!meta) return;
+    const chipWrap = document.createElement('div');
+    chipWrap.style.cssText = 'margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;';
+    chipWrap.innerHTML = infoButton(ir.ruling)
+      + (ir.note ? '<span style="font-size:10px;color:var(--t3);line-height:1.4;font-style:italic;">' + ir.note + '</span>' : '');
+    meta.parentNode.insertBefore(chipWrap, meta.nextSibling);
+    card.dataset.industryRulingWired = '1';
+  });
+}
+
+(function(){
+  // Best-effort: wrap any plausible company-modal opener; also poll on any click.
+  ['openCompanies','openBusinesses','openCompanyHub','openVentures'].forEach(fn => {
+    if(typeof window[fn] !== 'function') return;
+    const _orig = window[fn];
+    window[fn] = function(){
+      _orig.apply(this, arguments);
+      setTimeout(_wireIndustryRulingChips, 0);
+    };
+  });
+  document.addEventListener('click', function(){
+    setTimeout(_wireIndustryRulingChips, 30);
+  }, true);
+})();
+
+// ─── Founding-time penalty for haram-sector companies.
+(function(){
+  if(typeof foundCompany !== 'function') return;
+  const _orig = foundCompany;
+  foundCompany = function(industryId){
+    const c = LIFE.char;
+    _orig.apply(this, arguments);
+    if(!c || c.religion !== 'islam') return;
+    const ir = INDUSTRY_RULINGS[industryId];
+    if(!ir) return;
+    const ruling = ISLAMIC_RULINGS[ir.ruling];
+    if(!ruling) return;
+    if(ruling.verdict === 'haram'){
+      c.iman = clamp((c.iman||0) - 6, 0, 100);
+      c.karma = clamp((c.karma||50) - 3, 0, 100);
+      c.faith = c.iman;
+      c.kabairFlags = c.kabairFlags || {};
+      const flagKey = ir.ruling === 'riba' ? 'riba'
+                    : ir.ruling === 'khamr' ? 'khamr'
+                    : ir.ruling === 'gharar' ? 'haram_rizq'
+                    : ir.ruling === 'sihr' ? 'sihr'
+                    : 'haram_rizq';
+      c.kabairFlags[flagKey] = (c.kabairFlags[flagKey]||0) + 1;
+      c.flags = c.flags || {};
+      c.flags.naslBurden = (c.flags.naslBurden||0) + 2;
+      pushEvent('bad', '🚫 This sector\'s conventional revenue model carries a haram ruling (' + ruling.label + '). Iman -6. A sharia-compliant variant remains an option.');
+    } else if(ruling.verdict === 'mustahabb'){
+      c.iman = clamp((c.iman||0) + 2, 0, 100);
+      c.karma = clamp((c.karma||50) + 2, 0, 100);
+      c.faith = c.iman;
+    }
+  };
+})();
+
+// ─── Annual drag on profits from haram-sector companies — each year a
+//  Muslim founder draws income from a riba/khamr/gharar/sihr sector,
+//  the income is mixed and iman drifts. Sharia pivot (selling, divesting,
+//  or restructuring the business model) ends the drag.
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const haramSectorCos = (c.companies||[]).filter(co => {
+      const ir = INDUSTRY_RULINGS[co.industry];
+      if(!ir) return false;
+      const r = ISLAMIC_RULINGS[ir.ruling];
+      return r && r.verdict === 'haram';
+    });
+    if(haramSectorCos.length){
+      const cnt = Math.min(3, haramSectorCos.length);
+      c.iman = clamp((c.iman||0) - (1 + cnt), 0, 100);
+      c.karma = clamp((c.karma||50) - 1, 0, 100);
+      c.faith = c.iman;
+      c.flags = c.flags || {};
+      c.flags.naslBurden = (c.flags.naslBurden||0) + 1;
+      // Quiet — only surface every few years to avoid noise
+      if(c.age % 3 === 0){
+        pushEvent('bad', '🚫 ' + cnt + ' of your companies still draw revenue from haram sectors. Iman drifts.');
+      }
+    }
+  };
+})();
+
 </script>
 </body>
 </html>

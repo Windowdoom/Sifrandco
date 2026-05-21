@@ -17659,6 +17659,183 @@ function _wireActivityRulingChips(){
   };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  CONDUCT, INSURANCE, BODY-MODS PASS — closes the remaining authenticated
+//  surfaces: crime → kabair, conventional insurance → gharar, tattoos →
+//  haram, lottery winnings → maysir. Same registry pattern.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+Object.assign(ISLAMIC_RULINGS, {
+  theft: {
+    verdict:'haram', label:'Sariqa — Theft & Unjust Taking',
+    summary:'Taking the wealth of others without right is forbidden, and the prescribed shariah punishment is severe. Robbery with violence (hirabah) is heavier still — the Quran addresses it directly. Even a small theft against a stranger violates the Muslim\'s covenant of trust.',
+    refs:[
+      {kind:'quran', cite:'Quran 5:38', url:'https://quran.com/5/38'},
+      {kind:'quran', cite:'Quran 5:33', url:'https://quran.com/5/33', text:'(Hirabah — armed robbery and corruption on earth.)'},
+    ],
+  },
+  tattoo: {
+    verdict:'haram', label:'Tattoos & Permanent Body Alteration',
+    summary:'The Messenger of Allah ﷺ cursed both the tattooer and the one tattooed. The ruling extends to changing the creation of Allah without legitimate need (e.g., medical correction). Ear-piercing for women is the recognised exception by precedent; face/multiple piercings and tattoos are not.',
+    refs:[
+      {kind:'hadith', cite:'Sahih Bukhari 5947', url:'https://sunnah.com/bukhari:5947',
+       text:'"Allah has cursed the woman who tattoos and the one who has herself tattooed, and the one who plucks eyebrows and the one who has them plucked."'},
+      {kind:'quran', cite:'Quran 4:119', url:'https://quran.com/4/119', text:'(Shaytan said he would command them to change the creation of Allah.)'},
+    ],
+  },
+});
+
+// ─── Crime: iman / kabair / theft flag for Muslim characters.
+(function(){
+  if(typeof commitCrime !== 'function') return;
+  const _orig = commitCrime;
+  commitCrime = function(id){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const isViolent = (id === 'mug' || id === 'rob' || id === 'bankjob' || id === 'grandtheft');
+    c.iman = clamp((c.iman||0) - (isViolent ? 8 : 5), 0, 100);
+    c.karma = clamp((c.karma||50) - (isViolent ? 4 : 2), 0, 100);
+    c.faith = c.iman;
+    c.kabairFlags = c.kabairFlags || {};
+    c.kabairFlags.theft = (c.kabairFlags.theft||0) + 1;
+    if(isViolent) c.kabairFlags.haram_rizq = (c.kabairFlags.haram_rizq||0) + 1;
+    c.flags = c.flags || {};
+    c.flags.naslBurden = (c.flags.naslBurden||0) + (isViolent ? 2 : 1);
+  };
+})();
+
+// Inject info chip on the crime modal — single chip explaining theft.
+function _wireCrimeRulingChips(){
+  const modal = document.getElementById('modal');
+  if(!modal || !modal.classList.contains('show')) return;
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam') return;
+  const header = modal.querySelector('.modal-body > div:first-child');
+  if(!header || header.dataset.crimeRulingWired) return;
+  // Only wire if this looks like the crime modal (it has the red ⚠ banner)
+  if(header.textContent.indexOf('Illegal') < 0) return;
+  const chip = document.createElement('div');
+  chip.style.cssText = 'margin-top:8px;text-align:center;';
+  chip.innerHTML = infoButton('theft');
+  header.appendChild(chip);
+  header.dataset.crimeRulingWired = '1';
+}
+(function(){
+  if(typeof openCrime !== 'function') return;
+  const _orig = openCrime;
+  openCrime = function(){
+    _orig.apply(this, arguments);
+    setTimeout(_wireCrimeRulingChips, 0);
+  };
+})();
+
+// ─── Conventional insurance: gharar penalty when getting any of the four
+//  standard policies. Takaful is the halal alternative and is offered
+//  through the Sharia banking modal — no penalty for it.
+(function(){
+  if(typeof toggleInsurance !== 'function') return;
+  const _orig = toggleInsurance;
+  toggleInsurance = function(t){
+    const c = LIFE.char;
+    const wasOn = !!(c.insurance && c.insurance[t]);
+    _orig.apply(this, arguments);
+    if(!c || c.religion !== 'islam') return;
+    const isOn = !!(c.insurance && c.insurance[t]);
+    if(!wasOn && isOn){
+      // Newly enabled conventional policy — gharar fires unless takaful covers it
+      if(c.insurance && c.insurance.takaful) return;
+      c.iman = clamp((c.iman||0) - 3, 0, 100);
+      c.karma = clamp((c.karma||50) - 1, 0, 100);
+      c.faith = c.iman;
+      pushEvent('bad', '🚫 Conventional ' + t + ' insurance is gharar. Iman -3. Takaful (mutual risk-sharing) is the halal alternative.');
+    }
+  };
+})();
+
+// ─── Body mods: tattoos = haram; face tattoo + multiple piercings the
+//  same. Ear-piercing for women alone is the recognised exception.
+(function(){
+  if(typeof getBodyMod !== 'function') return;
+  const _orig = getBodyMod;
+  getBodyMod = function(id){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const isTattoo = (id === 'small_tat' || id === 'sleeve_tat' || id === 'back_tat' || id === 'face_tat');
+    const isEarPierce = (id === 'ear_pierce' && c.sex === 'f');
+    if(isEarPierce) return; // permitted by precedent
+    if(isTattoo){
+      c.iman = clamp((c.iman||0) - 6, 0, 100);
+      c.karma = clamp((c.karma||50) - 2, 0, 100);
+      c.faith = c.iman;
+      c.kabairFlags = c.kabairFlags || {};
+      c.kabairFlags.tattoo = (c.kabairFlags.tattoo||0) + 1;
+      pushEvent('bad', '🚫 Tattoos carry a cursing in the hadith (Bukhari 5947). Iman -6.');
+    } else {
+      // Other piercings — makruh, lighter touch
+      c.iman = clamp((c.iman||0) - 2, 0, 100);
+      c.faith = c.iman;
+    }
+  };
+})();
+
+function _wireBodyModRulingChips(){
+  const modal = document.getElementById('modal');
+  if(!modal || !modal.classList.contains('show')) return;
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam') return;
+  const tattooIds = ['Small Tattoo','Sleeve Tattoo','Full Back Tattoo','Face Tattoo'];
+  modal.querySelectorAll('.card').forEach(card => {
+    if(card.dataset.bmRulingWired) return;
+    const titleEl = card.querySelector('.card-title');
+    if(!titleEl) return;
+    const plain = titleEl.textContent.replace(' · OWNED','').trim();
+    if(tattooIds.indexOf(plain) < 0) return;
+    const meta = card.querySelector('.card-meta');
+    if(!meta) return;
+    const chip = document.createElement('div');
+    chip.style.cssText = 'margin-top:5px;';
+    chip.innerHTML = infoButton('tattoo');
+    meta.parentNode.insertBefore(chip, meta.nextSibling);
+    card.dataset.bmRulingWired = '1';
+  });
+}
+(function(){
+  if(typeof openBodyMods !== 'function') return;
+  const _orig = openBodyMods;
+  openBodyMods = function(){
+    _orig.apply(this, arguments);
+    setTimeout(_wireBodyModRulingChips, 0);
+  };
+})();
+
+// ─── Lottery win event: when the player wins money via the lottery
+//  event for Muslims, the winnings are maysir. The event still triggers
+//  (we don't suppress it), but the gain is recorded as haram earnings
+//  and an iman drag fires.
+(function(){
+  if(typeof pushEvent !== 'function') return;
+  const _orig = pushEvent;
+  pushEvent = function(tag, text, fx){
+    const r = _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !text) return r;
+    const t = String(text).toLowerCase();
+    if(t.indexOf('lottery') >= 0 && (t.indexOf('won') >= 0 || t.indexOf('scratch') >= 0)){
+      c.iman = clamp((c.iman||0) - 4, 0, 100);
+      c.karma = clamp((c.karma||50) - 2, 0, 100);
+      c.faith = c.iman;
+      c.kabairFlags = c.kabairFlags || {};
+      c.kabairFlags.maysir = (c.kabairFlags.maysir||0) + 1;
+      c.flags = c.flags || {};
+      c.flags.naslBurden = (c.flags.naslBurden||0) + 1;
+      _orig.call(this, 'bad', '🚫 Lottery winnings are maysir (Quran 5:90-91). Iman -4.');
+    }
+    return r;
+  };
+})();
+
 </script>
 </body>
 </html>

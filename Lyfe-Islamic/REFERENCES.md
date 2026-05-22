@@ -14,7 +14,7 @@ Tafsir summaries are **paraphrased** from Ibn Kathir's classical work — see th
 | Salah — The Five Daily Prayers | Quran 2:43 | Muslim | 82b | [sunnah.com](https://sunnah.com/muslim:82b) |
 | Zakat — The Annual Almsgiving | Quran 9:60 | Bukhari | 1395 | [sunnah.com](https://sunnah.com/bukhari:1395) |
 | Riba — Interest is Forbidden | Quran 2:275 | Muslim | 1598 | [sunnah.com](https://sunnah.com/muslim:1598) |
-| Khamr — Alcohol and Intoxicants | Quran 5:90 | Muslim | 2003 | [sunnah.com](https://sunnah.com/muslim:2003) |
+| Khamr — Alcohol and Intoxicants | Quran 5:90 | Ibn Majah | 3380 | [sunnah.com](https://sunnah.com/ibnmajah:3380) |
 | Maysir — Gambling | Quran 2:219 | Bukhari | 4860 | [sunnah.com](https://sunnah.com/bukhari:4860) |
 | Birr al-Walidayn — Kindness to Parents | Quran 17:23 | Bukhari | 5971 | [sunnah.com](https://sunnah.com/bukhari:5971) |
 | Niyyah — Actions are by Intention | Quran 98:5 | Bukhari | 1 | [sunnah.com](https://sunnah.com/bukhari:1) |
@@ -81,7 +81,7 @@ The in-game registry attaches an authoritative ruling (verdict + summary + sahih
 | Ruling ID | Verdict | Primary Citations | Used By |
 |---|---|---|---|
 | riba | haram | Quran 2:275-279 · Muslim 1598 | Savings, mortgages, credit, auto loans, banker / hedge_fund / venture_capitalist / private_equity / corporate_lawyer / realestatedev / finance sector |
-| khamr | haram | Quran 5:90 · Muslim 2003 | vineyard_owner, sommelier, hotel_manager (mixed-revenue), Party activity |
+| khamr | haram | Quran 5:90 · Ibn Majah 3380 (also Tirmidhi 1295) | vineyard_owner, sommelier, hotel_manager (mixed-revenue), Party activity |
 | maysir | haram | Quran 5:90-91 · Bukhari 4860 | Crypto/gambling-adjacent (registry-ready) |
 | gharar | haram | Sahih Muslim 1513 | quant_trader, blockchain_dev, crypto sector |
 | halal_rizq | wajib | Quran 2:168 · Muslim 1015 | criminal career, apparel/mining sector caveats, treasure_hunter (luqata/rikaz) |
@@ -132,3 +132,23 @@ The remaining citations that did not match my phrase search are well-known canon
 **One important caveat that remains:** the dataset I used (`AhmedBaset/hadith-json`) indexes hadiths by an in-source `idInBook` that is offset from the URL numbering sunnah.com uses on its public site. For Bukhari the offset is ~210 (e.g., the music hadith of Abu Malik al-Ash'ari is `idInBook` 5377 in the dataset but cited as `bukhari:5590` on sunnah.com URLs and across modern scholarly literature). The sunnah.com URL numbers used throughout the game are the standard scholarly citations as commonly published, but a definitive 1:1 confirmation against the sunnah.com URL scheme requires access to sunnah.com itself, which remains blocked in the current sandbox.
 
 **Practical guidance for any contributor who can reach sunnah.com:** open each citation URL in REFERENCES.md, confirm the text on screen matches the text quoted in-game, and if any URL resolves to a different hadith, update the URL number in `Lyfe-Islamic/index.html` (the in-game text is treated as the source of truth).
+
+## Final authentication run
+
+A third pass was performed using **Arabic-text** content matching (invariant across English translators), against the AhmedBaset/hadith-json dataset.
+
+### Result: 44/44 hadith citations text-authenticated by Arabic content match — with 1 mis-attribution caught and corrected.
+
+**Citation error caught and fixed:** The well-known *"ten cursed regarding khamr"* hadith was previously cited as **Sahih Muslim 2003**. Arabic-content search across the entire Sahih Muslim collection returned **zero matches** for that text — confirming the hadith is not in Sahih Muslim. The actual canonical source is **Sunan Ibn Majah 3380** (also narrated in Jami' at-Tirmidhi 1295). The citation has been corrected in both `Lyfe-Islamic/index.html` and this references file. The hadith text in-game is unchanged — only the source attribution was fixed.
+
+### Full authenticated list (Arabic-content verified)
+
+All 44 hadith citations across the in-game `ISLAMIC_REFERENCES` and `ISLAMIC_RULINGS` registries were Arabic-content-verified against the dataset:
+
+Bukhari: 1, 24, 54, 893, 1395, 1521, 1903, 2014, 2067, 2320, 2766, 4860, 5304, 5590, 5641, 5947, 5971, 5976, 6011, 6095, 6114, 6412, 6416, 6864
+Muslim: 49, 82, 91, 1015, 1513, 1598, 1631, 1731, 1933, 2563, 2577, 2589, 2607
+Ibn Majah: 224, 1858, **3380** (corrected from Muslim 2003)
+Abu Dawud: 2178, 5151
+Tirmidhi: 1209, 1956
+
+Combined with the 51/51 Quran verses verified line-by-line against the Sahih International translation, the rulings registry is now considered **fully content-authenticated**. The only remaining caveat is the in-source `idInBook` vs sunnah.com URL numbering offset documented above — this can only be resolved by walking each URL on sunnah.com itself.

@@ -4,7 +4,7 @@ import { SectionTitle } from "@/components/Brand";
 import ShareDua from "@/components/ShareDua";
 import { DUAS, type Dua } from "@/data/duas";
 
-const CATEGORIES = ["All", "Morning", "Evening", "Sleep", "Wake", "Food", "Travel", "Distress", "Forgiveness", "After Salah"] as const;
+const CATEGORIES = ["All", "Morning", "Evening", "Sleep", "Wake", "Wudu", "Salah", "After Salah", "Adhkar", "Home", "Mosque", "Food", "Daily", "Family", "Travel", "Distress", "Forgiveness"] as const;
 
 export default function Duas() {
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>("All");

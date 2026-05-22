@@ -107,6 +107,7 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
         <Tile href="/hadith" title="Hadith"      sub="The Six Books" />
         <Tile href="/calendar" title="Hijri Calendar" sub="Events & fasts" />
         <Tile href="/zakat"  title="Zakat"       sub="Nisab calculator" />
+        <Tile href="/log"    title="Salah log"    sub="This week, at a glance" />
         <Tile href="/qada"   title="Qada Tracker" sub="Make-up prayers" />
         <Tile href="/ramadan" title="Ramadan"    sub="Suhoor & Iftar" />
       </section>

@@ -19218,6 +19218,264 @@ const WARM_EVENTS = [
   };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  MEANING-TAIL PASS — every event gets one sentence of interpretation
+//  drawn from the character's trajectory. Same mechanic, different
+//  emotional weight. Plus: trajectory commentary, skewed volatility,
+//  turning-point treatment, identity-marked action labels.
+//  Implements the audit's five highest-leverage upgrades.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+// ─── Helpers
+function _trajectorySnapshot(c){
+  return {
+    iman: c.iman || 0,
+    sakina: c.sakina || 50,
+    barakah: c.barakah || 50,
+    karma: c.karma || 50,
+    kabair: c.kabairFlags ? Object.values(c.kabairFlags).reduce((s,n)=>s+n,0) : 0,
+    halal: !!(c.flags && c.flags.halalRizqOnly),
+    riba: !!(c.kabairFlags && c.kabairFlags.riba),
+    tawbahActive: !!(c.flags && c.flags.tawbahRebuildUntil),
+  };
+}
+
+function _meaningTail(tag, text, c){
+  if(!c || c.religion !== 'islam') return '';
+  const s = _trajectorySnapshot(c);
+  const t = (text || '').toLowerCase();
+  // Money-positive events
+  if(t.indexOf('inherit') < 0 && /\+|gain|earn|won|bonus|paid|profit|received|salary/i.test(text)){
+    if(t.indexOf('riba') >= 0 || t.indexOf('interest') >= 0) return 'The number is real. The barakah in it is another matter.';
+    if(s.halal && s.iman >= 70) return 'Halal earnings sit differently in the hand — light, not heavy.';
+    if(s.kabair >= 3) return 'The income arrived. Something else didn\'t.';
+    if(s.iman >= 70) return 'Provision found you — Allah is the best of providers.';
+    return '';
+  }
+  // Money-loss / bad events
+  if(tag === 'bad' || /lost|loss|robbed|stolen|fine|broke|debt/i.test(text)){
+    if(s.tawbahActive) return 'A test during the rebuilding. The path forward is the same.';
+    if(s.iman >= 70) return 'Sabr now. The Quran says: "And give good tidings to the patient." (2:155)';
+    if(s.sakina <= 30) return 'Another weight on a heart already heavy. Tahajjud opens for hearts like this.';
+    return '';
+  }
+  // Death tag
+  if(tag === 'death'){
+    if(s.iman >= 50) return 'To Allah we belong, and to Him we return.';
+    return 'Death does not knock — it is already at the door of every soul.';
+  }
+  // Good / milestone — character-defining
+  if(tag === 'good' || tag === 'milestone' || tag === 'romantic' || tag === 'career'){
+    if(s.iman >= 80 && s.sakina >= 70) return 'Discipline is starting to define you — quietly, but unmistakably.';
+    if(s.kabair >= 5) return 'The reputation arrives, but a name is more than its public face.';
+    if(s.tawbahActive) return 'You are showing the rebuilding, not just thinking about it.';
+    return '';
+  }
+  return '';
+}
+
+// ─── Wrap pushEvent — attach the interpretation line + turning-point
+//  tagging + identity-marker prefixes on morally-loaded labels.
+(function(){
+  if(typeof pushEvent !== 'function') return;
+  const _orig = pushEvent;
+  pushEvent = function(tag, text, fx){
+    const c = LIFE && LIFE.char;
+    let finalText = text;
+    let finalTag = tag;
+    if(c && c.religion === 'islam' && text){
+      const tail = _meaningTail(tag, text, c);
+      if(tail){
+        // Append the interpretation in italic muted form via a separator
+        finalText = text + ' ⟡ ' + tail;
+      }
+      // Turning-point markers
+      const t = (text || '').toLowerCase();
+      const isTurningPoint =
+           t.indexOf('you married') >= 0
+        || t.indexOf('nikah concluded') >= 0
+        || t.indexOf('gave birth') >= 0
+        || t.indexOf('you had a baby') >= 0
+        || t.indexOf('your first child') >= 0
+        || (tag === 'death' && (t.indexOf('mother') >= 0 || t.indexOf('father') >= 0))
+        || t.indexOf('first job') >= 0
+        || t.indexOf('started a new career') >= 0
+        || t.indexOf('tawbah made') >= 0
+        || t.indexOf('hajj') >= 0
+        || t.indexOf('hafiz') >= 0;
+      if(isTurningPoint){
+        finalTag = 'milestone';
+        finalText = '◆ ' + finalText;
+      }
+    }
+    return _orig.call(this, finalTag, finalText, fx);
+  };
+})();
+
+// ─── Trajectory commentary — every 5 years, detect a clear shift
+//  in iman / sakina / kabair and surface a defining-you event.
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    if(c.age % 5 !== 0) return;
+    if(!c._lastTraj){ c._lastTraj = _trajectorySnapshot(c); return; }
+    const now = _trajectorySnapshot(c);
+    const dIman   = now.iman   - c._lastTraj.iman;
+    const dSakina = now.sakina - c._lastTraj.sakina;
+    const dKabair = now.kabair - c._lastTraj.kabair;
+    let line = null;
+    if(dIman >= 15 && dKabair === 0){
+      line = '◆ Five years on, your discipline is starting to define you. People notice without saying.';
+    } else if(dIman <= -15){
+      line = '◆ Five years on, the practice has thinned. You are not who you were — but the door back is the same width.';
+    } else if(dKabair >= 5){
+      line = '◆ The shortcuts add up. A reputation is gathering — not the one you would have chosen.';
+    } else if(dSakina >= 20){
+      line = '◆ Something has settled inside. Sakina is doing its slow work.';
+    } else if(dSakina <= -20){
+      line = '◆ The world has gotten louder inside you. Even the wins don\'t land the way they used to.';
+    } else if(now.halal && now.iman >= 70){
+      line = '◆ You\'ve held the line for years now. Quiet consistency is its own kind of barakah.';
+    }
+    if(line) pushEvent('milestone', line);
+    c._lastTraj = now;
+  };
+})();
+
+// ─── Skewed volatility — kabair-heavy years carry more dice for
+//  misfortune; high-iman years carry more stability. Quiet,
+//  asymmetric — the haram path is faster-but-volatile by design.
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive || c.age < 18) return;
+    const kabair = c.kabairFlags ? Object.values(c.kabairFlags).reduce((s,n)=>s+n,0) : 0;
+
+    // High-kabair volatility — random misfortune dice
+    if(kabair >= 4 && Math.random() < 0.10){
+      const hits = [
+        {fx:'fine',        amt:[1000, 6000], t:'A surprise tax / regulatory fine landed. The paperwork was correct on the surface — but the auditor kept asking.'},
+        {fx:'theft',       amt:[500, 4000],  t:'Something of yours was stolen — they took only what wasn\'t protected.'},
+        {fx:'health',      amt:[300, 2000],  t:'A sudden health scare — bloodwork came back unsettled. Tests cost.'},
+        {fx:'scandal',     amt:[0, 0],       t:'A rumour about you started circulating. You\'re not sure where it began.'},
+        {fx:'betrayal',    amt:[200, 3000],  t:'A friend you trusted asked for "a small favour" — it cost more than the favour was worth.'},
+      ];
+      const h = hits[Math.floor(Math.random() * hits.length)];
+      const amt = h.amt[0] + Math.floor(Math.random() * (h.amt[1] - h.amt[0] + 1));
+      if(amt > 0){ c.money = Math.max(0, c.money - amt); }
+      c.happiness = clamp(c.happiness - 6, 0, 100);
+      if(h.fx === 'scandal') c.karma = clamp(c.karma - 5, 0, 100);
+      pushEvent('bad', '🎲 ' + h.t + (amt > 0 ? ' (-' + fmtMoney(amt) + ')' : ''));
+    }
+
+    // High-iman stability — protective dice
+    if((c.iman||0) >= 75 && (c.flags||{}).halalRizqOnly && Math.random() < 0.07){
+      const goods = [
+        'A friend recommended you for an opportunity — quiet, no spotlight, just trust.',
+        'A small business decision worked out because you took your time and didn\'t rush.',
+        'Someone you helped years ago surfaced to return the kindness in a way you needed.',
+        'A health check came back clean — the discipline of years showing in the body.',
+      ];
+      const g = goods[Math.floor(Math.random() * goods.length)];
+      const lift = 100 + Math.floor(Math.random() * 900);
+      c.money += lift;
+      c.happiness = clamp(c.happiness + 4, 0, 100);
+      pushEvent('good', '🌿 ' + g + ' (+' + fmtMoney(lift) + ')');
+    }
+  };
+})();
+
+// ─── Turning-point CSS — make milestone events visually unmistakable
+//  in the event log. The ◆ prefix tags them; this CSS treats those
+//  entries with stronger emphasis.
+(function(){
+  const style = document.createElement('style');
+  style.textContent =
+      '.year-event:not(:has(*))[data-tp]{padding-left:14px;}\n'
+    + '.year-event{transition:background 0.2s;}\n'
+    + '.year-card .year-event{position:relative;}\n'
+    /* Apply emphasis to any event-text containing the turning-point diamond */
+    + '.year-event{font-size:13.5px;}\n';
+  document.head.appendChild(style);
+
+  // Post-render walk: any event-text that starts with ◆ gets a turning-point styling
+  if(typeof renderAll !== 'function') return;
+  const _orig = renderAll;
+  renderAll = function(){
+    _orig.apply(this, arguments);
+    setTimeout(function(){
+      document.querySelectorAll('.year-event').forEach(function(el){
+        if(el.dataset.tpStyled) return;
+        if((el.textContent || '').trim().startsWith('◆')){
+          el.style.borderLeft = '3px solid var(--gold)';
+          el.style.paddingLeft = '10px';
+          el.style.background = 'rgba(212,184,106,0.06)';
+          el.style.fontFamily = 'Georgia,serif';
+          el.style.fontStyle = 'italic';
+          el.style.fontSize = '14px';
+          el.style.color = 'var(--accent)';
+          el.style.lineHeight = '1.55';
+          el.dataset.tpStyled = '1';
+        } else if((el.textContent || '').indexOf(' ⟡ ') >= 0){
+          // Meaning-tail: render the post-⟡ portion in muted italic
+          if(!el.dataset.tailWired){
+            const html = el.innerHTML;
+            const idx = html.indexOf(' ⟡ ');
+            if(idx > 0){
+              const head = html.substring(0, idx);
+              const tail = html.substring(idx + 3);
+              el.innerHTML = head
+                + '<div style="margin-top:4px;font-family:Georgia,serif;font-style:italic;font-size:12px;color:var(--accent2);opacity:0.85;line-height:1.5;">' + tail + '</div>';
+              el.dataset.tailWired = '1';
+            }
+          }
+        }
+      });
+    }, 0);
+  };
+})();
+
+// ─── Identity-marked action labels — at runtime, find the most
+//  morally-loaded action buttons and prepend the path-tag they
+//  represent. The action backends stay the same; only the label
+//  framing changes so the player sees what they're choosing.
+(function(){
+  if(typeof renderActionBar !== 'function') return;
+  const _orig = renderActionBar;
+  renderActionBar = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    setTimeout(function(){
+      const buttons = document.querySelectorAll('.act-btn, .action-btn, button');
+      buttons.forEach(function(btn){
+        if(btn.dataset.identityMarked) return;
+        const text = (btn.textContent || '').trim().toLowerCase();
+        // Crime menu button
+        if(text === '🦹 crime' || text === 'crime'){
+          btn.title = 'Haram path — fast money, kabair, naslBurden';
+          btn.style.borderColor = 'rgba(184,88,68,0.4)';
+        }
+        // Activities → party is haram-leaning
+        if(text === '🎉 go out partying' || text === 'go out partying'){
+          btn.innerHTML = '🎉 Party <span style="font-size:9px;color:var(--crimson);">[unrestricted path]</span>';
+        }
+        if(text.indexOf('volunteer') >= 0){
+          btn.innerHTML = btn.innerHTML + ' <span style="font-size:9px;color:var(--green);">[khidmah]</span>';
+        }
+        btn.dataset.identityMarked = '1';
+      });
+    }, 0);
+  };
+})();
+
 </script>
 </body>
 </html>

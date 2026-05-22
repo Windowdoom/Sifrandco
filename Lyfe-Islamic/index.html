@@ -16044,13 +16044,6 @@ function resolveEthicalChoice(pick){
     'Iman ' + (fx.iman>=0?'+':'') + (fx.iman||0) + '.');
   if(opts.onChoose) opts.onChoose(pick);
   closeModal();
-  if(opts.topic){
-    // Offer reflection screen — dismissible
-    setTimeout(() => {
-      const proceed = confirm('Open the reflection (Quran + Sahih hadith) on this topic?\n\nClick OK to read, Cancel to skip.');
-      if(proceed) openReflection(opts.topic);
-    }, 150);
-  }
   renderAll(); saveLife();
 }
 

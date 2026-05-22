@@ -19194,12 +19194,14 @@ Object.assign(ISLAMIC_RULINGS, {
   };
 })();
 
-// ─── Madhab selection — surfaced once when the player turns 16, then
-//  always changeable from the dating preferences modal.
+// ─── Madhab selection — surfaced once when the player turns 13 (age of
+//  taklif / approaching puberty), then always changeable from the dating
+//  preferences modal. Moved to 13 so it doesn't overlap with the
+//  Alternate Reality fork at age 16.
 function chooseMadhab(){
   const c = LIFE.char;
   let html = '<div style="padding:14px 16px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:6px;margin-bottom:14px;font-size:13px;line-height:1.6;color:#cfe8d4;">'
-    + 'Pick the school of fiqh (madhab) your family raised you in. All four are valid Sunni traditions. The choice changes the rules of nikah (wali requirement, minimum mahr) and a few practical points elsewhere.'
+    + 'You\'re approaching the age of taklif — personal religious responsibility. Pick the school of fiqh (madhab) your family raised you in. All four are valid Sunni traditions. The choice shapes the rules of nikah, mahr, and a few practical points of law.'
     + '</div>';
   Object.keys(MADHABS).forEach(k => {
     const m = MADHABS[k];
@@ -19270,7 +19272,7 @@ function setMarriagePath(path){
     _orig.apply(this, arguments);
     const c = LIFE.char;
     if(!c || c.religion !== 'islam' || !c.alive) return;
-    if(c.age === 16 && !c.madhab && !((c.flags||{}).madhabPromptShown)){
+    if(c.age === 13 && !c.madhab && !((c.flags||{}).madhabPromptShown)){
       c.flags = c.flags || {}; c.flags.madhabPromptShown = true;
       setTimeout(chooseMadhab, 600);
     } else if(c.age === 18 && c.marriagePath == null && !((c.flags||{}).marriagePathPromptShown)){
@@ -20452,6 +20454,501 @@ function showDefiningMomentBanner(title, leftLabel, leftDesc, rightLabel, rightD
     pushEvent('milestone', '◆ Two lives stitched into one contract. The Prophet ﷺ said: "Whoever marries has completed half his religion." (Bayhaqi, hasan)');
     return r;
   };
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+//  HALAL / HARAM / SECULAR  —  Three-tier classification on all actions
+//
+//  Every significant action in the game is tagged. The tag:
+//   • Shows a compact badge so the player always knows where they stand
+//   • Feeds c.flags.halalLegacy / c.flags.haramLegacy counters
+//   • Those counters shape the starting iman of the player's children
+//     (nasl — the Islamic concept of protecting one's lineage)
+// ═══════════════════════════════════════════════════════════════════════
+
+// ─── Map existing Islamic verdict strings to the 3-tier system
+function hhsTier(verdict){
+  if(!verdict) return 'secular';
+  const v = verdict.toLowerCase();
+  if(v === 'haram' || v === 'makruh') return 'haram';
+  if(v === 'wajib' || v === 'mustahabb' || v === 'khidmah' || v === 'ilm' || v === 'dawa') return 'halal';
+  return 'secular'; // mubah, differing-views, depends, siyasah, qital, etc.
+}
+
+// ─── Compact HHS badge (Halal / Haram / Secular)
+function hhsBadge(verdict, extraStyle){
+  const tier = hhsTier(verdict);
+  const cfg = {
+    halal:   {label:'Halal',   color:'#4ade80', bg:'rgba(74,222,128,0.08)',  border:'rgba(74,222,128,0.30)'},
+    haram:   {label:'Haram',   color:'#f87171', bg:'rgba(248,113,113,0.08)', border:'rgba(248,113,113,0.30)'},
+    secular: {label:'Secular', color:'#94a3b8', bg:'rgba(148,163,184,0.06)', border:'rgba(148,163,184,0.20)'},
+  }[tier];
+  return '<span style="display:inline-flex;align-items:center;padding:1px 7px;border-radius:20px;'
+    + 'font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-family:var(--font-m);'
+    + 'color:' + cfg.color + ';background:' + cfg.bg + ';border:1px solid ' + cfg.border + ';'
+    + (extraStyle||'') + '">' + cfg.label + '</span>';
+}
+
+// ─── Record a moral action to the nasl legacy counters
+function recordNaslAction(tier){
+  const c = LIFE && LIFE.char;
+  if(!c) return;
+  c.flags = c.flags || {};
+  if(tier === 'halal')  c.flags.halalLegacy = (c.flags.halalLegacy || 0) + 1;
+  if(tier === 'haram')  c.flags.haramLegacy = (c.flags.haramLegacy || 0) + 1;
+}
+
+// ─── Extend initIslamicChild to apply nasl legacy from parent
+(function(){
+  const _origChild = initIslamicChild;
+  if(typeof _origChild !== 'function') return;
+  initIslamicChild = function(kid, parentChar){
+    _origChild(kid, parentChar);
+    if(!kid || !parentChar || parentChar.religion !== 'islam') return;
+    const halal  = (parentChar.flags && parentChar.flags.halalLegacy) || 0;
+    const haram  = (parentChar.flags && parentChar.flags.haramLegacy) || 0;
+    const net    = halal - haram; // positive = righteous legacy
+    const bonus  = Math.floor(clamp(net * 0.4, -15, 12));
+    kid.iman     = clamp((kid.iman || 40) + bonus, 5, 95);
+    if(net >= 10) {
+      kid._naslBlessing = true; // flag for birth event text
+    } else if(net <= -10){
+      kid._naslBurden   = true;
+    }
+  };
+})();
+
+// ─── Activities — add HHS classification and Islamic extras
+//  Patch openActivities to show tier badges and a masjid option.
+(function(){
+  if(typeof openActivities !== 'function') return;
+  const _orig = openActivities;
+  // HHS classification per activity
+  const ACT_TIERS = {
+    gym:       'secular',
+    library:   'secular',
+    meditate:  'secular',
+    doctor:    'secular',
+    salon:     'secular',
+    party:     'haram',   // free-mixing + likely alcohol exposure
+    volunteer: 'halal',
+    church:    'secular', // mubah for a non-Muslim; for Muslim → secular (not Islamic worship)
+    masjid:    'halal',
+    quran:     'halal',
+    sadaqah:   'halal',
+    fast:      'halal',
+  };
+  // Extra Islamic activities only shown for Muslim characters
+  const ISLAMIC_ACTS = [
+    {id:'masjid',  name:'Visit the Masjid',        ico:'🕌', cost:0,   fx:{iman:+4, sakina:+3, happiness:+3},        text:'Prayed in the masjid and stayed for a lesson.'},
+    {id:'quran',   name:'Recite Qur\'an (1 hour)', ico:'📖', cost:0,   fx:{iman:+5, sakina:+4},                      text:'Sat with the Book. Each letter carries ten rewards.'},
+    {id:'sadaqah', name:'Give Sadaqah',             ico:'💰', cost:100, fx:{iman:+3, barakah:+4, karma:+6, happiness:+4}, text:'Gave sadaqah. Charity does not diminish wealth. (Sahih Muslim 2588)'},
+    {id:'fast',    name:'Nafl Fast',                ico:'🌙', cost:0,   fx:{iman:+4, health:+2, sakina:+3},           text:'Fasted voluntarily. Every act of taqwa is its own provision.'},
+  ];
+
+  openActivities = function(){
+    const c = LIFE.char;
+    const isMuslim = c && c.religion === 'islam';
+
+    const baseActs = [
+      {id:'gym',      name:'Hit the Gym',             ico:'🏋️', cost:50,  fx:{health:+4, looks:+2},                text:'Sweat through 90 minutes. Health +4, Looks +2'},
+      {id:'library',  name:'Study at the Library',    ico:'📚', cost:0,   fx:{smarts:+3},                          text:'Read for hours. Smarts +3'},
+      {id:'meditate', name:'Meditate',                ico:'🧘', cost:0,   fx:{happiness:+5, health:+1},             text:'Settle the mind. Happiness +5'},
+      {id:'doctor',   name:'See a Doctor',            ico:'🩺', cost:300, fx:{health:+10},                         text:'Full check-up. Health +10'},
+      {id:'salon',    name:'Spa & Salon',             ico:'💆', cost:200, fx:{looks:+5, happiness:+5},             text:'Pampering day. Looks +5'},
+      {id:'party',    name:'Go Out Partying',         ico:'🎉', cost:120, fx:{happiness:+8, health:-3},             text:'Drink the night away. Happiness +8, Health −3'},
+      {id:'volunteer',name:'Volunteer at a Shelter',  ico:'💝', cost:0,   fx:{karma:+8, happiness:+3},              text:'Give back. Karma +8'},
+      {id:'church',   name:'Worship Service',         ico:'⛪', cost:20,  fx:{karma:+3, happiness:+4},              text:'Find peace. Karma +3'},
+    ];
+
+    const acts = isMuslim ? [...baseActs, ...ISLAMIC_ACTS] : baseActs;
+
+    let html = '';
+    acts.forEach(a => {
+      const tier   = ACT_TIERS[a.id] || 'secular';
+      const badge  = hhsBadge(tier === 'halal' ? 'mustahabb' : tier === 'haram' ? 'haram' : 'mubah');
+      const isHaramAct = tier === 'haram' && isMuslim;
+      html += '<div class="card" style="' + (isHaramAct ? 'border-color:rgba(248,113,113,0.35);' : '') + '">'
+        + '<div class="card-ico">' + a.ico + '</div>'
+        + '<div class="card-body"><div class="card-title">' + a.name + '</div>'
+        + '<div class="card-meta" style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:4px;">'
+        +   badge
+        +   (isHaramAct ? '<span style="font-size:10px;color:#f87171;font-style:italic;">Affects iman &amp; nasl</span>' : '')
+        + '</div>'
+        + '<div class="card-meta">' + a.text + '</div></div>'
+        + '<div class="card-act">'
+        + (a.cost ? '<div class="card-pay neg">−' + fmtMoney(a.cost) + '</div>' : '')
+        + '<button class="card-btn' + (tier==='halal'?' green':'') + '" onclick="doActivity(\'' + a.id + '\')">Do It</button>'
+        + '</div></div>';
+    });
+    openModal('Mind & Body', html);
+  };
+
+  // ─── Extend doActivity to handle Islamic actions + nasl tracking
+  const _origDo = doActivity;
+  doActivity = function(id){
+    const c = LIFE && LIFE.char;
+    const isMuslim = c && c.religion === 'islam';
+    const tier = ACT_TIERS[id] || 'secular';
+    // Islamic-only activities handled here
+    const islamicMap = {
+      masjid:  {cost:0,   fx:{iman:+4, sakina:+3, happiness:+3}, text:'Prayed in the masjid and stayed for a lesson.'},
+      quran:   {cost:0,   fx:{iman:+5, sakina:+4},               text:'Recited the Qur\'an. Each letter carries ten rewards.'},
+      sadaqah: {cost:100, fx:{iman:+3, barakah:+4, karma:+6, happiness:+4}, text:'Gave sadaqah. Charity does not diminish wealth. (Sahih Muslim 2588)'},
+      fast:    {cost:0,   fx:{iman:+4, health:+2, sakina:+3},    text:'Fasted voluntarily. Taqwa is its own provision.'},
+    };
+    if(islamicMap[id] && c){
+      const a = islamicMap[id];
+      if(a.cost && c.money < a.cost){ toast('Not enough money.'); return; }
+      c.money = (c.money || 0) - (a.cost || 0);
+      if(a.fx.iman)     c.iman     = clamp((c.iman||0)     + a.fx.iman,     0, 100);
+      if(a.fx.sakina)   c.sakina   = clamp((c.sakina||0)   + a.fx.sakina,   0, 100);
+      if(a.fx.barakah)  c.barakah  = clamp((c.barakah||0)  + a.fx.barakah,  0, 100);
+      if(a.fx.health)   c.health   = clamp(c.health + a.fx.health,   0, 100);
+      if(a.fx.happiness)c.happiness= clamp(c.happiness + a.fx.happiness, 0, 100);
+      if(a.fx.karma)    c.karma    = clamp(c.karma + a.fx.karma, 0, 100);
+      recordNaslAction('halal');
+      pushEvent('good', a.text + (a.cost ? ' (−' + fmtMoney(a.cost) + ')' : ''), a.fx);
+      closeModal(); renderAll(); saveLife();
+      return;
+    }
+    // For base activities, track nasl then call original
+    if(isMuslim) recordNaslAction(tier);
+    // Extra iman penalty for haram activities when Muslim
+    if(isMuslim && tier === 'haram' && c){
+      c.iman = clamp((c.iman || 0) - 6, 0, 100);
+      c.kabairFlags = c.kabairFlags || {};
+      c.kabairFlags.khamr = (c.kabairFlags.khamr || 0) + 1;
+      // The base doActivity will also apply the happiness boost — leave it
+    }
+    _origDo.apply(this, arguments);
+  };
+})();
+
+// ─── House / mortgage — flag riba warning for Muslim buyers
+(function(){
+  if(typeof openShop !== 'function') return;
+  const _origShop = openShop;
+  openShop = function(){
+    _origShop.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    // Walk rendered house cards and inject riba note
+    setTimeout(function(){
+      const modal = document.getElementById('modal');
+      if(!modal || !modal.classList.contains('show')) return;
+      modal.querySelectorAll('.card').forEach(card => {
+        if(card.dataset.ribaWired) return;
+        const titleEl = card.querySelector('.card-title');
+        if(!titleEl) return;
+        const meta = card.querySelector('.card-meta');
+        if(!meta) return;
+        // Inject a riba-awareness note on every house card for Muslim chars
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'margin-top:5px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;';
+        wrap.innerHTML = hhsBadge('secular')
+          + '<span style="font-size:10px;color:#94a3b8;font-style:italic;">'
+          + 'Conventional mortgage = riba. Pay cash or seek Islamic finance (murabaha/ijara).'
+          + '</span>'
+          + infoButton('riba');
+        meta.parentNode.insertBefore(wrap, meta.nextSibling);
+        card.dataset.ribaWired = '1';
+      });
+    }, 80);
+  };
+})();
+
+// ─── ETHICAL_FORKS — add nasl tracking to the existing fork system
+(function(){
+  if(typeof rollRandomEthicalFork !== 'function') return;
+  const _origFork = rollRandomEthicalFork;
+  rollRandomEthicalFork = function(){
+    // The fork fires openModal with choice buttons that call forkChoose(id, choice).
+    // We extend forkChoose instead.
+    _origFork.apply(this, arguments);
+  };
+
+  // Patch forkChoose to record halal/haram choice
+  if(typeof forkChoose !== 'function') return;
+  const _origFC = forkChoose;
+  forkChoose = function(id, choice){
+    const c = LIFE && LIFE.char;
+    if(c && c.religion === 'islam'){
+      recordNaslAction(choice === 'halal' ? 'halal' : 'haram');
+    }
+    _origFC.apply(this, [id, choice]);
+  };
+})();
+
+// ─── Finance / investments — riba flag on savings & bonds
+//  Patch openInvestments (or openFinance) to inject HHS badges.
+(function(){
+  const patchTarget = typeof openInvestments === 'function' ? 'openInvestments'
+                    : typeof openFinance     === 'function' ? 'openFinance'
+                    : null;
+  if(!patchTarget) return;
+  const _orig = window[patchTarget] || (typeof openInvestments !== 'undefined' ? openInvestments : openFinance);
+  const fn = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    setTimeout(function(){
+      const modal = document.getElementById('modal');
+      if(!modal || !modal.classList.contains('show')) return;
+      // Identify known haram instrument cards by title keywords
+      const HARAM_KEYWORDS = ['bond','savings account','interest','cd account','certificate of deposit','fixed deposit','loan','mortgage'];
+      const HALAL_KEYWORDS  = ['sukuk','murabaha','ijara','mudaraba','sharia','halal','zakat'];
+      modal.querySelectorAll('.card').forEach(card => {
+        if(card.dataset.hhsWired) return;
+        const titleEl = card.querySelector('.card-title');
+        if(!titleEl) return;
+        const title = titleEl.textContent.toLowerCase();
+        const meta  = card.querySelector('.card-meta');
+        if(!meta) return;
+        let tier = 'secular';
+        if(HARAM_KEYWORDS.some(k => title.includes(k))) tier = 'haram';
+        if(HALAL_KEYWORDS.some(k => title.includes(k)))  tier = 'halal';
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'margin-top:4px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;';
+        wrap.innerHTML = hhsBadge(tier === 'haram' ? 'haram' : tier === 'halal' ? 'mustahabb' : 'mubah')
+          + (tier === 'haram'
+              ? '<span style="font-size:10px;color:#f87171;font-style:italic;">Involves riba — seek halal alternatives.</span>' + infoButton('riba')
+              : '');
+        meta.parentNode.insertBefore(wrap, meta.nextSibling);
+        card.dataset.hhsWired = '1';
+      });
+    }, 80);
+  };
+  if(patchTarget === 'openInvestments') openInvestments = fn;
+  else openFinance = fn;
+})();
+
+// ─── Nasl (progeny) legacy display — shown in stats block for Muslim chars
+//  Appends a compact legacy bar below the existing Islamic stats.
+(function(){
+  if(typeof renderAll !== 'function') return;
+  const _origRender = renderAll;
+  renderAll = function(){
+    _origRender.apply(this, arguments);
+    try{
+      const c = LIFE && LIFE.char;
+      if(!c || c.religion !== 'islam' || !c.alive) return;
+      const statsBlock = document.getElementById('stats-block');
+      if(!statsBlock) return;
+      if(statsBlock.querySelector('#nasl-legacy-bar')) return; // don't duplicate
+      const halal  = (c.flags && c.flags.halalLegacy) || 0;
+      const haram  = (c.flags && c.flags.haramLegacy) || 0;
+      const net    = halal - haram;
+      if(halal === 0 && haram === 0) return; // nothing to show yet
+      const total  = halal + haram || 1;
+      const pct    = Math.round((halal / total) * 100);
+      const label  = net >= 10  ? 'Righteous Legacy'
+                   : net >= 3   ? 'Balanced Path'
+                   : net >= -2  ? 'Mixed Record'
+                   : net >= -9  ? 'Heavy Burden'
+                   :              'Nasl at Risk';
+      const color  = net >= 3 ? '#4ade80' : net >= -2 ? '#facc15' : '#f87171';
+      const bar = document.createElement('div');
+      bar.id = 'nasl-legacy-bar';
+      bar.style.cssText = 'margin:10px 0 0;padding:8px 10px;background:rgba(15,25,20,0.6);border:1px solid rgba(201,169,97,0.15);border-radius:8px;';
+      bar.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">'
+        + '<span style="font-size:10px;font-family:var(--font-m);letter-spacing:.12em;color:var(--accent);text-transform:uppercase;">Nasl Legacy</span>'
+        + '<span style="font-size:10px;color:' + color + ';font-weight:600;">' + label + '</span>'
+        + '</div>'
+        + '<div style="height:4px;background:rgba(248,113,113,0.25);border-radius:2px;overflow:hidden;">'
+        +   '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:2px;transition:width 0.4s ease;"></div>'
+        + '</div>'
+        + '<div style="display:flex;justify-content:space-between;margin-top:4px;">'
+        +   '<span style="font-size:9px;color:#4ade80;">☑ ' + halal + ' halal</span>'
+        +   '<span style="font-size:9px;color:#f87171;">' + haram + ' haram ☒</span>'
+        + '</div>';
+      statsBlock.appendChild(bar);
+    } catch(e){ /* silent — non-critical UI */ }
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+//  UI MODERNISATION — Cleaner, more aerodynamic aesthetic
+//  Applied as a late-stage CSS override so it wins over all earlier rules.
+// ═══════════════════════════════════════════════════════════════════════
+(function(){
+  const style = document.createElement('style');
+  style.id = 'ui-modern';
+  style.textContent = `
+/* ── Design tokens ─────────────────────────────────────────────────── */
+:root{
+  --r2:   10px;
+  --r3:   14px;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-modal:0 8px 40px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.35);
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.card{
+  border-radius: var(--r2) !important;
+  border: 1px solid rgba(201,169,97,0.12) !important;
+  background: rgba(18,28,22,0.82) !important;
+  box-shadow: var(--shadow-card) !important;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s !important;
+  backdrop-filter: blur(6px);
+}
+.card:hover{
+  border-color: rgba(201,169,97,0.30) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.45), 0 1px 4px rgba(201,169,97,0.08) !important;
+  transform: translateY(-1px);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────── */
+.card-btn, .tb-btn, .act-btn, .action-btn, .intro-start{
+  border-radius: 20px !important;
+  font-family: var(--font-m) !important;
+  letter-spacing: .06em !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 6px 16px !important;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.30) !important;
+}
+.card-btn:hover:not(:disabled), .tb-btn:hover, .act-btn:hover, .intro-start:hover{
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.40) !important;
+}
+.card-btn.green{ background: linear-gradient(135deg,#22c55e,#16a34a) !important; color:#fff !important; }
+.card-btn.danger{ background: linear-gradient(135deg,#ef4444,#b91c1c) !important; color:#fff !important; }
+.card-btn:not(.green):not(.danger):not(.muted){
+  background: linear-gradient(135deg,#c9a961,#a07830) !important;
+  color: #0a0e08 !important;
+}
+
+/* ── Topbar ─────────────────────────────────────────────────────────── */
+#topbar{
+  border-bottom: 1px solid rgba(201,169,97,0.10) !important;
+  backdrop-filter: blur(12px) !important;
+  background: rgba(10,20,16,0.88) !important;
+  padding: 0 18px !important;
+  gap: 8px !important;
+}
+.tb-chip{
+  border-radius: 20px !important;
+  padding: 3px 10px !important;
+  font-size: 11px !important;
+  border: 1px solid rgba(201,169,97,0.15) !important;
+  background: rgba(201,169,97,0.06) !important;
+  transition: background 0.15s !important;
+}
+.tb-btn{
+  border-radius: 20px !important;
+  padding: 4px 12px !important;
+  font-size: 10.5px !important;
+  background: transparent !important;
+  border: 1px solid rgba(201,169,97,0.25) !important;
+  color: var(--accent) !important;
+}
+.tb-btn:hover{ background: rgba(201,169,97,0.10) !important; }
+.tb-btn.warn{ border-color: rgba(248,113,113,0.35) !important; color: #f87171 !important; }
+.tb-btn.warn:hover{ background: rgba(248,113,113,0.10) !important; }
+
+/* ── Modal ──────────────────────────────────────────────────────────── */
+#modal .modal-box, .modal-box{
+  border-radius: var(--r3) !important;
+  border: 1px solid rgba(201,169,97,0.14) !important;
+  box-shadow: var(--shadow-modal) !important;
+  background: #0c1a12 !important;
+}
+.modal-head{
+  border-bottom: 1px solid rgba(201,169,97,0.10) !important;
+  padding: 14px 18px 12px !important;
+  background: rgba(10,20,16,0.9) !important;
+  border-radius: var(--r3) var(--r3) 0 0 !important;
+}
+#modal-title{
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: .02em !important;
+}
+.modal-body{ padding: 18px !important; }
+
+/* ── Column panels ──────────────────────────────────────────────────── */
+.col{
+  border-radius: var(--r2) !important;
+  border: 1px solid rgba(201,169,97,0.08) !important;
+  background: rgba(10,18,14,0.70) !important;
+  backdrop-filter: blur(8px) !important;
+}
+.col-head{
+  border-bottom: 1px solid rgba(201,169,97,0.08) !important;
+  font-size: 10px !important;
+  letter-spacing: .20em !important;
+  padding: 8px 14px !important;
+  background: rgba(201,169,97,0.04) !important;
+}
+
+/* ── Stat bars ──────────────────────────────────────────────────────── */
+.stat-fill{
+  border-radius: 3px !important;
+  transition: width 0.35s cubic-bezier(.4,0,.2,1) !important;
+}
+
+/* ── Timeline events ────────────────────────────────────────────────── */
+.tl-item{
+  border-radius: 8px !important;
+  padding: 7px 10px !important;
+  margin-bottom: 5px !important;
+  border-left-width: 2px !important;
+}
+
+/* ── Tags / chips ───────────────────────────────────────────────────── */
+.card-tag{ border-radius: 20px !important; font-size: 9px !important; padding: 1px 7px !important; }
+.ruling-chip{ border-radius: 20px !important; }
+
+/* ── Intro screen ───────────────────────────────────────────────────── */
+#intro{ backdrop-filter: blur(2px); }
+.intro-form input, .intro-form select{
+  border-radius: 8px !important;
+  border: 1px solid rgba(201,169,97,0.20) !important;
+  background: rgba(10,18,14,0.90) !important;
+  color: var(--t1) !important;
+  font-family: var(--font-s) !important;
+  padding: 9px 12px !important;
+  font-size: 13px !important;
+  outline: none !important;
+  transition: border-color 0.15s !important;
+}
+.intro-form input:focus, .intro-form select:focus{
+  border-color: rgba(201,169,97,0.50) !important;
+}
+.intro-start{
+  border-radius: 24px !important;
+  padding: 10px 28px !important;
+  font-size: 12px !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+  background: linear-gradient(135deg,#c9a961,#a07830) !important;
+  color: #0a0e08 !important;
+  border: none !important;
+  box-shadow: 0 2px 12px rgba(201,169,97,0.25), 0 1px 3px rgba(0,0,0,0.30) !important;
+}
+.intro-start.muted{ background: rgba(201,169,97,0.12) !important; color: var(--t2) !important; box-shadow: none !important; }
+
+/* ── Scrollbars ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar{ width:4px; height:4px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:rgba(201,169,97,0.22); border-radius:2px; }
+::-webkit-scrollbar-thumb:hover{ background:rgba(201,169,97,0.40); }
+
+/* ── Tab nav ────────────────────────────────────────────────────────── */
+.tab, .col-tab{
+  border-radius: 20px !important;
+  padding: 4px 12px !important;
+  font-size: 10.5px !important;
+  transition: background 0.15s, color 0.15s !important;
+}
+.tab.active, .col-tab.active{
+  background: rgba(201,169,97,0.18) !important;
+  color: var(--accent) !important;
+}
+`;
+  document.head.appendChild(style);
 })();
 
 </script>

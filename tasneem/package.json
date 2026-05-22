@@ -2,7 +2,7 @@
   "name": "tasneem",
   "version": "0.1.0",
   "private": true,
-  "description": "Tasneem — an ad-free, telemetry-free Islamic worship companion. تَسْنِيم — Quran 83:27.",
+  "description": "Tasneem, an ad-free, telemetry-free Islamic worship companion. تَسْنِيم, Quran 83:27.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

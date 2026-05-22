@@ -37,7 +37,7 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
   return (
     <div className="pt-8 pb-6">
       <header className="px-6">
-        <Wordmark subtitle="A spring from which those near Allah drink — Q 83:27" />
+        <Wordmark subtitle="A spring from which those near Allah drink, Q 83:27" />
       </header>
 
       {/* Next prayer hero */}
@@ -74,7 +74,7 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
 
           {current && (
             <div className="mt-4 text-center text-[11px] text-paper-50/70">
-              Current window — <span className="text-gold-300">{current.label}</span>
+              Current window, <span className="text-gold-300">{current.label}</span>
             </div>
           )}
         </div>

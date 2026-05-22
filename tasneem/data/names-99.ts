@@ -1,4 +1,4 @@
-// The 99 Names (Asma' al-Husna) — order per the well-known Tirmidhi 3507 listing.
+// The 99 Names (Asma' al-Husna), order per the well-known Tirmidhi 3507 listing.
 // Hadith reference: Abu Hurairah reported the Prophet ﷺ said,
 // "Allah has ninety-nine names, one hundred less one. Whoever enumerates them will enter Paradise."
 // Sahih al-Bukhari 2736, Sahih Muslim 2677.

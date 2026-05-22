@@ -19,7 +19,7 @@ export default function Zakat() {
 
   const nisabGold = goldPricePerGram * 87.48;
   const nisabSilver = silverPricePerGram * 612.36;
-  const nisab = Math.min(nisabGold, nisabSilver); // majority view — lower threshold benefits the poor.
+  const nisab = Math.min(nisabGold, nisabSilver); // majority view, lower threshold benefits the poor.
 
   const totalAssets = cash + savings + goldHeld * goldPricePerGram + silverHeld * silverPricePerGram + investments + businessAssets;
   const zakatable = Math.max(0, totalAssets - debts);
@@ -54,7 +54,7 @@ export default function Zakat() {
         <Row label="Total zakatable wealth" value={zakatable} />
         <div className="gold-rule my-3" />
         <Row label="Zakat due (2.5%)" value={due} big />
-        {zakatable < nisab && <div className="mt-2 text-[11px] text-tayba-900/60 dark:text-paper-200/60">Below nisab — no zakat is due this year.</div>}
+        {zakatable < nisab && <div className="mt-2 text-[11px] text-tayba-900/60 dark:text-paper-200/60">Below nisab, no zakat is due this year.</div>}
       </div>
 
       <p className="text-[11px] text-tayba-900/55 dark:text-paper-200/55">

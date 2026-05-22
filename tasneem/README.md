@@ -1,20 +1,20 @@
 # Tasneem · تَسْنِيم
 
-> *"And its mixture is of Tasneem, a spring from which those near [to Allah] drink."* — **Quran 83:27**
+> *"And its mixture is of Tasneem, a spring from which those near [to Allah] drink."*, **Quran 83:27**
 
 An ad-free, telemetry-free Islamic worship companion. Runs on any device with a browser, installable as a PWA on iOS / Android / desktop.
 
 ## Identity
 
-**Name** — Tasneem (تَسْنِيم), the highest spring in Jannah, drunk pure by the *muqarrabun* (those nearest to Allah). The metaphor: an app that helps elevate daily worship to the highest.
+**Name**, Tasneem (تَسْنِيم), the highest spring in Jannah, drunk pure by the *muqarrabun* (those nearest to Allah). The metaphor: an app that helps elevate daily worship to the highest.
 
-**Palette** — the Prophet ﷺ's beloved colours plus a classical gold accent:
+**Palette**, the Prophet ﷺ's beloved colours plus a classical gold accent:
 
 | Token | Hex | Meaning |
 |---|---|---|
-| Tayba Green | `#0A5C36` | Deep emerald — the Prophet ﷺ loved green; green is the colour of Jannah's garments (Q 18:31) |
+| Tayba Green | `#0A5C36` | Deep emerald, the Prophet ﷺ loved green; green is the colour of Jannah's garments (Q 18:31) |
 | Madinah Green | `#1B7A4F` | Lighter accent |
-| Pure White | `#FAFAF7` | Warm white — *"Wear white clothes…"* (Abu Dawud 4061) |
+| Pure White | `#FAFAF7` | Warm white, *"Wear white clothes…"* (Abu Dawud 4061) |
 | Tasneem Gold | `#C9A961` | Muted classical gold |
 | Deep Gold | `#B8860B` | Ornamental highlights |
 | Night | `#0B1F17` | Dark-mode background |
@@ -23,11 +23,11 @@ An ad-free, telemetry-free Islamic worship companion. Runs on any device with a 
 
 - **Next.js 14** (App Router) + **React 18** + **TypeScript**
 - **Tailwind CSS** for the design system
-- **adhan** library for prayer-time calculations (BSD, by Batoul Apps — purely on-device math)
+- **adhan** library for prayer-time calculations (BSD, by Batoul Apps, purely on-device math)
 - **quran.com API** for Quran text & translations (Sahih International default)
 - **sunnah.com** links for all hadith citations
-- **PWA manifest** — installable, runs offline after first load
-- **localStorage** for all user state — nothing leaves the device
+- **PWA manifest**, installable, runs offline after first load
+- **localStorage** for all user state, nothing leaves the device
 
 ## Features (current scaffold)
 
@@ -46,11 +46,11 @@ An ad-free, telemetry-free Islamic worship companion. Runs on any device with a 
 | `/qada` | Make-up prayer tracker |
 | `/ramadan` | Suhoor / Iftar countdown + Laylat al-Qadr highlight on odd nights |
 | `/settings` | Calculation method, madhab, high-latitude rule, export/import |
-| `/donate` | One-time and monthly support — no premium tier |
+| `/donate` | One-time and monthly support, no premium tier |
 
 ## Authentication chain
 
-Every Quranic citation = quran.com (Sahih International default). Every hadith = sunnah.com with chapter and number. The methodology is identical to the verified references library in `../Lyfe-Islamic/REFERENCES.md` — only sahih and hasan hadith from the Six Books are quoted; no daif or mawdu narrations.
+Every Quranic citation = quran.com (Sahih International default). Every hadith = sunnah.com with chapter and number. The methodology is identical to the verified references library in `../Lyfe-Islamic/REFERENCES.md`, only sahih and hasan hadith from the Six Books are quoted; no daif or mawdu narrations.
 
 ## Running
 
@@ -64,8 +64,8 @@ Then open http://localhost:3000.
 
 ## Build for any device
 
-- **Web** — `npm run build && npm run start`. Deploy to Vercel/Netlify/Cloudflare Pages.
-- **iOS / Android / Desktop** — installable as a PWA from the browser. Wrap with **Capacitor** for app-store distribution when desired.
+- **Web**, `npm run build && npm run start`. Deploy to Vercel/Netlify/Cloudflare Pages.
+- **iOS / Android / Desktop**, installable as a PWA from the browser. Wrap with **Capacitor** for app-store distribution when desired.
 
 ## Privacy & ethics
 
@@ -77,4 +77,4 @@ Then open http://localhost:3000.
 
 ## License
 
-MIT — to remain free, forever.
+MIT, to remain free, forever.

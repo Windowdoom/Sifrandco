@@ -42,7 +42,7 @@ export default function LocationGate({ children }: Props) {
     <div className="card mx-4 mt-6 p-6">
       <h2 className="font-serif text-2xl text-tayba-700">Set your location</h2>
       <p className="mt-2 text-sm text-tayba-900/70">
-        Tasneem uses your location only on this device — never sent anywhere — to calculate prayer times and Qibla direction.
+        Tasneem uses your location only on this device, never sent anywhere, to calculate prayer times and Qibla direction.
       </p>
 
       <button onClick={request} disabled={loading} className="btn-primary mt-5 w-full">

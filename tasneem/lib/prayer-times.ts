@@ -19,12 +19,12 @@ export const DEFAULT_SETTINGS: UserSettings = {
 };
 
 export const CALCULATION_METHODS: { key: MethodKey; label: string; note: string }[] = [
-  { key: "MuslimWorldLeague",    label: "Muslim World League",      note: "Fajr 18°, Isha 17° — widely used worldwide" },
+  { key: "MuslimWorldLeague",    label: "Muslim World League",      note: "Fajr 18°, Isha 17°, widely used worldwide" },
   { key: "Egyptian",             label: "Egyptian General Authority", note: "Fajr 19.5°, Isha 17.5°" },
-  { key: "Karachi",              label: "University of Islamic Sciences, Karachi", note: "Fajr 18°, Isha 18° — South Asia" },
+  { key: "Karachi",              label: "University of Islamic Sciences, Karachi", note: "Fajr 18°, Isha 18°, South Asia" },
   { key: "UmmAlQura",            label: "Umm al-Qura, Makkah",      note: "Fajr 18.5°, Isha 90 min after Maghrib" },
   { key: "Dubai",                label: "Dubai",                    note: "Fajr 18.2°, Isha 18.2°" },
-  { key: "MoonsightingCommittee",label: "Moonsighting Committee",   note: "Fajr 18°, Isha 18° — seasonal adjustments" },
+  { key: "MoonsightingCommittee",label: "Moonsighting Committee",   note: "Fajr 18°, Isha 18°, seasonal adjustments" },
   { key: "NorthAmerica",         label: "ISNA (North America)",     note: "Fajr 15°, Isha 15°" },
   { key: "Kuwait",               label: "Kuwait",                   note: "Fajr 18°, Isha 17.5°" },
   { key: "Qatar",                label: "Qatar",                    note: "Fajr 18°, Isha 90 min after Maghrib" },

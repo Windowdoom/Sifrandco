@@ -41,7 +41,7 @@ export function gregorianToHijri(date: Date): HijriDate {
     day: hDay,
     month: hMonth,
     year: hYear,
-    monthName: HIJRI_MONTHS[hMonth - 1] ?? "—",
+    monthName: HIJRI_MONTHS[hMonth - 1] ?? " ",
   };
 }
 
@@ -49,7 +49,7 @@ export function formatHijri(d: HijriDate): string {
   return `${d.day} ${d.monthName} ${d.year} AH`;
 }
 
-// Important Islamic dates (tabular — verify locally for fiqh purposes)
+// Important Islamic dates (tabular, verify locally for fiqh purposes)
 export function islamicEventsForYear(hYear: number) {
   return [
     { name: "Ramadan begins",         month: 9,  day: 1  },

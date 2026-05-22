@@ -41,7 +41,7 @@ export default function Qada() {
 
       <p className="mt-6 text-[11px] text-tayba-900/55 dark:text-paper-200/55">
         Chip away with one or two qada with each daily prayer. The Prophet ﷺ said:
-        <em> "Whoever forgets a prayer or sleeps through it, its expiation is to pray it when he remembers it."</em> — Sahih al-Bukhari 597 · <a href="https://sunnah.com/bukhari:597" target="_blank" rel="noopener" className="text-gold-500 underline">verify</a>
+        <em> "Whoever forgets a prayer or sleeps through it, its expiation is to pray it when he remembers it."</em>, Sahih al-Bukhari 597 · <a href="https://sunnah.com/bukhari:597" target="_blank" rel="noopener" className="text-gold-500 underline">verify</a>
       </p>
     </div>
   );

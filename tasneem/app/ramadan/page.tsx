@@ -42,27 +42,27 @@ function Inner({ lat, lng }: { lat: number; lng: number }) {
         <div className="card p-4">
           <div className="text-[10px] uppercase tracking-[0.22em] text-gold-500">Suhoor ends</div>
           <div className="font-serif text-2xl mt-1">{fmtTime(times.fajr)}</div>
-          <div className="text-xs text-tayba-900/60">Fajr — stop eating</div>
+          <div className="text-xs text-tayba-900/60">Fajr, stop eating</div>
         </div>
         <div className="card p-4">
           <div className="text-[10px] uppercase tracking-[0.22em] text-gold-500">Iftar</div>
           <div className="font-serif text-2xl mt-1">{fmtTime(times.maghrib)}</div>
-          <div className="text-xs text-tayba-900/60">Maghrib — break fast</div>
+          <div className="text-xs text-tayba-900/60">Maghrib, break fast</div>
         </div>
       </div>
 
       {lastTen && (
         <div className="card p-5 border border-gold-400/60">
           <div className="text-[10px] uppercase tracking-[0.22em] text-gold-500">The last ten nights</div>
-          <h3 className="font-serif text-xl mt-1">Laylat al-Qadr {isOddNight ? "— odd night tonight" : ""}</h3>
+          <h3 className="font-serif text-xl mt-1">Laylat al-Qadr {isOddNight ? " odd night tonight" : ""}</h3>
           <p className="text-sm mt-2 text-tayba-900/75 dark:text-paper-200/75">
-            <em>"Seek Laylat al-Qadr in the odd nights of the last ten of Ramadan."</em> — Sahih al-Bukhari 2017 · <a target="_blank" rel="noopener" href="https://sunnah.com/bukhari:2017" className="text-gold-500 underline">verify</a>
+            <em>"Seek Laylat al-Qadr in the odd nights of the last ten of Ramadan."</em>, Sahih al-Bukhari 2017 · <a target="_blank" rel="noopener" href="https://sunnah.com/bukhari:2017" className="text-gold-500 underline">verify</a>
           </p>
           <div className="mt-3 rounded-xl bg-gold-50 p-3 text-sm dark:bg-gold-500/10">
             <div className="text-[10px] uppercase tracking-widest text-gold-500">Dua for Laylat al-Qadr</div>
             <div className="arabic text-2xl mt-1 text-tayba-700 dark:text-paper-50">اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي</div>
             <div className="text-xs mt-1 text-tayba-900/70 dark:text-paper-200/70">
-              "O Allah, You are Pardoning and You love to pardon, so pardon me." — Tirmidhi 3513 · <a target="_blank" rel="noopener" href="https://sunnah.com/tirmidhi:3513" className="text-gold-500 underline">verify</a>
+              "O Allah, You are Pardoning and You love to pardon, so pardon me.", Tirmidhi 3513 · <a target="_blank" rel="noopener" href="https://sunnah.com/tirmidhi:3513" className="text-gold-500 underline">verify</a>
             </div>
           </div>
         </div>

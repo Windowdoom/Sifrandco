@@ -20,7 +20,7 @@ export default function Names() {
         className="w-full rounded-2xl border border-paper-200 bg-paper-50 px-4 py-2.5 text-sm outline-none focus:border-gold-400 dark:border-tayba-700 dark:bg-tayba-800"/>
 
       <p className="mt-3 text-[11px] text-tayba-900/50 dark:text-paper-200/50">
-        Hadith: <em>"Allah has ninety-nine names, one hundred less one. Whoever enumerates them will enter Paradise."</em> — Sahih al-Bukhari 2736, Sahih Muslim 2677.
+        Hadith: <em>"Allah has ninety-nine names, one hundred less one. Whoever enumerates them will enter Paradise."</em>, Sahih al-Bukhari 2736, Sahih Muslim 2677.
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">

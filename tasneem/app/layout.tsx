@@ -10,7 +10,7 @@ const amiri = Amiri({ subsets: ["arabic"], weight: ["400", "700"], variable: "--
 export const metadata: Metadata = {
   title: "Tasneem · تَسْنِيم",
   description:
-    "Tasneem — a private, ad-free Islamic worship companion. Prayer times, Qibla, Quran, duas, dhikr — verified to the Six Books and quran.com.",
+    "Tasneem, a private, ad-free Islamic worship companion. Prayer times, Qibla, Quran, duas, dhikr, verified to the Six Books and quran.com.",
   manifest: "/manifest.json",
   applicationName: "Tasneem",
   appleWebApp: { capable: true, title: "Tasneem", statusBarStyle: "black-translucent" },

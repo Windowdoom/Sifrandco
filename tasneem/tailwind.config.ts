@@ -6,7 +6,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Tayba — the Prophet's ﷺ Madinah
+        // Tayba, the Prophet's ﷺ Madinah
         tayba: {
           50:  "#EAF3EC",
           100: "#CFE3D4",
@@ -19,7 +19,7 @@ const config: Config = {
           800: "#063521",
           900: "#0B1F17", // night
         },
-        // Tasneem gold — the spring of the muqarrabun
+        // Tasneem gold, the spring of the muqarrabun
         gold: {
           50:  "#FBF6E8",
           100: "#F2E6BD",

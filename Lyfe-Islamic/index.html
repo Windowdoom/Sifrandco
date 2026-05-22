@@ -18909,6 +18909,315 @@ function finalizeHalalNikah(mahr, modeKey){
   };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  HUMANITY PASS — beautiful repentance, parallel progression tracks,
+//  Ramadan UI atmosphere, warm cultural micro-events, Qur'an during grief.
+//  Pushes the edition from "rules + consequences" toward "lived, felt life".
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+// ─── Tawbah as rebuilding, not reset.
+//  The original performTawbah gives +15 iman instantly. We wrap it so
+//  that's the *start* of a 3-year rebuilding window. Iman climbs
+//  gradually each year of clean practice; backsliding cancels but
+//  doesn't erase what was built. Models the Quranic principle:
+//  "Indeed, good deeds erase bad deeds" (Quran 11:114).
+(function(){
+  if(typeof performTawbah !== 'function') return;
+  const _orig = performTawbah;
+  performTawbah = function(topic){
+    const c = LIFE.char;
+    if(!c) return _orig.apply(this, arguments);
+    // The original applies the +15 iman / +5 karma / event log.
+    _orig.apply(this, arguments);
+    // Layer the rebuilding state on top
+    c.flags = c.flags || {};
+    c.flags.tawbahRebuildUntil = c.age + 3;
+    c.flags.tawbahRebuildStart = c.age;
+    c.flags.tawbahRebuildKabairAtStart = c.kabairFlags
+      ? Object.values(c.kabairFlags).reduce((s,n)=>s+n,0) : 0;
+    pushEvent('milestone', '🌱 The first night after tawbah is the hardest. The path back is not a reset — it is daily practice, and Allah loves the consistent (even the small) acts. Three years of steady steps from here, in sha Allah.');
+  };
+})();
+
+// Annual processing of the rebuilding window
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    if(!c.flags || !c.flags.tawbahRebuildUntil) return;
+    if(c.age > c.flags.tawbahRebuildUntil){
+      // Completed window — final blessing if no new kabair
+      const startK = c.flags.tawbahRebuildKabairAtStart || 0;
+      const nowK   = c.kabairFlags ? Object.values(c.kabairFlags).reduce((s,n)=>s+n,0) : 0;
+      if(nowK <= startK){
+        c.iman    = clamp((c.iman||0) + 6, 0, 100);
+        c.sakina  = clamp((c.sakina||50) + 8, 0, 100);
+        c.barakah = clamp((c.barakah||50) + 4, 0, 100);
+        c.faith = c.iman;
+        pushEvent('milestone', '🌿 Three years on the path back. The heart feels lighter — sakina +8. The rebuilding completed, in sha Allah.');
+      }
+      delete c.flags.tawbahRebuildUntil;
+      delete c.flags.tawbahRebuildStart;
+      delete c.flags.tawbahRebuildKabairAtStart;
+      return;
+    }
+    // Within the window — incremental rebuild if practice is kept
+    const salahOk = (c.salahDaily||0) >= 5;
+    const noNewKabair = (c.kabairFlags
+      ? Object.values(c.kabairFlags).reduce((s,n)=>s+n,0)
+      : 0) <= (c.flags.tawbahRebuildKabairAtStart || 0);
+    if(salahOk && noNewKabair){
+      c.iman    = clamp((c.iman||0) + 2, 0, 100);
+      c.sakina  = clamp((c.sakina||50) + 3, 0, 100);
+      c.faith = c.iman;
+      // Quiet — surface only the first year so it doesn't spam
+      if(c.age === c.flags.tawbahRebuildStart + 1){
+        pushEvent('good', '🌱 A year of steady salah after tawbah. The path widens. Sakina +3.');
+      }
+    } else if(!noNewKabair){
+      // A setback during the window — sakina dip, but the window
+      // is NOT cancelled. Rebuilding is non-linear.
+      c.sakina = clamp((c.sakina||50) - 4, 0, 100);
+      pushEvent('bad', '🍂 A stumble during the rebuilding. The path is not erased — pick up where you fell. (Quran 39:53)');
+    }
+  };
+})();
+
+// ─── Parallel progression tracks panel.
+//  Computes Deen, Family, Knowledge, Service, Community from existing
+//  stats so the player sees these as primary progression, not flavor
+//  text under career. Renders into the iman side panel.
+function computeTracks(c){
+  const liveKids = (c.children||[]).filter(k => k.alive);
+  const muslimKids = liveKids.filter(k => k.religion === 'islam');
+  return {
+    deen:       Math.min(100, Math.floor(
+                  ((c.iman||0) * 0.45)
+                + ((c.sakina||50) * 0.25)
+                + ((c.barakah||50) * 0.15)
+                + ((c.salahYearsConsistent||0) * 0.5)
+                + ((c.ramadanFastsKept||0) * 0.3)
+                + ((c.quranKhatm||0) * 1.5)
+                + ((c.hafizProgress||0) * 0.05))),
+    family:     Math.min(100, Math.floor(
+                  ((c.parentsHonoured||0) * 2.5)
+                + (liveKids.length * 5)
+                + (muslimKids.reduce((s,k) => s + (k.iman||0)/5, 0))
+                + (c.partner && c.partner.married ? 12 : 0))),
+    knowledge:  Math.min(100, Math.floor(
+                  ((c.smarts||0) * 0.5)
+                + ((c.hafizProgress||0) * 0.3)
+                + ((c.quranKhatm||0) * 2)
+                + ((c.degrees||[]).length * 8))),
+    service:    Math.min(100, Math.floor(
+                  ((c.neighboursHelped||0) * 4)
+                + ((c.janazahAttended||0) * 3)
+                + (((c.flags||{}).zakatLifetimePaid||0)/2000)
+                + ((c.flags||{}).waqfEstablished ? 25 : 0))),
+    community:  Math.min(100, Math.floor(
+                  ((c.duaCount||0) * 2)
+                + ((c.jummahKept||0) * 1.5)
+                + ((c.karma||50) * 0.3)
+                - ((c.kabairFlags
+                    ? Object.values(c.kabairFlags).reduce((s,n)=>s+n,0)
+                    : 0) * 3))),
+  };
+}
+
+(function(){
+  if(typeof renderAll !== 'function') return;
+  const _orig = renderAll;
+  renderAll = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const wrap = document.getElementById('iman-stats');
+    if(!wrap || wrap.dataset.tracksWired) return;
+    const t = computeTracks(c);
+    const trackRow = function(label, val, hint){
+      const pct = Math.max(0, Math.min(100, val));
+      return '<div class="stat-row" style="margin-top:6px;">'
+        + '<div style="display:flex;justify-content:space-between;font-family:var(--font-m);font-size:9px;letter-spacing:.16em;color:var(--accent2);text-transform:uppercase;">'
+        + '<span title="' + (hint||'') + '">' + label + '</span><span>' + pct + '</span></div>'
+        + '<div class="stat-bar" style="background:rgba(13,26,19,0.5);height:5px;"><div class="stat-fill" style="width:' + pct + '%;background:linear-gradient(90deg,#3d5b8a,#6fc3a8);"></div></div>'
+        + '</div>';
+    };
+    const trackBlock = '<div style="margin-top:14px;padding-top:10px;border-top:1px dashed rgba(201,169,97,0.2);">'
+      + '<div style="font-family:Georgia,serif;font-size:11px;color:var(--accent);letter-spacing:.06em;margin-bottom:6px;">❋ Tracks of life</div>'
+      + trackRow('Deen',       t.deen,      'Iman, sakina, salah years, fasts, khatm, hafiz progress')
+      + trackRow('Family',     t.family,    'Parents honoured, children alive, children on the deen, marriage')
+      + trackRow('Knowledge',  t.knowledge, 'Smarts, hafiz progress, khatm, degrees')
+      + trackRow('Service',    t.service,   'Neighbours helped, janazah attended, zakat, waqf')
+      + trackRow('Community',  t.community, "Du'a count, Jummahs, karma; kabair drags it down")
+      + '</div>';
+    wrap.insertAdjacentHTML('beforeend', trackBlock);
+    wrap.dataset.tracksWired = '1';
+  };
+})();
+
+// ─── Ramadan UI atmosphere — when the player's per-age ramadan flag
+//  is set this turn, warm the palette briefly + show a crescent banner.
+//  Persists for the current year-render then quietly steps back.
+(function(){
+  // CSS additions for the Ramadan atmosphere
+  const style = document.createElement('style');
+  style.textContent =
+      '.ramadan-mode body::before{opacity:0.07 !important;}\n'
+    + 'body.ramadan{background:radial-gradient(ellipse at top, rgba(212,184,106,0.06), transparent 50%), radial-gradient(ellipse at bottom, rgba(111,195,168,0.05), transparent 60%), #0f1812 !important;}\n'
+    + 'body.ramadan #topbar{background:linear-gradient(180deg,#1d2a20 0%,#13201a 100%) !important;border-bottom-color:#d4b86a !important;box-shadow:0 1px 12px rgba(212,184,106,0.15);}\n'
+    + 'body.ramadan .brand{color:#d4b86a !important;text-shadow:0 0 24px rgba(212,184,106,0.45) !important;}\n'
+    + '#ramadan-banner{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:7500;\n'
+    + '  background:linear-gradient(180deg,#1a2e22,#13201a);border:1px solid #d4b86a;\n'
+    + '  border-radius:24px;padding:6px 16px;font-family:Georgia,serif;font-size:12px;\n'
+    + '  color:#d4b86a;letter-spacing:0.08em;box-shadow:0 4px 24px rgba(212,184,106,0.25);\n'
+    + '  display:flex;align-items:center;gap:8px;animation:ramadan-fade 0.6s ease;}\n'
+    + '@keyframes ramadan-fade{from{opacity:0;transform:translate(-50%,-8px);}to{opacity:1;transform:translate(-50%,0);}}';
+  document.head.appendChild(style);
+
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    const inRamadan = !!((c.flags||{})['ramadan' + c.age]);
+    document.body.classList.toggle('ramadan', inRamadan);
+    let banner = document.getElementById('ramadan-banner');
+    if(inRamadan){
+      if(!banner){
+        banner = document.createElement('div');
+        banner.id = 'ramadan-banner';
+        banner.innerHTML = '<span style="font-size:14px;">🌙</span> Ramadan Mubarak · year of ' + c.age + '<span style="font-size:14px;">✨</span>';
+        document.body.appendChild(banner);
+      }
+    } else if(banner){
+      banner.remove();
+    }
+  };
+})();
+
+// ─── Warm cultural micro-events — small, indirect, textured.
+//  These run alongside the existing ISLAMIC_LIFE_EVENTS but capture
+//  the household-emotional-texture the critique called for.
+const WARM_EVENTS = [
+  {age:[18,99], prob:0.12,
+    t:'☕ Your mother set the kettle on without asking. The tea was sweeter than usual. She didn\'t say much, but she didn\'t need to.',
+    fx:{happiness:+4, sakina:+3, parentsHonoured:+1},
+    req:c => c.parents && c.parents.mom && c.parents.mom.alive !== false},
+  {age:[18,99], prob:0.10,
+    t:'🍽️ Mama called: "Kha lia?" (Did you eat?) You said yes. She sent biryani anyway.',
+    fx:{happiness:+5, barakah:+2, parentsHonoured:+1, duaCount:+1},
+    req:c => c.parents && c.parents.mom && c.parents.mom.alive !== false},
+  {age:[18,55], prob:0.09,
+    t:'📞 Your father called for "no reason" — then asked about your prayers, the car, the work, then said "okay, beta" and hung up.',
+    fx:{happiness:+3, sakina:+2, duaCount:+1},
+    req:c => c.parents && c.parents.dad && c.parents.dad.alive !== false},
+  {age:[6,17], prob:0.20,
+    t:'🎁 Eidi! Three uncles handed you crisp notes in salaams. You folded them carefully in your wallet.',
+    fx:{happiness:+6, money:+200, family:+2},
+    req:c => true},
+  {age:[14,99], prob:0.08,
+    t:'🕌 You stayed back after maghrib at the masjid. An older uncle started telling stories about his father — you listened.',
+    fx:{sakina:+4, iman:+2, community:+1}},
+  {age:[16,99], prob:0.07,
+    t:'📦 Your neighbour is moving. You helped carry boxes for two hours; their kids called you "bhaiya/bhai." You walked home tired and full.',
+    fx:{karma:+4, sakina:+3, neighboursHelped:+1, duaCount:+1}},
+  {age:[20,99], prob:0.06,
+    t:'🤲 An aunty at a gathering pressed both her hands around yours and said "Allah teri lambi umar de" (May Allah give you long life). She meant it.',
+    fx:{happiness:+4, barakah:+2, duaCount:+2}},
+  {age:[14,99], prob:0.05,
+    t:'🌌 You couldn\'t sleep. You read Surah Al-Mulk slowly, the way your grandmother used to. The room got quiet.',
+    fx:{sakina:+5, iman:+2}},
+  {age:[6,18], prob:0.10,
+    t:'📖 You finished memorizing a new surah. You ran to tell your mother first. She listened with her eyes closed.',
+    fx:{happiness:+5, iman:+3, hafiz:+1, parentsHonoured:+1},
+    req:c => c.parents && c.parents.mom && c.parents.mom.alive !== false},
+  {age:[18,99], prob:0.06,
+    t:'🍞 A neighbour brought over food they\'d cooked extra of. "Bas thoda sa hai." You returned the plate full a week later.',
+    fx:{happiness:+3, barakah:+3, neighboursHelped:+1}},
+  {age:[14,99], prob:0.05,
+    t:'🤝 You saw an old man struggling at the supermarket. You loaded his groceries into his car. He gave you dua all the way home in your head.',
+    fx:{karma:+3, sakina:+2, duaCount:+1}},
+  {age:[18,80], prob:0.04,
+    t:'💌 A friend you hadn\'t spoken to in years messaged: "Yaar, I was just thinking of you. How are you really?" You wrote back honestly.',
+    fx:{happiness:+5, sakina:+3, duaCount:+1}},
+];
+
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    // Fire at most 1 warm event per year so they stay precious
+    for(const ev of WARM_EVENTS){
+      if(c.age < ev.age[0] || c.age > ev.age[1]) continue;
+      if(ev.req && !ev.req(c)) continue;
+      if(Math.random() < ev.prob){
+        const f = ev.fx || {};
+        if(f.happiness) c.happiness = clamp(c.happiness + f.happiness, 0, 100);
+        if(f.sakina)    c.sakina    = clamp((c.sakina||50)  + f.sakina, 0, 100);
+        if(f.barakah)   c.barakah   = clamp((c.barakah||50) + f.barakah, 0, 100);
+        if(f.iman)      c.iman      = clamp((c.iman||0)     + f.iman, 0, 100);
+        if(f.karma)     c.karma     = clamp(c.karma         + f.karma, 0, 100);
+        if(f.money)     c.money    += f.money;
+        if(f.hafiz)     c.hafizProgress = Math.min(100, (c.hafizProgress||0) + f.hafiz);
+        if(f.parentsHonoured)  c.parentsHonoured = (c.parentsHonoured||0) + f.parentsHonoured;
+        if(f.neighboursHelped) c.neighboursHelped = (c.neighboursHelped||0) + f.neighboursHelped;
+        if(f.duaCount)         c.duaCount = (c.duaCount||0) + f.duaCount;
+        c.faith = c.iman;
+        pushEvent('good', ev.t);
+        break;
+      }
+    }
+  };
+})();
+
+// ─── Qur'an during grief — when a family-member death event fires, the
+//  next turn surfaces a quiet recitation event for Muslim characters.
+(function(){
+  if(typeof pushEvent !== 'function') return;
+  const _orig = pushEvent;
+  pushEvent = function(tag, text, fx){
+    const r = _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !text) return r;
+    const t = String(text).toLowerCase();
+    const isFamilyDeath = (tag === 'death') && (
+      t.indexOf('mother') >= 0 || t.indexOf('father') >= 0 ||
+      t.indexOf('sibling') >= 0 || t.indexOf('brother') >= 0 ||
+      t.indexOf('sister') >= 0 || t.indexOf('child') >= 0 ||
+      t.indexOf('partner') >= 0 || t.indexOf('spouse') >= 0
+    );
+    if(isFamilyDeath){
+      c.flags = c.flags || {};
+      c.flags.griefRecitationDue = c.age; // next turn will surface comfort
+    }
+    return r;
+  };
+})();
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    if(c.flags && c.flags.griefRecitationDue && c.flags.griefRecitationDue < c.age){
+      delete c.flags.griefRecitationDue;
+      c.sakina    = clamp((c.sakina||50) + 6, 0, 100);
+      c.iman      = clamp((c.iman||0) + 3, 0, 100);
+      c.happiness = clamp(c.happiness + 4, 0, 100);
+      c.faith = c.iman;
+      pushEvent('good', '📖 You recited Yasin for them, with their name in your heart between every verse. "Indeed we belong to Allah, and to Him we shall return." (Quran 2:156) The heart didn\'t stop hurting — but it found a place to put the hurt.');
+    }
+  };
+})();
+
 </script>
 </body>
 </html>

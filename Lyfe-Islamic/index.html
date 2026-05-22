@@ -21252,6 +21252,282 @@ function recordNaslAction(tier){
   document.head.appendChild(style);
 })();
 
+// ═══════════════════════════════════════════════════════════════════════
+//  ANIMATION LAYER — research-backed retention animations
+//
+//  Priority order (highest ROI first):
+//   1. Stat counter tick-up/tick-down when values change
+//   2. Button :active press feedback (CSS added via style block)
+//   3. Timeline entries slide in staggered on new year
+//   4. Toast spring-slide from bottom
+//   5. Milestone/achievement events glow-pulse
+//   6. Stat bars animate smoothly with spring easing
+//   7. Modal entry spring
+// ═══════════════════════════════════════════════════════════════════════
+
+(function(){
+  const HEAD = document.head;
+
+  // ── 1 & 2 & 6: CSS keyframes + button active press ────────────────
+  const animCSS = document.createElement('style');
+  animCSS.id = 'anim-layer';
+  animCSS.textContent = `
+/* Button press — tactile scale (150ms, material easing) */
+.card-btn:active:not(:disabled),
+.tb-btn:active,
+.act-btn:active,
+.action-btn:active,
+.intro-start:active{
+  transform: scale(0.94) !important;
+  opacity: 0.88 !important;
+  transition: transform 0.08s cubic-bezier(0.4,0,0.2,1),
+              opacity  0.08s cubic-bezier(0.4,0,0.2,1) !important;
+}
+
+/* Stat bars — spring easing for fills */
+.stat-fill{
+  transition: width 0.60s cubic-bezier(0.25,0.46,0.45,0.94) !important;
+}
+
+/* Stat value flash when it changes */
+@keyframes stat-tick{
+  0%  { color: #c9a961; transform: scale(1.18); }
+  60% { color: #c9a961; transform: scale(1.05); }
+  100%{ color: inherit;  transform: scale(1); }
+}
+.stat-val.ticked{
+  animation: stat-tick 0.45s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
+/* Timeline new-year slide in staggered */
+@keyframes tl-slide{
+  from{ opacity:0; transform:translateY(-10px); }
+  to  { opacity:1; transform:translateY(0); }
+}
+.year-block.anim-new{
+  animation: tl-slide 0.38s cubic-bezier(0.16,1,0.3,1) both;
+}
+.year-block.anim-new .year-event:nth-child(1){ animation-delay:0.04s; }
+.year-block.anim-new .year-event:nth-child(2){ animation-delay:0.09s; }
+.year-block.anim-new .year-event:nth-child(3){ animation-delay:0.14s; }
+.year-block.anim-new .year-event:nth-child(4){ animation-delay:0.19s; }
+@keyframes ev-slide{
+  from{ opacity:0; transform:translateX(-12px); }
+  to  { opacity:1; transform:translateX(0); }
+}
+.year-block.anim-new .year-event{
+  animation: ev-slide 0.32s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+/* Toast spring-in from bottom */
+@keyframes toast-in{
+  from{ opacity:0; transform:translate(-50%, 16px) scale(0.94); }
+  to  { opacity:1; transform:translate(-50%, 0)    scale(1); }
+}
+@keyframes toast-out{
+  from{ opacity:1; transform:translate(-50%, 0)    scale(1); }
+  to  { opacity:0; transform:translate(-50%, 8px)  scale(0.96); }
+}
+#toast.show   { animation: toast-in  0.28s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+#toast.hiding { animation: toast-out 0.22s cubic-bezier(0.4,0,0.2,1)      forwards; }
+
+/* Milestone glow-pulse on achievement events */
+@keyframes milestone-glow{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(201,169,97,0); }
+  40%    { box-shadow: 0 0 0 5px rgba(201,169,97,0.28), 0 0 18px rgba(201,169,97,0.18); }
+}
+.year-event.milestone.glow-anim{
+  animation: milestone-glow 1.6s ease-in-out;
+  border-radius: 6px;
+}
+
+/* Modal spring entrance */
+.modal.show .modal-box{
+  animation: modal-spring 0.35s cubic-bezier(0.16,1,0.3,1) both !important;
+}
+@keyframes modal-spring{
+  from{ opacity:0; transform:scale(0.93) translateY(12px); }
+  to  { opacity:1; transform:scale(1)    translateY(0); }
+}
+
+/* Age-up button glow pulse (encourages next action) */
+@keyframes age-pulse{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(201,169,97,0); }
+  60%    { box-shadow: 0 0 0 6px rgba(201,169,97,0.22); }
+}
+#age-up-btn{ animation: age-pulse 2.8s ease-in-out infinite; }
+
+/* Positive stat row highlight on gain */
+@keyframes stat-gain{
+  0%  { background: rgba(74,222,128,0.15); }
+  100%{ background: transparent; }
+}
+.stat.gaining{ animation: stat-gain 1.0s ease-out forwards; }
+
+/* Negative stat row highlight on loss */
+@keyframes stat-loss{
+  0%  { background: rgba(248,113,113,0.15); }
+  100%{ background: transparent; }
+}
+.stat.losing{ animation: stat-loss 1.0s ease-out forwards; }
+`;
+  HEAD.appendChild(animCSS);
+
+  // ── 1: Stat counter tick function ────────────────────────────────
+  function animateCounter(el, fromVal, toVal, ms){
+    if(!el) return;
+    const start = performance.now();
+    const diff  = toVal - fromVal;
+    function step(now){
+      const t = Math.min((now - start) / ms, 1);
+      // ease-out cubic
+      const ease = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(fromVal + diff * ease);
+      if(t < 1) requestAnimationFrame(step);
+      else el.textContent = toVal;
+    }
+    requestAnimationFrame(step);
+  }
+
+  // ── Patch renderStats to animate changed values ───────────────────
+  if(typeof renderStats === 'function'){
+    const _origStats = renderStats;
+    // Track previous values
+    let _prevStats = {};
+    renderStats = function(){
+      const c = LIFE && LIFE.char;
+      const wrap = document.getElementById('stats-block');
+      // Read current values before re-render
+      const prev = Object.assign({}, _prevStats);
+
+      _origStats.apply(this, arguments);
+
+      if(!c || !wrap) return;
+      const keys = ['happiness','health','smarts','looks','karma','faith','fame','iman','sakina','barakah'];
+      keys.forEach(k => {
+        const cur = c[k] !== undefined ? Math.round(c[k]) : 0;
+        // Find the stat-val element for this stat by iterating rendered rows
+        wrap.querySelectorAll('.stat').forEach(row => {
+          const nameEl = row.querySelector('.stat-name');
+          if(!nameEl) return;
+          const label = nameEl.textContent.toLowerCase();
+          if(label !== k && !(k === 'faith' && label === 'faith') &&
+             !(k === 'iman' && label === 'iman') &&
+             !(k === 'sakina' && label === 'sakina') &&
+             !(k === 'barakah' && label === 'barakah')) {
+            // try matching label to stat key
+            const statKeys = {
+              happiness:'happiness', health:'health', smarts:'smarts',
+              looks:'looks', karma:'karma', faith:'faith', fame:'fame',
+              iman:'iman', sakina:'sakina', barakah:'barakah'
+            };
+            if(statKeys[label] !== k) return;
+          }
+          const valEl = row.querySelector('.stat-val');
+          if(!valEl) return;
+          const old = prev[k] !== undefined ? prev[k] : cur;
+          if(old !== cur){
+            animateCounter(valEl, old, cur, 420);
+            valEl.classList.remove('ticked');
+            // Force reflow then re-add
+            void valEl.offsetWidth;
+            valEl.classList.add('ticked');
+            setTimeout(() => valEl.classList.remove('ticked'), 500);
+            // Highlight the stat row
+            row.classList.remove('gaining','losing');
+            void row.offsetWidth;
+            row.classList.add(cur > old ? 'gaining' : 'losing');
+            setTimeout(() => row.classList.remove('gaining','losing'), 1100);
+          }
+        });
+        _prevStats[k] = cur;
+      });
+    };
+  }
+
+  // ── 3: Timeline — mark newest year-block for animation ────────────
+  if(typeof renderTimeline === 'function'){
+    const _origTL = renderTimeline;
+    let _lastTopYear = null;
+    renderTimeline = function(){
+      _origTL.apply(this, arguments);
+      const wrap = document.getElementById('timeline');
+      if(!wrap) return;
+      const first = wrap.querySelector('.year-block');
+      if(!first) return;
+      const ageEl = first.querySelector('.year-age');
+      const age   = ageEl ? ageEl.textContent : null;
+      if(age && age !== _lastTopYear){
+        _lastTopYear = age;
+        first.classList.add('anim-new');
+        setTimeout(() => first.classList.remove('anim-new'), 900);
+      }
+    };
+  }
+
+  // ── 4: Toast spring with smooth hide ─────────────────────────────
+  if(typeof toast === 'function'){
+    const _origToast = toast;
+    toast = function(text){
+      const t = document.getElementById('toast');
+      if(t && _toastTimer){
+        clearTimeout(_toastTimer);
+        t.classList.remove('show','hiding');
+        void t.offsetWidth; // reflow
+      }
+      _origToast.apply(this, arguments);
+      // Patch: override the hide timer to use fade-out class
+      if(t && _toastTimer){
+        clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(function(){
+          t.classList.remove('show');
+          t.classList.add('hiding');
+          setTimeout(function(){
+            t.classList.remove('hiding');
+          }, 250);
+        }, 2200);
+      }
+    };
+  }
+
+  // ── 5: Milestone glow on pushEvent ────────────────────────────────
+  if(typeof pushEvent === 'function'){
+    const _origPush = pushEvent;
+    pushEvent = function(tag, text, fx){
+      _origPush.apply(this, [tag, text, fx]);
+      if(tag === 'milestone'){
+        // After renderTimeline runs, find & animate the first milestone event
+        setTimeout(function(){
+          const wrap = document.getElementById('timeline');
+          if(!wrap) return;
+          const milestones = wrap.querySelectorAll('.year-event.milestone');
+          const first = milestones[0]; // newest is first after reverse-render
+          if(first && !first.classList.contains('glow-anim')){
+            first.classList.add('glow-anim');
+            setTimeout(() => first.classList.remove('glow-anim'), 1700);
+          }
+        }, 80);
+      }
+    };
+  }
+
+  // ── Age-up button — find and add the id for the glow pulse ────────
+  //  The button may be rendered dynamically; patch after renderAll.
+  if(typeof renderAll === 'function'){
+    const _origRA = renderAll;
+    renderAll = function(){
+      _origRA.apply(this, arguments);
+      const btns = document.querySelectorAll('.act-btn, .action-btn, button');
+      btns.forEach(function(btn){
+        if(btn.textContent.trim() === 'Age Up' && !btn.id){
+          btn.id = 'age-up-btn';
+        }
+      });
+    };
+  }
+
+})(); // end animation layer
+
 </script>
 </body>
 </html>

@@ -834,6 +834,369 @@ input:focus,select:focus,textarea:focus{
   opacity:0.7;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   UI REBREATHE — pushes the layout from "dashboard" to "reading app".
+   Loosens density, rounds corners, softens borders, drops uppercase
+   tracking, raises line-height, and rebalances the visual hierarchy
+   so a single primary action is obvious per screen. Palette unchanged.
+   Mobile-first responsive behaviour reworked.
+   ═══════════════════════════════════════════════════════════════════ */
+:root{
+  --r:12px;
+  --r-sm:8px;
+  --r-lg:18px;
+}
+
+/* Base reading rhythm */
+html,body{
+  font-size:15px;
+  line-height:1.6;
+  font-feature-settings:"ss01","ss02","kern";
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Topbar — quieter, more breathing, no more visual weight-lifting */
+#topbar{
+  height:auto;
+  min-height:60px;
+  padding:10px 22px;
+  border-bottom:1px solid rgba(201,169,97,0.18);
+  box-shadow:none;
+}
+.brand{
+  font-size:24px;
+  letter-spacing:0.005em;
+  font-weight:700;
+}
+.brand-sub{font-size:10px;letter-spacing:0.16em;opacity:0.7;}
+.brand-by, .brand-by-wd{font-size:9px;letter-spacing:0.10em;opacity:0.55;}
+
+.tb-chip{
+  border-radius:999px;
+  padding:6px 14px;
+  font-size:11px;
+  letter-spacing:0.06em;
+  text-transform:none;
+  font-family:var(--font-s);
+  font-weight:500;
+  background:rgba(232,220,192,0.04);
+  border:1px solid rgba(232,220,192,0.10);
+  color:var(--t2);
+}
+.tb-chip.money,.tb-chip.money.neg,.tb-chip.age,.tb-chip.country{border-width:1px;}
+
+.tb-btn{
+  border-radius:var(--r-sm);
+  padding:8px 14px;
+  font-size:11px;
+  letter-spacing:0.04em;
+  text-transform:none;
+  font-weight:500;
+  font-family:var(--font-s);
+}
+
+/* Three-column main — give each column air */
+#main{gap:0;}
+.col{padding:0;}
+.col-header{
+  font-size:10px;
+  letter-spacing:0.12em;
+  padding:14px 22px 8px;
+  text-transform:uppercase;
+  color:var(--t3);
+  opacity:0.7;
+}
+.col-body{padding:18px 22px 28px;}
+.col-l,.col-r{border-color:rgba(201,169,97,0.10);}
+
+/* Stat rows — wider, calmer */
+.stat-row{padding:8px 0;}
+.stat-name{
+  font-size:11px;
+  letter-spacing:0.04em;
+  text-transform:none;
+  font-family:var(--font-s);
+  font-weight:500;
+  color:var(--t2);
+}
+.stat-val{
+  font-size:14px;
+  font-family:var(--font-s);
+  font-weight:600;
+  color:var(--t1);
+}
+.stat-bar{height:6px;border-radius:999px;border:none;background:rgba(13,26,19,0.6);}
+.stat-fill{border-radius:999px;}
+
+/* Cards — generous padding, larger rounding, soft borders, gentle motion */
+.card{
+  border-radius:var(--r);
+  padding:16px 18px;
+  border:1px solid rgba(232,220,192,0.08);
+  background:linear-gradient(180deg, rgba(26,42,34,0.55) 0%, rgba(20,32,25,0.55) 100%);
+  margin-bottom:10px;
+  gap:14px;
+  transition:transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.card:hover{
+  transform:translateY(-1px);
+  border-color:rgba(201,169,97,0.30);
+  box-shadow:0 6px 20px rgba(0,0,0,0.25);
+}
+.card-ico{
+  font-size:24px;
+  width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(201,169,97,0.06);
+  border-radius:var(--r-sm);
+  flex-shrink:0;
+}
+.card-title{
+  font-size:14.5px;
+  font-weight:600;
+  letter-spacing:0;
+  color:var(--t1);
+  line-height:1.35;
+}
+.card-meta{
+  font-size:12.5px;
+  color:var(--t2);
+  line-height:1.55;
+  letter-spacing:0;
+  margin-top:4px;
+}
+.card-act{align-self:center;gap:8px;}
+.card-pay{font-size:13px;font-weight:600;letter-spacing:0;}
+.card-tag{
+  font-size:10px;
+  padding:3px 9px;
+  border-radius:999px;
+  letter-spacing:0.04em;
+  text-transform:none;
+  font-weight:500;
+  border:1px solid rgba(232,220,192,0.12);
+  background:transparent;
+}
+
+/* Buttons — bigger touch targets, gentler styling */
+.card-btn, .tb-btn, .act-btn, .action-btn{
+  border-radius:var(--r-sm);
+  padding:9px 16px;
+  font-size:12.5px;
+  letter-spacing:0.02em;
+  text-transform:none;
+  font-weight:500;
+  font-family:var(--font-s);
+  min-height:36px;
+  transition:all 0.18s ease;
+}
+.card-btn{padding:8px 14px;}
+.card-btn.green{
+  background:linear-gradient(180deg, rgba(106,168,74,0.16), rgba(106,168,74,0.10));
+  border:1px solid rgba(106,168,74,0.45);
+  color:#a3e635;
+  font-weight:600;
+}
+.card-btn.green:hover{
+  background:linear-gradient(180deg, rgba(106,168,74,0.25), rgba(106,168,74,0.18));
+  box-shadow:0 0 24px rgba(106,168,74,0.15);
+}
+.card-btn.danger{
+  background:rgba(184,88,68,0.10);
+  border:1px solid rgba(184,88,68,0.40);
+  color:var(--crimson);
+}
+.card-btn.muted{opacity:0.4;}
+
+/* Year-card / event log — substantial breathing room */
+.year-card{
+  border-radius:var(--r);
+  padding:16px 18px;
+  margin-bottom:12px;
+  background:rgba(20,32,25,0.5);
+  border:1px solid rgba(232,220,192,0.06);
+  border-left:3px solid var(--brass);
+}
+.year-num{
+  font-family:Georgia,serif;
+  font-size:22px;
+  letter-spacing:0;
+  color:var(--gold);
+  text-shadow:none;
+  font-weight:600;
+}
+.year-age{font-size:10px;letter-spacing:0.16em;}
+.year-event{
+  font-size:14px;
+  line-height:1.65;
+  margin:10px 0;
+  color:var(--t1);
+  padding-left:0;
+}
+.year-event-fx{
+  font-size:11px;
+  letter-spacing:0.04em;
+  text-transform:none;
+  margin-top:4px;
+  opacity:0.7;
+}
+
+/* Modal — feels like a reading sheet rather than a dialog */
+#modal{padding:24px;}
+.modal{
+  border-radius:var(--r-lg);
+  max-width:580px;
+  width:calc(100% - 32px);
+  max-height:88vh;
+  border:1px solid rgba(201,169,97,0.25);
+  box-shadow:0 24px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(201,169,97,0.04);
+}
+.modal-header{
+  padding:18px 24px 16px;
+  border-bottom:1px solid rgba(201,169,97,0.14);
+}
+.modal-header::after{display:none;}
+.modal-title{
+  font-size:19px;
+  font-family:Georgia,serif;
+  letter-spacing:0;
+  font-weight:600;
+}
+.modal-body{padding:22px 24px 28px;}
+.modal-close{
+  border-radius:999px;
+  width:32px;height:32px;
+  font-size:14px;
+  letter-spacing:0;
+  background:rgba(232,220,192,0.04);
+  border:1px solid rgba(232,220,192,0.1);
+}
+
+/* Family / asset listings */
+.fam-row, .asset-row{padding:12px 0;border-color:rgba(232,220,192,0.06);}
+.fam-name, .asset-name{font-size:14px;letter-spacing:0;font-weight:600;}
+.fam-meta, .asset-meta{font-size:11.5px;letter-spacing:0;}
+.fam-section-h{
+  font-family:Georgia,serif;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:0;
+  color:var(--accent);
+  text-transform:none;
+  margin-top:14px;
+  margin-bottom:8px;
+  border-bottom:none;
+  padding-bottom:0;
+}
+.fam-section-h::before{
+  content:'❋ ';
+  color:var(--brass);
+  opacity:0.6;
+  font-weight:400;
+}
+
+/* Character avatar block — calmer */
+.char-avatar{font-size:56px;margin-bottom:10px;}
+.char-name{font-size:20px;letter-spacing:0;font-weight:600;}
+.char-occ{font-size:11px;letter-spacing:0.04em;text-transform:none;font-weight:500;}
+.char-loc{font-size:10.5px;letter-spacing:0.04em;}
+
+/* Action bar — bigger primary actions */
+.action-bar, #action-bar{padding:16px 22px;gap:10px;}
+.act-btn.primary, .action-btn.primary{
+  background:linear-gradient(180deg, rgba(201,169,97,0.18), rgba(201,169,97,0.10));
+  border:1px solid rgba(201,169,97,0.5);
+  color:var(--accent);
+  font-weight:600;
+  padding:11px 22px;
+  font-size:13px;
+}
+
+/* Toast — calmer notification */
+#toast{
+  border-radius:var(--r);
+  padding:12px 20px;
+  font-size:12.5px;
+  letter-spacing:0.02em;
+  text-transform:none;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,169,97,0.10);
+}
+
+/* Ruling chips — softer */
+.ruling-chip{
+  padding:4px 10px;
+  font-size:10px;
+  letter-spacing:0.04em;
+  text-transform:none;
+  font-weight:500;
+  border-radius:999px;
+  font-family:var(--font-s);
+}
+
+/* Death screen — reading-page proportions */
+.death-stat{padding:11px 14px;margin-bottom:6px;border-radius:var(--r-sm);font-size:13px;}
+.death-stat-k{letter-spacing:0;font-size:12px;font-weight:500;text-transform:none;}
+.death-stat-v{font-weight:600;font-size:13px;}
+
+/* Intro screen */
+.intro-title{font-size:72px;letter-spacing:0;line-height:1;}
+.intro-sub{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;opacity:0.75;}
+.intro-notice{font-size:12.5px;line-height:1.6;max-width:520px;margin:18px auto 0;}
+
+/* Tabs / segmented */
+.tab-btn, .rel-tab{
+  font-size:12px;
+  letter-spacing:0.02em;
+  text-transform:none;
+  padding:10px 14px;
+  font-weight:500;
+}
+
+/* Inputs */
+input, select, textarea{
+  border-radius:var(--r-sm);
+  padding:9px 12px;
+  font-size:13px;
+}
+
+/* Compact-but-clear chips inside text */
+[style*="border-radius:11px"]{border-radius:999px !important;}
+
+/* RESPONSIVE — calmer on phones */
+@media (max-width:720px){
+  #main{grid-template-columns:1fr;}
+  .col-l{display:none;}
+  .col-r{display:none;}
+  #topbar{padding:10px 14px;flex-wrap:wrap;}
+  .brand{font-size:20px;}
+  .brand-sub,.brand-by-wd{display:none;}
+  .tb-chip{font-size:10px;padding:5px 11px;}
+  .col-body{padding:14px 16px 22px;}
+  .modal{width:calc(100% - 16px);max-height:92vh;border-radius:var(--r);}
+  .modal-header{padding:14px 18px 12px;}
+  .modal-body{padding:16px 18px 22px;}
+  .card{padding:14px;gap:12px;}
+  .card-ico{font-size:22px;width:40px;height:40px;}
+  .year-card{padding:14px;}
+  .year-event{font-size:13.5px;}
+  .intro-title{font-size:48px;}
+}
+@media (max-width:420px){
+  .brand{font-size:18px;}
+  .modal-title{font-size:17px;}
+  .card-title{font-size:13.5px;}
+  .card-meta{font-size:12px;}
+  .year-event{font-size:13px;}
+  .death-stat{padding:10px 12px;font-size:12.5px;}
+  .intro-title{font-size:38px;}
+}
+
+/* Subtle motion across the whole UI */
+*{transition-property:background-color, border-color, color, box-shadow, transform, opacity;}
+.card, .card-btn, .tb-btn, .act-btn, .action-btn, .stat-fill{transition-duration:0.18s;}
+.modal{animation:modal-rise 0.22s ease;}
+@keyframes modal-rise{from{opacity:0;transform:translateY(8px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+
 </style>
 </head>
 <body>
@@ -19058,45 +19421,15 @@ function computeTracks(c){
   };
 })();
 
-// ─── Ramadan UI atmosphere — when the player's per-age ramadan flag
-//  is set this turn, warm the palette briefly + show a crescent banner.
-//  Persists for the current year-render then quietly steps back.
+// ─── Ramadan UI atmosphere — REMOVED.
+//  The banner was firing year after year and reading as noise.
+//  The existing Ramadan ritual + reflection events already carry
+//  the seasonal moment; no need for a persistent overlay.
+//  (Defensive: remove any stale banner if a save file carries one.)
 (function(){
-  // CSS additions for the Ramadan atmosphere
-  const style = document.createElement('style');
-  style.textContent =
-      '.ramadan-mode body::before{opacity:0.07 !important;}\n'
-    + 'body.ramadan{background:radial-gradient(ellipse at top, rgba(212,184,106,0.06), transparent 50%), radial-gradient(ellipse at bottom, rgba(111,195,168,0.05), transparent 60%), #0f1812 !important;}\n'
-    + 'body.ramadan #topbar{background:linear-gradient(180deg,#1d2a20 0%,#13201a 100%) !important;border-bottom-color:#d4b86a !important;box-shadow:0 1px 12px rgba(212,184,106,0.15);}\n'
-    + 'body.ramadan .brand{color:#d4b86a !important;text-shadow:0 0 24px rgba(212,184,106,0.45) !important;}\n'
-    + '#ramadan-banner{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:7500;\n'
-    + '  background:linear-gradient(180deg,#1a2e22,#13201a);border:1px solid #d4b86a;\n'
-    + '  border-radius:24px;padding:6px 16px;font-family:Georgia,serif;font-size:12px;\n'
-    + '  color:#d4b86a;letter-spacing:0.08em;box-shadow:0 4px 24px rgba(212,184,106,0.25);\n'
-    + '  display:flex;align-items:center;gap:8px;animation:ramadan-fade 0.6s ease;}\n'
-    + '@keyframes ramadan-fade{from{opacity:0;transform:translate(-50%,-8px);}to{opacity:1;transform:translate(-50%,0);}}';
-  document.head.appendChild(style);
-
-  if(typeof ageUp !== 'function') return;
-  const _orig = ageUp;
-  ageUp = function(){
-    _orig.apply(this, arguments);
-    const c = LIFE && LIFE.char;
-    if(!c || c.religion !== 'islam' || !c.alive) return;
-    const inRamadan = !!((c.flags||{})['ramadan' + c.age]);
-    document.body.classList.toggle('ramadan', inRamadan);
-    let banner = document.getElementById('ramadan-banner');
-    if(inRamadan){
-      if(!banner){
-        banner = document.createElement('div');
-        banner.id = 'ramadan-banner';
-        banner.innerHTML = '<span style="font-size:14px;">🌙</span> Ramadan Mubarak · year of ' + c.age + '<span style="font-size:14px;">✨</span>';
-        document.body.appendChild(banner);
-      }
-    } else if(banner){
-      banner.remove();
-    }
-  };
+  document.body.classList.remove('ramadan');
+  const stale = document.getElementById('ramadan-banner');
+  if(stale) stale.remove();
 })();
 
 // ─── Warm cultural micro-events — small, indirect, textured.

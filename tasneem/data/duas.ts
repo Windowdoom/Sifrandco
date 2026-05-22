@@ -9,7 +9,11 @@ export type Mood =
   | "grateful"
   | "hopeful"
   | "afraid"
-  | "rizq";
+  | "rizq"
+  | "angry"
+  | "grieving"
+  | "happy"
+  | "sick";
 
 export interface Dua {
   id: string;
@@ -218,14 +222,13 @@ export const DUAS: Dua[] = [
     arabic: "اللَّهُمَّ إِنِّي عَبْدُكَ، ابْنُ عَبْدِكَ، ابْنُ أَمَتِكَ، نَاصِيَتِي بِيَدِكَ، مَاضٍ فِيَّ حُكْمُكَ، عَدْلٌ فِيَّ قَضَاؤُكَ، أَسْأَلُكَ بِكُلِّ اسْمٍ هُوَ لَكَ، سَمَّيْتَ بِهِ نَفْسَكَ، أَوْ أَنْزَلْتَهُ فِي كِتَابِكَ، أَوْ عَلَّمْتَهُ أَحَدًا مِنْ خَلْقِكَ، أَوِ اسْتَأْثَرْتَ بِهِ فِي عِلْمِ الْغَيْبِ عِنْدَكَ، أَنْ تَجْعَلَ الْقُرْآنَ رَبِيعَ قَلْبِي، وَنُورَ صَدْرِي، وَجَلَاءَ حُزْنِي، وَذَهَابَ هَمِّي",
     transliteration: "Allahumma inni 'abduka, ibnu 'abdika, ibnu amatika…",
     translation: "O Allah, I am Your servant, son of Your servant, son of Your handmaid. My forelock is in Your hand, Your command over me is forever executed, and Your decree over me is just. I ask You by every name belonging to You which You have named Yourself with, or revealed in Your book, or taught to any of Your creation, or kept hidden in the knowledge of the unseen with You, that You make the Quran the spring of my heart, the light of my chest, the departer of my sadness, and the reliever of my anxiety.",
-    reference: "Musnad Ahmad 3712 (Sahih)",
-    refUrl: "https://sunnah.com/ahmad",
+    reference: "Musnad Ahmad 3712, graded Sahih by Ibn Hibban and al-Albani",
     grading: "Sahih",
     moods: ["anxious", "lost"],
   },
   {
     id: "rizq-allahumma-ikfini",
-    category: "Forgiveness",
+    category: "Distress",
     title: "For sufficiency in provision",
     context: "Taught by the Prophet ﷺ to a man drowning in debt; he was relieved of it through this dua.",
     arabic: "اللَّهُمَّ اكْفِنِي بِحَلَالِكَ عَنْ حَرَامِكَ، وَأَغْنِنِي بِفَضْلِكَ عَمَّنْ سِوَاكَ",

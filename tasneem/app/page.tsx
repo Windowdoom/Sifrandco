@@ -112,10 +112,10 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
       </section>
 
       {/* Footer pill */}
-      <section className="mx-4 mt-6 mb-4 flex items-center justify-between rounded-2xl border border-paper-200 bg-white px-4 py-3 dark:border-tayba-700 dark:bg-tayba-800">
-        <div className="text-xs font-medium text-tayba-900/85 dark:text-paper-200/70">
-          No ads, no tracking, open source
-        </div>
+      <section className="mx-4 mt-6 mb-4 flex items-center justify-between gap-3 rounded-2xl border border-paper-200 bg-white px-4 py-3 dark:border-tayba-700 dark:bg-tayba-800">
+        <Link href="/about" className="text-xs font-medium text-tayba-900/85 hover:text-gold-700 dark:text-paper-200/70">
+          No ads. No tracking. Ever. ↗
+        </Link>
         <Link href="/donate" className="btn-gold text-sm">Support Tasneem</Link>
       </section>
 

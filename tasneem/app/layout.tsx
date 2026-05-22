@@ -9,10 +9,12 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-cormorant", display: "swap" });
 const scheherazade = Scheherazade_New({ subsets: ["arabic"], weight: ["400", "500", "700"], variable: "--font-arabic", display: "swap" });
 
+const SITE_DESCRIPTION =
+  "A private, ad-free Islamic worship companion. Prayer times, Qibla, Quran, duas, dhikr, verified to the Six Books and quran.com. Nothing tracked, no account, open source.";
+
 export const metadata: Metadata = {
   title: "Tasneem · تَسْنِيم",
-  description:
-    "Tasneem, a private, ad-free Islamic worship companion. Prayer times, Qibla, Quran, duas, dhikr, verified to the Six Books and quran.com.",
+  description: SITE_DESCRIPTION,
   manifest: "/manifest.json",
   applicationName: "Tasneem",
   appleWebApp: { capable: true, title: "Tasneem", statusBarStyle: "black-translucent" },
@@ -20,6 +22,20 @@ export const metadata: Metadata = {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/icon.svg" }],
   },
+  openGraph: {
+    title: "Tasneem · تَسْنِيم",
+    description: SITE_DESCRIPTION,
+    siteName: "Tasneem",
+    type: "website",
+    images: [{ url: "/icon.svg", width: 512, height: 512, alt: "Tasneem" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Tasneem · تَسْنِيم",
+    description: SITE_DESCRIPTION,
+    images: ["/icon.svg"],
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {

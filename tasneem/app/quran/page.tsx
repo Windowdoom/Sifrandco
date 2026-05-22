@@ -33,7 +33,7 @@ export default function Quran() {
         className="mb-4 w-full rounded-2xl border border-paper-200 bg-paper-50 px-4 py-2.5 text-sm outline-none focus:border-gold-400 dark:border-tayba-700 dark:bg-tayba-800"/>
 
       {error && <div className="card p-4 text-sm text-red-700">Could not load: {error}</div>}
-      {!list && !error && <div className="text-center text-sm text-tayba-900/60">Loading…</div>}
+      {!list && !error && <SurahListSkeleton />}
 
       <div className="space-y-2">
         {filtered?.map((s) => (
@@ -47,6 +47,28 @@ export default function Quran() {
             </div>
             <div className="arabic text-xl text-tayba-700 dark:text-paper-50">{s.name_arabic}</div>
           </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SurahListSkeleton() {
+  return (
+    <div className="space-y-2">
+      <div className="arabic text-center text-2xl text-gold-500/70">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+      <div className="mt-3 space-y-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="card flex items-center justify-between p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 animate-pulse rounded-full bg-paper-100 dark:bg-tayba-700/50" />
+              <div className="space-y-1.5">
+                <div className="h-3.5 w-28 animate-pulse rounded bg-paper-100 dark:bg-tayba-700/50" />
+                <div className="h-2.5 w-40 animate-pulse rounded bg-paper-100/70 dark:bg-tayba-700/30" />
+              </div>
+            </div>
+            <div className="h-5 w-16 animate-pulse rounded bg-paper-100 dark:bg-tayba-700/50" />
+          </div>
         ))}
       </div>
     </div>

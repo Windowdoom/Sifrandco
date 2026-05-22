@@ -42,7 +42,17 @@ export default function SurahPage({ params }: { params: { surah: string } }) {
       )}
 
       {error && <div className="card mt-6 p-4 text-sm text-red-700">{error}</div>}
-      {!verses && !error && <div className="mt-6 text-center text-sm text-tayba-900/60">Loading…</div>}
+      {!verses && !error && (
+        <div className="mt-4 space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="card space-y-2 p-5">
+              <div className="h-2.5 w-12 animate-pulse rounded bg-paper-100 dark:bg-tayba-700/40" />
+              <div className="h-6 w-full animate-pulse rounded bg-paper-100 dark:bg-tayba-700/40" />
+              <div className="h-3 w-3/4 animate-pulse rounded bg-paper-100/70 dark:bg-tayba-700/30" />
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 space-y-4">
         {verses?.map((v) => (

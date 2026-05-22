@@ -166,6 +166,82 @@ const MOODS: MoodConfig[] = [
     },
     breath: "Pay any sadaqah you can today, even a small one. The hadith says it does not decrease wealth, it cleanses it.",
   },
+  {
+    id: "angry",
+    label: "Angry",
+    arabic: "غَاضِب",
+    reflection: "The Prophet ﷺ said: the strong one is not the one who overpowers people, the strong one is the one who controls himself when angry. Anger is not the sin; what you do with it is.",
+    ayah: {
+      text: "وَالْكَاظِمِينَ الْغَيْظَ وَالْعَافِينَ عَنِ النَّاسِ ۗ وَاللَّهُ يُحِبُّ الْمُحْسِنِينَ",
+      translation: "Those who restrain their anger and pardon people, and Allah loves the doers of good.",
+      reference: "Quran 3:134",
+      refUrl: "https://quran.com/3/134",
+    },
+    dhikr: {
+      arabic: "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ",
+      transliteration: "A'udhu billahi mina-shaytani-rajim",
+      meaning: "I seek refuge with Allah from the accursed Shaytan.",
+      count: 3,
+    },
+    breath: "The Prophet ﷺ said: if one of you becomes angry while standing, let him sit down. If the anger goes, fine; if not, let him lie down. Move from your current posture, drink water, and do not act on the anger for ten minutes.",
+  },
+  {
+    id: "grieving",
+    label: "Grieving",
+    arabic: "حَزِين",
+    reflection: "The Prophet ﷺ wept when his son Ibrahim died and said: the eye sheds tears, the heart grieves, but we say only what pleases our Lord. Grief is not weak faith. Refusing to grieve is.",
+    ayah: {
+      text: "إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ ۝ أُولَٰئِكَ عَلَيْهِمْ صَلَوَاتٌ مِّن رَّبِّهِمْ وَرَحْمَةٌ ۖ وَأُولَٰئِكَ هُمُ الْمُهْتَدُونَ",
+      translation: "Indeed, to Allah we belong and to Him we shall return. Upon them are blessings from their Lord and mercy, and it is those who are the guided.",
+      reference: "Quran 2:156-157",
+      refUrl: "https://quran.com/2/156",
+    },
+    dhikr: {
+      arabic: "اللَّهُمَّ أْجُرْنِي فِي مُصِيبَتِي، وَاخْلُفْ لِي خَيْرًا مِنْهَا",
+      transliteration: "Allahumma ajurni fi musibati, wa-khlif li khayran minha",
+      meaning: "O Allah, reward me in my affliction, and replace it for me with something better.",
+      count: 1,
+    },
+    breath: "Allow the tears. Make wudu when they slow. Read three pages of the Quran, no agenda, just letting the words sit in the chest. Sleep early tonight if you can.",
+  },
+  {
+    id: "happy",
+    label: "Happy",
+    arabic: "فَرِح",
+    reflection: "Joy is also worship. The Prophet ﷺ laughed until his molars showed. Receiving good and naming it as a gift from Allah is the practice of a believing heart, not a distraction from it.",
+    ayah: {
+      text: "قُلْ بِفَضْلِ اللَّهِ وَبِرَحْمَتِهِ فَبِذَٰلِكَ فَلْيَفْرَحُوا هُوَ خَيْرٌ مِّمَّا يَجْمَعُونَ",
+      translation: "Say, In the bounty of Allah and in His mercy, in that let them rejoice. It is better than what they accumulate.",
+      reference: "Quran 10:58",
+      refUrl: "https://quran.com/10/58",
+    },
+    dhikr: {
+      arabic: "اللَّهُمَّ مَا أَصْبَحَ بِي مِنْ نِعْمَةٍ أَوْ بِأَحَدٍ مِنْ خَلْقِكَ فَمِنْكَ وَحْدَكَ لَا شَرِيكَ لَكَ، فَلَكَ الْحَمْدُ وَلَكَ الشُّكْرُ",
+      transliteration: "Allahumma ma asbaha bi min ni'matin aw bi-ahadin min khalqika fa minka wahdaka la sharika lak, fa laka-l-hamdu wa laka-sh-shukr",
+      meaning: "O Allah, whatever blessing has come to me or to any of Your creation this morning, it is from You alone, You have no partner. To You is praise and to You is gratitude.",
+      count: 1,
+    },
+    breath: "Tell one person about the blessing. Pay a small sadaqah on top of it (the Prophet ﷺ would do this after good news). Make a quiet dua for someone else to have something like it.",
+  },
+  {
+    id: "sick",
+    label: "Sick",
+    arabic: "مَرِيض",
+    reflection: "The Prophet ﷺ said: no fatigue, illness, sorrow, or worry touches a Muslim except that Allah expiates by it some of their sins, even the prick of a thorn. Illness is not punishment, it is purification.",
+    ayah: {
+      text: "وَإِذَا مَرِضْتُ فَهُوَ يَشْفِينِ",
+      translation: "And when I am ill, it is He who cures me.",
+      reference: "Quran 26:80",
+      refUrl: "https://quran.com/26/80",
+    },
+    dhikr: {
+      arabic: "بِاسْمِ اللَّهِ، أَعُوذُ بِاللَّهِ وَقُدْرَتِهِ مِنْ شَرِّ مَا أَجِدُ وَأُحَاذِرُ",
+      transliteration: "Bismillah, a'udhu billahi wa qudratihi min sharri ma ajidu wa uhadhir",
+      meaning: "In the name of Allah. I seek refuge in Allah and in His power from the evil of what I find and what I fear.",
+      count: 7,
+    },
+    breath: "Place your hand on the place that hurts and say the dhikr above seven times (Sahih Muslim 2202). Take the medicine the doctor gave you, seeking the cure with means is part of tawakkul, not against it.",
+  },
 ];
 
 export default function Feel() {

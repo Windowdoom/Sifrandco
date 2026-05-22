@@ -19476,6 +19476,307 @@ function _meaningTail(tag, text, c){
   };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  PRESSURE PASS — making the meaning layer inescapable. Four moves:
+//  (A) Neglect mechanic — subtle "off" signals when the layer is
+//      ignored. Not punishment; atmosphere.
+//  (B) Compounding divergence — halal path quietly compounds over
+//      decades; unrestricted path quietly destabilises late life.
+//  (C) Yearly identity summary — one interpretive line per turn.
+//  (D) Defining-moment preambles on first job and first major
+//      financial commitment.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+// ─── (A) Neglect mechanic — track engagement, fire "off" atmosphere events.
+//  Engagement rises when the player chooses halal options (tawbah,
+//  halal banking, dawah action, etc.) and falls when they take
+//  shortcuts. Low engagement + low sakina = subtle hollow events.
+(function(){
+  if(typeof initIslamicChar !== 'function') return;
+  const _orig = initIslamicChar;
+  initIslamicChar = function(c){
+    _orig.apply(this, arguments);
+    if(!c) return;
+    if(c.meaningEngagement == null) c.meaningEngagement = 50;
+  };
+})();
+
+// Engagement nudges via pushEvent inspection (cheap hook)
+(function(){
+  if(typeof pushEvent !== 'function') return;
+  const _orig = pushEvent;
+  pushEvent = function(tag, text, fx){
+    const r = _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !text) return r;
+    const t = String(text).toLowerCase();
+    // Engagement up
+    if(t.indexOf('tawbah') >= 0 || t.indexOf('halal') >= 0 || t.indexOf('mudaraba') >= 0
+       || t.indexOf('murabaha') >= 0 || t.indexOf('ijara') >= 0 || t.indexOf('jummah') >= 0
+       || t.indexOf('zakat') >= 0  || t.indexOf('khidmah') >= 0 || t.indexOf('khatm') >= 0){
+      c.meaningEngagement = clamp((c.meaningEngagement||50) + 2, 0, 100);
+    }
+    // Engagement down
+    if(t.indexOf('riba') >= 0 || t.indexOf('zina') >= 0 || t.indexOf('khamr') >= 0
+       || t.indexOf('maysir') >= 0 || t.indexOf('shortcuts add up') >= 0){
+      c.meaningEngagement = clamp((c.meaningEngagement||50) - 3, 0, 100);
+    }
+    return r;
+  };
+})();
+
+// Hollow / off-feeling atmosphere events when ignoring the layer
+const HOLLOW_EVENTS = [
+  '🪟 The room felt smaller than yesterday. You couldn\'t name why.',
+  '🔇 Your phone has been quiet for weeks. You haven\'t reached out either.',
+  '💸 You looked at the account number — it didn\'t land the way you expected.',
+  '🌫️ You finished what you were chasing this year and immediately needed something new to chase.',
+  '🕯️ A friend\'s warm message went unanswered for so long that replying felt embarrassing.',
+  '🎭 You realised everyone you spend time with is someone you do business with.',
+  '🛏️ You woke up tired again. The body is fine. The tired is not the body\'s.',
+  '🪞 You caught your reflection at an off angle and thought: who is that?',
+];
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive || c.age < 18) return;
+    const eng    = c.meaningEngagement || 50;
+    const sakina = c.sakina || 50;
+    const iman   = c.iman || 0;
+    // The combined neglect score — high when player ignores everything
+    const neglect = (100 - eng) * 0.4 + (100 - sakina) * 0.4 + (100 - iman) * 0.2;
+    if(neglect >= 55 && Math.random() < 0.18){
+      const ev = HOLLOW_EVENTS[Math.floor(Math.random() * HOLLOW_EVENTS.length)];
+      // Subtle: small happiness scrape, no big stat drop. Atmosphere only.
+      c.happiness = clamp(c.happiness - 3, 0, 100);
+      pushEvent('', ev);
+    }
+  };
+})();
+
+// ─── (B) Compounding divergence — long-arc reward asymmetry.
+//  Halal path + high iman quietly compounds stats every 3 years.
+//  Unrestricted path + high kabair quietly accumulates instability
+//  modifiers that fire harder dice rolls in later life.
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    if(c.age < 20) return;
+
+    // Halal compounding — every 3 years on the clean arc
+    if(c.age % 3 === 0
+       && (c.iman||0) >= 65
+       && (c.flags||{}).halalRizqOnly
+       && c.meaningEngagement >= 55){
+      c.health    = clamp(c.health   + 1, 0, 100);
+      c.sakina    = clamp((c.sakina||50)  + 2, 0, 100);
+      c.barakah   = clamp((c.barakah||50) + 2, 0, 100);
+      c.duaCount  = (c.duaCount || 0) + 2;
+      // Family rapport drift — if c.partner exists, +compat
+      if(c.partner && c.partner.compat != null){
+        c.partner.compat = clamp(c.partner.compat + 2, 0, 100);
+      }
+      // Surface quietly — once every 9 years so it doesn't spam
+      if(c.age % 9 === 0){
+        pushEvent('good', '🌳 The years of small consistencies are starting to compound. Things just work a little more often.');
+      }
+    }
+
+    // Haram-arc late-life instability — increases with cumulative kabair
+    const kabair = c.kabairFlags ? Object.values(c.kabairFlags).reduce((s,n)=>s+n,0) : 0;
+    if(c.age >= 40 && kabair >= 8 && Math.random() < 0.07){
+      const lateHits = [
+        {t:'⚖️ A decision from years ago surfaced — a lawsuit, a paper trail. The legal bill arrived.', cost:[4000, 25000], hap:-12},
+        {t:'🏥 A long-running issue finally caught up — the doctor sat down before speaking.', cost:[6000, 18000], hap:-15, health:-12},
+        {t:'💔 An old friend you wronged passed away. You couldn\'t make it right.', cost:[0,0], hap:-18, sakina:-10},
+        {t:'📰 An old story about you resurfaced online. You couldn\'t shake the feeling everyone had seen it.', cost:[0,0], hap:-10, karma:-6},
+        {t:'🪦 The investment you built on the wrong foundation collapsed.', cost:[20000, 80000], hap:-14},
+      ];
+      const h = lateHits[Math.floor(Math.random() * lateHits.length)];
+      const amt = h.cost[0] + Math.floor(Math.random() * (h.cost[1] - h.cost[0] + 1));
+      if(amt) c.money = Math.max(0, c.money - amt);
+      if(h.hap) c.happiness = clamp(c.happiness + h.hap, 0, 100);
+      if(h.health) c.health = clamp(c.health + h.health, 0, 100);
+      if(h.sakina) c.sakina = clamp((c.sakina||50) + h.sakina, 0, 100);
+      if(h.karma) c.karma = clamp(c.karma + h.karma, 0, 100);
+      pushEvent('bad', h.t + (amt ? ' (-' + fmtMoney(amt) + ')' : ''));
+    }
+  };
+})();
+
+// ─── (C) Yearly identity summary — one interpretive line per turn,
+//  drawn from the trajectory. Fires near the end of ageUp processing
+//  so it appears last in the year's event list. Compact.
+const IDENTITY_LINES = {
+  high_disc:    'Quiet discipline. You\'re becoming someone people lean on.',
+  high_disc_2:  'You\'re becoming known — slowly — for your integrity.',
+  high_disc_3:  'The deen is becoming the centre, not the decoration.',
+  rebuilding:   'You are showing the rebuilding, not announcing it.',
+  rebuilding_2: 'A year inside the climb back. Allah sees what others don\'t.',
+  comfort:      'You\'ve been prioritising comfort over growth.',
+  comfort_2:    'Easier paths kept showing up. You kept taking them.',
+  shortcuts:    'The shortcuts are becoming the way you walk.',
+  shortcuts_2:  'Your name is being said in rooms you wouldn\'t want it said.',
+  contentment:  'Modest, full, content. The dunya is starting to taste like enough.',
+  drifting:     'You\'re drifting — not falling, but not climbing either.',
+  hollow:       'Even the wins are landing softer than they should.',
+  defining:     'A defining year — you\'ll look back on this stretch.',
+  recovering:   'The room is getting quieter inside you. That\'s the work doing its work.',
+  neglect:      'Things still mostly work — but something hasn\'t been clicking for a while.',
+};
+
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive || c.age < 14) return;
+    // Pick the most fitting line based on trajectory
+    const iman   = c.iman || 0;
+    const sak    = c.sakina || 50;
+    const bar    = c.barakah || 50;
+    const eng    = c.meaningEngagement || 50;
+    const kabair = c.kabairFlags ? Object.values(c.kabairFlags).reduce((s,n)=>s+n,0) : 0;
+    const tawbahActive = !!(c.flags && c.flags.tawbahRebuildUntil);
+    const halal = !!(c.flags && c.flags.halalRizqOnly);
+    const net = (c.money||0) + (c.savings||0) + (c.investments||0);
+
+    let pick = null;
+    if(tawbahActive){
+      pick = c.age % 2 === 0 ? IDENTITY_LINES.rebuilding : IDENTITY_LINES.rebuilding_2;
+    } else if(iman >= 80 && sak >= 75 && halal){
+      const set = [IDENTITY_LINES.high_disc, IDENTITY_LINES.high_disc_2, IDENTITY_LINES.high_disc_3];
+      pick = set[c.age % set.length];
+    } else if(net > 500000 && sak <= 30){
+      pick = IDENTITY_LINES.hollow;
+    } else if(net < 100000 && iman >= 70 && sak >= 70){
+      pick = IDENTITY_LINES.contentment;
+    } else if(kabair >= 6){
+      pick = c.age % 2 === 0 ? IDENTITY_LINES.shortcuts : IDENTITY_LINES.shortcuts_2;
+    } else if(iman <= 35 && eng <= 35){
+      pick = c.age % 2 === 0 ? IDENTITY_LINES.comfort : IDENTITY_LINES.comfort_2;
+    } else if(sak <= 40 && eng <= 40){
+      pick = IDENTITY_LINES.neglect;
+    } else if(iman >= 55 && eng >= 50){
+      pick = IDENTITY_LINES.recovering;
+    } else {
+      pick = IDENTITY_LINES.drifting;
+    }
+    // Probability dampener so we don't fire EVERY year — 50% chance,
+    // and skip if we already pushed a milestone (◆) this turn.
+    if(Math.random() < 0.50){
+      pushEvent('', '▸ ' + pick);
+    }
+  };
+})();
+
+// CSS for the ▸ identity-summary line: dimmer, indented, italic.
+(function(){
+  const style = document.createElement('style');
+  style.textContent =
+      '/* Identity summary lines (start with ▸) */\n'
+    + '.year-event[data-id-line]{padding-left:18px;font-style:italic;font-family:Georgia,serif;font-size:12.5px;color:var(--t2);opacity:0.85;border-left:2px solid rgba(111,195,168,0.3);background:transparent;}\n';
+  document.head.appendChild(style);
+  if(typeof renderAll !== 'function') return;
+  const _orig = renderAll;
+  renderAll = function(){
+    _orig.apply(this, arguments);
+    setTimeout(function(){
+      document.querySelectorAll('.year-event').forEach(function(el){
+        if(el.dataset.idStyled) return;
+        if((el.textContent || '').trim().startsWith('▸')){
+          el.dataset.idLine = '1';
+          el.style.paddingLeft = '18px';
+          el.style.fontStyle = 'italic';
+          el.style.fontFamily = 'Georgia,serif';
+          el.style.fontSize = '12.5px';
+          el.style.color = 'var(--t2)';
+          el.style.opacity = '0.9';
+          el.style.borderLeft = '2px solid rgba(111,195,168,0.3)';
+          el.style.background = 'transparent';
+          el.dataset.idStyled = '1';
+        }
+      });
+    }, 0);
+  };
+})();
+
+// ─── (D) Defining-moment preambles — first job + first major financial
+//  commitment. Surfaces a modal-like banner BEFORE the action confirms,
+//  explicitly framed as a turning point with clear tradeoffs.
+function showDefiningMomentBanner(title, leftLabel, leftDesc, rightLabel, rightDesc, leftFx, rightFx){
+  const html = ''
+    + '<div style="padding:14px 16px;background:linear-gradient(180deg,#1d2e24,#0d1a13);border:2px solid var(--gold);border-radius:8px;margin-bottom:16px;text-align:center;">'
+    +   '<div style="font-family:var(--font-m);font-size:9px;letter-spacing:.32em;color:var(--gold);text-transform:uppercase;margin-bottom:6px;">◆ Defining Choice ◆</div>'
+    +   '<div style="font-family:Georgia,serif;font-size:18px;color:var(--accent);">' + title + '</div>'
+    +   '<div style="font-size:11px;color:var(--t3);margin-top:6px;font-style:italic;">This decision will compound. You\'ll look back on this stretch.</div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+    +   '<div style="padding:12px;background:rgba(184,88,68,0.08);border:1px solid rgba(184,88,68,0.4);border-radius:6px;">'
+    +     '<div style="font-family:var(--font-m);font-size:10px;color:#ff9c9c;letter-spacing:.18em;margin-bottom:6px;">' + leftLabel + '</div>'
+    +     '<div style="font-size:13px;color:var(--t1);line-height:1.5;">' + leftDesc + '</div>'
+    +     '<div style="font-size:11px;color:#ffb064;margin-top:8px;line-height:1.5;">' + leftFx + '</div>'
+    +   '</div>'
+    +   '<div style="padding:12px;background:rgba(106,168,74,0.10);border:1px solid rgba(106,168,74,0.4);border-radius:6px;">'
+    +     '<div style="font-family:var(--font-m);font-size:10px;color:#a3e635;letter-spacing:.18em;margin-bottom:6px;">' + rightLabel + '</div>'
+    +     '<div style="font-size:13px;color:var(--t1);line-height:1.5;">' + rightDesc + '</div>'
+    +     '<div style="font-size:11px;color:#a3e635;margin-top:8px;line-height:1.5;">' + rightFx + '</div>'
+    +   '</div>'
+    + '</div>';
+  return html;
+}
+
+// Hook into acceptJob — first ever job triggers a defining banner.
+//  (The banner pre-renders; the modal then continues to the normal flow.)
+(function(){
+  if(typeof acceptJob !== 'function') return;
+  const _orig = acceptJob;
+  acceptJob = function(key){
+    const c = LIFE && LIFE.char;
+    if(c && c.religion === 'islam' && !c.flags?.firstJobDone){
+      c.flags = c.flags || {};
+      c.flags.firstJobDone = true;
+      // Show a one-off reflective banner via toast + the next pushEvent
+      pushEvent('milestone', '◆ Your first paycheque. The first dirham\'s shape decides the shape of the next thousand. Hadith: "Every body grown from haram, the fire is more deserving of it." (Tirmidhi 614, hasan)');
+    }
+    return _orig.apply(this, arguments);
+  };
+})();
+
+// Hook into the conventional-loan signing — defining moment because of riba.
+(function(){
+  if(typeof _doConventionalLoan !== 'function') return;
+  const _orig = _doConventionalLoan;
+  _doConventionalLoan = function(kind, id, price, down){
+    const c = LIFE && LIFE.char;
+    if(c && c.religion === 'islam' && !c.flags?.firstRibaSigned){
+      c.flags = c.flags || {};
+      c.flags.firstRibaSigned = true;
+      pushEvent('bad', '◆ You signed your name on a riba contract for the first time. The next signature comes easier. That\'s how shortcuts become roads.');
+    }
+    return _orig.apply(this, arguments);
+  };
+})();
+
+// Hook into halal nikah completion — already a turning point; reinforce.
+(function(){
+  if(typeof finalizeHalalNikah !== 'function') return;
+  const _orig = finalizeHalalNikah;
+  finalizeHalalNikah = function(){
+    const r = _orig.apply(this, arguments);
+    pushEvent('milestone', '◆ Two lives stitched into one contract. The Prophet ﷺ said: "Whoever marries has completed half his religion." (Bayhaqi, hasan)');
+    return r;
+  };
+})();
+
 </script>
 </body>
 </html>

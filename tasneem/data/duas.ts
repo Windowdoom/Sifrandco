@@ -1,0 +1,161 @@
+// Curated verified duas. Each entry traces to a primary source (Quran or Six-Books hadith).
+// Cross-reference: Hisn al-Muslim (Fortress of the Muslim) by Sa'id al-Qahtani.
+
+export interface Dua {
+  id: string;
+  category: "Morning" | "Evening" | "Sleep" | "Wake" | "Food" | "Travel" | "Distress" | "Forgiveness" | "Salah" | "After Salah";
+  title: string;
+  arabic: string;
+  transliteration: string;
+  translation: string;
+  reference: string;
+  refUrl?: string;
+  repeat?: number;
+}
+
+export const DUAS: Dua[] = [
+  {
+    id: "ayatul-kursi",
+    category: "Morning",
+    title: "Ayat al-Kursi",
+    arabic: "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ",
+    transliteration: "Allahu la ilaha illa Huwa, Al-Hayyul-Qayyum…",
+    translation: "Allah — there is no deity except Him, the Ever-Living, the Sustainer of existence. Neither drowsiness overtakes Him nor sleep…",
+    reference: "Quran 2:255",
+    refUrl: "https://quran.com/2/255",
+  },
+  {
+    id: "muawwidhat-ikhlas",
+    category: "Morning",
+    title: "Surah al-Ikhlas",
+    arabic: "قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ",
+    transliteration: "Qul Huwa Allahu Ahad. Allahu-s-Samad. Lam yalid wa lam yulad. Wa lam yakun lahu kufuwan ahad.",
+    translation: "Say, He is Allah, [who is] One. Allah, the Eternal Refuge. He neither begets nor is born. Nor is there to Him any equivalent.",
+    reference: "Quran 112 — recite 3x morning & evening (Abu Dawud 5082)",
+    refUrl: "https://sunnah.com/abudawud:5082",
+    repeat: 3,
+  },
+  {
+    id: "muawwidhat-falaq",
+    category: "Morning",
+    title: "Surah al-Falaq",
+    arabic: "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِن شَرِّ مَا خَلَقَ ۝ وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ",
+    transliteration: "Qul a'udhu bi-Rabbil-Falaq…",
+    translation: "Say, I seek refuge in the Lord of daybreak from the evil of that which He created…",
+    reference: "Quran 113 — recite 3x morning & evening (Abu Dawud 5082)",
+    refUrl: "https://sunnah.com/abudawud:5082",
+    repeat: 3,
+  },
+  {
+    id: "muawwidhat-nas",
+    category: "Morning",
+    title: "Surah an-Nas",
+    arabic: "قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَٰهِ النَّاسِ ۝ مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ",
+    transliteration: "Qul a'udhu bi-Rabbin-Nas…",
+    translation: "Say, I seek refuge in the Lord of mankind, the King of mankind, the God of mankind…",
+    reference: "Quran 114 — recite 3x morning & evening (Abu Dawud 5082)",
+    refUrl: "https://sunnah.com/abudawud:5082",
+    repeat: 3,
+  },
+  {
+    id: "morning-sayyid-istighfar",
+    category: "Morning",
+    title: "Sayyid al-Istighfar — Master of Seeking Forgiveness",
+    arabic: "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي، فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+    transliteration: "Allahumma anta Rabbi, la ilaha illa anta…",
+    translation: "O Allah, You are my Lord, none has the right to be worshipped except You. You created me and I am Your servant, and I abide by Your covenant and promise as best I can. I seek refuge in You from the evil I have done. I acknowledge Your favours upon me and I acknowledge my sins, so forgive me — for none can forgive sins except You.",
+    reference: "Sahih al-Bukhari 6306",
+    refUrl: "https://sunnah.com/bukhari:6306",
+  },
+  {
+    id: "evening-amsayna",
+    category: "Evening",
+    title: "We have reached the evening",
+    arabic: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ",
+    transliteration: "Amsayna wa amsal-mulku lillah…",
+    translation: "We have reached the evening and at this very time all sovereignty belongs to Allah. All praise is for Allah. None has the right to be worshipped except Allah alone, who has no partner.",
+    reference: "Sahih Muslim 2723",
+    refUrl: "https://sunnah.com/muslim:2723",
+  },
+  {
+    id: "sleep-bismika",
+    category: "Sleep",
+    title: "Before sleeping",
+    arabic: "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا",
+    transliteration: "Bismika Allahumma amutu wa ahya",
+    translation: "In Your name O Allah, I die and I live.",
+    reference: "Sahih al-Bukhari 6324",
+    refUrl: "https://sunnah.com/bukhari:6324",
+  },
+  {
+    id: "wake-alhamdulillah",
+    category: "Wake",
+    title: "On waking",
+    arabic: "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ",
+    transliteration: "Alhamdu lillahil-ladhi ahyana ba'da ma amatana wa ilayhin-nushur",
+    translation: "All praise is due to Allah who gave us life after having taken it from us, and to Him is the resurrection.",
+    reference: "Sahih al-Bukhari 6324",
+    refUrl: "https://sunnah.com/bukhari:6324",
+  },
+  {
+    id: "food-bismillah",
+    category: "Food",
+    title: "Before eating",
+    arabic: "بِسْمِ اللَّهِ",
+    transliteration: "Bismillah",
+    translation: "In the name of Allah. (If you forget at the start, say: Bismillahi fi awwalihi wa akhirih.)",
+    reference: "Sunan Abu Dawud 3767",
+    refUrl: "https://sunnah.com/abudawud:3767",
+  },
+  {
+    id: "food-after",
+    category: "Food",
+    title: "After eating",
+    arabic: "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ",
+    transliteration: "Alhamdu lillahil-ladhi at'amani hadha wa razaqaneehi min ghayri hawlin minni wa la quwwah",
+    translation: "All praise is for Allah who fed me this and provided it for me, without any might or power on my part.",
+    reference: "Sunan Abu Dawud 4023",
+    refUrl: "https://sunnah.com/abudawud:4023",
+  },
+  {
+    id: "travel-subhan",
+    category: "Travel",
+    title: "When riding / starting a journey",
+    arabic: "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ، وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ",
+    transliteration: "Subhanal-ladhi sakhkhara lana hadha wa ma kunna lahu muqrinin, wa inna ila Rabbina lamunqalibun",
+    translation: "Glory be to Him who has subjected this to us, though we could not have subdued it on our own. And indeed, to our Lord we will return.",
+    reference: "Quran 43:13–14 (sunnah of the Prophet ﷺ — Muslim 1342)",
+    refUrl: "https://sunnah.com/muslim:1342",
+  },
+  {
+    id: "distress-la-ilaha",
+    category: "Distress",
+    title: "Dua of distress (Yunus عليه السلام)",
+    arabic: "لَا إِلَٰهَ إِلَّا أَنتَ سُبْحَانَكَ إِنِّي كُنتُ مِنَ الظَّالِمِينَ",
+    transliteration: "La ilaha illa anta, subhanaka, inni kuntu min adh-dhalimin",
+    translation: "There is no deity except You; exalted are You. Indeed, I have been of the wrongdoers.",
+    reference: "Quran 21:87 — recited by Yunus عليه السلام in the belly of the whale (Tirmidhi 3505)",
+    refUrl: "https://sunnah.com/tirmidhi:3505",
+  },
+  {
+    id: "istighfar-short",
+    category: "Forgiveness",
+    title: "Brief istighfar",
+    arabic: "أَسْتَغْفِرُ اللَّهَ",
+    transliteration: "Astaghfirullah",
+    translation: "I seek forgiveness from Allah.",
+    reference: "The Prophet ﷺ said istighfar more than 70 times a day — Sahih al-Bukhari 6307",
+    refUrl: "https://sunnah.com/bukhari:6307",
+    repeat: 100,
+  },
+  {
+    id: "after-salah-1",
+    category: "After Salah",
+    title: "Tasbih after every salah",
+    arabic: "سُبْحَانَ اللَّهِ (٣٣) الْحَمْدُ لِلَّهِ (٣٣) اللَّهُ أَكْبَرُ (٣٣) لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    transliteration: "SubhanAllah ×33 · Alhamdulillah ×33 · Allahu Akbar ×33, then once: La ilaha illa-llah…",
+    translation: "Glory to Allah (33×), Praise to Allah (33×), Allah is Greatest (33×), then once: None has the right to be worshipped but Allah alone…",
+    reference: "Sahih Muslim 597",
+    refUrl: "https://sunnah.com/muslim:597",
+  },
+];

@@ -53,7 +53,7 @@ export default function Tasbih() {
         <div className="mt-1 text-sm text-tayba-900/60 dark:text-paper-200/60">{active.label}</div>
 
         <button onClick={tick}
-          className="relative mx-auto mt-6 grid h-56 w-56 place-items-center rounded-full bg-tayba-radial text-paper-50 shadow-soft active:scale-[0.98] transition">
+          className="relative mx-auto mt-6 grid h-56 w-56 place-items-center rounded-full bg-tasneem-radial text-paper-50 shadow-soft active:scale-[0.98] transition">
           <svg className="absolute inset-0" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="46" stroke="rgba(255,255,255,0.12)" strokeWidth="3" fill="none"/>
             <circle cx="50" cy="50" r="46" stroke="#C9A961" strokeWidth="3" fill="none"

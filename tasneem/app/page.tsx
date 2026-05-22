@@ -35,13 +35,13 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
   const hijri = formatHijri(gregorianToHijri(now));
 
   return (
-    <div className="pt-10 pb-6">
+    <div className="pt-8 pb-6">
       <header className="px-6">
         <Wordmark subtitle="A spring from which those near Allah drink — Q 83:27" />
       </header>
 
       {/* Next prayer hero */}
-      <section className="relative mx-4 mt-8 overflow-hidden rounded-3xl bg-tayba-radial p-6 text-paper-50 shadow-soft geo-pattern">
+      <section className="relative mx-4 mt-6 overflow-hidden rounded-3xl bg-tasneem-radial p-6 text-paper-50 shadow-soft geo-pattern">
         <div className="relative z-10">
           <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-paper-50/70">
             <span>{label ?? "Your location"}</span>
@@ -81,7 +81,7 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
       </section>
 
       {/* Quick tiles */}
-      <section className="mx-4 mt-6 grid grid-cols-2 gap-3">
+      <section className="mx-4 mt-5 grid grid-cols-2 gap-2.5">
         <Tile href="/qibla"  title="Qibla"       sub="Direction & distance" />
         <Tile href="/tasbih" title="Tasbih"      sub="Dhikr counter" />
         <Tile href="/quran"  title="Quran"       sub="Read & listen" />
@@ -95,8 +95,8 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
       </section>
 
       {/* Footer pill */}
-      <section className="mx-4 mt-8 mb-4 flex items-center justify-between rounded-2xl border border-paper-200 bg-paper-50 px-4 py-3 dark:border-tayba-700 dark:bg-tayba-800">
-        <div className="text-xs text-tayba-900/70 dark:text-paper-200/70">
+      <section className="mx-4 mt-6 mb-4 flex items-center justify-between rounded-2xl border border-paper-200 bg-white px-4 py-3 dark:border-tayba-700 dark:bg-tayba-800">
+        <div className="text-xs font-medium text-tayba-900/85 dark:text-paper-200/70">
           No ads · no tracking · open source
         </div>
         <Link href="/donate" className="btn-gold text-sm">Support Tasneem</Link>
@@ -111,10 +111,10 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
 
 function Tile({ href, title, sub }: { href: string; title: string; sub: string }) {
   return (
-    <Link href={href} className="card group p-4 transition hover:border-gold-400 hover:shadow-gold">
-      <div className="font-serif text-lg text-tayba-700 dark:text-paper-50">{title}</div>
-      <div className="text-xs text-tayba-900/60 dark:text-paper-200/60">{sub}</div>
-      <div className="mt-3 h-px w-8 bg-gold-400 transition-all group-hover:w-16" />
+    <Link href={href} className="card group p-3.5 transition hover:border-gold-400 hover:shadow-gold">
+      <div className="font-serif text-[1.05rem] font-medium text-tayba-900 dark:text-paper-50">{title}</div>
+      <div className="mt-0.5 text-[0.78rem] text-tayba-900/75 dark:text-paper-200/70">{sub}</div>
+      <div className="mt-2.5 h-px w-8 bg-gold-400 transition-all group-hover:w-16" />
     </Link>
   );
 }

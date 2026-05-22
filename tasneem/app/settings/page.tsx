@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SectionTitle } from "@/components/Brand";
+import PrayerReminders from "@/components/PrayerReminders";
 import { Storage } from "@/lib/storage";
 import { CALCULATION_METHODS, DEFAULT_SETTINGS, type UserSettings } from "@/lib/prayer-times";
 
@@ -34,6 +35,8 @@ export default function Settings() {
   return (
     <div className="px-4 pt-8 space-y-6">
       <SectionTitle kicker="Preferences" title="Settings" />
+
+      <PrayerReminders />
 
       <div className="card p-5">
         <div className="text-sm font-medium mb-2">Calculation method</div>

@@ -17836,6 +17836,336 @@ function _wireBodyModRulingChips(){
   };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  PHILOSOPHY DEEPENING PASS — sakina, barakah, Book of Life, ordinary
+//  Islamic life events, Tahajjud-unlocks-during-hardship.
+//  Adds the inner-state dimensions Islam emphasises (peace, blessing)
+//  alongside the existing iman/karma ledger, expands the death screen
+//  into a genuine Book of Life accounting, and seeds the events pool
+//  with ordinary acts of practice so Islam appears in routine joy,
+//  not only in moral tests.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+// ─── Initialise sakina + barakah on every Muslim character (player + heirs).
+(function(){
+  if(typeof initIslamicChar !== 'function') return;
+  const _orig = initIslamicChar;
+  initIslamicChar = function(c){
+    _orig.apply(this, arguments);
+    if(!c) return;
+    if(c.sakina  == null) c.sakina  = 50; // inner peace (tranquillity)
+    if(c.barakah == null) c.barakah = 50; // divine blessing in time/wealth
+    if(c.duaCount == null) c.duaCount = 0; // people who pray for you
+    if(c.jummahKept == null) c.jummahKept = 0;
+    if(c.salahYearsConsistent == null) c.salahYearsConsistent = 0;
+    if(c.parentsHonoured == null) c.parentsHonoured = 0;
+    if(c.neighboursHelped == null) c.neighboursHelped = 0;
+    if(c.janazahAttended == null) c.janazahAttended = 0;
+    if(c.quranKhatm == null) c.quranKhatm = 0; // full Qur'an readings completed
+  };
+})();
+
+// ─── Annual drift of sakina + barakah — driven by lived practice,
+//  not by single moments. The signal is subtle and accumulating.
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    let dS = -1, dB = -1; // gentle natural decline if untended
+
+    // Sakina builds from consistent salah, dhikr (proxied by faith maintenance),
+    // family ties, and tawbah. It erodes from kabair, riba income, and
+    // chronic neglect of obligation.
+    if((c.salahDaily||0) >= 5) { dS += 4; c.salahYearsConsistent = (c.salahYearsConsistent||0) + 1; }
+    else if((c.salahDaily||0) >= 3) dS += 2;
+    else if((c.salahDaily||0) >= 1) dS += 1;
+    else { dS -= 3; c.salahYearsConsistent = 0; }
+    if(c.kabairFlags){
+      const kt = Object.values(c.kabairFlags).reduce((s,n)=>s+n, 0);
+      if(kt > 0) dS -= Math.min(6, kt);
+    }
+    if((c.flags||{}).halalRizqOnly) { dS += 1; dB += 2; }
+    if((c.tawbahCount||0) > 0 && c.age % 3 === 0) dS += 1;
+
+    // Barakah grows from zakat paid, sadaqah, halal earnings, kinship
+    // maintained, kept promises, and parents honoured. Erodes from
+    // riba contracts, broken kinship, deceit.
+    if((c.flags||{}).zakatLifetimePaid && (c.flags||{}).zakatLifetimePaid > 0) dB += 2;
+    if((c.flags||{}).naslBurden) dB -= Math.min(5, (c.flags.naslBurden / 4));
+    if((c.parentsHonoured||0) > 0 && c.age % 2 === 0) dB += 1;
+    if((c.neighboursHelped||0) > 0 && c.age % 3 === 0) dB += 1;
+
+    c.sakina  = clamp((c.sakina||50)  + dS, 0, 100);
+    c.barakah = clamp((c.barakah||50) + dB, 0, 100);
+
+    // Sakina-driven emotional dampening: high sakina softens happiness
+    // drops; low sakina amplifies them. Subtle, only on years a major
+    // negative event hit (proxied by happiness loss this turn — skip,
+    // we don't track turn-deltas here, but apply a small ambient lift).
+    if(c.sakina >= 75 && c.happiness < 60) c.happiness = clamp(c.happiness + 2, 0, 100);
+    if(c.sakina <= 25 && c.happiness > 50) c.happiness = clamp(c.happiness - 1, 0, 100);
+
+    // Barakah-driven rizq: high barakah occasionally surfaces unexpected
+    // halal income; low barakah evaporates small amounts. Rare, quiet.
+    if(c.age >= 18 && c.alive){
+      const roll = Math.random();
+      if(c.barakah >= 70 && roll < 0.06){
+        const amt = 200 + Math.floor(Math.random() * 1800);
+        c.money += amt;
+        pushEvent('good', '🌿 An unexpected halal opening — ' + fmtMoney(amt) + ' came your way. Allah is the best of providers (Quran 5:114).');
+      } else if(c.barakah <= 25 && roll < 0.05){
+        const amt = 150 + Math.floor(Math.random() * 1200);
+        c.money = Math.max(0, c.money - amt);
+        pushEvent('bad', '🍂 Money slipped away in small expenses you couldn\'t track. Barakah is thin.');
+      }
+    }
+
+    // Inner-struggle event: wealthy + low sakina → emptiness
+    if(c.alive && c.age >= 25 && c.age % 5 === 0){
+      const net = (c.money||0) + (c.savings||0) + (c.investments||0);
+      if(net >= 500000 && c.sakina <= 30){
+        c.happiness = clamp(c.happiness - 8, 0, 100);
+        pushEvent('bad', '💭 Despite the wealth, an emptiness settles in. The heart finds rest only in remembrance of Allah (Quran 13:28).');
+      } else if(net < 50000 && c.iman >= 70 && c.sakina >= 70){
+        c.happiness = clamp(c.happiness + 6, 0, 100);
+        pushEvent('good', '🌙 Little wealth, but contentment fills the chest. The Prophet ﷺ taught: "Richness is not by abundance of goods; richness is the richness of the soul." (Bukhari 6446)');
+      }
+    }
+  };
+})();
+
+// ─── Render Sakina + Barakah alongside Iman in the stat panel.
+(function(){
+  const wireRender = function(){
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const wrap = document.getElementById('iman-stats');
+    if(!wrap || wrap.dataset.sbWired) return;
+    const row = function(label, val, fg, bgGrad){
+      return '<div class="stat-row" style="margin-top:8px;">'
+        + '<div style="display:flex;justify-content:space-between;font-family:var(--font-m);font-size:10px;letter-spacing:.18em;color:' + fg + ';text-transform:uppercase;">'
+        + '<span>' + label + '</span><span>' + val + '</span></div>'
+        + '<div class="stat-bar" style="background:#0d1a0e;"><div class="stat-fill" style="width:' + val + '%;background:' + bgGrad + ';"></div></div>'
+        + '</div>';
+    };
+    wrap.insertAdjacentHTML('beforeend',
+        row('🌿 Sakina',  c.sakina  || 50, '#7fd8ff', 'linear-gradient(90deg,#1f4d6e,#7fd8ff)')
+      + row('✨ Barakah', c.barakah || 50, '#ffd96b', 'linear-gradient(90deg,#6e4d1f,#ffd96b)')
+    );
+    wrap.dataset.sbWired = '1';
+  };
+  // Re-render is destructive; rely on a periodic top-up after each render
+  if(typeof renderAll === 'function'){
+    const _orig = renderAll;
+    renderAll = function(){
+      _orig.apply(this, arguments);
+      const wrap = document.getElementById('iman-stats');
+      if(wrap) wrap.dataset.sbWired = ''; // allow re-attach
+      setTimeout(wireRender, 0);
+    };
+  }
+})();
+
+// ─── Positive ordinary Islamic life events — fired during ageUp at
+//  moderate frequency so Islam appears in routine joy, not only as
+//  consequence of sin. Each touches sakina/barakah/happiness gently.
+const ISLAMIC_LIFE_EVENTS = [
+  // Yearly Eid moments
+  {age:[6,99], prob:0.95, oncePerAge:'eid_fitr',
+    t:'🌙 Eid al-Fitr — the family gathered after a month of fasting. Sweets, hugs, and forgiveness asked for.',
+    fx:{happiness:+8, sakina:+5, family:+3}},
+  {age:[8,99], prob:0.90, oncePerAge:'eid_adha',
+    t:'🐑 Eid al-Adha — the qurbani was offered, the meat shared with neighbours, the poor, and family.',
+    fx:{happiness:+7, sakina:+4, barakah:+3, karma:+4}},
+  // Weekly-feeling: Jummah accumulator
+  {age:[14,99], prob:0.40,
+    t:'🕌 You went to Jummah. The khutbah landed exactly where you needed it.',
+    fx:{sakina:+3, iman:+2, jummah:+1}},
+  // Family / kinship
+  {age:[18,90], prob:0.18,
+    t:'👨‍👩‍👧 You visited your parents. They prayed for you as you left.',
+    fx:{happiness:+5, barakah:+3, sakina:+2, parentsHonoured:+1, duaCount:+2},
+    req:c => c.father && c.father.alive || c.mother && c.mother.alive},
+  {age:[16,99], prob:0.14,
+    t:'🤝 A neighbour\'s pipe burst at midnight — you stayed up helping bail water. They invited you for breakfast at dawn.',
+    fx:{karma:+3, sakina:+2, barakah:+2, neighboursHelped:+1, duaCount:+1}},
+  {age:[14,99], prob:0.10,
+    t:'⚰️ You attended a janazah. The walk back was quiet — life is shorter than it seems.',
+    fx:{sakina:+4, iman:+3, janazahAttended:+1}},
+  // Qur'an + knowledge
+  {age:[10,99], prob:0.08,
+    t:'📖 You completed a full khatm of the Qur\'an this year.',
+    fx:{iman:+6, sakina:+5, barakah:+3, quranKhatm:+1}},
+  {age:[7,18], prob:0.10,
+    t:'📚 You attended a Quran class at the local masjid. The teacher said your tajweed is improving.',
+    fx:{iman:+3, sakina:+2, smarts:+1}},
+  // Hardship-triggered Tahajjud already handled via the action; passive
+  // version fires too for narrative texture:
+  {age:[14,99], prob:0.07,
+    t:'🌌 You woke for Tahajjud. The night was quiet, the heart heavy, and the dua was long.',
+    fx:{sakina:+6, iman:+4, barakah:+2},
+    req:c => c.happiness <= 40},
+  // Random barakah moments
+  {age:[18,99], prob:0.05,
+    t:'🌿 A small unexpected kindness — a stranger paid for your tea before walking off.',
+    fx:{happiness:+3, sakina:+2, barakah:+1, duaCount:+1}},
+  {age:[20,99], prob:0.04,
+    t:'🤲 A friend confided in you. You listened without judgement.',
+    fx:{sakina:+3, karma:+3, duaCount:+1}},
+  // Ramadan texture
+  {age:[10,99], prob:0.20,
+    t:'🌙 The last ten nights of Ramadan — you stayed awake reciting and asking, hoping for Laylat al-Qadr.',
+    fx:{iman:+5, sakina:+5, barakah:+4, ramadanFastsKept:+1}},
+];
+
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    // Pick at most 1-2 positive events per year so we don't spam
+    const fired = [];
+    for(const ev of ISLAMIC_LIFE_EVENTS){
+      if(c.age < ev.age[0] || c.age > ev.age[1]) continue;
+      if(ev.req && !ev.req(c)) continue;
+      const key = ev.oncePerAge ? ev.oncePerAge + '_' + c.age : null;
+      if(key && c.flags && c.flags[key]) continue;
+      if(Math.random() < ev.prob){
+        fired.push(ev);
+        if(key){ c.flags = c.flags || {}; c.flags[key] = true; }
+        if(fired.length >= 2) break;
+      }
+    }
+    fired.forEach(ev => {
+      // Apply fx
+      const f = ev.fx || {};
+      if(f.happiness) c.happiness = clamp(c.happiness + f.happiness, 0, 100);
+      if(f.sakina)    c.sakina    = clamp((c.sakina||50)  + f.sakina, 0, 100);
+      if(f.barakah)   c.barakah   = clamp((c.barakah||50) + f.barakah, 0, 100);
+      if(f.iman)      c.iman      = clamp((c.iman||0)     + f.iman, 0, 100);
+      if(f.karma)     c.karma     = clamp(c.karma         + f.karma, 0, 100);
+      if(f.smarts)    c.smarts    = clamp(c.smarts        + f.smarts, 0, 100);
+      if(f.jummah)             c.jummahKept = (c.jummahKept||0) + f.jummah;
+      if(f.parentsHonoured)    c.parentsHonoured = (c.parentsHonoured||0) + f.parentsHonoured;
+      if(f.neighboursHelped)   c.neighboursHelped = (c.neighboursHelped||0) + f.neighboursHelped;
+      if(f.janazahAttended)    c.janazahAttended = (c.janazahAttended||0) + f.janazahAttended;
+      if(f.quranKhatm)         c.quranKhatm = (c.quranKhatm||0) + f.quranKhatm;
+      if(f.ramadanFastsKept)   c.ramadanFastsKept = (c.ramadanFastsKept||0) + f.ramadanFastsKept;
+      if(f.duaCount)           c.duaCount = (c.duaCount||0) + f.duaCount;
+      c.faith = c.iman;
+      pushEvent('good', ev.t);
+    });
+  };
+})();
+
+// ─── Tahajjud action — unlocks when happiness is low. A subtle path
+//  to emotional/spiritual recovery rather than a generic +stat button.
+function performTahajjud(){
+  const c = LIFE.char;
+  if(!c || c.religion !== 'islam'){ toast('This action is for Muslim characters.'); return; }
+  if(c.happiness > 40){ toast('Tahajjud is opened by hardship — your heart is not yet heavy enough this turn.'); return; }
+  c.sakina    = clamp((c.sakina||50)  + 12, 0, 100);
+  c.iman      = clamp((c.iman||0)     + 6, 0, 100);
+  c.barakah   = clamp((c.barakah||50) + 4, 0, 100);
+  c.happiness = clamp(c.happiness     + 14, 0, 100);
+  c.faith = c.iman;
+  pushEvent('milestone', '🌌 You stood for Tahajjud in the last third of the night. The heart found space. Sakina +12, Iman +6.');
+  renderAll(); saveLife();
+}
+
+// ─── Book of Life — a Muslim-edition death summary that goes beyond
+//  net worth and prestige to the dimensions Islam actually weighs.
+//  Wraps showDeathScreen to inject the Book of Life block above the
+//  standard stats.
+(function(){
+  if(typeof showDeathScreen !== 'function') return;
+  const _orig = showDeathScreen;
+  showDeathScreen = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const sum = document.getElementById('death-summary');
+    if(!sum || sum.dataset.bookOfLifeWired) return;
+
+    const liveKids = (c.children||[]).filter(k => k.alive);
+    const muslimKids = liveKids.filter(k => k.religion === 'islam');
+    const avgKidIman = muslimKids.length ? Math.floor(muslimKids.reduce((s,k)=>s+(k.iman||0),0) / muslimKids.length) : 0;
+    const lifetimeZakat = (c.flags||{}).zakatLifetimePaid || 0;
+    const tawbahCount  = c.tawbahCount || 0;
+    const kabairTotal  = c.kabairFlags ? Object.values(c.kabairFlags).reduce((s,n)=>s+n,0) : 0;
+    const sadaqahJariyah = ((c.flags||{}).sadaqahJariyahCount) || ((c.flags||{}).waqfEstablished ? 1 : 0);
+    const peopleDua = (c.duaCount||0) + muslimKids.length * 3 + (c.parentsHonoured||0);
+
+    // Hidden good — a small randomised bonus representing acts known only to Allah.
+    // Bounded by iman so it doesn't reward heedlessness.
+    const hiddenGood = Math.floor(((c.iman||0) / 20) * (1 + Math.random()));
+
+    const rowOk  = (label, val, suffix) => '<div class="death-stat" style="border-color:#2d7a3f;"><span class="death-stat-k" style="color:#a3e635;">' + label + '</span><span class="death-stat-v" style="color:#a3e635;">' + val + (suffix||'') + '</span></div>';
+    const rowMid = (label, val, suffix) => '<div class="death-stat"><span class="death-stat-k">' + label + '</span><span class="death-stat-v">' + val + (suffix||'') + '</span></div>';
+    const rowBad = (label, val, suffix) => val ? '<div class="death-stat" style="border-color:#5a1a1a;"><span class="death-stat-k" style="color:#ff9c9c;">' + label + '</span><span class="death-stat-v" style="color:#ff9c9c;">' + val + (suffix||'') + '</span></div>' : '';
+
+    const book = ''
+      + '<div style="margin:18px 0 10px;padding:14px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:6px;text-align:center;">'
+      +   '<div style="font-family:var(--font-h);font-size:20px;color:#a3e635;">☪ Book of Life</div>'
+      +   '<div style="font-family:var(--font-m);font-size:10px;color:#6fb878;letter-spacing:.2em;margin-top:4px;text-transform:uppercase;">What this game can count. The rest is with Allah.</div>'
+      + '</div>'
+      + rowOk('Salah — years of consistent 5/day', c.salahYearsConsistent || 0)
+      + rowOk('Ramadan fasts kept',                c.ramadanFastsKept || 0)
+      + rowOk('Jummahs attended',                   c.jummahKept || 0)
+      + rowOk('Quran khatm completed',              c.quranKhatm || 0)
+      + (c.hafizProgress >= 100 ? rowOk('Hafiz of the Quran', 'Yes') : '')
+      + ((c.flags||{}).hajjPerformed ? rowOk('Hajj performed', 'Yes') : rowMid('Hajj performed', 'No'))
+      + rowOk('Zakat paid lifetime',                fmtMoney(lifetimeZakat))
+      + rowOk('Sadaqah jariyah established',        sadaqahJariyah)
+      + rowOk('Parents honoured (visits)',          c.parentsHonoured || 0)
+      + rowOk('Neighbours helped',                  c.neighboursHelped || 0)
+      + rowOk('Janazah attended',                   c.janazahAttended || 0)
+      + rowOk('Children raised on the deen',        muslimKids.length + ' (avg iman ' + avgKidIman + ')')
+      + rowOk('People who make du\'a for you',      peopleDua)
+      + rowMid('Tawbah made in life',                tawbahCount)
+      + rowBad('Kabair recorded against you',        kabairTotal)
+      + rowMid('Inner peace at death (Sakina)',      (c.sakina  || 0) + ' / 100')
+      + rowMid('Barakah at death',                   (c.barakah || 0) + ' / 100')
+      + rowMid('Iman at death',                      (c.iman    || 0) + ' / 100')
+      + (hiddenGood > 0 ? '<div class="death-stat" style="border-color:#7fd8ff;"><span class="death-stat-k" style="color:#7fd8ff;">Hidden good (known to Allah alone)</span><span class="death-stat-v" style="color:#7fd8ff;">+' + hiddenGood + '</span></div>' : '')
+      + '<div style="margin-top:14px;padding:10px 12px;background:#1a1428;border:1px dashed #6fb878;border-radius:5px;font-size:11px;color:#9ec8a4;line-height:1.55;text-align:center;font-style:italic;">'
+      +   'The final reckoning belongs to Allah alone. The Quran says: "Every soul will taste death, and you will only be given your full compensation on the Day of Resurrection." (Quran 3:185)'
+      + '</div>';
+
+    sum.insertAdjacentHTML('beforeend', book);
+    sum.dataset.bookOfLifeWired = '1';
+  };
+})();
+
+// ─── Wire a Tahajjud button into the action bar when conditions allow.
+//  Replaces the renderActionBar wrap that already exists for Tawbah/Reflect
+//  by extending its output if found, otherwise no-ops gracefully.
+(function(){
+  if(typeof renderActionBar !== 'function') return;
+  const _orig = renderActionBar;
+  renderActionBar = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    if(c.happiness > 40) return; // only surfaces during hardship
+    const bar = document.querySelector('.action-bar') || document.getElementById('action-bar');
+    if(!bar || bar.dataset.tahajjudWired === String(c.age)) return;
+    const btn = document.createElement('button');
+    btn.className = 'act-btn';
+    btn.style.cssText = 'background:#0d1a0e;border:1px solid #6fb878;color:#a3e635;';
+    btn.textContent = '🌌 Tahajjud';
+    btn.title = 'Stand in the last third of the night — for hearts feeling heavy.';
+    btn.onclick = function(){ performTahajjud(); };
+    bar.appendChild(btn);
+    bar.dataset.tahajjudWired = String(c.age);
+  };
+})();
+
 </script>
 </body>
 </html>

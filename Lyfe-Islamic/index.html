@@ -18166,6 +18166,446 @@ function performTahajjud(){
   };
 })();
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  HALAL / HARAM DATING + NIKAH DEPTH
+//  Surfaces the choice — Islam permits both paths to exist (the haram
+//  path with its consequences), and presents the proper way to marry
+//  per the player's madhab. Wali, mahr, and witnesses become real
+//  steps rather than a one-click ritual purchase.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+const MADHABS = {
+  hanafi: {
+    name:'Hanafi', ico:'📕', founder:'Imam Abu Hanifa',
+    walliRequired:false,
+    walliNote:'An adult Muslim woman may contract her own nikah without a wali, provided she marries a man of compatible standing (kuf\'). A wali is preferred and culturally expected, but not strictly required for validity.',
+    minMahr:300, // ~10 dirhams modern proxy
+    region:'Indian subcontinent, Turkey, Central Asia, Levant',
+  },
+  maliki: {
+    name:'Maliki', ico:'📗', founder:'Imam Malik ibn Anas',
+    walliRequired:true,
+    walliNote:'A wali is required for the marriage to be valid. The wali must act in her best interest; if he unjustly withholds (\'adl), the qadi can override.',
+    minMahr:500,
+    region:'North Africa, parts of West Africa, Andalus heritage',
+  },
+  shafii: {
+    name:"Shafi'i", ico:'📘', founder:"Imam Muhammad ibn Idris al-Shafi'i",
+    walliRequired:true,
+    walliNote:'A wali is required for the marriage to be valid. The order: father, paternal grandfather, full brother, paternal uncle, then the qadi.',
+    minMahr:400,
+    region:'Egypt, East Africa, Yemen, Indonesia, Malaysia',
+  },
+  hanbali: {
+    name:'Hanbali', ico:'📙', founder:'Imam Ahmad ibn Hanbal',
+    walliRequired:true,
+    walliNote:'A wali is required for validity. Strong emphasis on the bride\'s own consent — silence from a virgin is consent; a divorcée/widow must affirm explicitly.',
+    minMahr:400,
+    region:'Arabian Peninsula',
+  },
+};
+
+Object.assign(ISLAMIC_RULINGS, {
+  wali: {
+    verdict:'wajib', label:'Wali — The Bride\'s Guardian',
+    summary:'Three of the four Sunni madhabs (Maliki, Shafi\'i, Hanbali) hold that a wali is a condition of marriage validity for a woman — the marriage is not valid without him. The Hanafi position permits an adult woman to contract her own nikah with a compatible (kuf\') match, while still treating the wali as strongly preferred. The wali\'s role is to protect the bride\'s interest, not to overrule her — he cannot force a marriage she rejects, and unjust refusal is itself sinful.',
+    refs:[
+      {kind:'hadith', cite:'Sunan Abi Dawud 2083', url:'https://sunnah.com/abudawud:2083',
+       text:'The Prophet ﷺ said: "There is no marriage without a wali."'},
+      {kind:'hadith', cite:'Sahih Bukhari 5136', url:'https://sunnah.com/bukhari:5136',
+       text:'(A previously-married woman) "is not to be married until she is consulted, and a virgin is not to be married until her permission is sought."'},
+    ],
+  },
+  mahr: {
+    verdict:'wajib', label:'Mahr — The Bridal Gift',
+    summary:'A gift from the groom to the bride, obligatory in every nikah. It is hers exclusively — not her family\'s. Its amount is negotiable; the sunnah is that it not be excessive. Minimum thresholds differ by madhab but a token amount is always valid; the Prophet ﷺ approved a marriage where the mahr was an iron ring.',
+    refs:[
+      {kind:'quran', cite:'Quran 4:4', url:'https://quran.com/4/4',
+       text:'And give the women [upon marriage] their [bridal] gifts graciously.'},
+      {kind:'hadith', cite:'Sahih Bukhari 5121', url:'https://sunnah.com/bukhari:5121',
+       text:'"Look for something to give as mahr, even if it is a ring of iron."'},
+    ],
+  },
+  zina: {
+    verdict:'haram', label:'Zina — Unlawful Intimacy',
+    summary:'Sexual relations outside the bond of nikah. The Quran does not say "do not commit zina" — it says do not even approach it, blocking the steps that lead there (private meetings, suggestive looks, isolation with the opposite sex). The haram path is a real choice in life and in this game; its worldly consequences accumulate, and naslBurden passes to any children born outside the contract.',
+    refs:[
+      {kind:'quran', cite:'Quran 17:32', url:'https://quran.com/17/32',
+       text:'And do not approach unlawful sexual intercourse. Indeed, it is ever an immorality and is evil as a way.'},
+      {kind:'hadith', cite:'Sahih Bukhari 5256', url:'https://sunnah.com/bukhari:5256'},
+    ],
+  },
+});
+
+// ─── Initialise madhab + marriagePath on every Muslim character.
+//  Default madhab is set lazily when needed; default path is 'unset'
+//  so the choice surfaces explicitly.
+(function(){
+  if(typeof initIslamicChar !== 'function') return;
+  const _orig = initIslamicChar;
+  initIslamicChar = function(c){
+    _orig.apply(this, arguments);
+    if(!c) return;
+    if(c.madhab == null)        c.madhab = null;        // chosen at ~16
+    if(c.marriagePath == null)  c.marriagePath = null;  // 'halal' | 'unrestricted' | null
+    if(c.haramRelMonths == null) c.haramRelMonths = 0;  // accumulated months in unmarried physical relationships
+  };
+})();
+
+// ─── Madhab selection — surfaced once when the player turns 16, then
+//  always changeable from the dating preferences modal.
+function chooseMadhab(){
+  const c = LIFE.char;
+  let html = '<div style="padding:14px 16px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:6px;margin-bottom:14px;font-size:13px;line-height:1.6;color:#cfe8d4;">'
+    + 'Pick the school of fiqh (madhab) your family raised you in. All four are valid Sunni traditions. The choice changes the rules of nikah (wali requirement, minimum mahr) and a few practical points elsewhere.'
+    + '</div>';
+  Object.keys(MADHABS).forEach(k => {
+    const m = MADHABS[k];
+    const sel = (c.madhab === k);
+    html += '<div class="card" onclick="closeModal();setMadhab(\'' + k + '\')" style="cursor:pointer;' + (sel ? 'border-color:#a3e635;background:#1a1428;' : '') + '">'
+      + '<div class="card-ico">' + m.ico + '</div>'
+      + '<div class="card-body"><div class="card-title">' + m.name + (sel ? ' · CURRENT' : '') + '</div>'
+      + '<div class="card-meta">' + m.founder + ' — common in ' + m.region + '.</div>'
+      + '<div class="card-meta" style="margin-top:4px;color:#7fd8ff;">Wali: ' + (m.walliRequired ? 'required for nikah validity' : 'preferred but not required for adult women') + '. Min mahr: ' + fmtMoney(m.minMahr) + '.</div></div>'
+      + '<div class="card-act"><button class="card-btn ' + (sel ? '' : 'green') + '">' + (sel ? 'Keep' : 'Choose') + '</button></div></div>';
+  });
+  html += '<div style="margin-top:8px;padding:10px 12px;background:#1a1428;border:1px dashed #6fb878;border-radius:5px;font-size:11px;color:#9ec8a4;font-style:italic;text-align:center;">Following a madhab is not sectarianism — it is the practical method by which the ummah has preserved the law. All four imams loved one another; their differences are mercy.</div>';
+  openModal('📚 Choose Your Madhab', html);
+}
+function setMadhab(k){
+  const c = LIFE.char;
+  c.madhab = k;
+  pushEvent('milestone', '📚 You follow the ' + MADHABS[k].name + ' madhab.');
+  renderAll(); saveLife();
+}
+
+// ─── Marriage path choice — explicit fork between halal and unrestricted.
+//  Both routes are available; choosing 'unrestricted' is depicted as the
+//  player's free choice with consequences, not pre-judged.
+function chooseMarriagePath(){
+  const c = LIFE.char;
+  let html = '<div style="padding:14px 16px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:6px;margin-bottom:14px;font-size:13px;line-height:1.6;color:#cfe8d4;">'
+    + 'Two paths exist in this game. The choice is real. Either way, you live the consequences.'
+    + '</div>';
+  // Halal
+  html += '<div class="card" onclick="closeModal();setMarriagePath(\'halal\')" style="cursor:pointer;border-color:#2d7a3f;">'
+    + '<div class="card-ico">☪</div>'
+    + '<div class="card-body"><div class="card-title" style="color:#a3e635;">Halal Path — Marriage with Intent</div>'
+    + '<div class="card-meta">Meet potential spouses through families. No physical contact before nikah. Wali consulted (' + (c.sex === 'f' ? 'yours, per your madhab' : 'hers, per her madhab') + '). Mahr agreed. Two witnesses sign the contract. Compatibility weighs deen and character first.</div>'
+    + '<div class="card-meta" style="color:#a3e635;margin-top:4px;">+ Sakina builds. + Barakah on the marriage. — Slower to find a match.</div></div>'
+    + '<div class="card-act"><button class="card-btn green">Choose</button></div></div>';
+  // Unrestricted
+  html += '<div class="card" onclick="closeModal();setMarriagePath(\'unrestricted\')" style="cursor:pointer;border-color:#552a6e;">'
+    + '<div class="card-ico">→</div>'
+    + '<div class="card-body"><div class="card-title">Unrestricted — Casual Dating</div>'
+    + '<div class="card-meta">Date freely without intent. Physical relationships before any contract. Faster matches; the dating market is wider. ' + infoButton('zina') + '</div>'
+    + '<div class="card-meta" style="color:#ffb064;margin-top:4px;">— Iman drifts. — Naslburden accrues for any out-of-wedlock children. — Sakina erodes.</div></div>'
+    + '<div class="card-act"><button class="card-btn">Choose</button></div></div>';
+  // Defer
+  html += '<div class="card" onclick="closeModal()" style="cursor:pointer;opacity:.7;">'
+    + '<div class="card-ico">⏳</div>'
+    + '<div class="card-body"><div class="card-title">Decide Later</div>'
+    + '<div class="card-meta">You can pick this from Dating Preferences anytime.</div></div></div>';
+  openModal('💞 Your Marriage Path', html);
+}
+function setMarriagePath(path){
+  const c = LIFE.char;
+  c.marriagePath = path;
+  if(path === 'halal'){
+    pushEvent('milestone', '☪ You set your intention: marriage on the halal path. May Allah ease it.');
+    c.sakina = clamp((c.sakina||50) + 3, 0, 100);
+  } else {
+    pushEvent('', '→ You chose the unrestricted path. The game records, but does not judge.');
+  }
+  renderAll(); saveLife();
+}
+
+// Fire the prompts on age milestones — once each.
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    if(c.age === 16 && !c.madhab && !((c.flags||{}).madhabPromptShown)){
+      c.flags = c.flags || {}; c.flags.madhabPromptShown = true;
+      setTimeout(chooseMadhab, 600);
+    } else if(c.age === 18 && c.marriagePath == null && !((c.flags||{}).marriagePathPromptShown)){
+      c.flags = c.flags || {}; c.flags.marriagePathPromptShown = true;
+      setTimeout(chooseMarriagePath, 600);
+    }
+  };
+})();
+
+// ─── Wali consent calculator — the wali looks at the suitor.
+//  Strong: high iman, halal rizq, stable income, kabair-free history.
+//  Weak: kabair record, riba career, naslBurden visible, unstable.
+//  Returns: { ok:bool, reason:str, walliName:str, score:number }
+function evaluateWali(brideContext, suitor){
+  // brideContext: the female side — { c (her char), madhab }
+  // suitor: the male side — partner object on her side OR the player on his side
+  let score = 50;
+  // Iman of suitor
+  if(suitor.iman != null){
+    score += Math.floor(((suitor.iman || 0) - 50) / 2);
+  } else if(suitor.compat != null){
+    // NPC partner — use compat + religion as proxies
+    if(suitor.religion === 'islam') score += 12;
+    score += Math.floor(((suitor.compat || 50) - 50) / 4);
+  }
+  // Kabair on suitor (player only)
+  if(suitor.kabairFlags){
+    const kt = Object.values(suitor.kabairFlags).reduce((s,n)=>s+n,0);
+    score -= Math.min(35, kt * 4);
+  }
+  // Halal earnings flag (player)
+  if(suitor.flags && suitor.flags.halalRizqOnly) score += 8;
+  // Nasl burden visible (player) — wali is wary
+  if(suitor.flags && suitor.flags.naslBurden && suitor.flags.naslBurden > 4) score -= 10;
+  // Career check — player suitor in haram career
+  if(suitor.career && suitor.career.key){
+    const cr = (typeof CAREER_RULINGS === 'object') ? CAREER_RULINGS[suitor.career.key] : null;
+    if(cr){
+      const r = ISLAMIC_RULINGS[cr.ruling];
+      if(r && r.verdict === 'haram') score -= 20;
+      if(r && r.verdict === 'mustahabb') score += 6;
+    }
+  }
+  // Income stability matters but isn't the deciding factor
+  if(suitor.career && suitor.career.currentSalary){
+    if(suitor.career.currentSalary < 20000) score -= 5;
+  } else if(suitor.salary != null){
+    if(suitor.salary < 20000) score -= 5;
+  }
+  // Faith match
+  if(suitor.religion && suitor.religion !== 'islam') score -= 30;
+
+  // Wali name — pick from family hierarchy
+  const bride = brideContext.c;
+  let walliName = 'the qadi';
+  if(bride.parents && bride.parents.dad && bride.parents.dad.alive !== false){
+    walliName = bride.parents.dad.firstName + ' (your father)';
+  } else if(bride.siblings && bride.siblings.filter(s => s.sex==='m' && s.alive !== false).length){
+    const bro = bride.siblings.find(s => s.sex==='m' && s.alive !== false);
+    walliName = bro.firstName + ' (your brother, acting wali)';
+  }
+
+  const ok = score >= 55;
+  let reason = '';
+  if(!ok){
+    if(suitor.religion && suitor.religion !== 'islam') reason = 'differing faith — for a Muslim woman, the suitor must be Muslim (Quran 2:221).';
+    else if(suitor.kabairFlags && Object.values(suitor.kabairFlags).reduce((s,n)=>s+n,0) >= 3) reason = 'unresolved kabair on his record — the suitor\'s deen and character do not reassure.';
+    else if(score < 30) reason = 'character and standing are insufficient for the trust required.';
+    else reason = 'reservations about his ability to provide and protect.';
+  } else {
+    reason = 'iman, character, and standing satisfy the wali.';
+  }
+  return { ok, reason, walliName, score };
+}
+
+// ─── Halal nikah flow — replaces the generic religious-wedding modal
+//  for Muslim characters on the halal path. Wali, mahr, witnesses.
+function openHalalNikahFlow(){
+  const c = LIFE.char;
+  const p = c.partner;
+  if(!p){ toast('No partner.'); return; }
+  // Resolve madhab — the bride's madhab governs validity per classical fiqh.
+  // For a male player, the bride's madhab is the relevant one; we assume it
+  // matches the player's madhab unless we model the bride separately.
+  const madhabKey = c.madhab || 'hanafi';
+  const madhab = MADHABS[madhabKey] || MADHABS.hanafi;
+  const playerIsBride = (c.sex === 'f');
+
+  // Wali consent step — relevant if (a) madhab requires wali AND player is bride,
+  // OR (b) player is the suitor and we model the partner's wali.
+  // For simplicity: we always show the wali step for halal-path Muslims; for the
+  // groom side we narrate her wali's view.
+  const walliPerspective = playerIsBride
+    ? evaluateWali({c, madhab}, c)        // own family evaluates the suitor (the player would be... wait — bride is player, suitor is partner)
+    : evaluateWali({c:{parents:{dad:{firstName:p.firstName, alive:true}}, siblings:[]}, madhab}, c);
+  // Actually for player-is-bride, the wali is HER side, suitor is the partner:
+  let wallEval;
+  if(playerIsBride){
+    wallEval = evaluateWali({c, madhab}, p);
+  } else {
+    // Player is groom — partner's family evaluates the player
+    const brideContext = { c: { parents:{ dad:{ firstName: (p.fatherName || 'her father'), alive:true } }, siblings:[] }, madhab };
+    wallEval = evaluateWali(brideContext, c);
+  }
+
+  // Suggested mahr
+  const minMahr = madhab.minMahr;
+  const suggestedMahr = Math.max(minMahr, Math.min(15000, Math.floor((c.money||0) * 0.08)));
+
+  let html = '<div style="padding:12px 14px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:6px;margin-bottom:14px;font-size:12px;color:#cfe8d4;line-height:1.55;">'
+    + 'Halal nikah under the <b>' + madhab.name + '</b> madhab. Three steps: wali, mahr, witnesses. ' + infoButton('marriage') + ' ' + infoButton('wali') + ' ' + infoButton('mahr')
+    + '</div>';
+
+  // Wali card
+  const walliRequired = madhab.walliRequired || playerIsBride; // groom side: always wali-checked
+  html += '<div class="card" style="border-color:' + (wallEval.ok ? '#2d7a3f' : '#5a3a1a') + ';">'
+    + '<div class="card-ico">👤</div>'
+    + '<div class="card-body"><div class="card-title">Step 1 — Wali Consent</div>'
+    + '<div class="card-meta">' + (playerIsBride ? wallEval.walliName : 'Her wali') + ' considers the match. <i>' + madhab.walliNote + '</i></div>'
+    + '<div class="card-meta" style="margin-top:6px;color:' + (wallEval.ok ? '#a3e635' : '#ffb064') + ';font-weight:600;">'
+    + (wallEval.ok ? '✓ Approves — ' : '⚠ Hesitant — ') + wallEval.reason + '</div></div>'
+    + '<div class="card-act"></div></div>';
+
+  // Mahr card
+  html += '<div class="card" style="border-color:#2d7a3f;">'
+    + '<div class="card-ico">💍</div>'
+    + '<div class="card-body"><div class="card-title">Step 2 — Mahr</div>'
+    + '<div class="card-meta">A gift from groom to bride. <b>' + madhab.name + '</b> minimum: ' + fmtMoney(minMahr) + '. Suggested: ' + fmtMoney(suggestedMahr) + '.</div>'
+    + '<div class="card-meta" style="margin-top:4px;">';
+  if(!playerIsBride){
+    html += '<input id="mahr-amount" type="number" value="' + suggestedMahr + '" min="' + minMahr + '" style="background:#0a0a14;border:1px solid #2a2a3a;color:var(--t1);padding:6px 10px;border-radius:3px;width:120px;"> <span style="color:var(--t3);">your offer</span>';
+  } else {
+    html += 'He offers ' + fmtMoney(suggestedMahr) + '. The mahr is yours alone.';
+  }
+  html += '</div></div></div>';
+
+  // Witnesses card
+  html += '<div class="card" style="border-color:#2d7a3f;">'
+    + '<div class="card-ico">📜</div>'
+    + '<div class="card-body"><div class="card-title">Step 3 — Two Witnesses</div>'
+    + '<div class="card-meta">Two adult Muslim witnesses to the contract — required by every madhab. Family friends and the imam typically serve.</div>'
+    + '<div class="card-meta" style="color:#a3e635;margin-top:4px;">✓ Witnesses confirmed.</div></div>'
+    + '<div class="card-act"></div></div>';
+
+  // Action buttons
+  if(wallEval.ok || !walliRequired){
+    html += '<button class="card-btn green" style="width:100%;margin-top:10px;padding:12px;" onclick="finalizeHalalNikah(' + suggestedMahr + ',\'' + madhabKey + '\')">☪ Conclude the Nikah</button>';
+  } else if(madhabKey === 'hanafi' && playerIsBride){
+    html += '<button class="card-btn" style="width:100%;margin-top:6px;padding:10px;" onclick="finalizeHalalNikah(' + suggestedMahr + ',\'hanafi-no-wali\')">Proceed without wali (Hanafi position — valid, but family relations strain)</button>';
+  } else {
+    html += '<div style="padding:10px 12px;background:#2a1a0c;border:1px dashed #ffb064;border-radius:5px;color:#ffd4a8;font-size:11px;line-height:1.55;margin-top:8px;">The wali is not satisfied. Address his concerns over time — raise iman, leave haram earnings, build standing — and return. Forcing the match against his judgment would invalidate the nikah under your madhab.</div>';
+  }
+  html += '<button class="card-btn" style="width:100%;margin-top:8px;padding:8px;background:transparent;border-color:var(--b2);" onclick="closeModal()">Step back for now</button>';
+  openModal('☪ Nikah — ' + madhab.name, html);
+}
+
+function finalizeHalalNikah(mahr, modeKey){
+  const c = LIFE.char;
+  const p = c.partner;
+  if(!p){ toast('No partner.'); return; }
+  // Mahr input (if groom)
+  const mahrInput = document.getElementById('mahr-amount');
+  let actualMahr = mahr;
+  if(mahrInput){
+    actualMahr = Math.max(MADHABS[c.madhab || 'hanafi'].minMahr, parseInt(mahrInput.value, 10) || mahr);
+  }
+  if((c.money||0) < actualMahr + 1500){
+    toast('You need ' + fmtMoney(actualMahr + 1500) + ' total (mahr + walima feast minimum).');
+    return;
+  }
+  c.money -= actualMahr;
+  c.money -= 1500; // walima feast minimum
+  p.married = true;
+  p.weddingType = 'nikah-halal';
+  p.mahrPaid = actualMahr;
+  p.madhabUsed = c.madhab;
+  c.happiness = clamp(c.happiness + 22, 0, 100);
+  c.iman = clamp((c.iman||0) + 10, 0, 100);
+  c.sakina = clamp((c.sakina||50) + 8, 0, 100);
+  c.barakah = clamp((c.barakah||50) + 6, 0, 100);
+  c.karma = clamp((c.karma||50) + 5, 0, 100);
+  c.faith = c.iman;
+  if(modeKey === 'hanafi-no-wali'){
+    // Valid Hanafi position but family tension
+    c.sakina = clamp(c.sakina - 4, 0, 100);
+    pushEvent('milestone', '☪ Nikah concluded under the Hanafi position without wali — valid, but tension remains with your family. Mahr ' + fmtMoney(actualMahr) + '.');
+  } else {
+    pushEvent('milestone', '☪ Nikah concluded under the ' + (MADHABS[c.madhab||'hanafi'].name) + ' madhab. Mahr ' + fmtMoney(actualMahr) + '. Two witnesses signed. Walima to follow.');
+  }
+  closeModal();
+  switchRelTab && switchRelTab('partner');
+  renderAll(); saveLife();
+}
+
+// ─── Route proposeMarriage through the halal nikah flow for Muslim
+//  characters on the halal path. Unrestricted path keeps the existing
+//  wedding planner (with whatever consequences accrue).
+(function(){
+  if(typeof proposeMarriage !== 'function') return;
+  const _orig = proposeMarriage;
+  proposeMarriage = function(){
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam' || c.marriagePath !== 'halal'){
+      return _orig.apply(this, arguments);
+    }
+    const p = c.partner;
+    if(!p){ toast('No one to propose to.'); return; }
+    if(p.married){ toast('You are already married. Honour the marriage you have.'); return; }
+    if(c.flags && c.flags.iddahUntil && c.age < c.flags.iddahUntil){
+      toast('Iddah waiting period is not complete. Wait before contracting another nikkah.');
+      return;
+    }
+    // On the halal path compat threshold is replaced by deen-fit:
+    // we still require some baseline mutual interest, but family + deen weigh.
+    if((p.compat||0) < 45){ toast(p.firstName + ' is not the right match. Compat too low.'); p.compat = clamp((p.compat||0) - 5, 0, 100); switchRelTab && switchRelTab('partner'); return; }
+    if(!c.madhab){
+      toast('Pick your madhab first (Dating Preferences → Madhab) so the nikah rules apply correctly.');
+      chooseMadhab();
+      return;
+    }
+    openHalalNikahFlow();
+  };
+})();
+
+// ─── Haram-path accrual — for Muslims who chose the unrestricted path
+//  and have a partner (unmarried), accumulate haramRelMonths each year
+//  the relationship is active without nikah. Periodically apply the
+//  zina ruling penalty + naslBurden so the choice has weight.
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.alive) return;
+    if(c.marriagePath !== 'unrestricted') return;
+    if(!c.partner || c.partner.married) return;
+    c.haramRelMonths = (c.haramRelMonths||0) + 12;
+    // Every full year accumulating, apply the penalty
+    c.iman = clamp((c.iman||0) - 3, 0, 100);
+    c.sakina = clamp((c.sakina||50) - 2, 0, 100);
+    c.faith = c.iman;
+    c.kabairFlags = c.kabairFlags || {};
+    c.kabairFlags.zina = (c.kabairFlags.zina||0) + 1;
+    c.flags = c.flags || {};
+    c.flags.naslBurden = (c.flags.naslBurden||0) + 1;
+    if(c.age % 3 === 0){
+      pushEvent('bad', '🚫 A year of unmarried physical relationship — zina ruling accrues (Quran 17:32). Iman -3, sakina -2.');
+    }
+  };
+})();
+
+// ─── Inject the marriage-path + madhab into the dating prefs modal,
+//  so the player always has a place to see and change the choice.
+(function(){
+  if(typeof openDatingPrefs !== 'function') return;
+  const _orig = openDatingPrefs;
+  openDatingPrefs = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam') return;
+    const body = document.querySelector('#modal .modal-body');
+    if(!body || body.dataset.halalHaramWired) return;
+    const block = document.createElement('div');
+    block.style.cssText = 'margin-top:14px;padding:12px 14px;background:#0d1a0e;border:1px solid #2d7a3f;border-radius:6px;';
+    block.innerHTML =
+        '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:#a3e635;text-transform:uppercase;margin-bottom:6px;">Marriage Path</div>'
+      + '<div style="font-size:12px;color:#cfe8d4;line-height:1.55;margin-bottom:8px;">Current: <b>' + (c.marriagePath || 'undecided') + '</b>. The choice is yours; both paths exist with their consequences.</div>'
+      + '<button class="card-btn" onclick="closeModal();chooseMarriagePath()">' + (c.marriagePath ? 'Change path' : 'Choose path') + '</button>'
+      + '<div style="font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:#a3e635;text-transform:uppercase;margin-top:14px;margin-bottom:6px;">Madhab</div>'
+      + '<div style="font-size:12px;color:#cfe8d4;line-height:1.55;margin-bottom:8px;">Current: <b>' + (c.madhab ? MADHABS[c.madhab].name : 'not chosen') + '</b>. Governs wali requirement and minimum mahr.</div>'
+      + '<button class="card-btn" onclick="closeModal();chooseMadhab()">' + (c.madhab ? 'Change madhab' : 'Choose madhab') + '</button>';
+    body.appendChild(block);
+    body.dataset.halalHaramWired = '1';
+  };
+})();
+
 </script>
 </body>
 </html>

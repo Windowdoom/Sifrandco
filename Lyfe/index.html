@@ -318,16 +318,79 @@ input,select{font-family:inherit;}
 .intro-notice{margin-top:10px;font-family:var(--font-m);font-size:9.5px;letter-spacing:.08em;
   color:var(--t3);text-align:center;line-height:1.55;opacity:.85;}
 
-/* ── Music control floats top-right ── */
-#music-ctrl{position:fixed;top:12px;right:14px;z-index:9999;
-  width:38px;height:38px;border-radius:50%;
-  background:rgba(20,12,38,.85);border:1px solid var(--gold);
-  display:flex;align-items:center;justify-content:center;cursor:pointer;
-  backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.4),0 0 18px rgba(251,191,36,.2);
-  transition:transform .15s, box-shadow .15s;font-size:18px;}
-#music-ctrl:hover{transform:scale(1.08);box-shadow:0 4px 18px rgba(251,191,36,.5);}
-#music-ctrl.off{border-color:var(--t3);box-shadow:none;opacity:.65;}
-#music-ctrl.off #music-icon::after{content:'';position:absolute;width:24px;height:2px;background:var(--crimson);transform:rotate(-30deg);}
+/* ── Music player widget — bottom-left, collapsible, doesn't overlap UI ── */
+#music-player{
+  position:fixed;
+  bottom:calc(14px + env(safe-area-inset-bottom, 0px));
+  left:14px;
+  z-index:2500;
+  display:flex;align-items:center;
+  background:rgba(20,12,38,.92);
+  border:1px solid rgba(251,191,36,.30);
+  border-radius:24px;
+  padding:6px 8px;
+  backdrop-filter:blur(10px);
+  box-shadow:0 4px 18px rgba(0,0,0,.45);
+  font-family:var(--font-m);
+  transition:width .25s ease, padding .25s ease;
+  gap:6px;
+  width:48px;        /* collapsed default */
+  height:40px;
+  overflow:hidden;
+  cursor:pointer;
+}
+#music-player.expanded{
+  width:280px;
+  padding:6px 12px 6px 8px;
+  cursor:default;
+}
+#music-player .mp-btn{
+  flex:0 0 32px; height:32px; width:32px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%;
+  background:rgba(251,191,36,.15);
+  border:1px solid rgba(251,191,36,.40);
+  color:var(--gold); font-size:14px; cursor:pointer;
+  transition:background .15s, transform .1s;
+}
+#music-player .mp-btn:hover{ background:rgba(251,191,36,.30); }
+#music-player .mp-btn:active{ transform:scale(0.92); }
+#music-player .mp-title{
+  font-size:10px; letter-spacing:.10em; color:var(--gold);
+  white-space:nowrap; text-overflow:ellipsis; overflow:hidden;
+  flex:1; opacity:0; transition:opacity .2s ease .05s;
+}
+#music-player.expanded .mp-title{ opacity:1; }
+#music-player .mp-vol-wrap{
+  display:flex; align-items:center; gap:5px;
+  opacity:0; transition:opacity .2s ease .05s;
+  flex-shrink:0;
+}
+#music-player.expanded .mp-vol-wrap{ opacity:1; }
+#music-player .mp-vol{
+  -webkit-appearance:none; appearance:none;
+  width:80px; height:3px;
+  background:rgba(251,191,36,.25);
+  border-radius:2px; outline:none; cursor:pointer;
+}
+#music-player .mp-vol::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none;
+  width:12px; height:12px; border-radius:50%;
+  background:var(--gold);
+  box-shadow:0 0 6px rgba(251,191,36,.5); cursor:pointer;
+}
+#music-player .mp-vol::-moz-range-thumb{
+  width:12px; height:12px; border-radius:50%; border:none;
+  background:var(--gold); cursor:pointer;
+}
+#music-player.muted .mp-btn{ background:rgba(120,60,60,.15); border-color:rgba(220,80,80,.40); color:#e87474; }
+#music-player.muted .mp-title{ opacity:0.5; }
+
+@media (max-width: 768px){
+  #music-player{ bottom:calc(70px + env(safe-area-inset-bottom, 0px)); }
+  #music-player.expanded{ width:240px; }
+  #music-player .mp-vol{ width:60px; }
+}
 
 /* ── First-run overlay ── */
 #first-run-overlay{position:fixed;inset:0;background:rgba(10,6,18,.85);backdrop-filter:blur(8px);
@@ -549,9 +612,16 @@ button:focus-visible,a:focus-visible,.tb-btn:focus-visible,.choice-btn:focus-vis
 <audio id="bg-music" loop preload="auto" style="display:none;">
   <source id="bg-music-src" src="" type="audio/mpeg">
 </audio>
-<!-- Music control floats top-right of the page -->
-<div id="music-ctrl" onclick="toggleMusic()" title="Toggle background music">
-  <span id="music-icon">🔊</span>
+<!-- Music player — bottom-left, doesn't overlap UI boxes -->
+<div id="music-player" title="Background music: Journey of Lyfe">
+  <button class="mp-btn" id="music-btn" onclick="event.stopPropagation();toggleMusic()" aria-label="Toggle music">
+    <span id="music-icon">🔊</span>
+  </button>
+  <div class="mp-title" id="music-title">Journey of Lyfe</div>
+  <div class="mp-vol-wrap">
+    <span style="font-size:9px;color:rgba(251,191,36,.7);letter-spacing:.10em;">VOL</span>
+    <input type="range" class="mp-vol" id="music-vol" min="0" max="100" value="45" oninput="setMusicVolume(this.value)" aria-label="Music volume">
+  </div>
 </div>
 
 <!-- ═══ Intro / Character Creation ═══ -->
@@ -14928,19 +14998,69 @@ window.addEventListener('keydown', e => {
     window.toggleMusic = () => {
       muted = !muted;
       try { localStorage.setItem('lyfe_music_muted', muted ? '1' : '0'); } catch(e){}
+      const player = document.getElementById('music-player');
       if(muted){
         if(typeof audio.pause === 'function') audio.pause();
-        ctrl.classList.add('off');
+        if(player) player.classList.add('muted');
         icon.textContent = '🔇';
       } else {
         if(typeof audio.play === 'function'){
           const r = audio.play();
           if(r && typeof r.catch === 'function') r.catch(()=>{});
         }
-        ctrl.classList.remove('off');
+        if(player) player.classList.remove('muted');
         icon.textContent = '🔊';
       }
     };
+
+    // Volume slider — applies & persists
+    window.setMusicVolume = (v) => {
+      const vol = Math.max(0, Math.min(100, parseInt(v,10)||0)) / 100;
+      if(typeof audio.volume !== 'undefined') audio.volume = vol;
+      try { localStorage.setItem('lyfe_music_vol', String(vol)); } catch(e){}
+      // Auto-mute toggle if vol hits 0 / unmute if user drags up from 0
+      if(vol === 0 && !muted) window.toggleMusic();
+      if(vol > 0 && muted) window.toggleMusic();
+      // Reflect icon
+      icon.textContent = vol === 0 ? '🔇' : vol < 0.33 ? '🔈' : vol < 0.66 ? '🔉' : '🔊';
+    };
+
+    // Restore persisted volume + muted state
+    try {
+      const v = parseFloat(localStorage.getItem('lyfe_music_vol'));
+      if(!isNaN(v) && v >= 0 && v <= 1){
+        audio.volume = v;
+        const slider = document.getElementById('music-vol');
+        if(slider) slider.value = Math.round(v * 100);
+        icon.textContent = v === 0 ? '🔇' : v < 0.33 ? '🔈' : v < 0.66 ? '🔉' : '🔊';
+      }
+    } catch(e){}
+    if(muted){
+      const player = document.getElementById('music-player');
+      if(player) player.classList.add('muted');
+    }
+
+    // Expand-on-hover / tap, collapse after 3s idle
+    const player = document.getElementById('music-player');
+    if(player){
+      let collapseTimer = null;
+      const expand = () => {
+        player.classList.add('expanded');
+        if(collapseTimer) clearTimeout(collapseTimer);
+        collapseTimer = setTimeout(() => player.classList.remove('expanded'), 3500);
+      };
+      player.addEventListener('mouseenter', expand);
+      player.addEventListener('click', expand);
+      player.addEventListener('touchstart', expand, {passive:true});
+      // Don't collapse while user is dragging the slider
+      const slider = document.getElementById('music-vol');
+      if(slider){
+        slider.addEventListener('input', () => {
+          if(collapseTimer) clearTimeout(collapseTimer);
+          collapseTimer = setTimeout(() => player.classList.remove('expanded'), 3500);
+        });
+      }
+    }
   } catch(e){}
 })();
 </script>

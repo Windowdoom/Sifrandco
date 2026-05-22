@@ -59,8 +59,5 @@ export function islamicEventsForYear(hYear: number) {
     { name: "Eid al-Adha",            month: 12, day: 10 },
     { name: "Islamic New Year",       month: 1,  day: 1  },
     { name: "Day of Ashura",          month: 1,  day: 10 },
-    { name: "Mawlid mention",         month: 3,  day: 12 },
-    { name: "Isra and Mi'raj mention", month: 7, day: 27 },
-    { name: "Mid-Sha'ban",            month: 8,  day: 15 },
   ];
 }

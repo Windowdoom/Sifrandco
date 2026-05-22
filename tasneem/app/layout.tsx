@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Cormorant_Garamond, Amiri } from "next/font/google";
+import { Inter, Cormorant_Garamond, Scheherazade_New } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
@@ -7,7 +7,7 @@ import Splash from "@/components/Splash";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-cormorant", display: "swap" });
-const amiri = Amiri({ subsets: ["arabic"], weight: ["400", "700"], variable: "--font-amiri", display: "swap" });
+const scheherazade = Scheherazade_New({ subsets: ["arabic"], weight: ["400", "500", "700"], variable: "--font-arabic", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Tasneem · تَسْنِيم",
@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${cormorant.variable} ${amiri.variable} min-h-screen font-sans`}>
+      <body className={`${inter.variable} ${cormorant.variable} ${scheherazade.variable} min-h-screen font-sans`}>
         <Splash />
         <main className="mx-auto max-w-2xl pb-28">{children}</main>
         <BottomNav />

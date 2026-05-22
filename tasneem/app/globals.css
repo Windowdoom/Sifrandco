@@ -18,18 +18,22 @@
 html, body { background: var(--bg); color: var(--fg); }
 
 body {
-  font-feature-settings: "ss01", "cv11";
+  font-feature-settings: "ss01", "cv11", "kern";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  letter-spacing: -0.005em;
 }
 
+.font-serif { letter-spacing: -0.012em; }
+
 .arabic {
-  font-family: var(--font-amiri), "Amiri", "Scheherazade New", "Noto Naskh Arabic", serif;
+  font-family: var(--font-arabic), "Scheherazade New", "Amiri", "Noto Naskh Arabic", serif;
   direction: rtl;
-  line-height: 2.35;
+  line-height: 2.05;
   letter-spacing: 0;
-  word-spacing: 0.04em;
-  font-feature-settings: "calt" 1, "liga" 1;
+  word-spacing: 0.06em;
+  font-feature-settings: "calt" 1, "liga" 1, "dlig" 1;
 }
 
 .gold-rule {

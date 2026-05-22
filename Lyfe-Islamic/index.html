@@ -1921,6 +1921,78 @@ const DEGREES = {
   general:  { name:'General Bachelor\'s',    years:4, minSmarts:55, cost:90000 },
 };
 
+// ── Scholarships for degree programs (med, law, MBA, PhD, etc.)
+//    Shown as options when the player clicks Enroll.
+const DEGREE_SCHOLARSHIPS = {
+  medical:[
+    { id:'nih_fellow',   name:'NIH Merit Fellowship',         cover:0.80,
+      desc:'National Institutes of Health. Full funding for top research candidates.',
+      eligible:(c) => c.smarts >= 90 },
+    { id:'ama_award',    name:'AMA Medical Scholarship',      cover:0.50,
+      desc:'American Medical Association award for outstanding pre-med students.',
+      eligible:(c) => c.smarts >= 82 },
+    { id:'low_income_med', name:'Low-Income Physician Pipeline', cover:0.65,
+      desc:'Federal aid for underserved-community candidates entering medicine.',
+      eligible:(c) => c.socioClass === 'poor' || c.socioClass === 'working' },
+    { id:'military_med', name:'Military Medical Scholarship',  cover:1.00,
+      desc:'Full tuition. Commit to 4 years military service as a commissioned officer after residency.',
+      eligible:(c) => c.health >= 70, commitsToMilitary:true },
+    { id:'faith_med',    name:'Islamic Health Sciences Award', cover:0.35,
+      desc:'Awarded to Muslim students committed to serving their communities through medicine.',
+      eligible:(c) => c.religion === 'islam' && (c.faith||0) >= 55 },
+  ],
+  law:[
+    { id:'lsat_merit',   name:'LSAT Excellence Scholarship',  cover:0.75,
+      desc:'Awarded to high-scoring applicants with demonstrated academic excellence.',
+      eligible:(c) => c.smarts >= 88 },
+    { id:'public_defender', name:'Public Defender Pipeline Grant', cover:0.60,
+      desc:'For students committed to criminal defense and civil rights law.',
+      eligible:(c) => (c.karma||0) >= 60 },
+    { id:'low_income_law', name:'Access to Justice Scholarship', cover:0.50,
+      desc:'Awarded to first-generation law students from low-income backgrounds.',
+      eligible:(c) => c.socioClass === 'poor' || c.socioClass === 'working' },
+    { id:'women_law',    name:'Women in Law Scholarship',      cover:0.40,
+      desc:'For female candidates demonstrating leadership and academic strength.',
+      eligible:(c) => c.sex === 'f' && c.smarts >= 72 },
+  ],
+  business:[
+    { id:'mba_merit',    name:'MBA Excellence Award',          cover:0.50,
+      desc:'For top-quartile applicants with strong academic and professional record.',
+      eligible:(c) => c.smarts >= 80 },
+    { id:'entrepreneurship', name:'Entrepreneur\'s Fellowship',  cover:0.60,
+      desc:'For students who have founded or co-founded a business.',
+      eligible:(c) => c.companies && c.companies.length > 0 },
+    { id:'diversity_mba', name:'Diversity MBA Scholarship',    cover:0.45,
+      desc:'Awarded to candidates from underrepresented backgrounds in business.',
+      eligible:(c) => c.socioClass === 'poor' || c.socioClass === 'working' },
+  ],
+  phd:[
+    { id:'nsf_fellow',   name:'NSF Graduate Research Fellowship', cover:1.00,
+      desc:'National Science Foundation. Covers tuition + $37,000 annual stipend. Highly competitive.',
+      eligible:(c) => c.smarts >= 88, stipend:37000 },
+    { id:'fulbright',    name:'Fulbright Scholarship',          cover:0.90,
+      desc:'For international or internationally-focused research. Prestigious.',
+      eligible:(c) => c.smarts >= 82 && c.country !== 'us' },
+    { id:'ta_funding',   name:'Teaching Assistantship',         cover:0.70,
+      desc:'Teach two undergrad courses per semester. Tuition waived + small stipend.',
+      eligible:(c) => c.smarts >= 75, stipend:18000 },
+    { id:'research_grant', name:'University Research Grant',    cover:0.50,
+      desc:'Departmental grant for applicants with a strong research proposal.',
+      eligible:(c) => c.smarts >= 78 },
+  ],
+  cs:[
+    { id:'tech_merit',   name:'Tech Merit Award',               cover:0.60,
+      desc:'Awarded to high-achieving CS candidates.',
+      eligible:(c) => c.smarts >= 82 },
+    { id:'diversity_tech', name:'Women in Tech Scholarship',    cover:0.50,
+      desc:'Advancing gender diversity in computer science.',
+      eligible:(c) => c.sex === 'f' },
+    { id:'need_cs',      name:'CS Access Grant',                cover:0.45,
+      desc:'Need-based aid for CS students.',
+      eligible:(c) => c.socioClass === 'poor' || c.socioClass === 'working' },
+  ],
+};
+
 // ═══════════════════════════════════════════════════════════════════════
 //  HOUSES & CARS — status ladders
 // ═══════════════════════════════════════════════════════════════════════
@@ -5372,11 +5444,76 @@ function quitJob(){
 function enrollDegree(k){
   const c = LIFE.char;
   const d = DEGREES[k];
-  const cost = Math.floor(d.cost * COUNTRIES[c.country].costMult);
-  c.money -= cost;
+  const available = (DEGREE_SCHOLARSHIPS[k] || []).filter(s => {
+    try { return s.eligible(c); } catch(e){ return false; }
+  });
+  if(available.length){
+    offerDegreeScholarships(k, d, available);
+  } else {
+    confirmEnrollDegree(k, 0);
+  }
+}
+
+function offerDegreeScholarships(k, d, list){
+  const c = LIFE.char;
+  const baseCost = Math.floor(d.cost * COUNTRIES[c.country].costMult);
+  let html = '<div style="padding:12px 14px;background:rgba(201,169,97,0.07);border:1px solid rgba(201,169,97,0.20);border-radius:10px;margin-bottom:14px;font-size:13px;color:var(--t1);text-align:center;line-height:1.5;">'
+    + 'You qualified for <b style="color:var(--accent);">' + list.length + ' scholarship' + (list.length>1?'s':'') + '</b> for ' + d.name + '.'
+    + '<br><span style="font-size:11px;color:var(--t2);">Full tuition without aid: ' + fmtMoney(baseCost) + '</span>'
+    + '</div>';
+  list.forEach(s => {
+    const covered  = Math.floor(baseCost * s.cover);
+    const owed     = baseCost - covered;
+    const stipend  = s.stipend || 0;
+    html += '<div class="card" style="margin-bottom:8px;">'
+      + '<div class="card-ico">🏆</div>'
+      + '<div class="card-body">'
+      +   '<div class="card-title">' + s.name + '</div>'
+      +   '<div class="card-meta">' + s.desc + '</div>'
+      +   '<div class="card-meta" style="margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;">'
+      +     '<span style="color:#4ade80;font-size:11px;">Covers ' + Math.round(s.cover*100) + '% · saves ' + fmtMoney(covered) + '</span>'
+      +     (owed > 0 ? '<span style="color:var(--t3);font-size:11px;">You pay ' + fmtMoney(owed) + '</span>' : '<span style="color:#4ade80;font-size:11px;">Fully funded</span>')
+      +     (stipend > 0 ? '<span style="color:#7fd8ff;font-size:11px;">+ ' + fmtMoney(stipend) + '/yr stipend</span>' : '')
+      +     (s.commitsToMilitary ? '<span style="color:#f87171;font-size:11px;">⚠ Military commitment post-graduation</span>' : '')
+      +   '</div>'
+      + '</div>'
+      + '<div class="card-act"><button class="card-btn green" onclick="acceptDegreeScholarship(\'' + k + '\',\'' + s.id + '\')">Accept</button></div>'
+      + '</div>';
+  });
+  html += '<div class="card" style="opacity:0.7;">'
+    + '<div class="card-ico">💸</div>'
+    + '<div class="card-body"><div class="card-title">Pay Full Tuition</div>'
+    + '<div class="card-meta">No scholarship. ' + fmtMoney(baseCost) + ' total cost.</div></div>'
+    + '<div class="card-act"><button class="card-btn muted" onclick="confirmEnrollDegree(\'' + k + '\',0)">Proceed</button></div>'
+    + '</div>';
+  openModal('🏆 Scholarships Available', html);
+}
+
+function acceptDegreeScholarship(degreeKey, scholarshipId){
+  const c = LIFE.char;
+  const d = DEGREES[degreeKey];
+  const scholarshipList = DEGREE_SCHOLARSHIPS[degreeKey] || [];
+  const s = scholarshipList.find(x => x.id === scholarshipId);
+  if(!s) return;
+  const baseCost = Math.floor(d.cost * COUNTRIES[c.country].costMult);
+  const covered  = Math.floor(baseCost * s.cover);
+  c.degreeScholarship = { name: s.name, cover: s.cover, stipend: s.stipend || 0 };
+  if(s.commitsToMilitary){ c.flags = c.flags || {}; c.flags.rotcCommit = true; }
+  confirmEnrollDegree(degreeKey, covered, s.stipend || 0, s.name);
+}
+
+function confirmEnrollDegree(k, covered, stipend, scholarshipName){
+  const c = LIFE.char;
+  const d = DEGREES[k];
+  const baseCost = Math.floor(d.cost * COUNTRIES[c.country].costMult);
+  const finalCost = Math.max(0, baseCost - (covered || 0));
+  c.money -= finalCost;
   c.degree = k;
   c.degreeYearsLeft = d.years;
-  pushEvent('milestone', '📚 You enrolled in ' + d.name + '. Cost: −' + fmtMoney(cost) + ' (loans).');
+  if(stipend) c.money += stipend; // first year stipend upfront
+  const aidNote = scholarshipName ? ' (' + scholarshipName + ' covers ' + fmtMoney(covered) + ')' : '';
+  pushEvent('milestone', '📚 Enrolled in ' + d.name + '. Cost: ' + (finalCost > 0 ? fmtMoney(finalCost) : 'fully funded') + aidNote + '.');
+  if(stipend) pushEvent('good', '💰 First-year stipend received: +' + fmtMoney(stipend) + '.');
   closeModal();
   renderAll();
   saveLife();
@@ -9459,10 +9596,18 @@ function openColleges(){
       } else if(current){
         btn = '<button class="card-btn danger" onclick="dropOut()">Drop Out</button>';
       }
+      // Check scholarship eligibility for preview
+      const availAid = (DEGREE_SCHOLARSHIPS[k] || []).filter(s => {
+        try { return meets && s.eligible(c); } catch(e){ return false; }
+      });
+      const bestCover = availAid.length ? Math.max(...availAid.map(s => s.cover)) : 0;
+      const aidChip = availAid.length
+        ? '<span style="font-size:9px;padding:1px 7px;border-radius:20px;background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.25);color:#4ade80;letter-spacing:.10em;text-transform:uppercase;margin-left:4px;">🏆 ' + availAid.length + ' scholarship' + (availAid.length>1?'s':'') + ' · up to ' + Math.round(bestCover*100) + '% off</span>'
+        : '';
       html += '<div class="card" style="' + (owned?'border-color:var(--accent);background:#1a1428;':'') + '">'
         + '<div class="card-ico">' + (k==='medical'?'⚕️':k==='law'?'⚖️':k==='business'?'💼':k==='phd'?'🔬':'📚') + '</div>'
         + '<div class="card-body"><div class="card-title">' + d.name + '</div>'
-        + '<div class="card-meta">' + d.years + ' yrs · Min Smarts ' + d.minSmarts + (meets?' ✓':' ✗') + ' · Tuition ' + fmtMoney(cost) + '</div></div>'
+        + '<div class="card-meta">' + d.years + ' yrs · Min Smarts ' + d.minSmarts + (meets?' ✓':' ✗') + ' · Tuition ' + fmtMoney(cost) + aidChip + '</div></div>'
         + '<div class="card-act">' + (tag?'<div>'+tag+'</div>':'') + btn + '</div></div>';
     });
   }

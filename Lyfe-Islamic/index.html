@@ -531,6 +531,309 @@ button:focus-visible,a:focus-visible,.tb-btn:focus-visible,.choice-btn:focus-vis
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+
+/* ═══════════════════════════════════════════════════════════════════
+   AESTHETIC REBALANCE — "Illuminated Manuscript"
+   Drops the cyberpunk-magenta palette in favour of a reflective
+   Islamic-traditional one: deep emerald-night base, brass illumination,
+   mosque-tile teal, lapis cool, parchment text. CSS variable overrides
+   cascade, so existing layout rules pick up the new colors without
+   structural changes. Soft warm shadows replace neon glows; a subtle
+   8-point-star (khatam) pattern overlays the body for texture.
+   ═══════════════════════════════════════════════════════════════════ */
+:root{
+  /* Deep emerald-night base */
+  --bg:#0a1410;
+  --s1:#142019;
+  --s2:#1a2a22;
+  --b1:#2a3d33;
+  --b2:#3a4d42;
+  /* Parchment text */
+  --t1:#e8dcc0;
+  --t2:#a89e8c;
+  --t3:#6a6258;
+  /* Brass illumination + mosque-tile teal as the dominant accents */
+  --accent:#c9a961;
+  --accent2:#6fc3a8;
+  --teal:#4a9a82;
+  --gold:#d4b86a;
+  --crimson:#b85844;
+  --green:#6aa84a;
+  --orange:#c08f4a;
+  --pink:#b86a6f;
+  --blue:#5a7ba8;
+  --cyan:#6fa8b5;
+  --magenta:#a86fa8;
+  /* Sakina-lime kept for positive signal */
+  --lime:#a3e635;
+  /* Illumination accents */
+  --brass:#a08454;
+  --lapis:#3d5b8a;
+  --emerald-dark:#0d1a13;
+  --emerald-mid:#1a2e22;
+  --parchment:#e8dcc0;
+}
+
+/* Subtle 8-point-star (khatam) overlay on the body — almost invisible
+   texture, gives the surface a manuscript-grain feel without competing
+   with content. Pattern is an inline SVG data-URI of two overlapping
+   squares rotated 45° which is the foundation of the khatam. */
+html,body{
+  background:
+    radial-gradient(ellipse at top left, rgba(201,169,97,0.04), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(111,195,168,0.03), transparent 50%),
+    var(--bg);
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.045;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'><g fill='none' stroke='%23c9a961' stroke-width='0.8'><rect x='10' y='10' width='40' height='40'/><rect x='10' y='10' width='40' height='40' transform='rotate(45 30 30)'/><circle cx='30' cy='30' r='2' fill='%23c9a961'/></g></svg>");
+  background-size:60px 60px;
+}
+#main,#topbar,#modal,#death-screen{position:relative;z-index:1;}
+
+/* Topbar — warmer brass gradient instead of cool blue-grey */
+#topbar{
+  background:linear-gradient(180deg,#13201a 0%,#0d1612 100%);
+  border-bottom:1px solid var(--brass);
+  box-shadow:0 1px 0 rgba(201,169,97,0.08);
+}
+.brand{color:var(--accent);text-shadow:0 0 18px rgba(201,169,97,0.25);}
+.brand-by{color:var(--accent2);}
+.brand-by-wd{color:var(--accent2);border-color:var(--accent2);opacity:0.7;}
+.brand-sub{color:var(--t3);}
+
+/* Chips and pills — softer, parchment-on-emerald look */
+.tb-chip{
+  background:rgba(232,220,192,0.04);
+  border-color:var(--b2);
+  color:var(--t2);
+}
+.tb-chip.money{color:var(--green);border-color:rgba(106,168,74,0.35);}
+.tb-chip.money.neg{color:var(--crimson);border-color:rgba(184,88,68,0.4);}
+.tb-chip.age{color:var(--gold);border-color:rgba(212,184,106,0.35);}
+.tb-chip.country{color:var(--accent2);border-color:rgba(111,195,168,0.3);}
+.tb-btn{
+  background:rgba(232,220,192,0.03);
+  border-color:var(--b2);
+  color:var(--t2);
+  transition:all 0.2s ease;
+}
+.tb-btn:hover{
+  color:var(--accent);
+  border-color:var(--accent);
+  background:rgba(201,169,97,0.05);
+  box-shadow:0 0 12px rgba(201,169,97,0.15);
+}
+.tb-btn.warn{color:var(--crimson);border-color:rgba(184,88,68,0.45);}
+
+/* Cards — warm-emerald base, brass on hover, illuminated-manuscript feel */
+.card{
+  background:linear-gradient(180deg,rgba(26,42,34,0.7) 0%,rgba(20,32,25,0.7) 100%);
+  border:1px solid var(--b1);
+  transition:all 0.25s ease;
+}
+.card:hover{
+  border-color:var(--accent);
+  box-shadow:0 0 0 1px rgba(201,169,97,0.15), 0 4px 16px rgba(0,0,0,0.3);
+  transform:translateY(-1px);
+}
+.card-btn{
+  background:rgba(232,220,192,0.03);
+  border:1px solid var(--b2);
+  color:var(--t1);
+  transition:all 0.2s;
+}
+.card-btn:hover{
+  background:rgba(201,169,97,0.08);
+  border-color:var(--accent);
+  color:var(--accent);
+}
+.card-btn.green{
+  background:rgba(106,168,74,0.10);
+  border-color:rgba(106,168,74,0.5);
+  color:var(--green);
+}
+.card-btn.green:hover{
+  background:rgba(106,168,74,0.20);
+  border-color:var(--green);
+  color:#a3e635;
+  box-shadow:0 0 14px rgba(106,168,74,0.25);
+}
+.card-btn.danger{
+  background:rgba(184,88,68,0.08);
+  border-color:rgba(184,88,68,0.45);
+  color:var(--crimson);
+}
+.card-btn.muted{opacity:0.45;}
+
+/* Modals — illuminated header strip in brass, parchment body */
+#modal{
+  background:rgba(10,20,16,0.85);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+}
+.modal{
+  background:var(--s1);
+  border:1px solid var(--brass);
+  box-shadow:0 0 0 1px rgba(201,169,97,0.08), 0 20px 60px rgba(0,0,0,0.6), 0 0 80px rgba(201,169,97,0.06);
+}
+.modal-header{
+  background:linear-gradient(180deg,#1d2e24 0%,#142019 100%);
+  border-bottom:1px solid var(--brass);
+  position:relative;
+}
+/* Geometric illumination band on the modal header */
+.modal-header::after{
+  content:'';
+  position:absolute;
+  left:0;right:0;bottom:-1px;height:2px;
+  background:linear-gradient(90deg,
+    transparent 0%,
+    var(--brass) 8%,
+    transparent 12%,
+    transparent 20%,
+    var(--brass) 24%,
+    transparent 28%,
+    transparent 72%,
+    var(--brass) 76%,
+    transparent 80%,
+    transparent 88%,
+    var(--brass) 92%,
+    transparent 96%);
+  opacity:0.7;
+}
+.modal-title{color:var(--accent);font-family:Georgia,serif;}
+
+/* Stat bars — candlelight gradient instead of neon */
+.stat-bar{background:rgba(13,26,19,0.8);border:1px solid var(--b1);}
+.stat-fill{background:linear-gradient(90deg,var(--brass),var(--gold));}
+.stat-fill.crit{background:linear-gradient(90deg,#5a2a22,var(--crimson));}
+
+/* Year-card / event log — manuscript ruled-line feel */
+.year-card{
+  background:linear-gradient(180deg,rgba(26,42,34,0.5) 0%,rgba(20,32,25,0.5) 100%);
+  border:1px solid var(--b1);
+  border-left:3px solid var(--brass);
+}
+.year-num{color:var(--gold);text-shadow:0 0 10px rgba(212,184,106,0.2);}
+.year-age{color:var(--t3);}
+
+/* Buttons in action bar — slightly larger and brass-themed */
+.act-btn,.action-btn{
+  background:rgba(20,32,25,0.7);
+  border:1px solid var(--b2);
+  color:var(--t1);
+  transition:all 0.2s ease;
+}
+.act-btn:hover,.action-btn:hover{
+  background:rgba(201,169,97,0.08);
+  border-color:var(--accent);
+  color:var(--accent);
+  box-shadow:0 2px 12px rgba(201,169,97,0.15);
+}
+.act-btn.primary,.action-btn.primary{
+  background:linear-gradient(180deg,#2a3d33,#1a2a22);
+  border-color:var(--accent);
+  color:var(--accent);
+  font-weight:600;
+}
+
+/* Toast — warm amber instead of cyberpunk magenta */
+#toast{
+  background:var(--s2);
+  border:1px solid var(--accent);
+  color:var(--t1);
+  box-shadow:0 0 24px rgba(201,169,97,0.3), 0 0 0 1px rgba(201,169,97,0.1);
+}
+
+/* Brand sub-text "Islamic Edition · One Year At A Time" — gold serif */
+.intro-title{
+  font-family:Georgia,serif;
+  color:var(--accent);
+  text-shadow:0 0 30px rgba(201,169,97,0.25);
+  letter-spacing:0.02em;
+}
+.intro-sub{color:var(--accent2);letter-spacing:0.18em;}
+.intro-notice{color:var(--t2);}
+
+/* Tabs / segmented controls — brass underline on active */
+.tab-btn.active,.rel-tab.active{
+  color:var(--accent);
+  border-bottom-color:var(--accent);
+}
+
+/* Inputs — parchment outline on focus */
+input,select,textarea{
+  background:rgba(10,20,16,0.6);
+  border:1px solid var(--b2);
+  color:var(--t1);
+  transition:all 0.2s;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--accent);
+  outline:none;
+  box-shadow:0 0 0 2px rgba(201,169,97,0.15);
+}
+
+/* Death screen — manuscript closing page */
+#death-screen{
+  background:radial-gradient(ellipse at center, #142019 0%, #0a1410 80%);
+}
+#death-screen::before{
+  content:'';
+  position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%23c9a961' stroke-width='0.6' opacity='0.4'><path d='M60 20 L70 50 L100 50 L75 70 L85 100 L60 80 L35 100 L45 70 L20 50 L50 50 Z'/></g></svg>");
+  background-size:200px 200px;
+  background-position:center;
+  background-repeat:no-repeat;
+  opacity:0.06;
+}
+.death-stat{
+  background:rgba(26,42,34,0.4);
+  border:1px solid var(--b1);
+}
+
+/* Ruling chips — slightly more parchment-feeling */
+.ruling-chip{
+  letter-spacing:0.14em;
+  font-family:var(--font-m);
+}
+
+/* Family / relationships emoji + name styling — soften the pink */
+.fam-rel{color:var(--accent2);}
+.fam-name{color:var(--t1);}
+.fam-meta{color:var(--t3);}
+
+/* Reduce magenta glow on stat hover indicators */
+.stat-row:hover .stat-name{color:var(--accent);}
+
+/* Soften the most cyberpunk-looking accents — generic .neon class
+   used in a few places (toasts, badges) gets brass tones */
+[style*="rgb(157, 107, 255)"],
+[style*="#9d6bff"],
+[style*="rgba(157,107,255"]{
+  /* Visual hint only — won't override inline but informs hover effects */
+}
+
+/* New helper class for illuminated section headers */
+.illum-header{
+  font-family:Georgia,serif;
+  font-size:18px;
+  color:var(--accent);
+  letter-spacing:0.04em;
+  border-bottom:1px solid var(--brass);
+  padding-bottom:8px;
+  margin-bottom:14px;
+  position:relative;
+}
+.illum-header::before{
+  content:'❋';
+  color:var(--brass);
+  margin-right:10px;
+  opacity:0.7;
+}
+
 </style>
 </head>
 <body>

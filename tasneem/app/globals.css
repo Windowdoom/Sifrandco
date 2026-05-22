@@ -80,3 +80,11 @@ body {
 /* hide scrollbars on inner scroll areas where desired */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+@keyframes splashRise {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.97); letter-spacing: 0.04em; }
+  60%  { opacity: 1; transform: translateY(0)    scale(1); }
+  100% { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.splash-rise { animation: splashRise 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.splash-rule { transform-origin: center; animation: splashRise 1300ms 200ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }

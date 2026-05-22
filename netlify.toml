@@ -1,7 +1,7 @@
 [build]
   base    = "tasneem"
   command = "npm run build"
-  publish = "tasneem/.next"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"

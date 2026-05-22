@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { SectionTitle } from "@/components/Brand";
+import ShareDua from "@/components/ShareDua";
 import { DUAS, type Dua } from "@/data/duas";
 
 const CATEGORIES = ["All", "Morning", "Evening", "Sleep", "Wake", "Food", "Travel", "Distress", "Forgiveness", "After Salah"] as const;
@@ -38,21 +39,30 @@ export default function Duas() {
 }
 
 function DuaCard({ dua }: { dua: Dua }) {
+  const [shareOpen, setShareOpen] = useState(false);
   return (
     <article className="card p-5">
-      <header className="mb-3">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-gold-600">
-          <span>{dua.category}</span>
-          {dua.repeat && <span className="text-tayba-900/55">·  ×{dua.repeat}</span>}
+      <header className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-gold-600">
+            <span>{dua.category}</span>
+            {dua.repeat && <span className="text-tayba-900/55">·  ×{dua.repeat}</span>}
+          </div>
+          <h3 className="mt-1 font-serif text-[1.35rem] font-medium leading-tight text-tayba-900 dark:text-paper-50">
+            {dua.title}
+          </h3>
+          {dua.context && (
+            <p className="mt-1.5 text-[0.82rem] leading-relaxed text-tayba-900/70 dark:text-paper-200/65">
+              {dua.context}
+            </p>
+          )}
         </div>
-        <h3 className="mt-1 font-serif text-[1.35rem] font-medium leading-tight text-tayba-900 dark:text-paper-50">
-          {dua.title}
-        </h3>
-        {dua.context && (
-          <p className="mt-1.5 text-[0.82rem] leading-relaxed text-tayba-900/70 dark:text-paper-200/65">
-            {dua.context}
-          </p>
-        )}
+        <button
+          onClick={() => setShareOpen(true)}
+          aria-label="Share dua"
+          className="shrink-0 rounded-full border border-paper-200 p-2 text-tayba-800 transition hover:border-gold-400 hover:text-gold-700 dark:border-tayba-700 dark:text-paper-200">
+          <ShareIcon />
+        </button>
       </header>
 
       <div className="arabic mt-1 text-[1.55rem] leading-[2.3] text-tayba-900 dark:text-paper-50">
@@ -83,6 +93,18 @@ function DuaCard({ dua }: { dua: Dua }) {
           </a>
         )}
       </footer>
+      <ShareDua dua={dua} open={shareOpen} onClose={() => setShareOpen(false)} />
     </article>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <circle cx="18" cy="5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="19" r="2.5" />
+      <path d="M8.2 10.8 15.8 6.4M8.2 13.2l7.6 4.4" />
+    </svg>
   );
 }

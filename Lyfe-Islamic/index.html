@@ -16293,7 +16293,7 @@ function openReferencesIndex(){
   };
 })();
 
-// ─── Welcome / intro tweak — clarify this is the Islamic edition
+// ─── Welcome / intro tweak — clarify this is the Islamic edition + disclaimer
 (function(){
   const title = document.querySelector('.intro-title');
   if(title) title.textContent = 'Lyfe';
@@ -16301,8 +16301,193 @@ function openReferencesIndex(){
   if(sub) sub.textContent = 'Islamic Edition · One Year At A Time';
   const notice = document.querySelector('.intro-notice');
   if(notice){
-    notice.innerHTML = 'Lyfe — Islamic Edition. Every character is born Muslim by default; you may stay on the path or deviate. Choices have worldly consequences; Allah\'s judgment is His alone. All Quran citations use the Sahih International translation; all hadith are sahih-graded from the Six Books. Verifiable on quran.com & sunnah.com. No music. Save is local. Nothing is sent anywhere.';
+    notice.innerHTML =
+        '<div style="padding:14px 16px;background:rgba(201,169,97,0.06);border:1px solid rgba(201,169,97,0.2);border-radius:10px;margin-bottom:12px;text-align:left;">'
+      +   '<div style="font-family:Georgia,serif;font-size:13px;color:var(--accent);margin-bottom:8px;letter-spacing:0;">A note before you begin</div>'
+      +   '<div style="font-size:12.5px;line-height:1.65;color:var(--t2);font-style:normal;letter-spacing:0;">'
+      +     '<b>This is a work of fiction.</b> All companies, schools, and named characters are imagined. '
+      +     'Anything Islamically oriented in this game is presented with utmost respect and cited with its Quran reference (Sahih International translation) and sahih-graded hadith from the Six Books, verifiable on quran.com and sunnah.com. '
+      +     '<b>Any shortcomings, simplifications, or misunderstandings are the fault of the developer alone</b> — please verify, please research, and please correct what is wrong. '
+      +     'The intention behind this work is to help people understand Islam not just as a religion, but as a way of life — a system that shapes how one earns, how one marries, how one grieves, and how one spends the years between birth and the meeting with Allah.'
+      +   '</div>'
+      +   '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">'
+      +     '<button class="card-btn" style="padding:6px 12px;font-size:11px;" onclick="openReferences()">View Citations</button>'
+      +     '<button class="card-btn" style="padding:6px 12px;font-size:11px;" onclick="openGuide()">Open Guide & Du\'a</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--t3);letter-spacing:0.04em;">'
+      +   'No music. Save is local. Nothing is sent anywhere.'
+      + '</div>';
   }
+})();
+
+// ─── References / Citations list — every Quran + sahih hadith
+//  citation used in the game, grouped by category. Accessible from
+//  the intro screen, the Guide, and via the topbar Guide button.
+function openReferences(){
+  let html = ''
+    + '<div style="padding:14px 16px;background:rgba(201,169,97,0.06);border:1px solid rgba(201,169,97,0.20);border-radius:10px;margin-bottom:18px;">'
+    +   '<div style="font-family:Georgia,serif;font-size:14px;color:var(--accent);margin-bottom:6px;">References & Citations</div>'
+    +   '<div style="font-size:12.5px;line-height:1.6;color:var(--t2);">Every ruling and reflection in this game cites Quran (Sahih International) and sahih hadith from the Six Books. Sources are linked below — please verify on quran.com and sunnah.com. Any miscitation is the developer\'s error; the in-game text is the source of truth, and the URL should be corrected when wrong.</div>'
+    + '</div>';
+
+  const section = function(title, items){
+    let s = '<div style="font-family:Georgia,serif;font-size:13px;color:var(--accent);margin:14px 0 6px;border-bottom:1px solid rgba(201,169,97,0.15);padding-bottom:4px;">' + title + '</div>';
+    items.forEach(function(it){
+      s += '<div style="padding:8px 0;border-bottom:1px dashed rgba(232,220,192,0.08);font-size:12.5px;line-height:1.55;">'
+        +   '<a href="' + it.url + '" target="_blank" style="color:var(--accent2);text-decoration:none;font-weight:500;">' + it.cite + '</a>'
+        +   ' <span style="color:var(--t3);">· ' + it.topic + '</span>'
+        + '</div>';
+    });
+    return s;
+  };
+
+  // Quran citations referenced across the rulings registry
+  html += section('Qur\'an — Sahih International', [
+    {cite:'Quran 2:127', url:'https://quran.com/2/127', topic:'Du\'a — acceptance of works'},
+    {cite:'Quran 2:155', url:'https://quran.com/2/155', topic:'Sabr — patience in trial'},
+    {cite:'Quran 2:156', url:'https://quran.com/2/156', topic:'Istirja — to Allah we return'},
+    {cite:'Quran 2:168', url:'https://quran.com/2/168', topic:'Halal food and earnings'},
+    {cite:'Quran 2:183', url:'https://quran.com/2/183', topic:'Fasting'},
+    {cite:'Quran 2:190', url:'https://quran.com/2/190', topic:'Rules of combat — no transgression'},
+    {cite:'Quran 2:219', url:'https://quran.com/2/219', topic:'Wine & gambling'},
+    {cite:'Quran 2:221', url:'https://quran.com/2/221', topic:'Cross-faith marriage limits'},
+    {cite:'Quran 2:228', url:'https://quran.com/2/228', topic:'Iddah waiting period'},
+    {cite:'Quran 2:229', url:'https://quran.com/2/229', topic:'Khula — wife-initiated divorce'},
+    {cite:'Quran 2:261', url:'https://quran.com/2/261', topic:'Sadaqah jariyah — multiplied reward'},
+    {cite:'Quran 2:267', url:'https://quran.com/2/267', topic:'Spend from the good things'},
+    {cite:'Quran 2:275-279', url:'https://quran.com/2/275-279', topic:'Riba — war from Allah'},
+    {cite:'Quran 2:282', url:'https://quran.com/2/282', topic:'Documenting contracts'},
+    {cite:'Quran 3:97', url:'https://quran.com/3/97', topic:'Hajj — obligation on the able'},
+    {cite:'Quran 3:185', url:'https://quran.com/3/185', topic:'Every soul will taste death'},
+    {cite:'Quran 4:3', url:'https://quran.com/4/3', topic:'Polygyny conditional on equal justice'},
+    {cite:'Quran 4:4', url:'https://quran.com/4/4', topic:'Mahr — bridal gift'},
+    {cite:'Quran 4:31', url:'https://quran.com/4/31', topic:'Avoiding major sins'},
+    {cite:'Quran 4:35', url:'https://quran.com/4/35', topic:'Arbiters before divorce'},
+    {cite:'Quran 4:36', url:'https://quran.com/4/36', topic:'Rights of the neighbour'},
+    {cite:'Quran 4:48', url:'https://quran.com/4/48', topic:'Tawhid — no associating with Allah'},
+    {cite:'Quran 4:58', url:'https://quran.com/4/58', topic:'Governance — render trusts'},
+    {cite:'Quran 4:97', url:'https://quran.com/4/97', topic:'Hijrah — migration for faith'},
+    {cite:'Quran 4:119', url:'https://quran.com/4/119', topic:'Changing the creation of Allah'},
+    {cite:'Quran 5:3', url:'https://quran.com/5/3', topic:'Forbidden food'},
+    {cite:'Quran 5:5', url:'https://quran.com/5/5', topic:'Cross-faith marriage permitted (kitabiyya for men)'},
+    {cite:'Quran 5:32', url:'https://quran.com/5/32', topic:'Saving one life as saving all'},
+    {cite:'Quran 5:33', url:'https://quran.com/5/33', topic:'Hirabah — armed robbery'},
+    {cite:'Quran 5:38', url:'https://quran.com/5/38', topic:'Theft — prescribed punishment'},
+    {cite:'Quran 5:90-91', url:'https://quran.com/5/90-91', topic:'Khamr & maysir — the decisive verse'},
+    {cite:'Quran 7:31', url:'https://quran.com/7/31', topic:'Israf — no extravagance'},
+    {cite:'Quran 7:199', url:'https://quran.com/7/199', topic:'Forgiveness and turning away from the ignorant'},
+    {cite:'Quran 9:60', url:'https://quran.com/9/60', topic:'Zakat — the eight categories'},
+    {cite:'Quran 9:119', url:'https://quran.com/9/119', topic:'Sidq — truthful speech'},
+    {cite:'Quran 11:114', url:'https://quran.com/11/114', topic:'Good deeds erase bad'},
+    {cite:'Quran 13:28', url:'https://quran.com/13/28', topic:'Hearts find rest in remembrance of Allah'},
+    {cite:'Quran 16:91', url:'https://quran.com/16/91', topic:'Yamin — fulfilling oaths'},
+    {cite:'Quran 17:23', url:'https://quran.com/17/23', topic:'Birr al-walidayn — kindness to parents'},
+    {cite:'Quran 17:26-27', url:'https://quran.com/17/26-27', topic:'Wastefulness — brothers of devils'},
+    {cite:'Quran 17:32', url:'https://quran.com/17/32', topic:'Zina — do not approach it'},
+    {cite:'Quran 17:37', url:'https://quran.com/17/37', topic:'Kibr — no walking in arrogance'},
+    {cite:'Quran 24:30', url:'https://quran.com/24/30', topic:'Haya — lowering the gaze'},
+    {cite:'Quran 25:70', url:'https://quran.com/25/70', topic:'Tawbah — evil replaced with good'},
+    {cite:'Quran 25:74', url:'https://quran.com/25/74', topic:'Family — dua for righteous progeny'},
+    {cite:'Quran 30:21', url:'https://quran.com/30/21', topic:'Marriage — comfort and mercy'},
+    {cite:'Quran 31:6', url:'https://quran.com/31/6', topic:'Idle speech that misleads'},
+    {cite:'Quran 33:5', url:'https://quran.com/33/5', topic:'Kafala — calling adopted children by their father\'s name'},
+    {cite:'Quran 39:53', url:'https://quran.com/39/53', topic:'Tawbah — do not despair of Allah\'s mercy'},
+    {cite:'Quran 41:33', url:'https://quran.com/41/33', topic:'Dawah — calling to Allah'},
+    {cite:'Quran 47:22', url:'https://quran.com/47/22', topic:'Silat al-rahim — kinship'},
+    {cite:'Quran 49:12', url:'https://quran.com/49/12', topic:'Tajassus & ghibah — spying and backbiting'},
+    {cite:'Quran 62:8', url:'https://quran.com/62/8', topic:'Death will meet you'},
+    {cite:'Quran 83:1', url:'https://quran.com/83/1', topic:'Al-Mutaffifin — those who cheat in measure'},
+    {cite:'Quran 97:3', url:'https://quran.com/97/3', topic:'Laylat al-Qadr — better than a thousand months'},
+    {cite:'Quran 103:1', url:'https://quran.com/103/1', topic:'By time — every soul is a hostage to its earning'},
+    {cite:'Quran 113:5', url:'https://quran.com/113/5', topic:'Seeking refuge from envy'},
+  ]);
+
+  html += section('Sahih al-Bukhari', [
+    {cite:'Bukhari 1', url:'https://sunnah.com/bukhari:1', topic:'Actions are by intentions'},
+    {cite:'Bukhari 24', url:'https://sunnah.com/bukhari:24', topic:'Modesty is part of faith'},
+    {cite:'Bukhari 54', url:'https://sunnah.com/bukhari:54', topic:'Hijrah — intentions sealed the migration'},
+    {cite:'Bukhari 893', url:'https://sunnah.com/bukhari:893', topic:'Each of you is a shepherd'},
+    {cite:'Bukhari 1395', url:'https://sunnah.com/bukhari:1395', topic:'Zakat — sending Mu\'adh to Yemen'},
+    {cite:'Bukhari 1521', url:'https://sunnah.com/bukhari:1521', topic:'Hajj — returning as on the day born'},
+    {cite:'Bukhari 1903', url:'https://sunnah.com/bukhari:1903', topic:'False speech invalidates fasting'},
+    {cite:'Bukhari 2014', url:'https://sunnah.com/bukhari:2014', topic:'Laylat al-qadr'},
+    {cite:'Bukhari 2067', url:'https://sunnah.com/bukhari:2067', topic:'Kinship — extending life and provision'},
+    {cite:'Bukhari 2320', url:'https://sunnah.com/bukhari:2320', topic:'Farming as charity'},
+    {cite:'Bukhari 2766', url:'https://sunnah.com/bukhari:2766', topic:'Seven destructive sins'},
+    {cite:'Bukhari 4860', url:'https://sunnah.com/bukhari:4860', topic:'Gambling — refuge in la ilaha illa Allah'},
+    {cite:'Bukhari 5121', url:'https://sunnah.com/bukhari:5121', topic:'Mahr — even a ring of iron'},
+    {cite:'Bukhari 5136', url:'https://sunnah.com/bukhari:5136', topic:'A woman\'s consent required'},
+    {cite:'Bukhari 5304', url:'https://sunnah.com/bukhari:5304', topic:'Kafala — the orphan-sponsor and the Prophet ﷺ'},
+    {cite:'Bukhari 5590', url:'https://sunnah.com/bukhari:5590', topic:'Music — Kitab al-Ashribah'},
+    {cite:'Bukhari 5641', url:'https://sunnah.com/bukhari:5641', topic:'Sabr — even the prick of a thorn expiates sins'},
+    {cite:'Bukhari 5947', url:'https://sunnah.com/bukhari:5947', topic:'Tattoos cursed'},
+    {cite:'Bukhari 5971', url:'https://sunnah.com/bukhari:5971', topic:'Mother three times, then father'},
+    {cite:'Bukhari 5976', url:'https://sunnah.com/bukhari:5976', topic:'Shirk — the greatest of major sins'},
+    {cite:'Bukhari 6011', url:'https://sunnah.com/bukhari:6011', topic:'Believers like one body'},
+    {cite:'Bukhari 6095', url:'https://sunnah.com/bukhari:6095', topic:'Three signs of a hypocrite'},
+    {cite:'Bukhari 6114', url:'https://sunnah.com/bukhari:6114', topic:'The strong one controls his anger'},
+    {cite:'Bukhari 6412', url:'https://sunnah.com/bukhari:6412', topic:'Two blessings — health and free time'},
+    {cite:'Bukhari 6416', url:'https://sunnah.com/bukhari:6416', topic:'Be in the world as a stranger'},
+    {cite:'Bukhari 6446', url:'https://sunnah.com/bukhari:6446', topic:'Richness is the richness of the soul'},
+    {cite:'Bukhari 6864', url:'https://sunnah.com/bukhari:6864', topic:'First cases judged — bloodshed'},
+  ]);
+
+  html += section('Sahih Muslim', [
+    {cite:'Muslim 49',   url:'https://sunnah.com/muslim:49',   topic:'Change evil with hand, tongue, heart'},
+    {cite:'Muslim 82',   url:'https://sunnah.com/muslim:82',   topic:'Salah — between a man and disbelief'},
+    {cite:'Muslim 91',   url:'https://sunnah.com/muslim:91',   topic:'Kibr — disdaining truth and people'},
+    {cite:'Muslim 1015', url:'https://sunnah.com/muslim:1015', topic:'Allah is Pure and accepts only the pure'},
+    {cite:'Muslim 1513', url:'https://sunnah.com/muslim:1513', topic:'Gharar — forbidden uncertain transactions'},
+    {cite:'Muslim 1598', url:'https://sunnah.com/muslim:1598', topic:'Riba — consumer, payer, recorder, witnesses cursed'},
+    {cite:'Muslim 1631', url:'https://sunnah.com/muslim:1631', topic:'Three continuing deeds after death'},
+    {cite:'Muslim 1731', url:'https://sunnah.com/muslim:1731a', topic:'Rules of war — protecting non-combatants'},
+    {cite:'Muslim 1933', url:'https://sunnah.com/muslim:1933', topic:'Forbidden — fanged beasts'},
+    {cite:'Muslim 2563', url:'https://sunnah.com/muslim:2563d', topic:'Hasad — do not envy'},
+    {cite:'Muslim 2577', url:'https://sunnah.com/muslim:2577', topic:'Hadith Qudsi — Allah forgives all sins'},
+    {cite:'Muslim 2589', url:'https://sunnah.com/muslim:2589', topic:'Ghibah — backbiting defined'},
+    {cite:'Muslim 2607', url:'https://sunnah.com/muslim:2607', topic:'Truthfulness leads to Paradise'},
+  ]);
+
+  html += section('Other Six Books', [
+    {cite:'Sunan Abi Dawud 2083', url:'https://sunnah.com/abudawud:2083', topic:'No marriage without a wali'},
+    {cite:'Sunan Abi Dawud 2178', url:'https://sunnah.com/abudawud:2178', topic:'Divorce — the most disliked of the lawful'},
+    {cite:'Sunan Abi Dawud 5151', url:'https://sunnah.com/abudawud:5151', topic:'Gabriel and the rights of the neighbour'},
+    {cite:'Jami\' at-Tirmidhi 614', url:'https://sunnah.com/tirmidhi:614', topic:'Bodies grown from haram'},
+    {cite:'Jami\' at-Tirmidhi 1209', url:'https://sunnah.com/tirmidhi:1209', topic:'The truthful merchant with prophets and martyrs'},
+    {cite:'Jami\' at-Tirmidhi 1295', url:'https://sunnah.com/tirmidhi:1295', topic:'Ten cursed regarding wine (also Ibn Majah 3380)'},
+    {cite:'Jami\' at-Tirmidhi 1956', url:'https://sunnah.com/tirmidhi:1956', topic:'A smile is charity'},
+    {cite:'Sunan Ibn Majah 224', url:'https://sunnah.com/ibnmajah:224', topic:'Seeking knowledge is an obligation'},
+    {cite:'Sunan Ibn Majah 1858', url:'https://sunnah.com/ibnmajah:1858', topic:'Marry for four reasons — religion wins'},
+    {cite:'Sunan Ibn Majah 3380', url:'https://sunnah.com/ibnmajah:3380', topic:'Ten cursed regarding wine (canonical)'},
+  ]);
+
+  html += '<div style="margin-top:18px;padding:12px 14px;background:rgba(232,220,192,0.04);border:1px dashed rgba(201,169,97,0.25);border-radius:10px;font-size:12.5px;color:var(--t2);font-style:italic;line-height:1.6;text-align:center;">'
+       +   'Hadith were content-verified against the canonical Six-Book datasets (Arabic + English). Where a URL number differs by edition, the in-game text is the source of truth — please open an issue or correct the URL.'
+       + '</div>';
+
+  openModal('☪ References & Citations', html);
+}
+
+// ─── Disclaimer block on the death screen Book of Life — appended
+//  via wrapping showDeathScreen so it lands at the bottom under the
+//  closing reminder.
+(function(){
+  if(typeof showDeathScreen !== 'function') return;
+  const _orig = showDeathScreen;
+  showDeathScreen = function(){
+    _orig.apply(this, arguments);
+    const sum = document.getElementById('death-summary');
+    if(!sum || sum.dataset.disclaimerWired) return;
+    const disclaimer = document.createElement('div');
+    disclaimer.style.cssText = 'grid-column:1/-1;margin-top:14px;padding:14px 16px;background:rgba(201,169,97,0.05);border:1px solid rgba(201,169,97,0.18);border-radius:10px;font-size:12px;color:var(--t2);line-height:1.65;text-align:center;';
+    disclaimer.innerHTML =
+        '<div style="font-family:Georgia,serif;font-size:13px;color:var(--accent);margin-bottom:6px;">A note from the maker</div>'
+      + 'This is a work of fiction. All Islamically oriented content was presented with utmost respect, citing Quran (Sahih International) and sahih-graded hadith from the Six Books. Any shortcomings or misunderstandings are the fault of the developer. The intention is for people to understand Islam not just as a religion, but as a way of life. '
+      + '<button class="card-btn" style="margin-top:10px;padding:5px 12px;font-size:11px;" onclick="openReferences()">View Citations</button>';
+    sum.appendChild(disclaimer);
+    sum.dataset.disclaimerWired = '1';
+  };
 })();
 
 
@@ -19557,6 +19742,9 @@ function openGuide(){
 
     + '<div style="padding:12px 14px;background:rgba(232,220,192,0.04);border:1px dashed rgba(201,169,97,0.25);border-radius:10px;font-size:12.5px;color:var(--t2);font-style:italic;line-height:1.6;text-align:center;">'
     +   'If any benefit comes from this work, it is from Allah. Any error is from me. May He forgive my shortcomings and yours.'
+    + '</div>'
+    + '<div style="margin-top:14px;text-align:center;">'
+    +   '<button class="card-btn" style="padding:8px 16px;" onclick="closeModal();openReferences()">View Full Citations List</button>'
     + '</div>';
   openModal('☪ Guide & Du\'a', html);
 }

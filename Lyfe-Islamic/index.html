@@ -1041,36 +1041,74 @@ html,body{
   opacity:0.7;
 }
 
-/* Modal — feels like a reading sheet rather than a dialog */
-#modal{padding:24px;}
-.modal{
+/* Modal — fullscreen centred overlay with a reading-sheet card inside.
+   The base CSS uses .modal as the overlay (position:fixed; inset:0) and
+   .modal-box as the actual card. Keep that semantic; only refine the box. */
+#modal, .modal{
+  background:rgba(8,16,12,0.78);
+  backdrop-filter:blur(10px) saturate(120%);
+  -webkit-backdrop-filter:blur(10px) saturate(120%);
+  padding:24px;
+}
+.modal-box{
   border-radius:var(--r-lg);
-  max-width:580px;
+  max-width:560px;
   width:calc(100% - 32px);
-  max-height:88vh;
-  border:1px solid rgba(201,169,97,0.25);
-  box-shadow:0 24px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(201,169,97,0.04);
+  max-height:86vh;
+  border:1px solid rgba(201,169,97,0.20);
+  background:linear-gradient(180deg, #1a2a22 0%, #142019 100%);
+  box-shadow:
+    0 24px 80px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(201,169,97,0.06),
+    0 0 60px rgba(201,169,97,0.04);
+  animation:modal-rise 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow:hidden;
 }
-.modal-header{
+.modal-head{
   padding:18px 24px 16px;
-  border-bottom:1px solid rgba(201,169,97,0.14);
+  border-bottom:1px solid rgba(201,169,97,0.10);
+  background:transparent;
+  display:flex;align-items:center;gap:14px;
 }
-.modal-header::after{display:none;}
 .modal-title{
   font-size:19px;
-  font-family:Georgia,serif;
+  font-family:Georgia, serif;
   letter-spacing:0;
   font-weight:600;
+  color:var(--accent);
+  flex:1;
+  text-transform:none;
 }
-.modal-body{padding:22px 24px 28px;}
-.modal-close{
+.modal-x{
   border-radius:999px;
-  width:32px;height:32px;
-  font-size:14px;
-  letter-spacing:0;
+  width:auto;
+  padding:6px 14px;
+  font-size:11px;
+  letter-spacing:0.04em;
+  text-transform:none;
+  font-weight:500;
   background:rgba(232,220,192,0.04);
-  border:1px solid rgba(232,220,192,0.1);
+  border:1px solid rgba(232,220,192,0.10);
+  color:var(--t2);
+  font-family:var(--font-s);
+  transition:all 0.18s ease;
 }
+.modal-x:hover{
+  background:rgba(232,220,192,0.08);
+  color:var(--t1);
+  border-color:rgba(201,169,97,0.30);
+}
+.modal-tabs{
+  padding:0 24px;
+  border-bottom:1px solid rgba(201,169,97,0.06);
+}
+.modal-body{
+  padding:22px 24px 26px;
+  overflow-y:auto;
+}
+/* Choice-card list inside modals (e.g. Family Crisis) — tighter rhythm */
+.modal-body .card{margin-bottom:10px;}
+.modal-body .card:last-child{margin-bottom:0;}
 
 /* Family / asset listings */
 .fam-row, .asset-row{padding:12px 0;border-color:rgba(232,220,192,0.06);}
@@ -1247,6 +1285,7 @@ input, select, textarea{
   <div class="tb-chip age" id="tb-age">Age 0</div>
   <div class="tb-chip money" id="tb-money">$0</div>
   <div class="tb-chip" id="tb-networth" title="Net worth — cash + savings + investments + real estate + companies + house + car + trust">Net $0</div>
+  <button class="tb-btn" onclick="openGuide()">Guide</button>
   <button class="tb-btn" onclick="openFamilyTree()">Family Tree</button>
   <button class="tb-btn warn" onclick="confirmRestart()">New Life</button>
 </div>
@@ -19430,6 +19469,71 @@ function computeTracks(c){
   document.body.classList.remove('ramadan');
   const stale = document.getElementById('ramadan-banner');
   if(stale) stale.remove();
+})();
+
+// ─── Guide — quick how-to-play + invoking dua + acknowledgement.
+//  Accessible from the topbar at all times. Surfaces author's
+//  intent so players treat the game as a starting point, not a
+//  fatwa source.
+function openGuide(){
+  const html = ''
+    + '<div style="padding:14px 16px;background:rgba(201,169,97,0.06);border:1px solid rgba(201,169,97,0.20);border-radius:10px;margin-bottom:18px;text-align:center;">'
+    +   '<div style="font-family:Georgia,serif;font-size:16px;color:var(--accent);">In the name of Allah, the Most Gracious, the Most Merciful</div>'
+    +   '<div style="font-size:11.5px;color:var(--t2);letter-spacing:0.04em;margin-top:6px;font-style:italic;">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>'
+    + '</div>'
+
+    + '<div style="font-family:Georgia,serif;font-size:14px;color:var(--accent);margin-bottom:8px;">A word from the maker</div>'
+    + '<div style="font-size:13px;line-height:1.65;color:var(--t1);margin-bottom:16px;">'
+    +   'Lyfe — Islamic Edition is meant as a small piece of <b>entertainment with a thread of education running through it</b>. It is not a fatwa source, not a substitute for a scholar, and not a substitute for living the deen in real life. Every ruling shown in the game comes with a citation; please verify, please research, please correct me where I have erred — the in-game text is the source of truth and the URL should be fixed when wrong.'
+    + '</div>'
+
+    + '<div style="font-family:Georgia,serif;font-size:14px;color:var(--accent);margin-bottom:8px;">Opening du\'a</div>'
+    + '<div style="padding:14px 16px;background:rgba(106,168,74,0.06);border:1px solid rgba(106,168,74,0.18);border-radius:10px;margin-bottom:18px;line-height:1.7;font-size:13px;color:var(--t1);">'
+    +   '<div style="font-family:Georgia,serif;font-style:italic;color:var(--accent2);margin-bottom:8px;">"Our Lord, accept [this] from us. Indeed You are the Hearing, the Knowing." <span style="opacity:0.7;font-size:11px;">— Quran 2:127</span></div>'
+    +   'Ya Allah — forgive my shortcomings in this work. Where I have placed a citation in error, raise someone to correct it. Where I have made a ruling sound simpler than it is, raise someone to teach the depth. Let what is right in this work benefit a heart; let what is wrong in it not lead anyone astray. Bless the players with consistency in salah, lawful rizq, and a closeness to You that grows quietly. Āmīn.'
+    + '</div>'
+
+    + '<div style="font-family:Georgia,serif;font-size:14px;color:var(--accent);margin-bottom:8px;">How to play</div>'
+    + '<div style="font-size:13px;line-height:1.65;color:var(--t1);margin-bottom:12px;">'
+    +   '<b>Age Up</b> advances one year. Decisions arrive as events — choose with care, the same way you would in life.<br><br>'
+    +   '<b>Faith ☪</b> opens salah, sawm, zakat, sadaqah jariyah, hajj, hijrah, tawbah. These are not stat-grinds; they are practice. Use them when you mean them.<br><br>'
+    +   '<b>Activities ✊</b> covers mind & body — gym, library, volunteer, masjid. The <i>Tahajjud</i> button surfaces only when your heart is heavy (happiness ≤ 40).<br><br>'
+    +   '<b>Dating Preferences</b> lets you pick your madhab and your marriage path — halal (with wali, mahr, witnesses) or unrestricted. Both paths exist in this game; both carry consequences.<br><br>'
+    +   '<b>Info chips</b> (the small coloured pills next to careers, houses, finances) open a ruling modal with the Quran + sahih hadith citation. Tap them.'
+    + '</div>'
+
+    + '<div style="font-family:Georgia,serif;font-size:14px;color:var(--accent);margin-bottom:8px;">A few things to remember</div>'
+    + '<div style="font-size:13px;line-height:1.65;color:var(--t1);margin-bottom:18px;">'
+    +   '• The game depicts <i>worldly</i> consequences only. Allah\'s judgement is His alone.<br>'
+    +   '• Differing-views rulings (notably music/entertainment) are flagged honestly — the game does not flatten ikhtilaf to one position.<br>'
+    +   '• Citations were verified by content match against canonical datasets (Sahih International for Quran; Bukhari/Muslim/etc. for hadith). If you find a URL that points to the wrong hadith, please open an issue.<br>'
+    +   '• The "Book of Life" at death is a worldly accounting. The true accounting is between you and Allah alone.'
+    + '</div>'
+
+    + '<div style="padding:12px 14px;background:rgba(232,220,192,0.04);border:1px dashed rgba(201,169,97,0.25);border-radius:10px;font-size:12.5px;color:var(--t2);font-style:italic;line-height:1.6;text-align:center;">'
+    +   'If any benefit comes from this work, it is from Allah. Any error is from me. May He forgive my shortcomings and yours.'
+    + '</div>';
+  openModal('☪ Guide & Du\'a', html);
+}
+
+// ─── Age-gate the parent crisis events. A 7-year-old cannot pay
+//  $40k for specialists, attend a parent's wedding ceremony as a
+//  decision-maker, or pay rent for them. These events fire for
+//  the player as the responsible adult only.
+(function(){
+  if(typeof rollLovedOneEvents !== 'function') return;
+  const _orig = rollLovedOneEvents;
+  rollLovedOneEvents = function(){
+    const c = LIFE && LIFE.char;
+    if(!c || c.age >= 16) return _orig.apply(this, arguments);
+    // Under-16 player: temporarily blank out parent + partner refs so
+    // the dispatcher's opt-pool excludes them, then restore.
+    const saved = { parents:c.parents, partner:c.partner };
+    c.parents = null;
+    c.partner = null;
+    try { _orig.apply(this, arguments); }
+    finally { c.parents = saved.parents; c.partner = saved.partner; }
+  };
 })();
 
 // ─── Warm cultural micro-events — small, indirect, textured.

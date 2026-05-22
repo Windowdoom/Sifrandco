@@ -776,22 +776,63 @@ input:focus,select:focus,textarea:focus{
   box-shadow:0 0 0 2px rgba(201,169,97,0.15);
 }
 
-/* Death screen — manuscript closing page */
+/* Death screen — manuscript closing page that FITS THE SCREEN.
+   Was overflowing because the Book of Life adds 20+ rows. Now:
+   - #death-screen scrolls vertically (justify content to start)
+   - .death-summary uses a wider max-width + 2-column grid for stats
+   - .death-stat rows are compact + don't repeat icon containers */
 #death-screen{
   background:radial-gradient(ellipse at center, #142019 0%, #0a1410 80%);
+  justify-content:flex-start;
+  padding:36px 24px 60px;
+  overflow-y:auto;
 }
+.death-title{font-size:48px;}
+.death-sub{margin-bottom:20px;}
 #death-screen::before{
   content:'';
-  position:absolute;inset:0;pointer-events:none;
+  position:fixed;inset:0;pointer-events:none;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><g fill='none' stroke='%23c9a961' stroke-width='0.6' opacity='0.4'><path d='M60 20 L70 50 L100 50 L75 70 L85 100 L60 80 L35 100 L45 70 L20 50 L50 50 Z'/></g></svg>");
   background-size:200px 200px;
   background-position:center;
   background-repeat:no-repeat;
-  opacity:0.06;
+  opacity:0.05;
+  z-index:0;
 }
+.death-summary{
+  max-width:880px;
+  width:100%;
+  position:relative;
+  z-index:1;
+  /* 2-column grid for the stat rows. The eulogy + section headers
+     get full-width via inline style/class; everything else flows
+     into two columns automatically. */
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px 12px;
+  padding:24px;
+}
+/* Anything that isn't a stat row spans both columns:
+   eulogy, Book of Life section header, closing reminder, etc. */
+.death-summary > *:not(.death-stat){grid-column:1 / -1;}
 .death-stat{
   background:rgba(26,42,34,0.4);
   border:1px solid var(--b1);
+  padding:9px 12px;
+  margin-bottom:0;
+  font-size:12.5px;
+  display:flex;justify-content:space-between;align-items:center;
+  gap:10px;
+  border-radius:8px;
+  min-height:38px;
+}
+.death-stat-k{font-size:11.5px;letter-spacing:0;text-transform:none;color:var(--t2);font-weight:500;flex:1;}
+.death-stat-v{font-size:12.5px;font-weight:600;text-align:right;white-space:nowrap;}
+
+/* Mobile death-screen: single column, slightly tighter */
+@media (max-width:680px){
+  .death-summary{grid-template-columns:1fr;padding:18px;}
+  .death-title{font-size:36px;}
 }
 
 /* Ruling chips — slightly more parchment-feeling */

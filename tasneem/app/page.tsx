@@ -80,12 +80,28 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
         </div>
       </section>
 
+      {/* Begin where you are - emotional state guidance */}
+      <section className="mx-4 mt-5">
+        <Link href="/feel" className="card relative flex items-center justify-between gap-4 overflow-hidden p-4 transition hover:border-gold-400 hover:shadow-gold">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.22em] text-gold-600">Begin where you are</div>
+            <div className="mt-1 font-serif text-[1.15rem] font-medium text-tayba-900 dark:text-paper-50">
+              Anxious, lost, grateful, tired?
+            </div>
+            <div className="mt-0.5 text-[0.82rem] text-tayba-900/75 dark:text-paper-200/70">
+              A verse, a dhikr, and a small action, matched to how you feel.
+            </div>
+          </div>
+          <div className="arabic shrink-0 text-2xl text-gold-600">قَلْب</div>
+        </Link>
+      </section>
+
       {/* Quick tiles */}
-      <section className="mx-4 mt-5 grid grid-cols-2 gap-2.5">
+      <section className="mx-4 mt-4 grid grid-cols-2 gap-2.5">
         <Tile href="/qibla"  title="Qibla"       sub="Direction & distance" />
         <Tile href="/tasbih" title="Tasbih"      sub="Dhikr counter" />
         <Tile href="/quran"  title="Quran"       sub="Read & listen" />
-        <Tile href="/duas"   title="Duas"        sub="Morning · Evening" />
+        <Tile href="/duas"   title="Duas"        sub="Morning, Evening" />
         <Tile href="/names"  title="99 Names"    sub="Asma' al-Husna" />
         <Tile href="/hadith" title="Hadith"      sub="The Six Books" />
         <Tile href="/calendar" title="Hijri Calendar" sub="Events & fasts" />
@@ -97,7 +113,7 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
       {/* Footer pill */}
       <section className="mx-4 mt-6 mb-4 flex items-center justify-between rounded-2xl border border-paper-200 bg-white px-4 py-3 dark:border-tayba-700 dark:bg-tayba-800">
         <div className="text-xs font-medium text-tayba-900/85 dark:text-paper-200/70">
-          No ads · no tracking · open source
+          No ads, no tracking, open source
         </div>
         <Link href="/donate" className="btn-gold text-sm">Support Tasneem</Link>
       </section>

@@ -26,8 +26,10 @@ body {
 .arabic {
   font-family: var(--font-amiri), "Amiri", "Scheherazade New", "Noto Naskh Arabic", serif;
   direction: rtl;
-  line-height: 2.1;
+  line-height: 2.35;
   letter-spacing: 0;
+  word-spacing: 0.04em;
+  font-feature-settings: "calt" 1, "liga" 1;
 }
 
 .gold-rule {

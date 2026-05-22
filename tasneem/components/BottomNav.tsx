@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 const ITEMS: { href: string; label: string; icon: React.ReactNode }[] = [
   { href: "/",        label: "Home",   icon: <DotStar /> },
   { href: "/prayer",  label: "Prayer", icon: <Crescent /> },
-  { href: "/qibla",   label: "Qibla",  icon: <Compass /> },
+  { href: "/feel",    label: "Feel",   icon: <Heart /> },
   { href: "/quran",   label: "Quran",  icon: <Book /> },
   { href: "/duas",    label: "Duas",   icon: <Hands /> },
 ];
@@ -47,6 +47,9 @@ function Book() { return (
 ); }
 function Hands() { return (
   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M7 11V6a1.5 1.5 0 1 1 3 0v5"/><path d="M10 11V5a1.5 1.5 0 1 1 3 0v6"/><path d="M13 11V6a1.5 1.5 0 1 1 3 0v7"/><path d="M16 13V8a1.5 1.5 0 1 1 3 0v8a5 5 0 0 1-5 5h-3a5 5 0 0 1-5-5l-2-4a1.5 1.5 0 0 1 2.5-1.6L7 12"/></svg>
+); }
+function Heart() { return (
+  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 20s-7-4.35-7-10a4.5 4.5 0 0 1 8-2.83A4.5 4.5 0 0 1 19 10c0 5.65-7 10-7 10Z"/></svg>
 ); }
 function DotStar() { return (
   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.5 5.5l2 2M16.5 16.5l2 2M5.5 18.5l2-2M16.5 7.5l2-2"/><circle cx="12" cy="12" r="2.5"/></svg>

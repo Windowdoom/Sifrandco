@@ -11,58 +11,78 @@ export default function Duas() {
 
   return (
     <div className="px-4 pt-8">
-      <SectionTitle kicker="Hisn al-Muslim · Verified" title="Duas & Adhkar" />
+      <SectionTitle kicker="Hisn al-Muslim, verified" title="Duas & Adhkar" />
 
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-2">
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
         {CATEGORIES.map((c) => (
           <button key={c} onClick={() => setCat(c)}
-            className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs ${
-              cat === c ? "border-gold-400 bg-gold-50 text-tayba-700"
-              : "border-paper-200 text-tayba-900/70 dark:border-tayba-700 dark:text-paper-200/70"}`}>
+            className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs transition ${
+              cat === c
+                ? "border-gold-400 bg-gold-50 text-tayba-900 font-medium"
+                : "border-paper-200 text-tayba-900/75 hover:border-gold-400/60 dark:border-tayba-700 dark:text-paper-200/70"}`}>
             {c}
           </button>
         ))}
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-5 space-y-4">
         {list.map((d) => <DuaCard key={d.id} dua={d} />)}
       </div>
 
-      <p className="mt-6 text-center text-[11px] text-tayba-900/50 dark:text-paper-200/50">
+      <p className="mt-8 text-center text-[11px] text-tayba-900/55 dark:text-paper-200/55">
         Every dua here cites its primary source from the Quran or the Six Books of Hadith.
-        Cross-reference: Hisn al-Muslim by Sa'id al-Qahtani.
+        Cross-reference, Hisn al-Muslim by Sa'id al-Qahtani.
       </p>
     </div>
   );
 }
 
 function DuaCard({ dua }: { dua: Dua }) {
-  const [open, setOpen] = useState(false);
   return (
-    <div className="card p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.2em] text-gold-500">{dua.category}{dua.repeat ? ` · ×${dua.repeat}` : ""}</div>
-          <h3 className="mt-0.5 font-serif text-lg text-tayba-700 dark:text-paper-50">{dua.title}</h3>
+    <article className="card p-5">
+      <header className="mb-3">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-gold-600">
+          <span>{dua.category}</span>
+          {dua.repeat && <span className="text-tayba-900/55">·  ×{dua.repeat}</span>}
         </div>
-        <button onClick={() => setOpen(!open)} className="text-xs text-gold-500 underline">{open ? "Hide" : "Show"}</button>
-      </div>
-
-      <div className="arabic mt-3 text-2xl text-tayba-900 dark:text-paper-50">{dua.arabic}</div>
-
-      {open && (
-        <div className="mt-3 space-y-2 text-sm">
-          <div className="italic text-tayba-900/70 dark:text-paper-200/70">{dua.transliteration}</div>
-          <div>{dua.translation}</div>
-        </div>
-      )}
-
-      <div className="mt-3 flex items-center justify-between text-[11px]">
-        <span className="text-tayba-900/55 dark:text-paper-200/55">{dua.reference}</span>
-        {dua.refUrl && (
-          <a href={dua.refUrl} target="_blank" rel="noopener noreferrer" className="text-gold-500 underline">verify</a>
+        <h3 className="mt-1 font-serif text-[1.35rem] font-medium leading-tight text-tayba-900 dark:text-paper-50">
+          {dua.title}
+        </h3>
+        {dua.context && (
+          <p className="mt-1.5 text-[0.82rem] leading-relaxed text-tayba-900/70 dark:text-paper-200/65">
+            {dua.context}
+          </p>
         )}
+      </header>
+
+      <div className="arabic mt-1 text-[1.55rem] leading-[2.3] text-tayba-900 dark:text-paper-50">
+        {dua.arabic}
       </div>
-    </div>
+
+      <p className="mt-3 text-[0.9rem] italic leading-relaxed text-tayba-800/85 dark:text-paper-200/80">
+        {dua.transliteration}
+      </p>
+
+      <p className="mt-2 text-[0.92rem] leading-relaxed text-tayba-900/85 dark:text-paper-200/85">
+        {dua.translation}
+      </p>
+
+      <footer className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-paper-200/70 pt-3 text-[11px] dark:border-tayba-700/60">
+        {dua.grading && (
+          <span className={`rounded-full px-2 py-0.5 font-medium ${
+            dua.grading === "Quran" ? "bg-gold-50 text-gold-700"
+            : dua.grading === "Sahih" ? "bg-tayba-50 text-tayba-700"
+            : "bg-paper-100 text-tayba-800"
+          }`}>{dua.grading}</span>
+        )}
+        <span className="text-tayba-900/65 dark:text-paper-200/60">{dua.reference}</span>
+        {dua.refUrl && (
+          <a href={dua.refUrl} target="_blank" rel="noopener noreferrer"
+             className="ml-auto text-gold-600 underline-offset-2 hover:underline">
+            verify ↗
+          </a>
+        )}
+      </footer>
+    </article>
   );
 }

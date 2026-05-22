@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   applicationName: "Tasneem",
   appleWebApp: { capable: true, title: "Tasneem", statusBarStyle: "black-translucent" },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg" }],
+  },
 };
 
 export const viewport: Viewport = {

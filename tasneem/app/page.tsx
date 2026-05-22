@@ -98,7 +98,8 @@ function Dashboard({ lat, lng, label }: { lat: number; lng: number; label?: stri
 
       {/* Quick tiles */}
       <section className="mx-4 mt-4 grid grid-cols-2 gap-2.5">
-        <Tile href="/qibla"  title="Qibla"       sub="Direction & distance" />
+        <Tile href="/qibla"   title="Qibla"     sub="Direction & distance" />
+        <Tile href="/mosques" title="Mosques"   sub="Nearby, OSM data" />
         <Tile href="/tasbih" title="Tasbih"      sub="Dhikr counter" />
         <Tile href="/quran"  title="Quran"       sub="Read & listen" />
         <Tile href="/duas"   title="Duas"        sub="Morning, Evening" />

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- fonts load async so being offline never blocks first paint -->
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="css/styles.css?v=4">
+<link rel="stylesheet" href="css/styles.css?v=5">
 </head>
 <body>
 <canvas id="field"></canvas>
@@ -87,7 +87,22 @@
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer"></aside>
 
-<script>setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})},1000);document.getElementById('clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});</script>
-<script type="module" src="js/app.js?v=4"></script>
+<script>
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})},1000);document.getElementById('clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+// ultimate failsafe: lives outside the module graph, so even a broken or missing
+// module can never leave the boot veil stuck
+window.addEventListener('error', e=>{ window.__axonErr = (e.message||'script error'); }, true);
+setTimeout(()=>{
+  const v=document.getElementById('veil');
+  if(v && !v.classList.contains('gone')){
+    v.classList.add('gone');
+    const log=document.getElementById('log');
+    if(log){ const d=document.createElement('div'); d.className='line sys';
+      d.textContent='⚠ The app failed to finish loading'+(window.__axonErr?': '+window.__axonErr:'')+'. Hard refresh (Cmd+Shift+R). If it persists, re-download the full folder.';
+      log.appendChild(d); }
+  }
+}, 5000);
+</script>
+<script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>

@@ -4,12 +4,12 @@ HOW TO OPEN IT (Mac)
 1. Double-click "start-axon.command".
    - First time: right-click it, choose Open, then Open again in the dialog.
    - If Python is missing, run once in Terminal: xcode-select --install
-2. Your browser opens AXON at http://localhost:8723. Leave the Terminal window open.
+2. Your browser opens AXON at http://localhost:8941. Leave the Terminal window open.
 
 Manual alternative (any computer with Python):
    cd /path/to/axon
-   python3 -m http.server 8723
-   then visit http://localhost:8723 in Chrome, Edge, or Safari.
+   python3 -m http.server 8941
+   then visit http://localhost:8941 in Chrome, Edge, or Safari.
 
 MACHINE ACCESS — AXON NOW HAS HANDS (the bridge)
 start-axon launches a tiny local server (bridge.py, pure Python, no installs)

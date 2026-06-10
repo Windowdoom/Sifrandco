@@ -17,7 +17,7 @@ Security model:
 """
 import http.server, socketserver, json, os, sys, subprocess, secrets, urllib.parse, threading, time, shlex, platform, pathlib, urllib.request, re, html, gzip, io
 
-PORT = int(os.environ.get("AXON_PORT", "8723"))
+PORT = int(os.environ.get("AXON_PORT", "8941"))
 ROOT = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 TOKEN = secrets.token_urlsafe(24)
@@ -361,7 +361,17 @@ class ThreadingServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 def main():
     os.chdir(ROOT)
-    httpd = ThreadingServer(("127.0.0.1", PORT), Handler)
+    global PORT
+    httpd = None
+    for attempt in range(10):          # if the port is taken (old server still up), hop
+        try:
+            httpd = ThreadingServer(("127.0.0.1", PORT), Handler)
+            break
+        except OSError:
+            PORT += 1
+    if httpd is None:
+        print("Could not find a free port. Close other AXON windows and retry.")
+        return
     url = f"http://localhost:{PORT}/"
     print("\n  AXON bridge is live.")
     print(f"  Open: {url}")

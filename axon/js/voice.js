@@ -33,6 +33,25 @@ export function speakingActive(){ return utterCount > 0; }
 let onAllSpeechDone = null;
 export function setOnSpeechDone(fn){ onAllSpeechDone = fn; }
 
+// Browsers refuse to speak before the first user gesture, and a blocked
+// utterance can wedge the queue. Hold anything spoken pre-gesture and release
+// it on the first click or keypress.
+let gestureOK = false;
+const pendingSpeech = [];
+function releasePending(){
+  gestureOK = true;
+  try{ speechSynthesis.cancel(); speechSynthesis.resume(); }catch(e){}
+  const held = pendingSpeech.splice(0);
+  for(const t of held) enqueue(t);
+}
+if(typeof window !== 'undefined'){
+  const arm = ()=>{ if(!gestureOK) releasePending(); window.removeEventListener('pointerdown', arm, true); window.removeEventListener('keydown', arm, true); };
+  window.addEventListener('pointerdown', arm, true);
+  window.addEventListener('keydown', arm, true);
+  // Chrome quietly pauses long speech; nudge it back awake
+  setInterval(()=>{ try{ if(speechSynthesis.speaking && speechSynthesis.paused) speechSynthesis.resume(); }catch(e){} }, 3000);
+}
+
 // strip markdown, urls, emphasis and symbols so speech sounds human
 function cleanForSpeech(s){
   return (s||'')
@@ -49,6 +68,7 @@ function cleanForSpeech(s){
 function enqueue(text){
   const t = cleanForSpeech(text);
   if(!S.speak || !('speechSynthesis' in window) || !t) return;
+  if(!gestureOK){ pendingSpeech.push(t); return; }   // hold until the browser will allow audio
   const u = new SpeechSynthesisUtterance(t);
   applyVoice(u);
   const done = ()=>{ utterCount = Math.max(0, utterCount-1); if(utterCount===0){ setState(null); onAllSpeechDone && onAllSpeechDone(); } };
@@ -86,7 +106,7 @@ export function makeSpeaker(){
 }
 
 export function speak(text){ const s = makeSpeaker(); s.feed(text); s.flush(); }
-export function stopSpeak(){ if('speechSynthesis' in window) speechSynthesis.cancel(); utterCount = 0; if(document.body.classList.contains('speaking')) setState(null); }
+export function stopSpeak(){ pendingSpeech.length = 0; if('speechSynthesis' in window) speechSynthesis.cancel(); utterCount = 0; if(document.body.classList.contains('speaking')) setState(null); }
 
 export const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null, listening = false;

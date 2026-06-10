@@ -22808,7 +22808,8 @@ function getSpoofRival(careerKey, country){
     cam.position.set(0, 1.7, 10);
 
     // Dusk lighting — matches the illuminated-manuscript palette
-    scene.add(new T.HemisphereLight(0x35506a, 0x141d14, 0.9));
+    const hemi = new T.HemisphereLight(0x35506a, 0x141d14, 0.9);
+    scene.add(hemi);
     const sun = new T.DirectionalLight(0xc9a961, 1.1);
     sun.position.set(-40, 55, 25);
     scene.add(sun);
@@ -22903,6 +22904,7 @@ function getSpoofRival(careerKey, country){
         const dome = new T.Mesh(new T.SphereGeometry(wD*0.42, 18, 12, 0, Math.PI*2, 0, Math.PI/2),
           new T.MeshLambertMaterial({color:0xc9a961}));
         dome.position.set(wx, h, wz); scene.add(dome);
+        scene.userData.masjidDome = dome;
         const min = new T.Mesh(new T.CylinderGeometry(0.8, 1, h*2.1, 10),
           new T.MeshLambertMaterial({color:0xd8cdb0}));
         min.position.set(wx + wD*0.62, h*1.05, wz + wD*0.62); scene.add(min);
@@ -22944,7 +22946,8 @@ function getSpoofRival(careerKey, country){
     const pos = new Float32Array(300*3);
     for(let i=0;i<300;i++){ pos[i*3]=(Math.random()-0.5)*600; pos[i*3+1]=80+Math.random()*150; pos[i*3+2]=(Math.random()-0.5)*600; }
     starGeo.setAttribute('position', new T.BufferAttribute(pos,3));
-    scene.add(new T.Points(starGeo, new T.PointsMaterial({color:0xe8dcc0, size:0.8, transparent:true, opacity:0.7})));
+    const starPts = new T.Points(starGeo, new T.PointsMaterial({color:0xe8dcc0, size:0.8, transparent:true, opacity:0.7}));
+    scene.add(starPts);
 
     // Radial-glow texture (shared by sun, moon, lamp pools)
     function glowTex(inner, outer){
@@ -23069,9 +23072,73 @@ function getSpoofRival(careerKey, country){
 
     return {T, renderer, scene, cam, interactives, colliders, npcs,
             clouds:clouds, birds:birds, lampFlk:lampFlk, car:car,
+            sky:skyMat, sunSp:sunSp, moonSp:moonSp, starPts:starPts,
+            hemi:hemi, sunL:sun, dome:scene.userData.masjidDome || null,
+            dayStart:performance.now(), adhan:false, adhanClaimed:false,
             ext:{scene:scene, colliders:colliders, interactives:interactives},
             interiors:{}, mode:'ext', bounds:190, extPos:null,
             yaw:0, pitch:0, keys:{}, joy:{x:0,y:0}, near:null, raf:0};
+  }
+
+  // ── Day/night engine — a full day every 5 minutes. The world starts
+  //    at golden hour; maghrib falls as the sun dips, and answering the
+  //    adhan at the masjid carries a real reward.
+  const DAY_KEYS = [
+    // t, skyLow, skyMid, skyTop, fog, hemiI, sunI, sunCol, starO
+    {t:0.00, low:0x8a4a6a, mid:0x2e3e5e, top:0x0c1424, fog:0x2a2436, hemiI:0.55, sunI:0.5, sunCol:0xe8a0b0, starO:0.35}, // dawn
+    {t:0.18, low:0x9ab8d0, mid:0x4a78a8, top:0x1e4a7a, fog:0x5a7a96, hemiI:1.15, sunI:1.3, sunCol:0xfff2d8, starO:0.0},  // morning
+    {t:0.40, low:0xa8c4d8, mid:0x5588b8, top:0x2a5a8a, fog:0x6a8aa8, hemiI:1.25, sunI:1.45, sunCol:0xffffff, starO:0.0}, // midday
+    {t:0.55, low:0xb06a2e, mid:0x27384a, top:0x0a1626, fog:0x182431, hemiI:0.9,  sunI:1.1, sunCol:0xc9a961, starO:0.25}, // golden hour
+    {t:0.62, low:0x7a3a3a, mid:0x1c2436, top:0x060e1c, fog:0x141a26, hemiI:0.6,  sunI:0.5, sunCol:0xb05a30, starO:0.6},  // maghrib
+    {t:0.75, low:0x1a2030, mid:0x0e1622, top:0x060c16, fog:0x0c1218, hemiI:0.35, sunI:0.1, sunCol:0x405068, starO:0.95}, // night
+    {t:1.00, low:0x8a4a6a, mid:0x2e3e5e, top:0x0c1424, fog:0x2a2436, hemiI:0.55, sunI:0.5, sunCol:0xe8a0b0, starO:0.35}, // wrap to dawn
+  ];
+  const DAY_LEN_MS = 300000;
+  const _ca = {}, _cb = {}; // scratch colors
+  function lerpHex(T, a, b, f, scratchA, scratchB){
+    scratchA.set ? scratchA.set(a) : null;
+    const colA = new T.Color(a), colB = new T.Color(b);
+    return colA.lerp(colB, f);
+  }
+  function updateDayNight(w, now){
+    // World time starts at golden hour (t = 0.50)
+    const t = ((now - w.dayStart) / DAY_LEN_MS + 0.50) % 1;
+    let i = 0;
+    while(i < DAY_KEYS.length - 1 && DAY_KEYS[i+1].t < t) i++;
+    const A = DAY_KEYS[i], B = DAY_KEYS[Math.min(i+1, DAY_KEYS.length-1)];
+    const f = (t - A.t) / Math.max(0.0001, (B.t - A.t));
+    const T = w.T;
+    w.sky.uniforms.low.value = lerpHex(T, A.low, B.low, f, _ca, _cb);
+    w.sky.uniforms.mid.value = lerpHex(T, A.mid, B.mid, f, _ca, _cb);
+    w.sky.uniforms.top.value = lerpHex(T, A.top, B.top, f, _ca, _cb);
+    if(w.scene.fog) w.scene.fog.color = lerpHex(T, A.fog, B.fog, f, _ca, _cb);
+    w.hemi.intensity = A.hemiI + (B.hemiI - A.hemiI) * f;
+    w.sunL.intensity = A.sunI + (B.sunI - A.sunI) * f;
+    w.sunL.color = lerpHex(T, A.sunCol, B.sunCol, f, _ca, _cb);
+    w.starPts.material.opacity = A.starO + (B.starO - A.starO) * f;
+    // Sun arcs across the sky: rises east, sets west
+    const sa = (t - 0.04) * Math.PI;                  // crude solar arc
+    w.sunSp.position.set(-Math.cos(sa) * 280, Math.max(6, Math.sin(sa) * 180), 160 - Math.sin(sa) * 120);
+    w.sunSp.material.opacity = Math.max(0.12, Math.min(1, Math.sin(sa) + 0.35));
+    w.moonSp.material.opacity = w.starPts.material.opacity;
+    // Lamps breathe up after sundown
+    const nightF = t > 0.58 || t < 0.10 ? 1 : (t > 0.50 ? (t - 0.50) / 0.08 : 0);
+    if(w.lampFlk) for(const cone of w.lampFlk){ cone.material.opacity = 0.02 + nightF * 0.07; }
+
+    // ── Maghrib adhan window
+    const inMaghrib = t >= 0.585 && t <= 0.66;
+    if(inMaghrib && !w.adhan){
+      w.adhan = true; w.adhanClaimed = false;
+      showWorldSpeech('🕌 The maghrib adhan rises over the rooftops. The masjid glows.');
+      if(typeof toast === 'function') toast('Maghrib. The masjid is calling.');
+    }
+    if(!inMaghrib && w.adhan && t > 0.66){ w.adhan = false; }
+    if(w.dome){
+      const base = 0.0, pulse = w.adhan ? 0.55 + 0.35 * Math.sin(now/220) : base;
+      w.dome.material.emissive = w.dome.material.emissive || new T.Color(0xc9a961);
+      w.dome.material.emissive.set(0xc9a961);
+      w.dome.material.emissiveIntensity = pulse;
+    }
   }
 
   // ── Interiors — a walkable room per building type
@@ -23181,7 +23248,21 @@ function getSpoofRival(careerKey, country){
     w.bounds = room.half - 1;
     w.cam.position.set(0, 1.7, room.half - 3.5);
     w.yaw = 0; w.pitch = 0;
-    if(typeof sfx === 'function') try{ sfx('milestone'); }catch(e){}
+    // Answering the maghrib adhan at the masjid carries a reward
+    if(b.id === 'masjid' && w.adhan && !w.adhanClaimed){
+      w.adhanClaimed = true;
+      const c = LIFE && LIFE.char;
+      if(c && c.religion === 'islam'){
+        c.sakina = clamp((c.sakina||50) + 3, 0, 100);
+        c.iman   = clamp((c.iman||0) + 2, 0, 100);
+        c.faith  = c.iman;
+        if(typeof pushEvent === 'function')
+          pushEvent('good', '🕌 You heard the maghrib adhan and answered it. Sakina +3, Iman +2.');
+        showWorldSpeech('"You came at the call. That is most of the religion." — the imam, smiling.');
+        if(typeof renderAll === 'function') renderAll();
+        if(typeof saveLife === 'function') saveLife();
+      }
+    }
   }
 
   function exitInterior(){
@@ -23282,6 +23363,7 @@ function getSpoofRival(careerKey, country){
       }
 
       // Atmosphere (outdoors only)
+      if(w.mode !== 'int') updateDayNight(w, now);
       if(w.mode === 'ext'){
         if(w.clouds) for(let ci = 0; ci < w.clouds.length; ci++){
           const cl = w.clouds[ci];

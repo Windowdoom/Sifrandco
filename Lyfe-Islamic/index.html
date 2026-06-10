@@ -3909,12 +3909,11 @@ const REALITIES = {
 };
 
 function rollAlternateReality(){
-  const c = LIFE.char;
-  // Fork once, at age 16. Player chooses one reality which alters available careers and events.
-  if(c.age !== 16) return;
-  if(c.reality) return;
-  // Offer the fork via modal
-  setTimeout(() => offerRealityFork(), 200);
+  // Islamic edition: there is one world and one life in it. The
+  // alternate-reality fork (magical / cyberpunk / apocalypse / space)
+  // belongs to regular Lyfe; here the dunya is the test. Existing
+  // saves that already chose a reality keep it; no new forks occur.
+  return;
 }
 
 let _pendingRealityFork = false;
@@ -4070,7 +4069,7 @@ function defaultChar(seed){
     retired:   false,
     alive:     true,
     cause:     null,
-    reality:   null,
+    reality:   'mundane',
     madhab:    null,
     marriagePath: null,
   };
@@ -4203,7 +4202,7 @@ function loadLife(){
         }
         if(c.madhab === undefined) c.madhab = null;
         if(c.marriagePath === undefined) c.marriagePath = null;
-        if(c.reality === undefined) c.reality = null;
+        if(c.reality === undefined || c.reality === null) c.reality = 'mundane';
         if(c.skinTone == null) c.skinTone = 0;
         ['iman','sakina','barakah','hafizProgress'].forEach(k => {
           if(c[k] != null && !isFinite(c[k])) c[k] = 0;

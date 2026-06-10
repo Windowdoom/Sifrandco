@@ -22792,6 +22792,9 @@ function getSpoofRival(careerKey, country){
       renderer.toneMapping = T.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.15;
     }
+    // Real shadows — long dusk shadows sell the scene more than anything
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = T.PCFSoftShadowMap || renderer.shadowMap.type;
     const scene = new T.Scene();
     scene.fog = new T.FogExp2(0x182431, 0.0058);
 
@@ -22815,20 +22818,82 @@ function getSpoofRival(careerKey, country){
     scene.add(hemi);
     const sun = new T.DirectionalLight(0xc9a961, 1.1);
     sun.position.set(-40, 55, 25);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -130; sun.shadow.camera.right = 130;
+    sun.shadow.camera.top = 130;   sun.shadow.camera.bottom = -130;
+    sun.shadow.camera.far = 300;
+    sun.shadow.bias = -0.0006;
     scene.add(sun);
 
-    // Ground + roads
+    // Ground — subtle mottled grass, receives every shadow
+    const gtex = (function(){
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
+      const g = cv.getContext('2d');
+      g.fillStyle = '#16241a'; g.fillRect(0,0,256,256);
+      for(let i = 0; i < 900; i++){
+        g.fillStyle = 'rgba(' + (14+Math.random()*22|0) + ',' + (30+Math.random()*22|0) + ',' + (18+Math.random()*14|0) + ',0.5)';
+        g.fillRect(Math.random()*256, Math.random()*256, 2 + Math.random()*4, 2 + Math.random()*4);
+      }
+      const t = new T.CanvasTexture(cv);
+      t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(28, 28);
+      return t;
+    })();
     const ground = new T.Mesh(new T.PlaneGeometry(500, 500),
-      new T.MeshLambertMaterial({color:0x16241a}));
+      new T.MeshLambertMaterial({color:0xffffff, map:gtex}));
     ground.rotation.x = -Math.PI/2;
+    ground.receiveShadow = true;
     scene.add(ground);
+
+    // Roads + sidewalks
+    const roadMat = new T.MeshLambertMaterial({color:0x20262c});
+    const walkMat = new T.MeshLambertMaterial({color:0x3a4146});
     [[0,0,400,7],[0,0,7,400],[0,-46,400,5],[0,46,400,5],[-46,0,5,400],[46,0,5,400]].forEach(r => {
-      const road = new T.Mesh(new T.PlaneGeometry(r[2], r[3]),
-        new T.MeshLambertMaterial({color:0x232a30}));
+      const road = new T.Mesh(new T.PlaneGeometry(r[2], r[3]), roadMat);
       road.rotation.x = -Math.PI/2;
       road.position.set(r[0], 0.02, r[1]);
+      road.receiveShadow = true;
       scene.add(road);
+      // sidewalk strips hugging each side
+      const horiz = r[2] > r[3];
+      const off = (horiz ? r[3] : r[2]) / 2 + 1.1;
+      for(const s of [-1, 1]){
+        const sw = new T.Mesh(new T.PlaneGeometry(horiz ? r[2] : 2, horiz ? 2 : r[3]), walkMat);
+        sw.rotation.x = -Math.PI/2;
+        sw.position.set(r[0] + (horiz ? 0 : s*off), 0.03, r[1] + (horiz ? s*off : 0));
+        sw.receiveShadow = true;
+        scene.add(sw);
+      }
     });
+    // Dashed center lines on the two main avenues
+    const dashMat = new T.MeshBasicMaterial({color:0xb8b090});
+    for(let d = -190; d <= 190; d += 12){
+      const d1 = new T.Mesh(new T.PlaneGeometry(4, 0.32), dashMat);
+      d1.rotation.x = -Math.PI/2; d1.position.set(d, 0.04, 0); scene.add(d1);
+      const d2 = new T.Mesh(new T.PlaneGeometry(0.32, 4), dashMat);
+      d2.rotation.x = -Math.PI/2; d2.position.set(0, 0.04, d); scene.add(d2);
+    }
+    // Crosswalk at the central intersection
+    for(let i = -2; i <= 2; i++){
+      const zr = new T.Mesh(new T.PlaneGeometry(0.9, 6), dashMat);
+      zr.rotation.x = -Math.PI/2; zr.position.set(i*1.6, 0.045, 8.2); scene.add(zr);
+    }
+
+    // Parked cars along the avenues — a street that's lived on
+    const parkCols = [0x3a4a5c, 0x5c3a3a, 0x44524a, 0x2c2c34, 0x6a5a38];
+    for(let i = 0; i < 6; i++){
+      const pk = new T.Group();
+      const pb = new T.Mesh(new T.BoxGeometry(2.1, 0.75, 4.4),
+        new T.MeshLambertMaterial({color:parkCols[i % parkCols.length]}));
+      pb.position.y = 0.7; pb.castShadow = true; pk.add(pb);
+      const pc = new T.Mesh(new T.BoxGeometry(1.8, 0.6, 2.1),
+        new T.MeshLambertMaterial({color:0x10141a}));
+      pc.position.set(0, 1.35, -0.2); pk.add(pc);
+      const along = i % 2 === 0;
+      pk.position.set(along ? -150 + i*52 : 5.6, 0, along ? 5.6 : -130 + i*47);
+      pk.rotation.y = along ? Math.PI/2 : 0;
+      scene.add(pk);
+    }
 
     // Sign sprite: emoji + name on canvas texture
     function makeSign(icon, name){
@@ -22901,6 +22966,7 @@ function getSpoofRival(careerKey, country){
         ac.position.set(wx + wD*0.22, h + 1, wz - wD*0.18); scene.add(ac);
       }
       box.position.set(wx, h/2, wz);
+      box.castShadow = true; box.receiveShadow = true;
       scene.add(box);
       // Masjid dome + minaret
       if(b.id === 'masjid'){
@@ -22929,19 +22995,29 @@ function getSpoofRival(careerKey, country){
       const tx = (Math.sin(i*127.3)*0.5+0.5) * 360 - 180, tz = (Math.sin(i*311.7)*0.5+0.5) * 360 - 180;
       if(Math.abs(tx) < 8 || Math.abs(tz) < 8) continue;
       const trunk = new T.Mesh(new T.CylinderGeometry(0.3,0.4,2.2,6), new T.MeshLambertMaterial({color:0x4a3520}));
-      trunk.position.set(tx,1.1,tz); scene.add(trunk);
+      trunk.position.set(tx,1.1,tz); trunk.castShadow = true; scene.add(trunk);
       const top = new T.Mesh(new T.ConeGeometry(2.2,4.5,8), new T.MeshLambertMaterial({color:0x254a2a}));
-      top.position.set(tx,4.2,tz); scene.add(top);
+      top.position.set(tx,4.2,tz); top.castShadow = true; scene.add(top);
     }
 
-    // Wandering NPCs
+    // Pedestrians — body + head, walking the sidewalks, not the void
     const npcs = [];
-    for(let i = 0; i < 8; i++){
-      const m = new T.Mesh(new T.CapsuleGeometry(0.45, 1.0, 4, 8),
-        new T.MeshLambertMaterial({color:[0x8a7a5a,0x5a7a8a,0x7a5a7a,0x5a8a5a][i%4]}));
-      m.position.set((i%4)*22 - 33, 0.95, Math.floor(i/4)*30 - 15);
-      scene.add(m);
-      npcs.push({m:m, a:Math.random()*Math.PI*2, t:0});
+    const skin = [0xe8c4a0, 0xc89a72, 0x9a6a48, 0x6a4630];
+    const cloth = [0x8a7a5a, 0x5a7a8a, 0x7a5a7a, 0x5a8a5a, 0x9a8a6a, 0x4a5a6a];
+    for(let i = 0; i < 12; i++){
+      const grp = new T.Group();
+      const body = new T.Mesh(new T.CapsuleGeometry(0.34, 0.85, 4, 8),
+        new T.MeshLambertMaterial({color:cloth[i % cloth.length]}));
+      body.position.y = 0.95; body.castShadow = true; grp.add(body);
+      const head = new T.Mesh(new T.SphereGeometry(0.24, 10, 8),
+        new T.MeshLambertMaterial({color:skin[i % skin.length]}));
+      head.position.y = 1.78; head.castShadow = true; grp.add(head);
+      // Sidewalk routes: walk parallel to one of the avenues
+      const horiz = i % 2 === 0;
+      const side = (i % 4 < 2) ? 5.6 : -5.6;
+      grp.position.set(horiz ? -160 + i*27 : side, 0, horiz ? side : -160 + i*27);
+      scene.add(grp);
+      npcs.push({m:grp, horiz:horiz, dir:(i % 3 === 0 ? -1 : 1), sp:1.1 + (i % 3) * 0.35, ph:i * 1.7});
     }
 
     // Stars
@@ -23046,7 +23122,7 @@ function getSpoofRival(careerKey, country){
       const grp = new T.Group();
       const bodyCol = spec.status >= 8 ? 0x8a1820 : spec.status >= 6 ? 0x10141c : spec.status >= 4 ? 0x2a4a6a : 0x6a6258;
       const body = new T.Mesh(new T.BoxGeometry(2.3, 0.8, 4.8), new T.MeshLambertMaterial({color:bodyCol}));
-      body.position.y = 0.75; grp.add(body);
+      body.position.y = 0.75; body.castShadow = true; grp.add(body);
       const cabin = new T.Mesh(new T.BoxGeometry(2.0, 0.7, 2.3),
         new T.MeshLambertMaterial({color:0x0c1014, emissive:0x1a2430, emissiveIntensity:0.4}));
       cabin.position.set(0, 1.45, -0.3); grp.add(cabin);
@@ -23475,29 +23551,47 @@ function getSpoofRival(careerKey, country){
         w.cam.lookAt(cs.x + fx*12, 1.2 + w.pitch*4, cs.z + fz*12);
         nx = cs.x; nz = cs.z;
       } else {
-        // ── Walking
-        const sp = (w.keys['shift'] ? 14 : 7) * dt;
+        // ── Walking — smoothed velocity, correct camera-relative vectors
         let mx = 0, mz = 0;
         if(w.keys['w'] || w.keys['arrowup'])    mz -= 1;
         if(w.keys['s'] || w.keys['arrowdown'])  mz += 1;
         if(w.keys['a'] || w.keys['arrowleft'])  mx -= 1;
         if(w.keys['d'] || w.keys['arrowright']) mx += 1;
         mx += w.joy.x; mz += w.joy.y;
-        const len = Math.hypot(mx, mz) || 1;
+        const len = Math.hypot(mx, mz);
+        if(len > 1){ mx /= len; mz /= len; }
         const sin = Math.sin(w.yaw), cos = Math.cos(w.yaw);
-        nx = w.cam.position.x + (mx*cos - mz*sin) * sp / len * (len>0.01?1:0);
-        nz = w.cam.position.z + (mx*sin + mz*cos) * sp / len * (len>0.01?1:0);
+        // forward = (−sin yaw, −cos yaw), right = (cos yaw, −sin yaw)
+        const wishX = mx * cos + mz * sin;
+        const wishZ = -mx * sin + mz * cos;
+        const maxSp = w.keys['shift'] ? 11.5 : 5.2;
+        // accelerate toward wish, decay when idle — kills the skating feel
+        w.velX = (w.velX || 0) + (wishX * maxSp - (w.velX || 0)) * Math.min(1, dt * 9);
+        w.velZ = (w.velZ || 0) + (wishZ * maxSp - (w.velZ || 0)) * Math.min(1, dt * 9);
+        nx = w.cam.position.x + w.velX * dt;
+        nz = w.cam.position.z + w.velZ * dt;
         // Bounds + building collision
         nx = Math.max(-w.bounds, Math.min(w.bounds, nx));
         nz = Math.max(-w.bounds, Math.min(w.bounds, nz));
         for(const c of w.colliders){
           const dx = nx - c.x, dz = nz - c.z;
           if(Math.abs(dx) < c.half && Math.abs(dz) < c.half){
-            if(Math.abs(dx) > Math.abs(dz)) nx = c.x + Math.sign(dx) * c.half;
-            else nz = c.z + Math.sign(dz) * c.half;
+            if(Math.abs(dx) > Math.abs(dz)){ nx = c.x + Math.sign(dx) * c.half; w.velX = 0; }
+            else { nz = c.z + Math.sign(dz) * c.half; w.velZ = 0; }
           }
         }
         w.cam.position.x = nx; w.cam.position.z = nz;
+        // Head-bob scaled by speed; settles when you stop
+        const speed2 = Math.hypot(w.velX || 0, w.velZ || 0);
+        w.bobT = (w.bobT || 0) + dt * speed2 * 1.6;
+        const bob = Math.sin(w.bobT) * Math.min(0.055, speed2 * 0.008);
+        w.cam.position.y = 1.7 + bob;
+        // Sprint widens the eye slightly
+        const wantFov = w.keys['shift'] && speed2 > 6 ? 78 : 72;
+        if(Math.abs(w.cam.fov - wantFov) > 0.2){
+          w.cam.fov += (wantFov - w.cam.fov) * Math.min(1, dt * 5);
+          w.cam.updateProjectionMatrix();
+        }
         w.cam.rotation.order = 'YXZ';
         w.cam.rotation.y = w.yaw;
         w.cam.rotation.x = w.pitch;
@@ -23521,15 +23615,13 @@ function getSpoofRival(careerKey, country){
         }
       }
 
-      // NPC wander (outdoors only)
+      // Pedestrians walk their sidewalk, bob a little, turn at the ends
       for(const n of (w.mode === 'ext' ? w.npcs : [])){
-        n.t -= dt;
-        if(n.t <= 0){ n.a = Math.random()*Math.PI*2; n.t = 2 + Math.random()*4; }
-        n.m.position.x += Math.cos(n.a) * dt * 1.6;
-        n.m.position.z += Math.sin(n.a) * dt * 1.6;
-        n.m.position.x = Math.max(-100, Math.min(100, n.m.position.x));
-        n.m.position.z = Math.max(-100, Math.min(100, n.m.position.z));
-        n.m.rotation.y = -n.a + Math.PI/2;
+        const axis = n.horiz ? 'x' : 'z';
+        n.m.position[axis] += n.dir * n.sp * dt;
+        if(Math.abs(n.m.position[axis]) > 170) n.dir *= -1;
+        n.m.position.y = Math.abs(Math.sin(now/220 + n.ph)) * 0.05;
+        n.m.rotation.y = n.horiz ? (n.dir > 0 ? Math.PI/2 : -Math.PI/2) : (n.dir > 0 ? 0 : Math.PI);
       }
 
       // Family drift gently near home
@@ -24113,6 +24205,7 @@ body{
 `;
   document.head.appendChild(m);
 })();
+
 
 
 

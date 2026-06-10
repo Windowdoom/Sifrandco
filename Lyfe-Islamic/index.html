@@ -1921,6 +1921,78 @@ const DEGREES = {
   general:  { name:'General Bachelor\'s',    years:4, minSmarts:55, cost:90000 },
 };
 
+// ── Scholarships for degree programs (med, law, MBA, PhD, etc.)
+//    Shown as options when the player clicks Enroll.
+const DEGREE_SCHOLARSHIPS = {
+  medical:[
+    { id:'nih_fellow',   name:'NIH Merit Fellowship',         cover:0.80,
+      desc:'National Institutes of Health. Full funding for top research candidates.',
+      eligible:(c) => c.smarts >= 90 },
+    { id:'ama_award',    name:'AMA Medical Scholarship',      cover:0.50,
+      desc:'American Medical Association award for outstanding pre-med students.',
+      eligible:(c) => c.smarts >= 82 },
+    { id:'low_income_med', name:'Low-Income Physician Pipeline', cover:0.65,
+      desc:'Federal aid for underserved-community candidates entering medicine.',
+      eligible:(c) => c.socioClass === 'poor' || c.socioClass === 'working' },
+    { id:'military_med', name:'Military Medical Scholarship',  cover:1.00,
+      desc:'Full tuition. Commit to 4 years military service as a commissioned officer after residency.',
+      eligible:(c) => c.health >= 70, commitsToMilitary:true },
+    { id:'faith_med',    name:'Islamic Health Sciences Award', cover:0.35,
+      desc:'Awarded to Muslim students committed to serving their communities through medicine.',
+      eligible:(c) => c.religion === 'islam' && (c.faith||0) >= 55 },
+  ],
+  law:[
+    { id:'lsat_merit',   name:'LSAT Excellence Scholarship',  cover:0.75,
+      desc:'Awarded to high-scoring applicants with demonstrated academic excellence.',
+      eligible:(c) => c.smarts >= 88 },
+    { id:'public_defender', name:'Public Defender Pipeline Grant', cover:0.60,
+      desc:'For students committed to criminal defense and civil rights law.',
+      eligible:(c) => (c.karma||0) >= 60 },
+    { id:'low_income_law', name:'Access to Justice Scholarship', cover:0.50,
+      desc:'Awarded to first-generation law students from low-income backgrounds.',
+      eligible:(c) => c.socioClass === 'poor' || c.socioClass === 'working' },
+    { id:'women_law',    name:'Women in Law Scholarship',      cover:0.40,
+      desc:'For female candidates demonstrating leadership and academic strength.',
+      eligible:(c) => c.sex === 'f' && c.smarts >= 72 },
+  ],
+  business:[
+    { id:'mba_merit',    name:'MBA Excellence Award',          cover:0.50,
+      desc:'For top-quartile applicants with strong academic and professional record.',
+      eligible:(c) => c.smarts >= 80 },
+    { id:'entrepreneurship', name:'Entrepreneur\'s Fellowship',  cover:0.60,
+      desc:'For students who have founded or co-founded a business.',
+      eligible:(c) => c.companies && c.companies.length > 0 },
+    { id:'diversity_mba', name:'Diversity MBA Scholarship',    cover:0.45,
+      desc:'Awarded to candidates from underrepresented backgrounds in business.',
+      eligible:(c) => c.socioClass === 'poor' || c.socioClass === 'working' },
+  ],
+  phd:[
+    { id:'nsf_fellow',   name:'NSF Graduate Research Fellowship', cover:1.00,
+      desc:'National Science Foundation. Covers tuition + $37,000 annual stipend. Highly competitive.',
+      eligible:(c) => c.smarts >= 88, stipend:37000 },
+    { id:'fulbright',    name:'Fulbright Scholarship',          cover:0.90,
+      desc:'For international or internationally-focused research. Prestigious.',
+      eligible:(c) => c.smarts >= 82 && c.country !== 'us' },
+    { id:'ta_funding',   name:'Teaching Assistantship',         cover:0.70,
+      desc:'Teach two undergrad courses per semester. Tuition waived + small stipend.',
+      eligible:(c) => c.smarts >= 75, stipend:18000 },
+    { id:'research_grant', name:'University Research Grant',    cover:0.50,
+      desc:'Departmental grant for applicants with a strong research proposal.',
+      eligible:(c) => c.smarts >= 78 },
+  ],
+  cs:[
+    { id:'tech_merit',   name:'Tech Merit Award',               cover:0.60,
+      desc:'Awarded to high-achieving CS candidates.',
+      eligible:(c) => c.smarts >= 82 },
+    { id:'diversity_tech', name:'Women in Tech Scholarship',    cover:0.50,
+      desc:'Advancing gender diversity in computer science.',
+      eligible:(c) => c.sex === 'f' },
+    { id:'need_cs',      name:'CS Access Grant',                cover:0.45,
+      desc:'Need-based aid for CS students.',
+      eligible:(c) => c.socioClass === 'poor' || c.socioClass === 'working' },
+  ],
+};
+
 // ═══════════════════════════════════════════════════════════════════════
 //  HOUSES & CARS — status ladders
 // ═══════════════════════════════════════════════════════════════════════
@@ -3955,6 +4027,9 @@ function defaultChar(seed){
     retired:   false,
     alive:     true,
     cause:     null,
+    reality:   null,
+    madhab:    null,
+    marriagePath: null,
   };
 }
 
@@ -5372,11 +5447,76 @@ function quitJob(){
 function enrollDegree(k){
   const c = LIFE.char;
   const d = DEGREES[k];
-  const cost = Math.floor(d.cost * COUNTRIES[c.country].costMult);
-  c.money -= cost;
+  const available = (DEGREE_SCHOLARSHIPS[k] || []).filter(s => {
+    try { return s.eligible(c); } catch(e){ return false; }
+  });
+  if(available.length){
+    offerDegreeScholarships(k, d, available);
+  } else {
+    confirmEnrollDegree(k, 0);
+  }
+}
+
+function offerDegreeScholarships(k, d, list){
+  const c = LIFE.char;
+  const baseCost = Math.floor(d.cost * COUNTRIES[c.country].costMult);
+  let html = '<div style="padding:12px 14px;background:rgba(201,169,97,0.07);border:1px solid rgba(201,169,97,0.20);border-radius:10px;margin-bottom:14px;font-size:13px;color:var(--t1);text-align:center;line-height:1.5;">'
+    + 'You qualified for <b style="color:var(--accent);">' + list.length + ' scholarship' + (list.length>1?'s':'') + '</b> for ' + d.name + '.'
+    + '<br><span style="font-size:11px;color:var(--t2);">Full tuition without aid: ' + fmtMoney(baseCost) + '</span>'
+    + '</div>';
+  list.forEach(s => {
+    const covered  = Math.floor(baseCost * s.cover);
+    const owed     = baseCost - covered;
+    const stipend  = s.stipend || 0;
+    html += '<div class="card" style="margin-bottom:8px;">'
+      + '<div class="card-ico">🏆</div>'
+      + '<div class="card-body">'
+      +   '<div class="card-title">' + s.name + '</div>'
+      +   '<div class="card-meta">' + s.desc + '</div>'
+      +   '<div class="card-meta" style="margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;">'
+      +     '<span style="color:#4ade80;font-size:11px;">Covers ' + Math.round(s.cover*100) + '% · saves ' + fmtMoney(covered) + '</span>'
+      +     (owed > 0 ? '<span style="color:var(--t3);font-size:11px;">You pay ' + fmtMoney(owed) + '</span>' : '<span style="color:#4ade80;font-size:11px;">Fully funded</span>')
+      +     (stipend > 0 ? '<span style="color:#7fd8ff;font-size:11px;">+ ' + fmtMoney(stipend) + '/yr stipend</span>' : '')
+      +     (s.commitsToMilitary ? '<span style="color:#f87171;font-size:11px;">⚠ Military commitment post-graduation</span>' : '')
+      +   '</div>'
+      + '</div>'
+      + '<div class="card-act"><button class="card-btn green" onclick="acceptDegreeScholarship(\'' + k + '\',\'' + s.id + '\')">Accept</button></div>'
+      + '</div>';
+  });
+  html += '<div class="card" style="opacity:0.7;">'
+    + '<div class="card-ico">💸</div>'
+    + '<div class="card-body"><div class="card-title">Pay Full Tuition</div>'
+    + '<div class="card-meta">No scholarship. ' + fmtMoney(baseCost) + ' total cost.</div></div>'
+    + '<div class="card-act"><button class="card-btn muted" onclick="confirmEnrollDegree(\'' + k + '\',0)">Proceed</button></div>'
+    + '</div>';
+  openModal('🏆 Scholarships Available', html);
+}
+
+function acceptDegreeScholarship(degreeKey, scholarshipId){
+  const c = LIFE.char;
+  const d = DEGREES[degreeKey];
+  const scholarshipList = DEGREE_SCHOLARSHIPS[degreeKey] || [];
+  const s = scholarshipList.find(x => x.id === scholarshipId);
+  if(!s) return;
+  const baseCost = Math.floor(d.cost * COUNTRIES[c.country].costMult);
+  const covered  = Math.floor(baseCost * s.cover);
+  c.degreeScholarship = { name: s.name, cover: s.cover, stipend: s.stipend || 0 };
+  if(s.commitsToMilitary){ c.flags = c.flags || {}; c.flags.rotcCommit = true; }
+  confirmEnrollDegree(degreeKey, covered, s.stipend || 0, s.name);
+}
+
+function confirmEnrollDegree(k, covered, stipend, scholarshipName){
+  const c = LIFE.char;
+  const d = DEGREES[k];
+  const baseCost = Math.floor(d.cost * COUNTRIES[c.country].costMult);
+  const finalCost = Math.max(0, baseCost - (covered || 0));
+  c.money -= finalCost;
   c.degree = k;
   c.degreeYearsLeft = d.years;
-  pushEvent('milestone', '📚 You enrolled in ' + d.name + '. Cost: −' + fmtMoney(cost) + ' (loans).');
+  if(stipend) c.money += stipend; // first year stipend upfront
+  const aidNote = scholarshipName ? ' (' + scholarshipName + ' covers ' + fmtMoney(covered) + ')' : '';
+  pushEvent('milestone', '📚 Enrolled in ' + d.name + '. Cost: ' + (finalCost > 0 ? fmtMoney(finalCost) : 'fully funded') + aidNote + '.');
+  if(stipend) pushEvent('good', '💰 First-year stipend received: +' + fmtMoney(stipend) + '.');
   closeModal();
   renderAll();
   saveLife();
@@ -9459,10 +9599,18 @@ function openColleges(){
       } else if(current){
         btn = '<button class="card-btn danger" onclick="dropOut()">Drop Out</button>';
       }
+      // Check scholarship eligibility for preview
+      const availAid = (DEGREE_SCHOLARSHIPS[k] || []).filter(s => {
+        try { return meets && s.eligible(c); } catch(e){ return false; }
+      });
+      const bestCover = availAid.length ? Math.max(...availAid.map(s => s.cover)) : 0;
+      const aidChip = availAid.length
+        ? '<span style="font-size:9px;padding:1px 7px;border-radius:20px;background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.25);color:#4ade80;letter-spacing:.10em;text-transform:uppercase;margin-left:4px;">🏆 ' + availAid.length + ' scholarship' + (availAid.length>1?'s':'') + ' · up to ' + Math.round(bestCover*100) + '% off</span>'
+        : '';
       html += '<div class="card" style="' + (owned?'border-color:var(--accent);background:#1a1428;':'') + '">'
         + '<div class="card-ico">' + (k==='medical'?'⚕️':k==='law'?'⚖️':k==='business'?'💼':k==='phd'?'🔬':'📚') + '</div>'
         + '<div class="card-body"><div class="card-title">' + d.name + '</div>'
-        + '<div class="card-meta">' + d.years + ' yrs · Min Smarts ' + d.minSmarts + (meets?' ✓':' ✗') + ' · Tuition ' + fmtMoney(cost) + '</div></div>'
+        + '<div class="card-meta">' + d.years + ' yrs · Min Smarts ' + d.minSmarts + (meets?' ✓':' ✗') + ' · Tuition ' + fmtMoney(cost) + aidChip + '</div></div>'
         + '<div class="card-act">' + (tag?'<div>'+tag+'</div>':'') + btn + '</div></div>';
     });
   }
@@ -15380,7 +15528,8 @@ const CORRUPTION_MOVES = [
     },
     exec: () => {
       const c = LIFE.char;
-      const co = c.companies[0];
+      const co = (c.companies && c.companies[0]);
+      if(!co){ toast('No company to launder through.'); return; }
       const clean = Math.floor((c.corruption||0) * 100000);
       co.cash = (co.cash||0) + clean;
       c.corruption = clamp((c.corruption||0) + 6, 0, 100);
@@ -16079,24 +16228,51 @@ function openReflection(topicKey){
 //  choice; iman + karma effects are applied here.
 let _pendingEthicalChoice = null;
 function openEthicalChoice(opts){
-  // opts: { topic, situation, halalLabel, haramLabel, halalFx, haramFx, onChoose }
   _pendingEthicalChoice = opts;
   const c = LIFE.char;
   const isMuslim = (c.religion === 'islam');
-  const halalLabel = isMuslim ? (opts.halalLabel || '☪ Walk away. this is haram') : (opts.peacefulLabel || opts.halalLabel || 'Walk away. the calmer path');
-  const haramLabel = opts.haramLabel || 'Engage anyway';
-  let html = '<div style="padding:14px 18px;background:#1a1428;border:1px solid var(--accent);border-radius:6px;margin-bottom:14px;font-size:14px;line-height:1.5;color:var(--t1);text-align:center;">' + opts.situation + '</div>';
-  html += '<div class="card" onclick="resolveEthicalChoice(\'halal\')" style="cursor:pointer;border-color:#2d7a3f;">'
-    +   '<div class="card-ico">☪</div>'
-    +   '<div class="card-body"><div class="card-title" style="color:#a3e635;">' + halalLabel + '</div>'
-    +   '<div class="card-meta">' + (opts.halalSummary || 'The path of restraint.') + '</div></div>'
-    +   '<div class="card-act"><button class="card-btn green">Choose</button></div></div>';
-  html += '<div class="card" onclick="resolveEthicalChoice(\'haram\')" style="cursor:pointer;border-color:#552a6e;">'
-    +   '<div class="card-ico">→</div>'
-    +   '<div class="card-body"><div class="card-title">' + haramLabel + '</div>'
-    +   '<div class="card-meta">' + (opts.haramSummary || 'The other road.') + '</div></div>'
-    +   '<div class="card-act"><button class="card-btn">Choose</button></div></div>';
-  openModal('A Decision', html);
+  const halalLabel  = opts.halalLabel  || (isMuslim ? 'Stop and pray' : 'Step back');
+  const haramLabel  = opts.haramLabel  || 'Continue anyway';
+  const halalDesc   = opts.halalSummary || 'The right path.';
+  const haramDesc   = opts.haramSummary || 'The easier one.';
+
+  // Situation banner
+  let html = '<div style="'
+    + 'padding:14px 16px;margin-bottom:16px;'
+    + 'background:rgba(201,169,97,0.07);'
+    + 'border:1px solid rgba(201,169,97,0.22);'
+    + 'border-radius:10px;'
+    + 'font-size:13.5px;line-height:1.6;'
+    + 'color:var(--t1);text-align:center;'
+    + '">' + opts.situation + '</div>';
+
+  // Halal option
+  html += '<div class="card" onclick="resolveEthicalChoice(\'halal\')" style="cursor:pointer;border-color:rgba(74,222,128,0.35);margin-bottom:8px;">'
+    + '<div class="card-ico" style="background:rgba(74,222,128,0.08);border-color:rgba(74,222,128,0.20);">🕌</div>'
+    + '<div class="card-body">'
+    +   '<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">'
+    +     '<span style="font-size:13px;font-weight:600;color:#4ade80;">' + halalLabel + '</span>'
+    +     '<span style="font-size:9px;padding:1px 7px;border-radius:20px;background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.25);color:#4ade80;letter-spacing:.12em;text-transform:uppercase;">Halal</span>'
+    +   '</div>'
+    +   '<div style="font-size:11.5px;color:var(--t2);">' + halalDesc + '</div>'
+    + '</div>'
+    + '<div class="card-act"><button class="card-btn green" style="min-width:64px;">Choose</button></div>'
+    + '</div>';
+
+  // Haram option
+  html += '<div class="card" onclick="resolveEthicalChoice(\'haram\')" style="cursor:pointer;border-color:rgba(248,113,113,0.25);">'
+    + '<div class="card-ico" style="background:rgba(248,113,113,0.06);border-color:rgba(248,113,113,0.18);">↪</div>'
+    + '<div class="card-body">'
+    +   '<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">'
+    +     '<span style="font-size:13px;font-weight:600;color:var(--t1);">' + haramLabel + '</span>'
+    +     (isMuslim ? '<span style="font-size:9px;padding:1px 7px;border-radius:20px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.22);color:#f87171;letter-spacing:.12em;text-transform:uppercase;">Haram</span>' : '')
+    +   '</div>'
+    +   '<div style="font-size:11.5px;color:var(--t2);">' + haramDesc + '</div>'
+    + '</div>'
+    + '<div class="card-act"><button class="card-btn muted" style="min-width:64px;">Choose</button></div>'
+    + '</div>';
+
+  openModal('Choose', html);
 }
 function resolveEthicalChoice(pick){
   const opts = _pendingEthicalChoice;
@@ -21527,6 +21703,963 @@ function recordNaslAction(tier){
   }
 
 })(); // end animation layer
+
+// ═══════════════════════════════════════════════════════════════════════
+//  REFINEMENT LAYER — depth additions identified from audit
+//
+//  1. Display nasl-burden + kabair ledger to the player
+//  2. Tahajjud + Istikharah + Dhikr — three new spiritual actions
+//  3. Aqiqah + Walima auto-triggers at the right life moments
+//  4. Barakah → investment returns multiplier
+//  5. Nasl burden auto-reduction through repeated tawbah
+//  6. Sadaqah Jariyah tracker — ongoing charity counted toward legacy
+//  7. Salah streak counter
+//  8. Death legacy: dua count + sadaqah jariyah remembered
+// ═══════════════════════════════════════════════════════════════════════
+(function(){
+
+  // ── 1. Stat-block additions: Kabair ledger + Hafiz progress
+  //     Both injected below the nasl-legacy bar created earlier.
+  if(typeof renderAll === 'function'){
+    const _orig = renderAll;
+    renderAll = function(){
+      _orig.apply(this, arguments);
+      try{
+        const c = LIFE && LIFE.char;
+        if(!c || c.religion !== 'islam' || !c.alive) return;
+        const statsBlock = document.getElementById('stats-block');
+        if(!statsBlock) return;
+
+        // Kabair (major sins) ledger
+        const kab = c.kabairFlags || {};
+        const total = Object.values(kab).reduce((s,n) => s+n, 0);
+        if(total > 0 && !statsBlock.querySelector('#kabair-ledger')){
+          const item = document.createElement('div');
+          item.id = 'kabair-ledger';
+          item.style.cssText = 'margin-top:6px;padding:7px 10px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.18);border-radius:8px;cursor:pointer;';
+          item.onclick = function(){ openKabairLedger(); };
+          item.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;">'
+            + '<span style="font-size:10px;font-family:var(--font-m);letter-spacing:.12em;color:#f87171;text-transform:uppercase;">⚠ Kabair Ledger</span>'
+            + '<span style="font-size:11px;color:#f87171;font-weight:600;">' + total + ' on record</span>'
+            + '</div>'
+            + '<div style="font-size:9px;color:var(--t3);margin-top:3px;">Tap to view · tawbah can repair</div>';
+          statsBlock.appendChild(item);
+        }
+
+        // Hafiz progress (Quran memorization)
+        if((c.hafizProgress||0) > 0 && !statsBlock.querySelector('#hafiz-bar')){
+          const item = document.createElement('div');
+          item.id = 'hafiz-bar';
+          const pct = Math.min(100, Math.round(c.hafizProgress));
+          item.style.cssText = 'margin-top:6px;padding:7px 10px;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.18);border-radius:8px;';
+          item.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+            + '<span style="font-size:10px;font-family:var(--font-m);letter-spacing:.12em;color:#4ade80;text-transform:uppercase;">📖 Hafiz Progress</span>'
+            + '<span style="font-size:11px;color:#4ade80;font-weight:600;">' + pct + '%</span>'
+            + '</div>'
+            + '<div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">'
+            + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#4ade80,#22c55e);"></div>'
+            + '</div>';
+          statsBlock.appendChild(item);
+        }
+
+        // Salah streak (consecutive years of 5 daily)
+        if((c.flags||{}).salahStreakYears > 0 && !statsBlock.querySelector('#salah-streak')){
+          const yrs = c.flags.salahStreakYears;
+          const item = document.createElement('div');
+          item.id = 'salah-streak';
+          item.style.cssText = 'margin-top:6px;padding:6px 10px;background:rgba(201,169,97,0.06);border:1px solid rgba(201,169,97,0.18);border-radius:8px;display:flex;justify-content:space-between;align-items:center;';
+          item.innerHTML = '<span style="font-size:10px;font-family:var(--font-m);letter-spacing:.12em;color:var(--accent);text-transform:uppercase;">🕌 Salah Streak</span>'
+            + '<span style="font-size:11px;color:var(--accent);font-weight:600;">' + yrs + ' yr' + (yrs>1?'s':'') + '</span>';
+          statsBlock.appendChild(item);
+        }
+      } catch(e){ /* silent */ }
+    };
+  }
+
+  // ── Kabair ledger modal
+  window.openKabairLedger = function(){
+    const c = LIFE && LIFE.char;
+    if(!c) return;
+    const kab = c.kabairFlags || {};
+    const labels = {
+      khamr:'Khamr (intoxicants)',
+      riba:'Riba (interest dealings)',
+      zina:'Zina (unlawful relations)',
+      ghibah:'Ghibah (backbiting)',
+      maysir:'Gambling',
+      sihr:'Sihr (forbidden arts)',
+      slander:'Slander / false witness',
+      tajassus:'Spying / surveillance',
+      qatl:'Qatl (unlawful killing)',
+    };
+    let html = '<div style="padding:12px 14px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.20);border-radius:10px;margin-bottom:14px;font-size:13px;color:var(--t1);line-height:1.6;">'
+      + 'A record of the major sins recorded in this life. Tawbah, sincere repentance with intention not to return, can repair these. The record stays; the wound heals.'
+      + '</div>';
+    const entries = Object.keys(kab).filter(k => kab[k] > 0);
+    if(!entries.length){
+      html += '<div style="padding:30px 16px;text-align:center;color:var(--t2);font-style:italic;">Clean record. Alhamdulillah.</div>';
+    } else {
+      entries.forEach(k => {
+        html += '<div class="card" style="margin-bottom:7px;">'
+          + '<div class="card-ico" style="background:rgba(248,113,113,0.10);border-color:rgba(248,113,113,0.20);">⚠</div>'
+          + '<div class="card-body">'
+          +   '<div class="card-title" style="color:#f87171;">' + (labels[k] || k) + '</div>'
+          +   '<div class="card-meta">Recorded: ' + kab[k] + ' time' + (kab[k]>1?'s':'') + '</div>'
+          + '</div>'
+          + '<div class="card-act"><button class="card-btn" onclick="performTawbah(\'' + k + '\');closeModal();">Tawbah</button></div>'
+          + '</div>';
+      });
+    }
+    openModal('⚠ Major Sins on Record', html);
+  };
+
+  // ── 2. Add three spiritual actions to the activities pool
+  //     Tahajjud (night prayer), Istikharah (guidance prayer), Dhikr (remembrance)
+  if(typeof openActivities === 'function'){
+    const _orig = openActivities;
+    openActivities = function(){
+      _orig.apply(this, arguments);
+      const c = LIFE && LIFE.char;
+      if(!c || c.religion !== 'islam') return;
+      setTimeout(function(){
+        const modal = document.getElementById('modal');
+        if(!modal || !modal.classList.contains('show')) return;
+        const body = modal.querySelector('.modal-body') || modal.querySelector('#modal-body');
+        if(!body || body.dataset.deepenWired) return;
+        body.dataset.deepenWired = '1';
+        // Three extra Islamic activities
+        const extras = [
+          {id:'tahajjud', name:'Tahajjud (night prayer)', ico:'🌙',
+            text:'Wake in the last third of the night to pray. The most spiritually weighted optional prayer.',
+            fx:{iman:+7, sakina:+6, barakah:+3, happiness:-2}},
+          {id:'istikharah', name:'Pray Istikharah', ico:'🤲',
+            text:'Seek Allah\'s guidance on a decision. Open your heart to the path that brings barakah.',
+            fx:{iman:+3, sakina:+5}},
+          {id:'dhikr', name:'Dhikr session (1 hour)', ico:'📿',
+            text:'Remember Allah with the tongue and heart. SubhanAllah, Alhamdulillah, Allahu Akbar.',
+            fx:{iman:+3, sakina:+4, happiness:+2}},
+          {id:'tilawah', name:'Tilawah (Quran study)', ico:'📚',
+            text:'Sit with the Quran for study, not just recitation. Reflect on the meaning.',
+            fx:{iman:+4, sakina:+3, smarts:+2, hafiz:+5}},
+        ];
+        const html = extras.map(a => {
+          return '<div class="card" style="margin-bottom:7px;border-color:rgba(74,222,128,0.20);">'
+            + '<div class="card-ico" style="background:rgba(74,222,128,0.08);border-color:rgba(74,222,128,0.20);">' + a.ico + '</div>'
+            + '<div class="card-body">'
+            +   '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">'
+            +     '<span style="font-size:13px;font-weight:600;color:var(--t1);">' + a.name + '</span>'
+            +     '<span style="font-size:9px;padding:1px 7px;border-radius:20px;background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.25);color:#4ade80;letter-spacing:.10em;text-transform:uppercase;">Halal</span>'
+            +   '</div>'
+            +   '<div style="font-size:11.5px;color:var(--t2);">' + a.text + '</div>'
+            + '</div>'
+            + '<div class="card-act"><button class="card-btn green" onclick="doSpiritualAction(\'' + a.id + '\')">Do It</button></div>'
+            + '</div>';
+        }).join('');
+        const sep = document.createElement('div');
+        sep.style.cssText = 'margin:14px 0 8px;font-size:10px;letter-spacing:.20em;color:var(--accent);text-transform:uppercase;font-family:var(--font-m);';
+        sep.textContent = '☪ Spiritual Practice';
+        body.appendChild(sep);
+        const wrap = document.createElement('div');
+        wrap.innerHTML = html;
+        while(wrap.firstChild) body.appendChild(wrap.firstChild);
+      }, 60);
+    };
+  }
+
+  window.doSpiritualAction = function(id){
+    const c = LIFE && LIFE.char;
+    if(!c) return;
+    const map = {
+      tahajjud: {fx:{iman:+7, sakina:+6, barakah:+3, happiness:-2}, text:'🌙 You woke for tahajjud. The night was still and the heart was open.'},
+      istikharah: {fx:{iman:+3, sakina:+5}, text:'🤲 You prayed istikharah. Tomorrow will clarify what is good for you.'},
+      dhikr: {fx:{iman:+3, sakina:+4, happiness:+2}, text:'📿 You sat in dhikr for an hour. The hearts find rest in the remembrance of Allah (Quran 13:28).'},
+      tilawah: {fx:{iman:+4, sakina:+3, smarts:+2, hafiz:+5}, text:'📚 You studied the Quran with tafsir. The Book reveals more on every return.'},
+    };
+    const a = map[id]; if(!a) return;
+    Object.keys(a.fx).forEach(k => {
+      if(k === 'hafiz'){ c.hafizProgress = clamp((c.hafizProgress||0) + a.fx.hafiz, 0, 100); return; }
+      c[k] = clamp((c[k]||0) + a.fx[k], 0, 100);
+    });
+    c.flags = c.flags || {};
+    if(id === 'tahajjud')   c.flags.tahajjudCount   = (c.flags.tahajjudCount||0) + 1;
+    if(id === 'istikharah') c.flags.istikharahCount = (c.flags.istikharahCount||0) + 1;
+    if(id === 'dhikr')      c.flags.dhikrCount      = (c.flags.dhikrCount||0) + 1;
+    if(c.flags.halalLegacy === undefined) c.flags.halalLegacy = 0;
+    c.flags.halalLegacy += 1;
+    pushEvent('good', a.text, a.fx);
+    closeModal(); renderAll(); saveLife();
+  };
+
+  // ── 3. Aqiqah trigger when a child reaches age 7 days (or any newborn moment)
+  //     We approximate: trigger the year a child is born (age 0).
+  if(typeof rollSpontaneousBaby === 'function'){
+    const _orig = rollSpontaneousBaby;
+    rollSpontaneousBaby = function(){
+      const before = LIFE && LIFE.char && LIFE.char.children ? LIFE.char.children.length : 0;
+      _orig.apply(this, arguments);
+      if(!LIFE || !LIFE.char) return;
+      const c = LIFE.char;
+      if(c.religion !== 'islam') return;
+      const after = c.children.length;
+      if(after > before){
+        const kid = c.children[after - 1];
+        setTimeout(function(){ offerAqiqah(kid); }, 250);
+      }
+    };
+  }
+
+  window.offerAqiqah = function(kid){
+    const c = LIFE && LIFE.char;
+    if(!c) return;
+    const cost = c.sex === 'm' ? 800 : 400; // two sheep for boys, one for girls per the sunnah
+    let html = '<div style="padding:14px 16px;background:rgba(201,169,97,0.08);border:1px solid rgba(201,169,97,0.22);border-radius:10px;margin-bottom:14px;font-size:13px;line-height:1.6;color:var(--t1);">'
+      + 'Aqiqah: the sunnah of slaughtering ' + (cost === 800 ? 'two sheep' : 'one sheep') + ' for the newborn '
+      + (kid.sex === 'f' ? 'girl' : 'boy') + ' (Abu Dawud 2834). The meat is shared with family, neighbours, and the poor.'
+      + '</div>';
+    html += '<div class="card" style="margin-bottom:8px;border-color:rgba(74,222,128,0.25);">'
+      + '<div class="card-ico">🐑</div>'
+      + '<div class="card-body"><div class="card-title">Perform aqiqah for ' + (kid.name||kid.firstName||'your child') + '</div>'
+      + '<div class="card-meta">Cost ' + fmtMoney(cost) + ' · Iman +4, Barakah +5, family bond strengthens.</div></div>'
+      + '<div class="card-act"><button class="card-btn green" onclick="performAqiqah(\'' + (kid.name||kid.firstName) + '\',' + cost + ')">Do It</button></div>'
+      + '</div>';
+    html += '<div class="card">'
+      + '<div class="card-ico">↩</div>'
+      + '<div class="card-body"><div class="card-title">Skip the aqiqah</div>'
+      + '<div class="card-meta">Sunnah mu\'akkadah missed. Can still do it later in the child\'s life.</div></div>'
+      + '<div class="card-act"><button class="card-btn muted" onclick="closeModal()">Skip</button></div>'
+      + '</div>';
+    openModal('🐑 Aqiqah for ' + (kid.name||kid.firstName||'newborn'), html);
+  };
+
+  window.performAqiqah = function(childName, cost){
+    const c = LIFE && LIFE.char;
+    if(!c) return;
+    if(c.money < cost){ toast('Not enough money for aqiqah.'); return; }
+    c.money -= cost;
+    c.iman    = clamp((c.iman||0) + 4, 0, 100);
+    c.barakah = clamp((c.barakah||0) + 5, 0, 100);
+    c.happiness = clamp(c.happiness + 6, 0, 100);
+    c.flags = c.flags || {};
+    c.flags.halalLegacy = (c.flags.halalLegacy||0) + 1;
+    pushEvent('milestone', '🐑 Aqiqah performed for ' + childName + '. The meat shared with neighbours and the poor. Iman +4, Barakah +5.');
+    closeModal(); renderAll(); saveLife();
+  };
+
+  // ── 4. Barakah → investment returns multiplier
+  //     Patch annual investment compounding (search for ".investments *" or
+  //     similar). We multiply gain by 0.9 + (barakah-50)/200, giving:
+  //       barakah   0 → 0.65× returns
+  //       barakah  50 → 1.00× returns (no change)
+  //       barakah 100 → 1.25× returns
+  if(typeof ageUp === 'function'){
+    const _origAge = ageUp;
+    let _prevInvest = 0;
+    ageUp = function(){
+      const c = LIFE && LIFE.char;
+      _prevInvest = (c && c.investments) || 0;
+      _origAge.apply(this, arguments);
+      if(!c || c.religion !== 'islam') return;
+      const newInvest = c.investments || 0;
+      const baseGain = newInvest - _prevInvest;
+      if(baseGain > 0){
+        const barakah = c.barakah || 50;
+        const mult    = 0.9 + (barakah - 50) / 200; // 0.65 → 1.25
+        const adjusted = Math.floor(baseGain * mult);
+        const diff = adjusted - baseGain;
+        if(diff !== 0){
+          c.investments += diff;
+          if(diff > 0 && barakah > 65) {
+            pushEvent('good', '✨ Barakah lifted your investments. +' + fmtMoney(diff) + ' beyond normal yield.');
+          } else if(diff < 0 && barakah < 35){
+            pushEvent('bad', '🌪 Low barakah pulled your investments. ' + fmtMoney(diff) + ' below market.');
+          }
+        }
+      }
+    };
+  }
+
+  // ── 5. Nasl burden reduction via repeated tawbah
+  //     Each tawbah reduces haramLegacy by 1 (cap 0). Symbolic but matters.
+  if(typeof performTawbah === 'function'){
+    const _orig = performTawbah;
+    performTawbah = function(topic){
+      const c = LIFE && LIFE.char;
+      _orig.apply(this, arguments);
+      if(!c) return;
+      c.flags = c.flags || {};
+      if((c.flags.haramLegacy||0) > 0){
+        c.flags.haramLegacy = Math.max(0, c.flags.haramLegacy - 1);
+        pushEvent('good', '🌿 Tawbah lightened your nasl burden by one act. Allah is the One who turns hearts.');
+      }
+      // Boost halal legacy for the act of tawbah itself
+      c.flags.halalLegacy = (c.flags.halalLegacy||0) + 1;
+    };
+  }
+
+  // ── 6. Sadaqah Jariyah tracker
+  //     Whenever the player gives ≥$1000 sadaqah, log it as ongoing charity.
+  //     At death, the count adds to the legacy screen.
+  window.recordSadaqahJariyah = function(amount){
+    const c = LIFE && LIFE.char;
+    if(!c) return;
+    c.flags = c.flags || {};
+    c.flags.sadaqahJariyahCount = (c.flags.sadaqahJariyahCount||0) + 1;
+    c.flags.sadaqahJariyahTotal = (c.flags.sadaqahJariyahTotal||0) + amount;
+    c.barakah = clamp((c.barakah||50) + 2, 0, 100);
+  };
+
+  // ── 7. Salah streak — count years of consistent 5-daily salah
+  if(typeof ageUp === 'function'){
+    const _origAge2 = ageUp;
+    ageUp = function(){
+      _origAge2.apply(this, arguments);
+      const c = LIFE && LIFE.char;
+      if(!c || c.religion !== 'islam' || !c.alive) return;
+      c.flags = c.flags || {};
+      if((c.salahDaily||0) >= 5){
+        c.flags.salahStreakYears = (c.flags.salahStreakYears||0) + 1;
+        // Milestone messages at 1, 5, 10, 20, 40 years
+        const yrs = c.flags.salahStreakYears;
+        if(yrs === 5)  pushEvent('milestone', '🕌 Five years of consistent salah. The Prophet ﷺ loved the deeds done with consistency, even if small. (Sahih Bukhari 6464)');
+        if(yrs === 10) pushEvent('milestone', '🕌 Ten years of the five daily prayers. The body now turns to wudu without thinking.');
+        if(yrs === 20) pushEvent('milestone', '🕌 Two decades of salah. Iman +6, Sakina +6.');
+        if(yrs === 40) pushEvent('milestone', '🕌 Forty years of salah. A station the angels record.');
+        if(yrs === 5)  { c.iman = clamp((c.iman||0)+3, 0, 100); c.sakina = clamp((c.sakina||50)+3, 0, 100); }
+        if(yrs === 10) { c.iman = clamp((c.iman||0)+5, 0, 100); c.sakina = clamp((c.sakina||50)+5, 0, 100); }
+        if(yrs === 20) { c.iman = clamp((c.iman||0)+6, 0, 100); c.sakina = clamp((c.sakina||50)+6, 0, 100); }
+        if(yrs === 40) { c.iman = clamp((c.iman||0)+8, 0, 100); c.sakina = clamp((c.sakina||50)+8, 0, 100); c.barakah = clamp((c.barakah||50)+8, 0, 100); }
+      } else {
+        // Broken streak
+        c.flags.salahStreakYears = 0;
+      }
+    };
+  }
+
+  // ── 8. Death legacy enrichment — show sadaqah jariyah + dua count
+  if(typeof showDeathScreen === 'function'){
+    const _orig = showDeathScreen;
+    showDeathScreen = function(){
+      _orig.apply(this, arguments);
+      const c = LIFE && LIFE.char;
+      if(!c || c.religion !== 'islam') return;
+      setTimeout(function(){
+        const screen = document.getElementById('death-screen');
+        if(!screen) return;
+        if(screen.querySelector('#islamic-legacy')) return;
+        const sj = (c.flags||{}).sadaqahJariyahCount || 0;
+        const sjTotal = (c.flags||{}).sadaqahJariyahTotal || 0;
+        const duaCount = (c.flags||{}).duaCount || 0;
+        const tahajjud = (c.flags||{}).tahajjudCount || 0;
+        const istikharah = (c.flags||{}).istikharahCount || 0;
+        const dhikr = (c.flags||{}).dhikrCount || 0;
+        const salahStreak = (c.flags||{}).salahStreakYears || 0;
+        const tawbah = c.tawbahCount || 0;
+        const hafiz = c.hafizProgress || 0;
+        const halalLegacy = (c.flags||{}).halalLegacy || 0;
+        const haramLegacy = (c.flags||{}).haramLegacy || 0;
+
+        const wrap = document.createElement('div');
+        wrap.id = 'islamic-legacy';
+        wrap.style.cssText = 'margin-top:18px;padding:16px 18px;background:rgba(201,169,97,0.06);border:1px solid rgba(201,169,97,0.20);border-radius:12px;';
+        wrap.innerHTML = '<div style="font-family:Georgia,serif;font-size:14px;color:var(--accent);margin-bottom:10px;text-align:center;letter-spacing:.04em;">'
+          + 'What You Left Behind'
+          + '</div>'
+          + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:12.5px;color:var(--t1);">'
+          + (sj          ? '<div>Sadaqah Jariyah</div><div style="text-align:right;color:#4ade80;font-weight:600;">' + sj + ' (' + fmtMoney(sjTotal) + ')</div>' : '')
+          + (tahajjud    ? '<div>Tahajjud prayed</div><div style="text-align:right;">' + tahajjud + ' nights</div>' : '')
+          + (istikharah  ? '<div>Istikharah</div><div style="text-align:right;">' + istikharah + ' times</div>' : '')
+          + (dhikr       ? '<div>Dhikr sessions</div><div style="text-align:right;">' + dhikr + '</div>' : '')
+          + (salahStreak ? '<div>Longest salah streak</div><div style="text-align:right;color:var(--accent);font-weight:600;">' + salahStreak + ' years</div>' : '')
+          + (tawbah      ? '<div>Tawbah made</div><div style="text-align:right;">' + tawbah + '</div>' : '')
+          + (hafiz       ? '<div>Hafiz progress</div><div style="text-align:right;">' + Math.round(hafiz) + '%</div>' : '')
+          + (halalLegacy ? '<div>Halal acts</div><div style="text-align:right;color:#4ade80;">' + halalLegacy + '</div>' : '')
+          + (haramLegacy ? '<div>Haram acts</div><div style="text-align:right;color:#f87171;">' + haramLegacy + '</div>' : '')
+          + (duaCount    ? '<div>Du\'a made</div><div style="text-align:right;">' + duaCount + '</div>' : '')
+          + '</div>'
+          + '<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(201,169,97,0.15);font-size:11px;color:var(--t2);font-style:italic;text-align:center;line-height:1.5;">'
+          + '"When a person dies, their deeds come to an end except three: sadaqah jariyah, beneficial knowledge, or a righteous child who prays for them." (Sahih Muslim 1631)'
+          + '</div>';
+        screen.appendChild(wrap);
+      }, 80);
+    };
+  }
+
+  // ── 9. Hook into sadaqah giving — find existing zakat/sadaqah event paths
+  //     and call recordSadaqahJariyah on large gifts.
+  if(typeof pushEvent === 'function'){
+    const _origPush = pushEvent;
+    pushEvent = function(tag, text, fx){
+      _origPush.apply(this, arguments);
+      // Detect zakat/sadaqah text and amount
+      try{
+        if(typeof text === 'string'){
+          const m = text.match(/(?:Zakat|Sadaqah|sadaqah|charity)[^$]*\$([\d,]+)/i);
+          if(m){
+            const amt = parseInt(m[1].replace(/,/g,''), 10);
+            if(amt >= 1000 && typeof recordSadaqahJariyah === 'function'){
+              recordSadaqahJariyah(amt);
+            }
+          }
+        }
+      } catch(e){ /* silent */ }
+    };
+  }
+
+})(); // end refinement layer
+
+// ═══════════════════════════════════════════════════════════════════════
+//  A11Y + UI POLISH — fixes identified by the UI audit
+// ═══════════════════════════════════════════════════════════════════════
+(function(){
+  const css = document.createElement('style');
+  css.id = 'a11y-polish';
+  css.textContent = `
+/* Modal close button — meet 36px touch target */
+.modal-x{
+  min-width: 36px !important;
+  min-height: 36px !important;
+  padding: 8px 14px !important;
+  font-size: 13px !important;
+}
+
+/* Home scene toggle — bigger touch target on mobile */
+@media (max-width: 768px){
+  .hs-toggle{
+    min-width: 32px !important;
+    min-height: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+  }
+}
+
+/* Contrast — lift muted text up to AA */
+:root{
+  --t3: #a89fd8 !important;
+}
+.card-meta{ color: var(--t2) !important; }
+.modal-tab{ color: var(--t2) !important; }
+.year-event-fx{ color: var(--t2) !important; opacity: 0.85; }
+.brand-sub{ color: var(--t2) !important; }
+.char-loc{ color: var(--t2) !important; }
+
+/* Modal title — wrap long titles instead of clipping */
+.modal-title, #modal-title{
+  white-space: normal !important;
+  word-break: break-word !important;
+  max-width: calc(100% - 60px) !important;
+  line-height: 1.3 !important;
+}
+
+/* Modal tabs — wrap on narrow screens */
+.modal-tab{
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+@media (max-width: 560px){
+  .modal-tab{
+    font-size: 9px !important;
+    padding: 8px 6px !important;
+    min-height: 40px !important;
+  }
+}
+
+/* Touch users — make :active visible since :hover does nothing */
+@media (hover: none){
+  .modal-tab:not(.active):active{ color: var(--accent) !important; }
+  .card:active{ transform: scale(0.99) !important; }
+}
+
+/* Toast — respect notched safe-area */
+#toast{
+  bottom: max(30px, calc(20px + env(safe-area-inset-bottom, 0px))) !important;
+}
+
+/* Timeline events — wrap & shrink on mobile */
+@media (max-width: 768px){
+  .year-event{
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+    word-break: break-word !important;
+  }
+}
+
+/* Intro input — ARIA for screen readers (also via JS below) */
+.intro-input, .intro-select{
+  outline-offset: 2px !important;
+}
+`;
+  document.head.appendChild(css);
+
+  // ── Stat width defensive — patch renderStats so undefined values
+  //    don't render as "width:undefined%"
+  if(typeof renderStats === 'function'){
+    const _orig = renderStats;
+    renderStats = function(){
+      _orig.apply(this, arguments);
+      const wrap = document.getElementById('stats-block');
+      if(!wrap) return;
+      wrap.querySelectorAll('.stat-fill').forEach(el => {
+        const w = el.style.width;
+        if(!w || w === 'undefined%' || w === 'NaN%'){
+          el.style.width = '0%';
+        }
+      });
+    };
+  }
+
+  // ── Add aria-label to the intro name input
+  document.addEventListener('DOMContentLoaded', function(){
+    const nameInput = document.getElementById('intro-name');
+    if(nameInput && !nameInput.getAttribute('aria-label')){
+      nameInput.setAttribute('aria-label', 'Character name (leave blank for random)');
+    }
+    const countryInput = document.getElementById('intro-country');
+    if(countryInput && !countryInput.getAttribute('aria-label')){
+      countryInput.setAttribute('aria-label', 'Country of birth');
+    }
+    const sexInput = document.getElementById('intro-sex');
+    if(sexInput && !sexInput.getAttribute('aria-label')){
+      sexInput.setAttribute('aria-label', 'Character sex');
+    }
+  });
+  // Catch case where DOMContentLoaded already fired
+  if(document.readyState !== 'loading'){
+    const nameInput = document.getElementById('intro-name');
+    if(nameInput && !nameInput.getAttribute('aria-label')){
+      nameInput.setAttribute('aria-label', 'Character name (leave blank for random)');
+    }
+  }
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SPOOF RIVALS — country-keyed legends across entertainment domains
+//
+//  Adds flavor to creative & entertainment careers. Names are spoofs of
+//  real famous people from each country. When the player gets promoted
+//  or hits a fame milestone, the game compares them to a real rival.
+// ═══════════════════════════════════════════════════════════════════════
+const SPOOF_RIVALS = {
+  us: {
+    music:    [
+      {name:'Bayonse Karter',     claim:'queen of pop-r&b, sold-out world tours'},
+      {name:'Drayk Graham',       claim:'most-streamed rapper of the decade'},
+      {name:'Taylr Swyft',        claim:'broke every chart record three times over'},
+      {name:'Eminim Mathers',     claim:'still the bar for technical rap'},
+      {name:'Brunor Mars',        claim:'24k throwback hit-maker'},
+      {name:'Billy Eyelish',      claim:'whisper-pop, five Grammys at twenty'},
+    ],
+    acting:   [
+      {name:'Tomm Hanks',         claim:'two consecutive Oscars, beloved everyman'},
+      {name:'Meryll Streap',      claim:'twenty-one Oscar nominations'},
+      {name:'Leonardor DiCapri',  claim:'finally won the gold, kept the streak'},
+      {name:'Denzill Washingtin', claim:'two Oscars, defined a generation'},
+      {name:'Skarlett Johansin',  claim:'highest-grossing actress alive'},
+      {name:'Robirt Downy Jr.',   claim:'rebuilt his career from the bottom'},
+    ],
+    art:      [
+      {name:'Banksey',            claim:'anonymous, his stencil sold for $25M'},
+      {name:'Jeff Coons',         claim:'balloon dogs at Christie\'s for $58M'},
+      {name:'Kaws Brian',         claim:'limited-edition figures resell for 50x'},
+      {name:'Yayoy Kosama',       claim:'infinity rooms drew lines around the block'},
+    ],
+    cooking:  [
+      {name:'Gordin Ramsy',       claim:'three Michelin stars, ten restaurants'},
+      {name:'Anthonny Burdaine',  claim:'made food TV mean something'},
+      {name:'Julya Childs',       claim:'taught a country to cook French'},
+      {name:'Tomas Killer',       claim:'three Michelin stars in two cities'},
+    ],
+    dancing:  [
+      {name:'Misti Coplund',      claim:'first Black principal at ABT'},
+      {name:'Twila Tharper',      claim:'reinvented modern dance choreography'},
+      {name:'Maddie Zieglar',     claim:'youngest Sia muse, then her own brand'},
+    ],
+    writing:  [
+      {name:'Stephin King',       claim:'sixty-plus novels, sold half a billion'},
+      {name:'Tonny Morrisin',     claim:'Nobel laureate, Pulitzer winner'},
+      {name:'Cormak McCarthi',    claim:'austere prose, two cinema adaptations'},
+    ],
+    comedy:   [
+      {name:'Dav Chapell',        claim:'returned to stand-up, broke streaming'},
+      {name:'Kavin Hartt',        claim:'arena comedian, billion-dollar empire'},
+      {name:'Joan Riverz',        claim:'paved the road for every female comic'},
+    ],
+    sports:   [
+      {name:'LeBren James',       claim:'four rings, all-time scoring leader'},
+      {name:'Tom Bradi',          claim:'seven Super Bowl wins, played until 45'},
+      {name:'Serenna Williams',   claim:'twenty-three Grand Slams'},
+      {name:'Tigir Woudz',        claim:'fifteen majors, comeback at the Masters'},
+    ],
+    modeling: [
+      {name:'Gigee Hadeed',       claim:'fifty-plus Vogue covers'},
+      {name:'Kendell Janer',      claim:'highest-paid model three years running'},
+    ],
+  },
+
+  uk: {
+    music:    [
+      {name:'Adell Ankins',       claim:'sold out Wembley, broke vocal records'},
+      {name:'Ed Sheren',           claim:'+ ÷ x — one of every three pop streams'},
+      {name:'Harri Stiles',         claim:'left One Direction, did Coachella headline'},
+      {name:'Dua Leepa',           claim:'disco revival, Grammy at first try'},
+      {name:'Sam Smithers',       claim:'four octaves, two Oscars for a Bond theme'},
+    ],
+    acting:   [
+      {name:'Iddris Elbah',       claim:'almost-Bond, broke into Hollywood his way'},
+      {name:'Emmma Watsen',       claim:'Hermione, then Brown, then activist'},
+      {name:'Tom Hardli',         claim:'three accents per film, never the same role'},
+      {name:'Olivia Coalman',     claim:'won the Oscar with a deadpan stare'},
+      {name:'Benedik Cumberbach', claim:'Sherlock, Strange, and the British accent'},
+    ],
+    art:      [
+      {name:'Damian Hirst',       claim:'shark in formaldehyde, $200M empire'},
+      {name:'Tracy Eminem',       claim:'unmade bed sold for £2.5M'},
+    ],
+    cooking:  [
+      {name:'Jamy Olivar',        claim:'taught the UK to cook in 30 minutes'},
+      {name:'Nigella Loosin',     claim:'late-night cooking, redefined the genre'},
+      {name:'Gordin Ramsi',       claim:'(crossover — claims both countries)'},
+    ],
+    writing:  [
+      {name:'J.K. Rouwling',      claim:'Harry Pothead, world\'s richest author'},
+      {name:'Neyle Geyman',       claim:'comics to novels to TV, the multimedia king'},
+      {name:'Hilree Mantal',      claim:'two Bookers for the Cromwell trilogy'},
+    ],
+    sports:   [
+      {name:'Lewis Hamiltin',     claim:'seven F1 titles, equal-most in history'},
+      {name:'Mo Faraah',          claim:'four Olympic golds at distance'},
+      {name:'David Bekhem',       claim:'free kicks, fashion, MLS owner'},
+    ],
+  },
+
+  jp: {
+    music:    [
+      {name:'Hikar Otadeh',       claim:'Utada-era torchbearer, double-platinum'},
+      {name:'Babymetalish',       claim:'kawaii metal, Tokyo Dome sold out'},
+      {name:'Kenshi Yonezzu',     claim:'invisible until the streams hit 800M'},
+    ],
+    acting:   [
+      {name:'Hayao Mizayaki',     claim:'studio that made the world cry at flying castles'},
+      {name:'Tarko Kitanoh',      claim:'directed and starred in his own genre'},
+      {name:'Riye Sazaka',        claim:'arthouse darling, three Cannes nods'},
+    ],
+    art:      [
+      {name:'Takashi Murakomi',   claim:'superflat, Louis Vuitton collab, $25M auctions'},
+      {name:'Yayoy Kosama',       claim:'infinity rooms, polka-dot legend at 90'},
+    ],
+    cooking:  [
+      {name:'Jiro Onoshi',        claim:'three Michelin stars for a ten-seat sushi counter'},
+      {name:'Massa Takamuri',     claim:'omakase imitated worldwide'},
+    ],
+    sports:   [
+      {name:'Shohey Otani',       claim:'two-way MLB star, both pitcher and slugger'},
+      {name:'Naoma Osakah',       claim:'four Grand Slams, broke her silence'},
+    ],
+    writing:  [
+      {name:'Hiruki Murakimi',    claim:'kafka-on-the-shore, every year a Nobel nominee'},
+    ],
+  },
+
+  br: {
+    music:    [
+      {name:'Anittah Limaa',      claim:'crossed funk carioca into US charts'},
+      {name:'Caetano Velozo',     claim:'tropicalia legend, sixty albums deep'},
+      {name:'Gilberto Gil',       claim:'minister of culture and bossa pioneer'},
+    ],
+    acting:   [
+      {name:'Wagnir Maurah',      claim:'Narcos, then Hollywood'},
+      {name:'Brus Wilis (br)',    claim:'(joke — actually Brazilian-American)'},
+    ],
+    sports:   [
+      {name:'Ney Mar Jr.',        claim:'most expensive transfer in history'},
+      {name:'Pellé Edsen',        claim:'three World Cups, the king'},
+    ],
+    art:      [
+      {name:'Romero Britto',      claim:'pop-art commissions for Disney, FIFA, Coca-Cola'},
+    ],
+  },
+
+  in: {
+    music:    [
+      {name:'Arjun Rehman',       claim:'two Oscars for Slumdog\'s score'},
+      {name:'Lata Mangeshker',    claim:'70-year playback career, 30,000+ songs'},
+      {name:'Diljitt Dosanj',     claim:'crossed Punjabi pop to Coachella'},
+    ],
+    acting:   [
+      {name:'Shah Rukh Khanr',    claim:'King Khan, 100+ films, billion-rupee box office'},
+      {name:'Deepika Padukin',    claim:'three Hollywood crossovers and counting'},
+      {name:'Aamir Khen',         claim:'method actor, every release is an event'},
+    ],
+    cooking:  [
+      {name:'Vikus Khanna',       claim:'Michelin star in NYC, judge on MasterChef India'},
+      {name:'Sanjeev Kappor',     claim:'India\'s most famous TV chef, 50 cookbooks'},
+    ],
+    art:      [
+      {name:'Anish Kapoorr',      claim:'Cloud Gate in Chicago, owns vantablack'},
+    ],
+    sports:   [
+      {name:'Virat Kohleey',      claim:'fastest to 12,000 ODI runs in cricket'},
+      {name:'Sachin Tendoolkar',  claim:'one hundred international centuries'},
+    ],
+  },
+
+  fr: {
+    music:    [
+      {name:'Daft Pukk',          claim:'invented modern electronic, then retired'},
+      {name:'Stromay (be)',       claim:'(Belgian/French — claimed by both)'},
+    ],
+    acting:   [
+      {name:'Marian Cotillarde',  claim:'Oscar for Piaf, then Hollywood'},
+      {name:'Jean Reuno',         claim:'Léon, then half of every French export'},
+    ],
+    cooking:  [
+      {name:'Alain Diccase',      claim:'most Michelin stars ever awarded one chef'},
+      {name:'Anne-Sopfee Pikk',   claim:'three stars, Maison Pic'},
+      {name:'Joël Robushion',     claim:'(legacy — most Michelin stars in history)'},
+    ],
+    art:      [
+      {name:'JR Photogrof',       claim:'pasted faces on buildings across the world'},
+    ],
+  },
+
+  de: {
+    music:    [
+      {name:'Karyn Düşler',       claim:'electronic pioneer, Kraftwerk-era survivor'},
+    ],
+    acting:   [
+      {name:'Diane Krugler',      claim:'crossed Berlinale to LA'},
+    ],
+    sports:   [
+      {name:'Bastian Schweisteyger', claim:'World Cup midfielder, Bundesliga immortal'},
+      {name:'Toni Kruz',          claim:'four Champions League winners\' medals'},
+    ],
+  },
+
+  mx: {
+    music:    [
+      {name:'Bad Bunni',          claim:'(PR-Mexican crossover) most-streamed artist alive'},
+      {name:'Pesoo Plumah',       claim:'corridos tumbados, Spotify global #1'},
+      {name:'Vincente Fernandz',  claim:'ranchera royalty, golden voice'},
+    ],
+    acting:   [
+      {name:'Gael Garcia Bernall', claim:'Y Tu Mamá, Mozart in the Jungle'},
+      {name:'Salma Hyek',         claim:'Frida, then producer empire'},
+    ],
+    sports:   [
+      {name:'Saúl "Cinammon" Alvarez', claim:'undisputed super-middleweight king'},
+    ],
+    art:      [
+      {name:'Friddah Kahlu',      claim:'self-portraits that defined Mexican modernism'},
+    ],
+  },
+
+  ng: {
+    music:    [
+      {name:'Burnaa Boi',         claim:'Afrobeats Grammy winner, world tour'},
+      {name:'Wizz Kidd',          claim:'Drake collab put afrobeats on US charts'},
+      {name:'Davidoh Adeleke',    claim:'Lagos to Madison Square Garden'},
+      {name:'Temms Kingom',       claim:'Grammy nomination at twenty-four'},
+    ],
+    acting:   [
+      {name:'Genevieve Naji',     claim:'Nollywood crown, Hollywood crossover'},
+    ],
+    sports:   [
+      {name:'Anthonni Joshia',    claim:'two-time unified heavyweight champion'},
+    ],
+  },
+
+  eg: {
+    music:    [
+      {name:'Amr Diaab',          claim:'thirty albums, the king of Arabic pop'},
+      {name:'Umm Kalthumm',       claim:'(legacy) voice of an era, every Thursday'},
+    ],
+    acting:   [
+      {name:'Mohammed Ramadann',  claim:'tied for highest-paid Arab actor'},
+    ],
+  },
+
+  sa: {
+    music:    [
+      {name:'Mohammed Abduuh',    claim:'fifty-year Khaleeji legend'},
+    ],
+    acting:   [
+      {name:'Hisam Salameh',      claim:'pioneered Saudi cinema after the lifting'},
+    ],
+    sports:   [
+      {name:'Yasir Shah-Otani',   claim:'(mixed roots) cricketing all-rounder'},
+    ],
+  },
+
+  pk: {
+    music:    [
+      {name:'Atif Aslan',         claim:'biggest playback voice across two languages'},
+      {name:'Nustrat Fatey Ali',  claim:'(legacy) qawwali ambassador to the world'},
+      {name:'Mahira Khaan',       claim:'Coke Studio era, then Bollywood'},
+    ],
+    cooking:  [
+      {name:'Shai Bibi',          claim:'TV Punjabi cooking, four million subscribers'},
+    ],
+    sports:   [
+      {name:'Imrann Khann',       claim:'1992 World Cup captain, then prime minister'},
+      {name:'Babbar Azzam',       claim:'top of the ICC ODI batting rankings'},
+    ],
+  },
+
+  id: {
+    music:    [
+      {name:'Anggun Sasmi',       claim:'Indonesia\'s first French-charting export'},
+    ],
+    sports:   [
+      {name:'Greysya Polyii',     claim:'Olympic gold in mixed doubles badminton'},
+    ],
+  },
+};
+
+// Map skills/career keys to spoof-rival domains
+const SPOOF_DOMAIN_MAP = {
+  music:        'music',     pop_star:    'music',    rap_artist: 'music',
+  musician:     'music',     dj:          'music',
+  actor:        'acting',    filmmaker:   'acting',   screenwriter: 'acting',
+  reality_tv:   'acting',
+  chef:         'cooking',   baker:       'cooking',
+  author:       'writing',   journalist:  'writing',
+  painting:     'art',       calligraphy: 'art',
+  dancing:      'dancing',   ballet:      'dancing',
+  martialarts:  'sports',
+  fashion:      'modeling',
+  comedian:     'comedy',
+};
+
+function getSpoofRival(careerKey, country){
+  const domain = SPOOF_DOMAIN_MAP[careerKey];
+  if(!domain) return null;
+  const countryPool = SPOOF_RIVALS[country] || SPOOF_RIVALS.us;
+  const list = countryPool[domain] || (SPOOF_RIVALS.us[domain] || []);
+  if(!list.length) return null;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+// Hook into career promotion — occasional rival comparison
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  let _lastRungIdx = -1;
+  ageUp = function(){
+    const c = LIFE && LIFE.char;
+    const before = c && c.career ? c.career.rungIdx : -1;
+    _orig.apply(this, arguments);
+    if(!c || !c.career) return;
+    const after = c.career.rungIdx;
+    if(after > before){
+      // Just got promoted. Maybe drop a rival comparison.
+      if(Math.random() < 0.45){
+        const rival = getSpoofRival(c.career.key, c.country);
+        if(rival){
+          const lines = [
+            'They\'re calling you the next ' + rival.name + ' (' + rival.claim + ').',
+            'Critics compared you to ' + rival.name + '. You\'re flattered. You hate it.',
+            'A piece dropped: "Is ' + (c.firstName || 'this rising star') + ' the new ' + rival.name + '?"',
+            'You met ' + rival.name + ' backstage. They were kinder than expected.',
+            'You opened for ' + rival.name + '. The crowd stayed for both of you.',
+          ];
+          pushEvent('career', '⭐ ' + lines[Math.floor(Math.random() * lines.length)]);
+        }
+      }
+    }
+  };
+})();
+
+// Hook into fame milestones — at fame 50, 80, 95
+(function(){
+  if(typeof ageUp !== 'function') return;
+  const _orig = ageUp;
+  ageUp = function(){
+    const c = LIFE && LIFE.char;
+    const beforeFame = c ? (c.fame || 0) : 0;
+    _orig.apply(this, arguments);
+    if(!c) return;
+    const fame = c.fame || 0;
+    c.flags = c.flags || {};
+    [50, 80, 95].forEach(threshold => {
+      const key = 'fameMilestone' + threshold;
+      if(beforeFame < threshold && fame >= threshold && !c.flags[key]){
+        c.flags[key] = true;
+        const rival = c.career ? getSpoofRival(c.career.key, c.country) : null;
+        if(rival){
+          let line;
+          if(threshold === 50)  line = 'Fame ' + threshold + ': you\'re in the same magazines as ' + rival.name + ' now.';
+          if(threshold === 80)  line = 'Fame ' + threshold + ': ' + rival.name + ' shouted you out at an awards show.';
+          if(threshold === 95)  line = 'Fame ' + threshold + ': ' + rival.name + ' compared their early years to yours. The torch is shifting.';
+          pushEvent('milestone', '🌟 ' + line);
+        } else {
+          pushEvent('milestone', '🌟 Fame ' + threshold + '. Your name carries weight in your country now.');
+        }
+      }
+    });
+  };
+})();
+
+// Career-hub modal: append a "Famous in Your Country" card per career
+//   so the player can see who they're competing with before applying.
+(function(){
+  if(typeof openOccupation !== 'function') return;
+  const _orig = openOccupation;
+  openOccupation = function(){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c) return;
+    setTimeout(function(){
+      const modal = document.getElementById('modal');
+      if(!modal || !modal.classList.contains('show')) return;
+      modal.querySelectorAll('.card').forEach(card => {
+        if(card.dataset.rivalWired) return;
+        const titleEl = card.querySelector('.card-title');
+        if(!titleEl) return;
+        // Match title back to career key
+        const title = titleEl.textContent.trim();
+        let careerKey = null;
+        if(typeof CAREERS === 'object'){
+          Object.keys(CAREERS).forEach(k => {
+            const r = CAREERS[k];
+            if(r && r.rungs && r.rungs[0] && r.rungs[0].title === title) careerKey = k;
+          });
+        }
+        if(!careerKey) return;
+        const rival = getSpoofRival(careerKey, c.country);
+        if(!rival) return;
+        const meta = card.querySelector('.card-meta');
+        if(!meta) return;
+        const chip = document.createElement('div');
+        chip.style.cssText = 'margin-top:4px;font-size:10.5px;color:var(--accent2);font-style:italic;';
+        chip.innerHTML = '✦ Top of the field: <span style="color:var(--accent);">' + rival.name + '</span> — ' + rival.claim;
+        meta.parentNode.insertBefore(chip, meta.nextSibling);
+        card.dataset.rivalWired = '1';
+      });
+    }, 60);
+  };
+})();
+
+// Skill-monetisation hook — when a player monetises a creative skill,
+//  sometimes their work gets compared to a famous rival.
+(function(){
+  if(typeof monetizeSkill !== 'function') return;
+  const _orig = monetizeSkill;
+  monetizeSkill = function(id){
+    _orig.apply(this, arguments);
+    const c = LIFE && LIFE.char;
+    if(!c) return;
+    if(Math.random() < 0.30){
+      const rival = getSpoofRival(id, c.country);
+      if(rival){
+        const lines = [
+          'A reviewer wrote: "Reminds me of early ' + rival.name + '."',
+          'You posted it. Someone in the comments said you were ripping off ' + rival.name + '. You laughed.',
+          'It\'s not ' + rival.name + ' tier yet. But you can see the trajectory.',
+        ];
+        pushEvent('', '✦ ' + lines[Math.floor(Math.random() * lines.length)]);
+      }
+    }
+  };
+})();
 
 </script>
 </body>

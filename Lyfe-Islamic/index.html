@@ -23031,8 +23031,44 @@ function getSpoofRival(careerKey, country){
       birds.push({m:bd, r:30 + i*9, h:26 + i*4, ph:i*1.3, sp:0.25 + i*0.04});
     }
 
+    // Your car — parked on the road outside your house, if you own one
+    let car = null;
+    (function(){
+      const c = LIFE && LIFE.char;
+      if(!c || !c.carId || c.carId === 'none' || c.carId === 'bike' || c.carId === 'scooter') return;
+      const spec = (typeof CARS !== 'undefined' && CARS.find(x => x.id === c.carId)) || {name:'Car', mph:120, status:3};
+      const grp = new T.Group();
+      const bodyCol = spec.status >= 8 ? 0x8a1820 : spec.status >= 6 ? 0x10141c : spec.status >= 4 ? 0x2a4a6a : 0x6a6258;
+      const body = new T.Mesh(new T.BoxGeometry(2.3, 0.8, 4.8), new T.MeshLambertMaterial({color:bodyCol}));
+      body.position.y = 0.75; grp.add(body);
+      const cabin = new T.Mesh(new T.BoxGeometry(2.0, 0.7, 2.3),
+        new T.MeshLambertMaterial({color:0x0c1014, emissive:0x1a2430, emissiveIntensity:0.4}));
+      cabin.position.set(0, 1.45, -0.3); grp.add(cabin);
+      const wheelG = new T.CylinderGeometry(0.42, 0.42, 0.3, 12);
+      const wheelM = new T.MeshLambertMaterial({color:0x0a0a0a});
+      [[-1.05,1.5],[1.05,1.5],[-1.05,-1.5],[1.05,-1.5]].forEach(p => {
+        const wh = new T.Mesh(wheelG, wheelM);
+        wh.rotation.z = Math.PI/2; wh.position.set(p[0], 0.42, p[1]); grp.add(wh);
+      });
+      // Headlights + tail lights
+      [[-0.7, 2.42, 0xfff2c0],[0.7, 2.42, 0xfff2c0],[-0.7, -2.42, 0xff3a30],[0.7, -2.42, 0xff3a30]].forEach(p => {
+        const lt = new T.Mesh(new T.SphereGeometry(0.13, 8, 6),
+          new T.MeshBasicMaterial({color:p[2]}));
+        lt.position.set(p[0], 0.85, p[1]); grp.add(lt);
+      });
+      // Headlight beam pools
+      const beam = new T.Mesh(new T.PlaneGeometry(5, 9),
+        new T.MeshBasicMaterial({map:glowTex('rgba(255,242,192,0.35)','rgba(255,220,140,0.12)'), transparent:true, depthWrite:false}));
+      beam.rotation.x = -Math.PI/2; beam.position.set(0, 0.05, 7); grp.add(beam);
+      const px = -9.6, pz = -22;
+      grp.position.set(px, 0, pz);
+      scene.add(grp);
+      car = {grp:grp, x:px, z:pz, heading:0, speed:0, name:spec.name,
+             maxSp: 16 + (spec.mph || 100) * 0.12};
+    })();
+
     return {T, renderer, scene, cam, interactives, colliders, npcs,
-            clouds:clouds, birds:birds, lampFlk:lampFlk,
+            clouds:clouds, birds:birds, lampFlk:lampFlk, car:car,
             ext:{scene:scene, colliders:colliders, interactives:interactives},
             interiors:{}, mode:'ext', bounds:190, extPos:null,
             yaw:0, pitch:0, keys:{}, joy:{x:0,y:0}, near:null, raf:0};
@@ -23180,32 +23216,70 @@ function getSpoofRival(careerKey, country){
       w.raf = requestAnimationFrame(tick);
       const dt = Math.min(0.05, (now - clock.last)/1000); clock.last = now;
 
-      // Move
-      const sp = (w.keys['shift'] ? 14 : 7) * dt;
-      let mx = 0, mz = 0;
-      if(w.keys['w'] || w.keys['arrowup'])    mz -= 1;
-      if(w.keys['s'] || w.keys['arrowdown'])  mz += 1;
-      if(w.keys['a'] || w.keys['arrowleft'])  mx -= 1;
-      if(w.keys['d'] || w.keys['arrowright']) mx += 1;
-      mx += w.joy.x; mz += w.joy.y;
-      const len = Math.hypot(mx, mz) || 1;
-      const sin = Math.sin(w.yaw), cos = Math.cos(w.yaw);
-      let nx = w.cam.position.x + (mx*cos - mz*sin) * sp / len * (len>0.01?1:0);
-      let nz = w.cam.position.z + (mx*sin + mz*cos) * sp / len * (len>0.01?1:0);
-      // Bounds + building collision
-      nx = Math.max(-w.bounds, Math.min(w.bounds, nx));
-      nz = Math.max(-w.bounds, Math.min(w.bounds, nz));
-      for(const c of w.colliders){
-        const dx = nx - c.x, dz = nz - c.z;
-        if(Math.abs(dx) < c.half && Math.abs(dz) < c.half){
-          if(Math.abs(dx) > Math.abs(dz)) nx = c.x + Math.sign(dx) * c.half;
-          else nz = c.z + Math.sign(dz) * c.half;
+      let nx = w.cam.position.x, nz = w.cam.position.z;
+      if(w.mode === 'car' && w.car){
+        // ── Driving
+        const cs = w.car;
+        const gas   = (w.keys['w'] || w.keys['arrowup'])   || w.joy.y < -0.25;
+        const brake = (w.keys['s'] || w.keys['arrowdown']) || w.joy.y >  0.25;
+        let steer = 0;
+        if(w.keys['a'] || w.keys['arrowleft'])  steer += 1;
+        if(w.keys['d'] || w.keys['arrowright']) steer -= 1;
+        steer -= w.joy.x;
+        cs.speed += ((gas ? 16 : 0) - (brake ? 26 : 0)) * dt;
+        cs.speed *= (1 - 1.0 * dt);                       // rolling friction
+        cs.speed = Math.max(-7, Math.min(cs.maxSp, cs.speed));
+        if(Math.abs(cs.speed) > 0.3){
+          cs.heading += steer * dt * 1.9 * Math.min(1, Math.abs(cs.speed)/9) * Math.sign(cs.speed);
         }
+        const fx = Math.sin(cs.heading), fz = Math.cos(cs.heading);
+        let cxn = cs.x + fx * cs.speed * dt;
+        let czn = cs.z + fz * cs.speed * dt;
+        cxn = Math.max(-185, Math.min(185, cxn));
+        czn = Math.max(-185, Math.min(185, czn));
+        for(const c of w.colliders){
+          const dx = cxn - c.x, dz = czn - c.z;
+          if(Math.abs(dx) < c.half + 1.4 && Math.abs(dz) < c.half + 1.4){
+            if(Math.abs(dx) > Math.abs(dz)) cxn = c.x + Math.sign(dx) * (c.half + 1.4);
+            else czn = c.z + Math.sign(dz) * (c.half + 1.4);
+            cs.speed *= -0.18;                            // crunch, bounce back
+          }
+        }
+        cs.x = cxn; cs.z = czn;
+        cs.grp.position.set(cs.x, 0, cs.z);
+        cs.grp.rotation.y = cs.heading;
+        // Hood camera — first person behind the wheel
+        w.cam.position.set(cs.x - fx*0.4, 1.45, cs.z - fz*0.4);
+        w.cam.lookAt(cs.x + fx*12, 1.2 + w.pitch*4, cs.z + fz*12);
+        nx = cs.x; nz = cs.z;
+      } else {
+        // ── Walking
+        const sp = (w.keys['shift'] ? 14 : 7) * dt;
+        let mx = 0, mz = 0;
+        if(w.keys['w'] || w.keys['arrowup'])    mz -= 1;
+        if(w.keys['s'] || w.keys['arrowdown'])  mz += 1;
+        if(w.keys['a'] || w.keys['arrowleft'])  mx -= 1;
+        if(w.keys['d'] || w.keys['arrowright']) mx += 1;
+        mx += w.joy.x; mz += w.joy.y;
+        const len = Math.hypot(mx, mz) || 1;
+        const sin = Math.sin(w.yaw), cos = Math.cos(w.yaw);
+        nx = w.cam.position.x + (mx*cos - mz*sin) * sp / len * (len>0.01?1:0);
+        nz = w.cam.position.z + (mx*sin + mz*cos) * sp / len * (len>0.01?1:0);
+        // Bounds + building collision
+        nx = Math.max(-w.bounds, Math.min(w.bounds, nx));
+        nz = Math.max(-w.bounds, Math.min(w.bounds, nz));
+        for(const c of w.colliders){
+          const dx = nx - c.x, dz = nz - c.z;
+          if(Math.abs(dx) < c.half && Math.abs(dz) < c.half){
+            if(Math.abs(dx) > Math.abs(dz)) nx = c.x + Math.sign(dx) * c.half;
+            else nz = c.z + Math.sign(dz) * c.half;
+          }
+        }
+        w.cam.position.x = nx; w.cam.position.z = nz;
+        w.cam.rotation.order = 'YXZ';
+        w.cam.rotation.y = w.yaw;
+        w.cam.rotation.x = w.pitch;
       }
-      w.cam.position.x = nx; w.cam.position.z = nz;
-      w.cam.rotation.order = 'YXZ';
-      w.cam.rotation.y = w.yaw;
-      w.cam.rotation.x = w.pitch;
 
       // Atmosphere (outdoors only)
       if(w.mode === 'ext'){
@@ -23237,22 +23311,39 @@ function getSpoofRival(careerKey, country){
 
       // Proximity → prompt
       w.near = null;
-      let best = 36;
-      for(const it of w.interactives){
-        const d2 = (nx-it.x)*(nx-it.x) + (nz-it.z)*(nz-it.z);
-        it.glow.material.opacity = 0.25 + 0.18 * Math.sin(now/300);
-        if(d2 < best){ best = d2; w.near = it; }
-      }
-      if(w.near){
-        const verb = w.near.kind ? w.near.label : 'enter ' + w.near.b.name;
-        prompt.textContent = (('ontouchstart' in window) ? 'Tap — ' : 'Press E — ') + verb;
-        prompt.classList.add('show');
-        loc.textContent = w.near.b.icon + ' ' + w.near.b.name;
+      if(w.mode === 'car'){
+        const kmh = Math.abs(Math.round(w.car.speed * 6.5));
+        loc.textContent = '🚗 ' + w.car.name + ' · ' + kmh + ' km/h';
+        if(Math.abs(w.car.speed) < 2.5){
+          w.near = {kind:'exitcar', b:{name:'car', icon:'🚗'}, label:'step out'};
+          prompt.textContent = (('ontouchstart' in window) ? 'Tap — ' : 'Press E — ') + 'step out';
+          prompt.classList.add('show');
+        } else prompt.classList.remove('show');
       } else {
-        prompt.classList.remove('show');
-        const c = LIFE && LIFE.char;
-        if(w.mode === 'int') loc.textContent = '🏠 Inside';
-        else loc.textContent = c ? (c.city + ' · Age ' + c.age) : 'Your neighborhood';
+        let best = 36;
+        for(const it of w.interactives){
+          const d2 = (nx-it.x)*(nx-it.x) + (nz-it.z)*(nz-it.z);
+          it.glow.material.opacity = 0.25 + 0.18 * Math.sin(now/300);
+          if(d2 < best){ best = d2; w.near = it; }
+        }
+        // Your parked car beats a building if it's closer
+        if(w.mode === 'ext' && w.car){
+          const d2 = (nx-w.car.x)*(nx-w.car.x) + (nz-w.car.z)*(nz-w.car.z);
+          if(d2 < 22 && d2 < best){
+            w.near = {kind:'car', b:{name:w.car.name, icon:'🚗'}, label:'drive your ' + w.car.name};
+          }
+        }
+        if(w.near){
+          const verb = w.near.kind ? w.near.label : 'enter ' + w.near.b.name;
+          prompt.textContent = (('ontouchstart' in window) ? 'Tap — ' : 'Press E — ') + verb;
+          prompt.classList.add('show');
+          loc.textContent = w.near.b.icon + ' ' + w.near.b.name;
+        } else {
+          prompt.classList.remove('show');
+          const c = LIFE && LIFE.char;
+          if(w.mode === 'int') loc.textContent = '🏠 Inside';
+          else loc.textContent = c ? (c.city + ' · Age ' + c.age) : 'Your neighborhood';
+        }
       }
 
       w.renderer.render(w.scene, w.cam);
@@ -23263,6 +23354,23 @@ function getSpoofRival(careerKey, country){
   function enterBuilding(){
     const w = world;
     if(!w || !w.near) return;
+    if(w.near.kind === 'car'){
+      // Behind the wheel
+      const c = LIFE && LIFE.char;
+      if(c && c.age < 16){ toast('Too young to drive. Walk it off.'); return; }
+      w.mode = 'car';
+      w.car.heading = w.yaw + Math.PI; // face where you were looking
+      showWorldSpeech('🚗 W gas · S brake · A/D steer. Drive safe — or don\'t.');
+      return;
+    }
+    if(w.near.kind === 'exitcar'){
+      w.mode = 'ext';
+      const fx = Math.sin(w.car.heading), fz = Math.cos(w.car.heading);
+      w.cam.position.set(w.car.x - fz*3, 1.7, w.car.z + fx*3); // step out to the side
+      w.yaw = w.car.heading; w.pitch = 0;
+      w.cam.rotation.order = 'YXZ';
+      return;
+    }
     if(w.mode === 'ext'){
       // Walk inside — interiors handle the menu at their desk
       enterInterior(w.near.b);
@@ -23292,7 +23400,8 @@ function getSpoofRival(careerKey, country){
     world.keys[k] = true;
     if(k === 'e') enterBuilding();
     if(k === 'escape'){
-      if(world.mode === 'int') exitInterior();
+      if(world.mode === 'car'){ world.mode = 'ext'; world.yaw = world.car.heading; }
+      else if(world.mode === 'int') exitInterior();
       else closeWorld();
     }
   });

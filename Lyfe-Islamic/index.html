@@ -24154,6 +24154,73 @@ function getSpoofRival(careerKey, country){
     }
   }
 
+  // ── Staged nikah — the contract, witnessed inside the 3D masjid.
+  //    Auto-plays as a short cinematic: guests stand at the mihrab,
+  //    the imam speaks, the qabul is given, the hall makes du'a.
+  window.worldStageNikah = function(spouseName, waliName){
+    try {
+      openLyfeWorld();
+    } catch(e){ return; }
+    let tries = 0;
+    const waitWorld = setInterval(function(){
+      tries++;
+      if(tries > 40){ clearInterval(waitWorld); return; }   // ~8s — 3D unavailable
+      if(!world || !wrap.classList.contains('open')) return;
+      clearInterval(waitWorld);
+      const masjidB = {id:'masjid', name:'Masjid', icon:'🕌', type:'masjid', action:'openFaithPractice'};
+      try { enterInterior(masjidB); } catch(e){ return; }
+      const w = world, T = w.T, room = w.curRoom;
+      if(!room) return;
+
+      // The gathering: spouse, wali, two witnesses by the mihrab
+      const guests = [];
+      const c = LIFE && LIFE.char;
+      const spouseSeed = 3;        // hijab female variant
+      const placements = [
+        {seed: (c && c.sex === 'm') ? 9 : 16, x:-1.6, z:-room.half + 5.2, ry:0.5},   // spouse
+        {seed: 26, x:-3.4, z:-room.half + 6.0, ry:0.3},                              // wali
+        {seed: 31, x: 2.6, z:-room.half + 6.4, ry:-0.3},                             // witness
+        {seed: 38, x: 4.0, z:-room.half + 7.2, ry:-0.5},                             // witness
+      ];
+      placements.forEach(function(pl){
+        const g = makePerson(T, pl.seed);
+        g.grp.position.set(pl.x, 0, pl.z);
+        g.grp.rotation.y = pl.ry + Math.PI;
+        room.scene.add(g.grp);
+        guests.push(g.grp);
+      });
+
+      // Walk-in position: facing the mihrab
+      w.cam.position.set(0, 1.7, room.half - 4);
+      w.yaw = 0; w.pitch = 0;
+
+      const sName = spouseName || 'your intended';
+      const wName = waliName || 'the wali';
+      const beats = [
+        ['🕌 The imam clears his throat. "We gather for what the Prophet ﷺ called the completion of half the religion."', 4600],
+        ['📜 ' + wName + ' steps forward: "I give in marriage, with the mahr agreed and the witnesses present."', 4600],
+        ['🤝 The imam turns to you: "Do you accept?" — You: "Qabiltu. I accept the nikah."', 4600],
+        ['💞 ' + sName + ' looks up once — and the hall smiles all at once.', 4200],
+        ['🤲 The gathering makes du\'a together: "Barakallahu laka wa baraka \'alayka wa jama\'a baynakuma fi khayr." (Abu Dawud 2130)', 5200],
+      ];
+      let bi = 0;
+      (function nextBeat(){
+        if(!wrap.classList.contains('open')){ cleanup(); return; }
+        if(bi >= beats.length){
+          showWorldSpeech('🕌 It is done. Walk out as two.');
+          setTimeout(cleanup, 5000);
+          return;
+        }
+        const b = beats[bi++];
+        showWorldSpeech(b[0]);
+        setTimeout(nextBeat, b[1]);
+      })();
+      function cleanup(){
+        guests.forEach(function(g){ try { room.scene.remove(g); } catch(e){} });
+      }
+    }, 200);
+  };
+
   // ── Family in the world — spouse and kids near the house, each with
   //    a name tag and things to say. Rebuilt every time you enter.
   function nameTag(T, text){
@@ -25344,6 +25411,45 @@ function getSpoofRival(careerKey, country){
         if(anchorBtn && anchorBtn.parentNode) anchorBtn.parentNode.insertBefore(btn, anchorBtn);
         else screen.appendChild(btn);
       }, 120);
+    };
+  }
+})();
+
+
+// ── Offer to witness the nikah in the masjid after the contract
+(function(){
+  function offerScene(){
+    const c = LIFE && LIFE.char;
+    if(!c || c.religion !== 'islam' || !c.partner) return;
+    setTimeout(function(){
+      const spouse = c.partner.firstName || 'your spouse';
+      let html = '<div style="padding:14px 16px;background:rgba(201,169,97,0.08);border:1px solid rgba(201,169,97,0.25);border-radius:10px;margin-bottom:14px;font-size:13.5px;line-height:1.6;color:var(--t1);text-align:center;">'
+        + 'The contract is concluded. The masjid is ready, the witnesses are seated.'
+        + '</div>'
+        + '<div class="card" onclick="closeModal();worldStageNikah(\'' + spouse.replace(/'/g, "\\'") + '\')" style="cursor:pointer;border-color:rgba(74,222,128,0.35);margin-bottom:8px;">'
+        + '<div class="card-ico">🕌</div>'
+        + '<div class="card-body"><div class="card-title" style="color:#4ade80;">Walk into the masjid</div>'
+        + '<div class="card-meta">Witness your own nikah, first person — the wali, the qabul, the du\'a of the gathering.</div></div>'
+        + '<div class="card-act"><button class="card-btn green">Go</button></div></div>'
+        + '<div class="card" onclick="closeModal()" style="cursor:pointer;">'
+        + '<div class="card-ico">↩</div>'
+        + '<div class="card-body"><div class="card-title">Continue</div>'
+        + '<div class="card-meta">The timeline records it either way.</div></div>'
+        + '<div class="card-act"><button class="card-btn muted">Skip</button></div></div>';
+      openModal('💞 The Nikah', html);
+    }, 700);
+  }
+  if(typeof finalizeHalalNikah === 'function'){
+    const _o = finalizeHalalNikah;
+    finalizeHalalNikah = function(){ const r = _o.apply(this, arguments); offerScene(); return r; };
+  }
+  if(typeof confirmWedding === 'function'){
+    const _o2 = confirmWedding;
+    confirmWedding = function(){
+      const r = _o2.apply(this, arguments);
+      const c = LIFE && LIFE.char;
+      if(c && c.religion === 'islam' && c.partner && c.partner.married) offerScene();
+      return r;
     };
   }
 })();

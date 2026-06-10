@@ -1280,46 +1280,61 @@ input, select, textarea{
 .modal{animation:modal-rise 0.22s ease;}
 @keyframes modal-rise{from{opacity:0;transform:translateY(8px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
 
-/* ── Bismillah Splash ─────────────────────────────────────────────── */
-#bismillah-splash{
+/* ── Boot Sequence ─────────────────────────────────────────────── */
+#boot-screen{
   position:fixed;inset:0;z-index:9999;
-  display:flex;align-items:center;justify-content:center;
   background:#060f0a;
-  transition:opacity 0.7s ease;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .7s ease;
+  padding:24px;
 }
-#bismillah-inner{
-  text-align:center;
-  animation:bism-rise 1s cubic-bezier(.22,1,.36,1) both;
-}
-@keyframes bism-rise{
-  from{opacity:0;transform:translateY(18px);}
-  to{opacity:1;transform:translateY(0);}
-}
-#bismillah-arabic{
+#boot-arabic{
   font-family:Georgia,'Times New Roman',serif;
-  font-size:clamp(26px,5vw,48px);
-  color:#c9a961;
-  letter-spacing:.04em;
-  line-height:1.6;
-  text-shadow:0 0 40px rgba(201,169,97,.35), 0 0 80px rgba(201,169,97,.12);
-  margin-bottom:16px;
-  direction:rtl;
+  font-size:clamp(28px,5.4vw,54px);
+  color:#c9a961;letter-spacing:.04em;line-height:1.5;
+  text-shadow:0 0 40px rgba(201,169,97,.35), 0 0 90px rgba(201,169,97,.12);
+  direction:rtl;text-align:center;margin-bottom:14px;
+  opacity:0;animation:bootFadeIn .9s .15s cubic-bezier(.22,1,.36,1) forwards;
 }
-#bismillah-latin{
+#boot-latin{
   font-family:'Palatino Linotype',Georgia,serif;
-  font-size:clamp(11px,2vw,14px);
-  color:rgba(232,220,192,.55);
-  letter-spacing:.16em;
-  text-transform:uppercase;
-  margin-bottom:22px;
+  font-size:clamp(10.5px,1.6vw,13px);
+  color:rgba(232,220,192,.55);letter-spacing:.20em;text-transform:uppercase;
+  text-align:center;margin-bottom:34px;
+  opacity:0;animation:bootFadeIn .9s .45s cubic-bezier(.22,1,.36,1) forwards;
 }
-#bismillah-line{
+#boot-divider{
   width:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(201,169,97,.6),transparent);
-  margin:0 auto;
-  animation:bism-line 1.4s 0.3s cubic-bezier(.22,1,.36,1) forwards;
+  margin:0 auto 28px;
+  animation:bootDivider 1.0s .7s cubic-bezier(.22,1,.36,1) forwards;
 }
-@keyframes bism-line{to{width:200px;}}
+@keyframes bootDivider{to{width:220px;}}
+@keyframes bootFadeIn{to{opacity:1;}}
+#boot-log{
+  width:min(96vw,460px);
+  font-family:'IBM Plex Mono','SF Mono',Consolas,monospace;
+  font-size:11.5px;line-height:1.85;
+  text-align:left;margin:0 auto;min-height:140px;
+}
+.boot-line{opacity:0;transition:opacity .25s ease;white-space:pre-wrap;}
+.boot-line.show{opacity:1;}
+.boot-line .ok{color:#5ed47a;}
+.boot-line .key{color:#c9a961;}
+.boot-line .dim{color:rgba(232,220,192,.40);}
+.boot-line .label{color:rgba(232,220,192,.62);}
+#boot-skip{
+  margin-top:30px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  color:rgba(201,169,97,.55);letter-spacing:.22em;text-transform:uppercase;
+  opacity:0;animation:bootFadeIn .8s 1.6s ease forwards;
+  text-align:center;
+}
+#boot-skip kbd{
+  display:inline-block;border:1px solid rgba(201,169,97,.30);border-radius:4px;
+  padding:2px 7px;font-family:inherit;font-size:9.5px;color:var(--accent,#c9a961);
+  margin:0 2px;background:rgba(201,169,97,.06);
+}
 
 /* ── Intro fade-in (driven by JS) ─────────────────────────────────── */
 #intro{transition:opacity 0.6s ease;}
@@ -1331,13 +1346,13 @@ input, select, textarea{
 <!-- ═══ Background music — Journey of Lyfe ═══ -->
 
 
-<!-- ═══ Bismillah Splash ═══ -->
-<div id="bismillah-splash">
-  <div id="bismillah-inner">
-    <div id="bismillah-arabic">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
-    <div id="bismillah-latin">In the name of Allah, the Most Gracious, the Most Merciful</div>
-    <div id="bismillah-line"></div>
-  </div>
+<!-- ═══ Boot Screen ═══ -->
+<div id="boot-screen">
+  <div id="boot-arabic">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+  <div id="boot-latin">In the name of Allah, the Most Gracious, the Most Merciful</div>
+  <div id="boot-divider"></div>
+  <div id="boot-log"></div>
+  <div id="boot-skip">Press <kbd>any key</kbd> or tap to begin</div>
 </div>
 
 <!-- ═══ Intro / Character Creation ═══ -->
@@ -1454,22 +1469,50 @@ input, select, textarea{
 <div id="toast"></div>
 
 <script>
-// ─── Bismillah splash → intro transition
+// ─── Boot sequence → intro transition (Ward-style typed lines)
 (function(){
-  const SPLASH_MS  = 2400; // how long the Bismillah is fully visible
-  const FADE_MS    =  700; // fade-out duration (matches CSS transition)
-  const splash = document.getElementById('bismillah-splash');
+  const log    = document.getElementById('boot-log');
+  const screen = document.getElementById('boot-screen');
   const intro  = document.getElementById('intro');
-  if(!splash || !intro) return;
-  // After SPLASH_MS, fade splash out and fade intro in simultaneously
-  setTimeout(function(){
-    splash.style.opacity = '0';
+  if(!log || !screen || !intro) return;
+
+  const LINES = [
+    '<span class="key">[NIYYAH]</span> <span class="label">Setting intention...</span> <span class="ok">PURE</span>',
+    '<span class="key">[QURAN]</span>  <span class="label">Citation index...</span> <span class="ok">114 SURAHS LINKED</span>',
+    '<span class="key">[HADITH]</span> <span class="label">Sahih references...</span> <span class="ok">VERIFIED</span>',
+    '<span class="key">[FIQH]</span>   <span class="label">Four madhabs loaded...</span> <span class="ok">OK</span>',
+    '<span class="key">[DUNYA]</span>  <span class="label">World simulation...</span> <span class="ok">READY</span>',
+    '<span class="key">[QADR]</span>   <span class="label">Decree engine...</span> <span class="dim">only Allah knows</span>',
+    '<span class="dim">One life. One year at a time. Make it count.</span>',
+  ];
+
+  let done = false;
+  function endBoot(){
+    if(done) return;
+    done = true;
+    screen.style.opacity = '0';
     intro.style.opacity  = '1';
     intro.style.pointerEvents = '';
-    setTimeout(function(){
-      splash.style.display = 'none';
-    }, FADE_MS + 50);
-  }, SPLASH_MS);
+    setTimeout(function(){ screen.style.display = 'none'; }, 750);
+    document.removeEventListener('keydown', endBoot);
+    screen.removeEventListener('click', endBoot);
+  }
+
+  let i = 0;
+  function next(){
+    if(done) return;
+    if(i >= LINES.length){ setTimeout(endBoot, 900); return; }
+    const div = document.createElement('div');
+    div.className = 'boot-line';
+    div.innerHTML = LINES[i++];
+    log.appendChild(div);
+    requestAnimationFrame(function(){ div.classList.add('show'); });
+    setTimeout(next, 240);
+  }
+  setTimeout(next, 1100); // let the Bismillah land first
+
+  document.addEventListener('keydown', endBoot);
+  screen.addEventListener('click', endBoot);
 })();
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -22659,6 +22702,459 @@ function getSpoofRival(careerKey, country){
       }
     }
   };
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+//  LYFE WORLD — first-person 3D city (GTA-lite, Three.js)
+//
+//  Walk the neighborhood in first person. WASD + mouse-look on desktop,
+//  virtual joystick + drag-look on touch. Walk up to a building and
+//  press E (or tap the prompt) to enter — it opens the real game menu
+//  (masjid → faith practices, school → education, bank → banking...).
+//  Falls back to the 2D city map if WebGL/Three.js is unavailable.
+// ═══════════════════════════════════════════════════════════════════════
+(function(){
+  let THREE_READY = false, THREE_FAILED = false, world = null;
+
+  function loadThree(cb){
+    if(THREE_READY){ cb(true); return; }
+    if(THREE_FAILED){ cb(false); return; }
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/three@0.160.0/build/three.min.js';
+    s.onload  = function(){ THREE_READY = true; cb(true); };
+    s.onerror = function(){ THREE_FAILED = true; cb(false); };
+    document.head.appendChild(s);
+  }
+
+  // ── World container + HUD
+  const css = document.createElement('style');
+  css.textContent = `
+#lyfe-world{position:fixed;inset:0;z-index:6500;background:#060f0a;display:none;}
+#lyfe-world.open{display:block;}
+#lw-canvas{position:absolute;inset:0;width:100%;height:100%;}
+#lw-cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;
+  border-radius:50%;background:rgba(201,169,97,.9);box-shadow:0 0 8px rgba(201,169,97,.6);pointer-events:none;}
+#lw-prompt{position:absolute;left:50%;bottom:18%;transform:translateX(-50%);
+  font-family:var(--font-m,monospace);font-size:13px;color:#0a0e08;background:rgba(201,169,97,.95);
+  padding:10px 22px;border-radius:24px;display:none;cursor:pointer;letter-spacing:.06em;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;}
+#lw-prompt.show{display:block;}
+#lw-exit{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;
+  font-family:var(--font-m,monospace);font-size:11px;color:#c9a961;background:rgba(6,15,10,.8);
+  border:1px solid rgba(201,169,97,.4);padding:8px 16px;border-radius:20px;cursor:pointer;letter-spacing:.1em;}
+#lw-loc{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:14px;
+  font-family:Georgia,serif;font-size:13px;color:#e8dcc0;background:rgba(6,15,10,.7);
+  padding:8px 16px;border-radius:20px;border:1px solid rgba(201,169,97,.25);letter-spacing:.04em;}
+#lw-hint{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+  font-family:var(--font-m,monospace);font-size:10px;color:rgba(232,220,192,.55);letter-spacing:.12em;
+  text-transform:uppercase;pointer-events:none;text-align:center;}
+#lw-joy{position:absolute;left:24px;bottom:calc(34px + env(safe-area-inset-bottom,0px));
+  width:110px;height:110px;border-radius:50%;border:1.5px solid rgba(201,169,97,.35);
+  background:rgba(6,15,10,.35);display:none;touch-action:none;}
+#lw-joy-knob{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;
+  border-radius:50%;background:rgba(201,169,97,.55);}
+@media (pointer: coarse){ #lw-joy{display:block;} #lw-cross{display:none;} }
+`;
+  document.head.appendChild(css);
+
+  const wrap = document.createElement('div');
+  wrap.id = 'lyfe-world';
+  wrap.innerHTML = '<canvas id="lw-canvas"></canvas>'
+    + '<div id="lw-cross"></div>'
+    + '<div id="lw-loc">Your neighborhood</div>'
+    + '<button id="lw-exit">✕ Leave</button>'
+    + '<div id="lw-prompt"></div>'
+    + '<div id="lw-hint">WASD move · mouse look · E enter · Esc leave</div>'
+    + '<div id="lw-joy"><div id="lw-joy-knob"></div></div>';
+  document.body.appendChild(wrap);
+
+  // Building palette by type
+  const TYPE_COL = { home:0x7a5a3a, school:0x4a6a8a, medical:0x8a4a4a, civic:0x6a6a7a,
+                     shop:0x8a6a3a, entertainment:0x6a4a8a, neighbor:0x5a6a4a, masjid:0x3a7a5a };
+
+  function buildWorld(){
+    const T = window.THREE;
+    const canvas = document.getElementById('lw-canvas');
+    const renderer = new T.WebGLRenderer({canvas:canvas, antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const scene = new T.Scene();
+    scene.background = new T.Color(0x0e1f2e);
+    scene.fog = new T.Fog(0x0e1f2e, 60, 220);
+
+    const cam = new T.PerspectiveCamera(72, 1, 0.1, 400);
+    cam.position.set(0, 1.7, 10);
+
+    // Dusk lighting — matches the illuminated-manuscript palette
+    scene.add(new T.HemisphereLight(0x35506a, 0x141d14, 0.9));
+    const sun = new T.DirectionalLight(0xc9a961, 1.1);
+    sun.position.set(-40, 55, 25);
+    scene.add(sun);
+
+    // Ground + roads
+    const ground = new T.Mesh(new T.PlaneGeometry(500, 500),
+      new T.MeshLambertMaterial({color:0x16241a}));
+    ground.rotation.x = -Math.PI/2;
+    scene.add(ground);
+    [[0,0,400,7],[0,0,7,400],[0,-46,400,5],[0,46,400,5],[-46,0,5,400],[46,0,5,400]].forEach(r => {
+      const road = new T.Mesh(new T.PlaneGeometry(r[2], r[3]),
+        new T.MeshLambertMaterial({color:0x232a30}));
+      road.rotation.x = -Math.PI/2;
+      road.position.set(r[0], 0.02, r[1]);
+      scene.add(road);
+    });
+
+    // Sign sprite: emoji + name on canvas texture
+    function makeSign(icon, name){
+      const cv = document.createElement('canvas'); cv.width = 512; cv.height = 144;
+      const g = cv.getContext('2d');
+      g.fillStyle = 'rgba(6,15,10,0.82)'; g.fillRect(0,0,512,144);
+      g.strokeStyle = '#c9a961'; g.lineWidth = 5; g.strokeRect(4,4,504,136);
+      g.font = '62px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(icon, 70, 76);
+      g.fillStyle = '#e8dcc0'; g.font = 'bold 44px Georgia, serif';
+      g.fillText(name, 300, 76, 380);
+      const tex = new T.CanvasTexture(cv);
+      const sp = new T.Sprite(new T.SpriteMaterial({map:tex, transparent:true}));
+      sp.scale.set(11, 3.1, 1);
+      return sp;
+    }
+
+    // Buildings from CITY_LAYOUT (plus masjid + souq, added below)
+    const interactives = [], colliders = [];
+    const layout = (typeof CITY_LAYOUT !== 'undefined' ? CITY_LAYOUT.slice() : []);
+    if(!layout.some(b => b.id === 'masjid'))
+      layout.push({id:'masjid', name:'Masjid', icon:'🕌', x:50, y:88, type:'masjid', action:'openFaithPractice'});
+    if(!layout.some(b => b.id === 'souq'))
+      layout.push({id:'souq', name:'Souq Market', icon:'🛒', x:92, y:24, type:'shop', action:'openShops'});
+
+    layout.forEach(b => {
+      const wx = (b.x - 50) * 2.4, wz = (b.y - 50) * 2.4;
+      const h  = b.type === 'home' || b.type === 'neighbor' ? 5 : 8 + ((b.x * 7 + b.y * 13) % 9);
+      const wD = 10 + ((b.x * 3 + b.y) % 5);
+      const col = TYPE_COL[b.type] || 0x5a5a6a;
+      const box = new T.Mesh(new T.BoxGeometry(wD, h, wD),
+        new T.MeshLambertMaterial({color:col}));
+      box.position.set(wx, h/2, wz);
+      scene.add(box);
+      // Windows: emissive strip
+      const win = new T.Mesh(new T.BoxGeometry(wD + 0.1, h * 0.5, wD + 0.1),
+        new T.MeshLambertMaterial({color:0x1a1408, emissive:0xc9a961, emissiveIntensity:0.18, transparent:true, opacity:0.35}));
+      win.position.copy(box.position);
+      scene.add(win);
+      // Masjid dome + minaret
+      if(b.id === 'masjid'){
+        const dome = new T.Mesh(new T.SphereGeometry(wD*0.42, 18, 12, 0, Math.PI*2, 0, Math.PI/2),
+          new T.MeshLambertMaterial({color:0xc9a961}));
+        dome.position.set(wx, h, wz); scene.add(dome);
+        const min = new T.Mesh(new T.CylinderGeometry(0.8, 1, h*2.1, 10),
+          new T.MeshLambertMaterial({color:0xd8cdb0}));
+        min.position.set(wx + wD*0.62, h*1.05, wz + wD*0.62); scene.add(min);
+      }
+      const sign = makeSign(b.icon, b.name);
+      sign.position.set(wx, h + 2.6, wz);
+      scene.add(sign);
+      // Door glow marker
+      const glow = new T.Mesh(new T.CylinderGeometry(1.6, 1.6, 0.1, 16),
+        new T.MeshBasicMaterial({color:0xc9a961, transparent:true, opacity:0.35}));
+      glow.position.set(wx, 0.06, wz + wD/2 + 2);
+      scene.add(glow);
+      interactives.push({b:b, x:wx, z:wz + wD/2 + 2, glow:glow});
+      colliders.push({x:wx, z:wz, half:wD/2 + 0.8});
+    });
+
+    // Trees
+    for(let i = 0; i < 40; i++){
+      const tx = (Math.sin(i*127.3)*0.5+0.5) * 360 - 180, tz = (Math.sin(i*311.7)*0.5+0.5) * 360 - 180;
+      if(Math.abs(tx) < 8 || Math.abs(tz) < 8) continue;
+      const trunk = new T.Mesh(new T.CylinderGeometry(0.3,0.4,2.2,6), new T.MeshLambertMaterial({color:0x4a3520}));
+      trunk.position.set(tx,1.1,tz); scene.add(trunk);
+      const top = new T.Mesh(new T.ConeGeometry(2.2,4.5,8), new T.MeshLambertMaterial({color:0x254a2a}));
+      top.position.set(tx,4.2,tz); scene.add(top);
+    }
+
+    // Wandering NPCs
+    const npcs = [];
+    for(let i = 0; i < 8; i++){
+      const m = new T.Mesh(new T.CapsuleGeometry(0.45, 1.0, 4, 8),
+        new T.MeshLambertMaterial({color:[0x8a7a5a,0x5a7a8a,0x7a5a7a,0x5a8a5a][i%4]}));
+      m.position.set((i%4)*22 - 33, 0.95, Math.floor(i/4)*30 - 15);
+      scene.add(m);
+      npcs.push({m:m, a:Math.random()*Math.PI*2, t:0});
+    }
+
+    // Stars
+    const starGeo = new T.BufferGeometry();
+    const pos = new Float32Array(300*3);
+    for(let i=0;i<300;i++){ pos[i*3]=(Math.random()-0.5)*600; pos[i*3+1]=80+Math.random()*150; pos[i*3+2]=(Math.random()-0.5)*600; }
+    starGeo.setAttribute('position', new T.BufferAttribute(pos,3));
+    scene.add(new T.Points(starGeo, new T.PointsMaterial({color:0xe8dcc0, size:0.8, transparent:true, opacity:0.7})));
+
+    return {T, renderer, scene, cam, interactives, colliders, npcs,
+            yaw:0, pitch:0, keys:{}, joy:{x:0,y:0}, near:null, raf:0};
+  }
+
+  // ── Controls + loop
+  function startLoop(){
+    const w = world;
+    const prompt = document.getElementById('lw-prompt');
+    const loc = document.getElementById('lw-loc');
+    const clock = { last: performance.now() };
+
+    function resize(){
+      const el = document.getElementById('lw-canvas');
+      w.renderer.setSize(el.clientWidth, el.clientHeight, false);
+      w.cam.aspect = el.clientWidth / el.clientHeight;
+      w.cam.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function tick(now){
+      if(!wrap.classList.contains('open')) return;
+      w.raf = requestAnimationFrame(tick);
+      const dt = Math.min(0.05, (now - clock.last)/1000); clock.last = now;
+
+      // Move
+      const sp = (w.keys['shift'] ? 14 : 7) * dt;
+      let mx = 0, mz = 0;
+      if(w.keys['w'] || w.keys['arrowup'])    mz -= 1;
+      if(w.keys['s'] || w.keys['arrowdown'])  mz += 1;
+      if(w.keys['a'] || w.keys['arrowleft'])  mx -= 1;
+      if(w.keys['d'] || w.keys['arrowright']) mx += 1;
+      mx += w.joy.x; mz += w.joy.y;
+      const len = Math.hypot(mx, mz) || 1;
+      const sin = Math.sin(w.yaw), cos = Math.cos(w.yaw);
+      let nx = w.cam.position.x + (mx*cos - mz*sin) * sp / len * (len>0.01?1:0);
+      let nz = w.cam.position.z + (mx*sin + mz*cos) * sp / len * (len>0.01?1:0);
+      // Bounds + building collision
+      nx = Math.max(-190, Math.min(190, nx));
+      nz = Math.max(-190, Math.min(190, nz));
+      for(const c of w.colliders){
+        const dx = nx - c.x, dz = nz - c.z;
+        if(Math.abs(dx) < c.half && Math.abs(dz) < c.half){
+          if(Math.abs(dx) > Math.abs(dz)) nx = c.x + Math.sign(dx) * c.half;
+          else nz = c.z + Math.sign(dz) * c.half;
+        }
+      }
+      w.cam.position.x = nx; w.cam.position.z = nz;
+      w.cam.rotation.order = 'YXZ';
+      w.cam.rotation.y = w.yaw;
+      w.cam.rotation.x = w.pitch;
+
+      // NPC wander
+      for(const n of w.npcs){
+        n.t -= dt;
+        if(n.t <= 0){ n.a = Math.random()*Math.PI*2; n.t = 2 + Math.random()*4; }
+        n.m.position.x += Math.cos(n.a) * dt * 1.6;
+        n.m.position.z += Math.sin(n.a) * dt * 1.6;
+        n.m.position.x = Math.max(-100, Math.min(100, n.m.position.x));
+        n.m.position.z = Math.max(-100, Math.min(100, n.m.position.z));
+        n.m.rotation.y = -n.a + Math.PI/2;
+      }
+
+      // Proximity → prompt
+      w.near = null;
+      let best = 36;
+      for(const it of w.interactives){
+        const d2 = (nx-it.x)*(nx-it.x) + (nz-it.z)*(nz-it.z);
+        it.glow.material.opacity = 0.25 + 0.18 * Math.sin(now/300);
+        if(d2 < best){ best = d2; w.near = it; }
+      }
+      if(w.near){
+        prompt.textContent = (('ontouchstart' in window) ? 'Tap here to enter ' : 'Press E — enter ') + w.near.b.name;
+        prompt.classList.add('show');
+        loc.textContent = w.near.b.icon + ' ' + w.near.b.name;
+      } else {
+        prompt.classList.remove('show');
+        const c = LIFE && LIFE.char;
+        loc.textContent = c ? (c.city + ' · Age ' + c.age) : 'Your neighborhood';
+      }
+
+      w.renderer.render(w.scene, w.cam);
+    }
+    w.raf = requestAnimationFrame(tick);
+  }
+
+  function enterBuilding(){
+    const w = world;
+    if(!w || !w.near) return;
+    const action = w.near.b.action;
+    closeWorld();
+    if(action && typeof window[action] === 'function'){
+      try { window[action](); } catch(e){ toast('Closed for the day.'); }
+    } else if(typeof toast === 'function'){
+      toast(w.near.b.name + ' is closed.');
+    }
+  }
+
+  // ── Input wiring
+  document.addEventListener('keydown', function(e){
+    if(!wrap.classList.contains('open') || !world) return;
+    const k = e.key.toLowerCase();
+    world.keys[k] = true;
+    if(k === 'e') enterBuilding();
+    if(k === 'escape') closeWorld();
+  });
+  document.addEventListener('keyup', function(e){
+    if(world) world.keys[e.key.toLowerCase()] = false;
+  });
+  wrap.addEventListener('click', function(e){
+    if(e.target.id === 'lw-exit'){ closeWorld(); return; }
+    if(e.target.id === 'lw-prompt'){ enterBuilding(); return; }
+    if(e.target.id === 'lw-canvas' && !('ontouchstart' in window)){
+      e.target.requestPointerLock && e.target.requestPointerLock();
+    }
+  });
+  document.addEventListener('mousemove', function(e){
+    if(!world || !wrap.classList.contains('open')) return;
+    if(document.pointerLockElement){
+      world.yaw   -= e.movementX * 0.0024;
+      world.pitch -= e.movementY * 0.0022;
+      world.pitch = Math.max(-1.2, Math.min(1.2, world.pitch));
+    }
+  });
+
+  // Touch: joystick (left) + look-drag (right half)
+  (function(){
+    const joy = document.getElementById('lw-joy');
+    const knob = document.getElementById('lw-joy-knob');
+    let joyId = null, lookId = null, lx = 0, ly = 0;
+    wrap.addEventListener('touchstart', function(e){
+      for(const t of e.changedTouches){
+        if(joyId === null && t.clientX < window.innerWidth * 0.45 && t.clientY > window.innerHeight * 0.5){
+          joyId = t.identifier;
+        } else if(lookId === null){
+          lookId = t.identifier; lx = t.clientX; ly = t.clientY;
+        }
+      }
+    }, {passive:true});
+    wrap.addEventListener('touchmove', function(e){
+      if(!world) return;
+      for(const t of e.changedTouches){
+        if(t.identifier === joyId){
+          const r = joy.getBoundingClientRect();
+          const dx = t.clientX - (r.left + r.width/2), dy = t.clientY - (r.top + r.height/2);
+          const m = Math.min(1, Math.hypot(dx,dy)/45);
+          const a = Math.atan2(dy,dx);
+          world.joy.x = Math.cos(a)*m; world.joy.y = Math.sin(a)*m;
+          knob.style.transform = 'translate(' + Math.cos(a)*m*32 + 'px,' + Math.sin(a)*m*32 + 'px)';
+        } else if(t.identifier === lookId){
+          world.yaw   -= (t.clientX - lx) * 0.005;
+          world.pitch -= (t.clientY - ly) * 0.004;
+          world.pitch = Math.max(-1.2, Math.min(1.2, world.pitch));
+          lx = t.clientX; ly = t.clientY;
+        }
+      }
+    }, {passive:true});
+    wrap.addEventListener('touchend', function(e){
+      for(const t of e.changedTouches){
+        if(t.identifier === joyId){ joyId = null; if(world){ world.joy.x = 0; world.joy.y = 0; } knob.style.transform = ''; }
+        if(t.identifier === lookId) lookId = null;
+      }
+    }, {passive:true});
+  })();
+
+  function closeWorld(){
+    wrap.classList.remove('open');
+    if(world && world.raf) cancelAnimationFrame(world.raf);
+    if(document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
+  }
+
+  window.openLyfeWorld = function(){
+    const c = LIFE && LIFE.char;
+    if(c && c.age < 5){ toast('Too young to wander the city alone.'); return; }
+    loadThree(function(ok){
+      if(!ok || !window.WebGLRenderingContext){
+        toast('3D unavailable — opening the map instead.');
+        if(typeof openCityMap === 'function') openCityMap();
+        return;
+      }
+      wrap.classList.add('open');
+      if(!world){
+        try { world = buildWorld(); }
+        catch(e){
+          wrap.classList.remove('open');
+          toast('3D failed to start — opening the map instead.');
+          if(typeof openCityMap === 'function') openCityMap();
+          return;
+        }
+      }
+      startLoop();
+    });
+  };
+
+  // Topbar button
+  const tb = document.getElementById('topbar');
+  if(tb){
+    const btn = document.createElement('button');
+    btn.className = 'tb-btn';
+    btn.textContent = '🌆 World';
+    btn.onclick = function(){ openLyfeWorld(); };
+    const newLifeBtn = tb.querySelector('.tb-btn.warn');
+    tb.insertBefore(btn, newLifeBtn || null);
+  }
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+//  CHARACTER APPEARANCE — pick skin tone at creation; avatar reflects it
+// ═══════════════════════════════════════════════════════════════════════
+(function(){
+  const TONES = ['', '\u{1F3FB}', '\u{1F3FC}', '\u{1F3FD}', '\u{1F3FE}', '\u{1F3FF}'];
+  let chosen = 0;
+  try { chosen = parseInt(localStorage.getItem('lyfe_skin') || '0', 10) || 0; } catch(e){}
+
+  // Inject swatch row into the intro form
+  const form = document.querySelector('.intro-form');
+  if(form){
+    const row = document.createElement('div');
+    row.className = 'intro-field';
+    row.innerHTML = '<div class="intro-label">Appearance</div>'
+      + '<div id="skin-row" style="display:flex;gap:8px;justify-content:center;">'
+      + TONES.map(function(t, i){
+          return '<button type="button" data-i="' + i + '" style="width:38px;height:38px;border-radius:50%;'
+            + 'border:2px solid ' + (i === chosen ? '#c9a961' : 'rgba(201,169,97,.2)') + ';'
+            + 'background:rgba(6,12,10,.85);font-size:20px;cursor:pointer;">'
+            + '\u{1F9D1}' + t + '</button>';
+        }).join('')
+      + '</div>';
+    const startBtn = form.querySelector('.intro-start');
+    form.insertBefore(row, startBtn || null);
+    row.addEventListener('click', function(e){
+      const b = e.target.closest('button[data-i]');
+      if(!b) return;
+      chosen = parseInt(b.dataset.i, 10);
+      try { localStorage.setItem('lyfe_skin', String(chosen)); } catch(err){}
+      row.querySelectorAll('button[data-i]').forEach(function(x){
+        x.style.borderColor = x === b ? '#c9a961' : 'rgba(201,169,97,.2)';
+      });
+    });
+  }
+
+  // Persist onto the character at creation
+  if(typeof startNewLife === 'function'){
+    const _orig = startNewLife;
+    startNewLife = function(){
+      _orig.apply(this, arguments);
+      if(LIFE && LIFE.char) LIFE.char.skinTone = chosen;
+      if(typeof renderAll === 'function') renderAll();
+      if(typeof saveLife === 'function') saveLife();
+    };
+  }
+
+  // Apply tone modifier to the rendered avatar emoji
+  if(typeof renderCharCard === 'function'){
+    const _orig = renderCharCard;
+    renderCharCard = function(){
+      _orig.apply(this, arguments);
+      const c = LIFE && LIFE.char;
+      const el = document.getElementById('char-avatar');
+      if(!c || !el) return;
+      const tone = TONES[c.skinTone || 0];
+      if(tone && el.textContent && el.textContent.indexOf(tone) < 0){
+        el.textContent = el.textContent + tone;
+      }
+    };
+  }
 })();
 
 </script>

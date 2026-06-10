@@ -2,6 +2,7 @@
 // Adds hands-free conversation mode: AXON re-opens the mic after it finishes speaking.
 import { S } from './store.js';
 import { setState } from './dom.js';
+import { sListen } from './sound.js';
 
 let voices = [];
 function loadVoices(){ voices = (('speechSynthesis' in window) ? speechSynthesis.getVoices() : []) || []; }
@@ -112,7 +113,7 @@ export function initSTT(onFinal, micBtn, onNote, convoBtn){
     return false;
   }
   rec = new SR(); rec.lang = 'en-US'; rec.interimResults = true; rec.continuous = false;
-  rec.onstart = ()=>{ listening = true; micBtn.classList.add('live'); setState('listening'); };
+  rec.onstart = ()=>{ listening = true; micBtn.classList.add('live'); setState('listening'); sListen(); };
   rec.onend = ()=>{ listening = false; micBtn.classList.remove('live'); if(!document.body.classList.contains('thinking') && !document.body.classList.contains('speaking')) setState(null); };
   rec.onerror = e=>{
     listening = false; micBtn.classList.remove('live'); setState(null);

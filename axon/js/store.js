@@ -8,7 +8,7 @@ export const uid = () => Date.now().toString(36) + Math.random().toString(36).sl
 export const now = () => new Date().toISOString();
 
 const SKEY = 'axon_settings';
-const DEFS = { engine:'off', apiKey:'', model:'claude-sonnet-4-6', localModel:'Llama-3.2-3B-Instruct-q4f16_1-MLC', speak:true, voiceURI:'', profile:'', activeSpace:null };
+const DEFS = { engine:'off', apiKey:'', model:'claude-sonnet-4-6', localModel:'Llama-3.2-3B-Instruct-q4f16_1-MLC', speak:true, sound:true, voiceURI:'', profile:'', activeSpace:null };
 export let S = loadS();
 function loadS(){ try{ return { ...DEFS, ...JSON.parse(localStorage.getItem(SKEY)||'{}') }; }catch(e){ return { ...DEFS }; } }
 export function saveS(){ localStorage.setItem(SKEY, JSON.stringify(S)); }

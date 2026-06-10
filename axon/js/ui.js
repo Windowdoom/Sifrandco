@@ -121,6 +121,7 @@ function dSettings(){
   <div class="dsec"><div class="ttl">Voice</div>
     <div class="toggle-row"><span class="tlbl">Speak replies<small>${'speechSynthesis' in window?'Speaks as the text appears':'Not supported here'}</small></span><label class="switch"><input type="checkbox" id="set_speak" ${S.speak?'checked':''}><span class="sl"></span></label></div>
     <div class="field"><label>Voice</label><select id="set_voice"><option value="">Auto (most natural available)</option>${listVoices().map(v=>`<option value="${esc(v.voiceURI)}" ${S.voiceURI===v.voiceURI?'selected':''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select><div class="fhint">For the smoothest sound on a Mac, install an enhanced voice once in System Settings, Accessibility, Spoken Content, Manage Voices (look for Siri or Enhanced voices), then reopen this list.</div></div>
+    <div class="toggle-row"><span class="tlbl">Interface sounds<small>Subtle synthesized cues for send, reply, and listen</small></span><label class="switch"><input type="checkbox" id="set_sound" ${S.sound!==false?'checked':''}><span class="sl"></span></label></div>
     <div class="toggle-row"><span class="tlbl">Voice input<small>${SR?'Tap the mic to talk':'Needs Chrome, Edge, or Safari'}</small></span><span style="font-family:var(--mono);font-size:11px;color:${SR?'var(--green)':'var(--dim)'}">${SR?'ready':'off'}</span></div></div>
   <button class="savebtn" onclick="AX.saveSettings()">Save settings</button>
   <div class="dsec" style="margin-top:22px"><div class="ttl">What AXON knows about you</div>
@@ -139,6 +140,7 @@ export function saveSettings(){
   S.model=document.getElementById('set_model').value;
   const lm=document.getElementById('set_local').value; if(lm!==S.localModel){ S.localModel=lm; resetLocalEngine(); }
   S.speak=document.getElementById('set_speak').checked;
+  S.sound=document.getElementById('set_sound').checked;
   S.voiceURI=document.getElementById('set_voice').value;
   saveS(); updateBadges(); renderDrawer('settings');
   reply(S.engine==='api'?(S.apiKey?'Saved. Claude is online.':'Saved. Add your key to use Claude.'):S.engine==='local'?'Saved. The local brain loads on your next question.':'Saved. Reasoning is off, notes and recall still work.');

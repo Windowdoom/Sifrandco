@@ -7,9 +7,11 @@ import * as ai from './ai.js';
 import * as ui from './ui.js';
 import { probeBridge, bridgeOnline, bridgeInfo, setConfirmer } from './bridge.js';
 import { ingestKnowledgeFolder } from './knowledge.js';
+import { unlockAudio, sBoot, sSend, sReceive, sListen, sStop, sConfirm } from './sound.js';
 
-function reply(text){ const h = pushAxon(text); h.finalize(text); speak(text); }
-function greet(){ const h=new Date().getHours(); return h<5?'Still awake':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Late night'; }
+function reply(text){ const h = pushAxon(text); h.finalize(text); speak(text); sReceive(); }
+function greet(){ const h=new Date().getHours(); return h<5?'Burning the midnight oil':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Late night'; }
+const pick = a => a[Math.floor(Math.random()*a.length)];
 
 // expose handlers used by inline onclick in the drawers
 window.AX = {
@@ -94,7 +96,7 @@ function briefing(){
   return s;
 }
 
-function submit(){ const i=document.getElementById('cmd'); const text=i.value.trim(); if(!text) return; i.value=''; stopSpeak(); pushUser(text); route(text); }
+function submit(){ const i=document.getElementById('cmd'); const text=i.value.trim(); if(!text) return; i.value=''; unlockAudio(); sSend(); stopSpeak(); pushUser(text); route(text); }
 
 // confirm card for any action that touches the machine
 const ACTION_TITLE = { write:'Write a file', exec:'Run a command', run_code:'Execute code', open:'Open on your machine' };
@@ -118,6 +120,7 @@ function confirmAction(name, args){
         <button class="gbtn go" data-yes>Approve</button>
       </div></div>`;
     document.body.appendChild(wrap);
+    sConfirm();
     const done = v=>{ wrap.remove(); resolve(v); };
     wrap.querySelector('[data-yes]').onclick = ()=>done(true);
     wrap.querySelector('[data-no]').onclick = ()=>done(false);
@@ -188,12 +191,13 @@ async function boot(){
 
   setTimeout(()=>{
     document.getElementById('veil').classList.add('gone');
+    sBoot();
     if(ai.history.length){
-      const g = `${greet()}, Danial. Picking up where we left off in ${activeSpace()?.name||'General'}. ${proactiveLine()}`;
+      const g = `${greet()}, Danial. ${pick(['Right where we left off','Back to it','Resuming the thread'])} in ${activeSpace()?.name||'General'}. ${proactiveLine()}`;
       const h=pushAxon(g); h.finalize(g); speak(g);
     } else {
-      let g = `${greet()}, Danial. AXON online. `;
-      g += state.memories.length ? `I am holding ${state.memories.length} things about you and ${state.entries.length} notes. ` : `Fresh brain. Teach me with 'remember that' and I will build a picture. `;
+      let g = `${greet()}, Danial. ${pick(['AXON online and at your service.','AXON online. Systems are yours.','AXON online — and already showing off.'])} `;
+      g += state.memories.length ? `${pick(['I am holding','I have kept hold of','In my keeping:'])} ${state.memories.length} things about you and ${state.entries.length} notes. ` : `Fresh slate. Teach me with 'remember that' and I will start building a picture of you. `;
       g += proactiveLine();
       const h=pushAxon(g); h.finalize(g); speak(g);
     }
@@ -211,10 +215,10 @@ async function boot(){
 function proactiveLine(idle){
   const sp = activeSpace();
   const inSpace = state.entries.filter(e=>e.spaceId===sp?.id).length;
-  if(S.engine==='off') return idle?'' : "Pick a brain in Settings, or just ask me math, conversions, and dates anytime.";
-  if(!state.entries.length) return idle?'' : "Feed me some material in a space and I will start grounding my answers in your own sources.";
-  if(idle) return `Still here when you need me. ${inSpace} notes in ${sp.name} if you want to review or be quizzed.`;
-  return "What are we working on?";
+  if(S.engine==='off') return idle?'' : pick(["Pick a brain in Settings when you want me thinking. Until then, math, conversions, and dates are on the house.","No brain on yet, but I am hardly idle. Math, units, dates, and recall whenever you like."]);
+  if(!state.entries.length) return idle?'' : pick(["Feed me some material and I will start grounding answers in your own sources.","Drop a textbook in the knowledge folder and watch me get clever about your subjects."]);
+  if(idle) return pick([`Still here, sir. ${inSpace} notes in ${sp.name} whenever you want to review or be quizzed.`, `Take your time. I will be right here, looking deceptively calm.`]);
+  return pick(["What are we working on?","Where shall we begin?","Your move. I am all ears."]);
 }
 
 window.addEventListener('load', ()=>setTimeout(boot, 200));

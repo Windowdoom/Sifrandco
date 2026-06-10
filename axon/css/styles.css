@@ -8,6 +8,12 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{background:radial-gradient(ellipse at 50% 32%,#0A1B2C 0%,var(--bg) 72%);color:var(--text);font-family:var(--body);overflow:hidden;-webkit-font-smoothing:antialiased}
+body:before{content:"";position:fixed;inset:-20%;z-index:0;pointer-events:none;background:
+  radial-gradient(40% 50% at 20% 30%,rgba(94,230,216,.07),transparent 60%),
+  radial-gradient(45% 55% at 82% 70%,rgba(107,168,255,.08),transparent 62%);
+  filter:blur(10px);animation:drift 22s ease-in-out infinite alternate}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(3%,-3%) scale(1.08)}}
+@media(prefers-reduced-motion:reduce){body:before{animation:none}}
 #field{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.9}
 ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}::-webkit-scrollbar-track{background:transparent}
 button{font-family:var(--body);cursor:pointer;color:inherit}
@@ -70,7 +76,9 @@ body.speaking .core-disc{opacity:.2;animation:pulseFast .42s ease-in-out infinit
 .line{font-size:14.5px;line-height:1.65;animation:fade .3s ease}
 .line.user{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:right}
 .line.user:before{content:"› ";color:var(--blue)}
-.line.axon{background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:13px 16px;box-shadow:0 4px 24px rgba(0,0,0,.25)}
+.line.axon{position:relative;background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:13px 16px 13px 18px;box-shadow:0 4px 24px rgba(0,0,0,.25);animation:rise .34s cubic-bezier(.2,.8,.2,1)}
+.line.axon:before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:2px;border-radius:2px;background:linear-gradient(var(--sig),var(--blue));opacity:.7}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
 .line.axon .who{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--sig);text-transform:uppercase;display:block;margin-bottom:5px}
 .line.axon .body{white-space:normal}
 .line.axon .body p{margin:0 0 8px}

@@ -24,6 +24,18 @@ like "find my tax notes and summarize them", "make a folder on my Desktop and
 write today's plan into it", or "run this script and tell me what broke", and it
 actually does it. Header shows "machine linked" when the bridge is connected.
 
+SEARCH THE WEB
+With the bridge running and you online, AXON can search the live web and read
+pages (no API key needed). Ask "what's the latest on X" or "look up Y and
+summarize it" and it searches, opens the best results, and answers from them.
+
+GIVE IT DEEP KNOWLEDGE (the knowledge folder)
+Drop .txt / .md / .csv files into the "knowledge" folder next to this README.
+On the next launch AXON absorbs every new or changed file into its Knowledge
+bank and grounds its answers in them. This is how you raise it to intermediate
+or advanced knowledge on your subjects. For PDFs, export to text first, or use
+"Feed me material" inside any space (that path reads PDFs directly).
+
 SAFETY
   - The bridge binds to 127.0.0.1 only and is never on the network.
   - A fresh random token each launch; only the AXON page can call the tools.

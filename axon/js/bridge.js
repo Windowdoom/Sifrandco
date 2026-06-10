@@ -33,7 +33,7 @@ async function call(name, args){
 let confirmer = async ()=>false;
 export function setConfirmer(fn){ confirmer = fn; }
 
-const READ_TOOLS = new Set(['roots','add_root','list','read','search']);
+const READ_TOOLS = new Set(['roots','add_root','list','read','search','web_search','web_fetch']);
 
 // unified entry the agent loop uses. Read tools run free; the rest ask first.
 export async function runTool(name, args){
@@ -59,4 +59,8 @@ export const TOOL_SCHEMAS = [
     input_schema:{ type:'object', properties:{ lang:{type:'string', enum:['python','js','bash']}, code:{type:'string'} }, required:['lang','code'] } },
   { name:'open', description:'Open a file, folder, app, or URL with the OS default. Requires confirmation.',
     input_schema:{ type:'object', properties:{ target:{type:'string'} }, required:['target'] } },
+  { name:'web_search', description:'Search the web for current information. Returns titles, URLs, and snippets.',
+    input_schema:{ type:'object', properties:{ query:{type:'string'} }, required:['query'] } },
+  { name:'web_fetch', description:'Fetch a web page and return its readable text. Use after web_search to read a result in full.',
+    input_schema:{ type:'object', properties:{ url:{type:'string'} }, required:['url'] } },
 ];

@@ -15,13 +15,13 @@ Security model:
     the UI only sends after you approve the action in a confirm card.
   - Every mutating action is appended to axon-bridge.log next to this file.
 """
-import http.server, socketserver, json, os, sys, subprocess, secrets, urllib.parse, threading, time, shlex, platform, pathlib
+import http.server, socketserver, json, os, sys, subprocess, secrets, urllib.parse, threading, time, shlex, platform, pathlib, urllib.request, re, html, gzip, io
 
 PORT = int(os.environ.get("AXON_PORT", "8723"))
 ROOT = os.path.dirname(os.path.abspath(__file__))
 HOME = os.path.expanduser("~")
 TOKEN = secrets.token_urlsafe(24)
-APPROVED_ROOTS = [HOME]          # reads/writes confined to these trees
+APPROVED_ROOTS = [HOME, ROOT]    # home plus the app's own folder (knowledge bank)
 LOG = os.path.join(ROOT, "axon-bridge.log")
 IS_MAC = platform.system() == "Darwin"
 IS_WIN = platform.system() == "Windows"
@@ -196,6 +196,84 @@ def t_run_code(a):
     except Exception as e:
         return err(str(e))
 
+def _http_get(url, timeout=15):
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        raw = r.read()
+        if r.headers.get("Content-Encoding") == "gzip":
+            raw = gzip.decompress(raw)
+        charset = r.headers.get_content_charset() or "utf-8"
+        return raw.decode(charset, "replace")
+
+def _strip_html(h):
+    h = re.sub(r"(?is)<(script|style|noscript|svg|head)[^>]*>.*?</\1>", " ", h)
+    h = re.sub(r"(?is)<br\s*/?>", "\n", h)
+    h = re.sub(r"(?is)</(p|div|li|h[1-6]|tr)>", "\n", h)
+    h = re.sub(r"(?is)<[^>]+>", " ", h)
+    h = html.unescape(h)
+    h = re.sub(r"[ \t]+", " ", h)
+    h = re.sub(r"\n\s*\n\s*\n+", "\n\n", h)
+    return h.strip()
+
+def _ddg_unwrap(href):
+    if "uddg=" in href:
+        try:
+            return urllib.parse.unquote(href.split("uddg=")[1].split("&")[0])
+        except Exception:
+            pass
+    return href
+
+def t_web_search(a):
+    """Web search with no API key. Tries DuckDuckGo HTML, then the lite endpoint."""
+    q = (a.get("query") or "").strip()
+    if not q:
+        return err("Empty query.")
+    enc = urllib.parse.quote(q)
+    last = ""
+    # endpoint 1: full HTML results
+    for url, pat in [
+        ("https://html.duckduckgo.com/html/?q=" + enc,
+         r'<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>'),
+        ("https://lite.duckduckgo.com/lite/?q=" + enc,
+         r'<a[^>]*class="result-link"[^>]*href="([^"]+)"[^>]*>(.*?)</a>'),
+    ]:
+        try:
+            body = _http_get(url)
+        except Exception as e:
+            last = str(e); continue
+        results = []
+        for m in re.finditer(pat, body, re.I | re.S):
+            href = _ddg_unwrap(m.group(1)); title = _strip_html(m.group(2))
+            if not (title and href.startswith("http")):
+                continue
+            seg = body[m.end():m.end() + 1400]
+            sm = re.search(r'(?:result__snippet|result-snippet)[^>]*>(.*?)</', seg, re.I | re.S)
+            results.append({"title": title, "url": href,
+                            "snippet": (_strip_html(sm.group(1)) if sm else "")[:300]})
+            if len(results) >= 8:
+                break
+        if results:
+            log("WEB_SEARCH", q)
+            return 200, {"query": q, "results": results}
+    return err("Search returned nothing (no internet, or the search site blocked the request). " + last)
+
+def t_web_fetch(a):
+    """Fetch a URL and return readable text."""
+    url = (a.get("url") or "").strip()
+    if not url.startswith("http"):
+        return err("Need an http(s) URL.")
+    try:
+        page = _http_get(url)
+    except Exception as e:
+        return err("Fetch failed: " + str(e))
+    tm = re.search(r"(?is)<title[^>]*>(.*?)</title>", page)
+    title = _strip_html(tm.group(1)) if tm else ""
+    text = _strip_html(page)
+    log("WEB_FETCH", url)
+    return 200, {"url": url, "title": title, "text": text[:12000]}
+
 def t_open(a):
     if not a.get("confirmed"):
         return err("Open needs confirmation.", 412)
@@ -217,7 +295,7 @@ def t_open(a):
 TOOLS = {
     "roots": t_roots, "add_root": t_add_root, "list": t_list, "read": t_read,
     "search": t_search, "write": t_write, "exec": t_exec, "run_code": t_run_code,
-    "open": t_open,
+    "open": t_open, "web_search": t_web_search, "web_fetch": t_web_fetch,
 }
 
 # ---- http server ----------------------------------------------------------

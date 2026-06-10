@@ -19,7 +19,7 @@ export function isGenerating(){ return !!aborter; }
 function bridgeBlurb(){
   if(!bridgeOnline()) return '';
   const i = bridgeInfo();
-  return `\n\nMACHINE ACCESS: You are connected to Danial's computer (${i.os||'local'}, home ${i.home||'~'}) through a local bridge. You have tools to list and read files, search his disk, write files, run shell commands, execute code you write, and open files or apps. Use them to actually do things, not just describe them. Reading and searching are free; writes, commands, code execution, and opening things ask Danial for one-tap confirmation, so propose the precise action. Prefer searching and reading his real files over guessing. Keep destructive operations minimal and explain them before proposing. When a task is done, report what you actually did and what came back.`;
+  return `\n\nMACHINE ACCESS: You are connected to Danial's computer (${i.os||'local'}, home ${i.home||'~'}) through a local bridge. You have tools to list and read files, search his disk, write files, run shell commands, execute code you write, open files or apps, and search and read the live web (web_search then web_fetch). When a question needs current facts, news, prices, or anything past your knowledge, search the web rather than guessing or saying you cannot. Use them to actually do things, not just describe them. Reading and searching are free; writes, commands, code execution, and opening things ask Danial for one-tap confirmation, so propose the precise action. Prefer searching and reading his real files over guessing. Keep destructive operations minimal and explain them before proposing. When a task is done, report what you actually did and what came back.`;
 }
 
 export function sysPrompt(){
@@ -163,7 +163,7 @@ async function askAPI(question){
 }
 
 // ---- agentic Claude: tool-use loop over the machine bridge ----
-const TOOL_LABEL = { list:'listing files', read:'reading', search:'searching the disk', write:'writing a file', exec:'running a command', run_code:'executing code', open:'opening' };
+const TOOL_LABEL = { list:'listing files', read:'reading', search:'searching the disk', write:'writing a file', exec:'running a command', run_code:'executing code', open:'opening', web_search:'searching the web', web_fetch:'reading a page' };
 
 async function askAPIAgent(question){
   const ctx = buildContext(question);
@@ -209,7 +209,7 @@ async function askAPIAgent(question){
 
 // ---- agentic local model: JSON-action protocol the small model can follow ----
 function localAgentSys(){
-  return sysPrompt() + `\n\nTO USE A TOOL, reply with ONLY a fenced block and nothing else:\n\`\`\`action\n{"tool":"search","args":{"query":"taxes","path":"~"}}\n\`\`\`\nTools: list{path}, read{path}, search{query,path}, write{path,content}, exec{cmd}, run_code{lang,code}, open{target}. After you see the RESULT, either call another tool the same way or give your final plain answer with no action block. Use at most a few tools.`;
+  return sysPrompt() + `\n\nTO USE A TOOL, reply with ONLY a fenced block and nothing else:\n\`\`\`action\n{"tool":"search","args":{"query":"taxes","path":"~"}}\n\`\`\`\nTools: list{path}, read{path}, search{query,path}, write{path,content}, exec{cmd}, run_code{lang,code}, open{target}, web_search{query}, web_fetch{url}. After you see the RESULT, either call another tool the same way or give your final plain answer with no action block. Use at most a few tools.`;
 }
 async function askLocalAgent(question){
   const ctx = buildContext(question);

@@ -6,6 +6,7 @@ import { speak, stopSpeak, initSTT, convoMode } from './voice.js';
 import * as ai from './ai.js';
 import * as ui from './ui.js';
 import { probeBridge, bridgeOnline, bridgeInfo, setConfirmer } from './bridge.js';
+import { ingestKnowledgeFolder } from './knowledge.js';
 
 function reply(text){ const h = pushAxon(text); h.finalize(text); speak(text); }
 function greet(){ const h=new Date().getHours(); return h<5?'Still awake':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Late night'; }
@@ -164,6 +165,8 @@ async function boot(){
   startParticles();
   await probeBridge(); updateBridgeChip();
   setInterval(async ()=>{ await probeBridge(); updateBridgeChip(); }, 15000);
+  if(bridgeOnline()){ ingestKnowledgeFolder(m=>{ const bt=document.getElementById('bootText'); if(bt) bt.textContent=m; })
+    .then(msg=>{ if(msg){ ui.updateBadges(); pushSys(msg); } }).catch(()=>{}); }
   document.getElementById('send').addEventListener('click', submit);
   document.getElementById('cmd').addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
   document.getElementById('spacePill').addEventListener('click', ()=>ui.openDrawer('spaces'));

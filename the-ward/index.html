@@ -6308,5 +6308,181 @@ if(document.readyState!=='loading') buildSceneUI();
 })();
 
 </script>
+<style id="ui-polish">
+/* ════ UI POLISH LAYER — stability, depth, color ════ */
+
+/* 1. Kill layout shift: reserve the accent border on every card */
+.pt-card{border-left:3px solid transparent !important;transition:background .18s,border-color .18s,box-shadow .18s;}
+.pt-card.active{border-left-color:var(--blue3) !important;background:linear-gradient(90deg,rgba(66,165,245,.10),var(--s3) 55%) !important;box-shadow:0 0 0 1px rgba(66,165,245,.35),0 6px 18px rgba(0,0,0,.35);}
+.pt-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.35);}
+.pt-card.critical{animation:none;border-color:rgba(239,83,80,.55) !important;box-shadow:0 0 14px rgba(198,40,40,.22);}
+.pt-card.critical::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;animation:pulseRed 2.2s infinite;}
+
+/* 2. Buttons: no whole-layout nudges, consistent feedback */
+button{transition:background .15s,border-color .15s,color .15s,box-shadow .15s,transform .1s,opacity .15s !important;}
+button:active{transform:scale(.985);}
+.action-btn{animation:none !important;border-left:3px solid transparent;}
+.action-btn:hover{transform:none !important;border-left-color:var(--teal3);background:linear-gradient(90deg,rgba(29,214,196,.07),var(--s3)) !important;box-shadow:0 4px 16px rgba(0,0,0,.35);}
+.action-btn:active{transform:scale(.99) !important;}
+.rpg-scn-ch{border-left:3px solid transparent;}
+.rpg-scn-ch:hover{transform:none !important;border-left-color:var(--teal3);box-shadow:0 4px 16px rgba(0,0,0,.4);}
+button:focus-visible,.pt-card:focus-visible{outline:2px solid var(--teal3);outline-offset:2px;}
+
+/* 3. Scrollbars you can actually grab */
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-track{background:rgba(0,0,0,.25);}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--b2),#264a72);border-radius:5px;border:2px solid transparent;background-clip:padding-box;}
+::-webkit-scrollbar-thumb:hover{background:#2e5a8a;background-clip:padding-box;border:2px solid transparent;}
+
+/* 4. Overlays & outcome cards: depth instead of flatness */
+.ov-box{border:1px solid var(--b2) !important;box-shadow:0 30px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.03) inset !important;background:linear-gradient(180deg,#0c1c30,#081523) !important;}
+.ov-pearl{background:linear-gradient(135deg,rgba(245,166,35,.08),rgba(245,166,35,.02)) !important;border:1px solid rgba(245,166,35,.3) !important;border-radius:10px;}
+.btn-ack{background:linear-gradient(135deg,var(--teal2),#0a7a6c) !important;box-shadow:0 4px 18px rgba(0,137,123,.35);}
+.btn-ack:hover{box-shadow:0 6px 24px rgba(29,214,196,.45);filter:brightness(1.12);}
+
+/* 5. Panels & typography rhythm */
+.ch-text{font-size:15.5px;color:#dbe8f6;}
+.ch-labs{box-shadow:inset 0 0 30px rgba(0,0,0,.4);border-color:rgba(245,166,35,.18) !important;}
+.act-title{line-height:1.45;}
+kbd,.kbd{box-shadow:0 2px 0 rgba(0,0,0,.45);}
+
+/* 6. HPI quick-facts strip */
+#hpi-facts{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px;}
+.hpi-chip{font-family:var(--font-m);font-size:10px;letter-spacing:.06em;padding:6px 11px;border-radius:20px;border:1px solid var(--b2);background:rgba(255,255,255,.025);color:var(--t2);display:flex;align-items:center;gap:6px;}
+.hpi-chip b{color:var(--t1);font-weight:600;}
+#hpi-acuity{margin-top:14px;max-width:420px;}
+#hpi-acuity .lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.18em;color:var(--t3);margin-bottom:5px;display:flex;justify-content:space-between;}
+#hpi-acuity .track{height:8px;background:rgba(0,0,0,.45);border-radius:4px;overflow:hidden;border:1px solid var(--b1);}
+#hpi-acuity .fill{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1),background .6s;}
+
+/* 7. Toasts & deltas */
+.toast,.gfm-toast{box-shadow:0 12px 40px rgba(0,0,0,.6) !important;}
+
+/* 8. Story scene: match the new depth */
+#rpg-scn-box{border-top:1px solid rgba(29,214,196,.25);box-shadow:0 -20px 60px rgba(0,0,0,.5);}
+#rpg-journal-btn{background:linear-gradient(135deg,#13283f,#0e2035);}
+</style>
+<script>
+(function(){
+'use strict';
+// ════ INTERACTION POLISH LAYER ════
+
+// A. Preserve scroll position across list rebuilds (ward + triage)
+function preserveScroll(fnName, elId){
+  const orig=window[fnName]; if(typeof orig!=='function') return;
+  window[fnName]=function(){
+    const el=document.getElementById(elId);
+    const top=el?el.scrollTop:0;
+    const r=orig.apply(this,arguments);
+    if(el) el.scrollTop=top;
+    return r;
+  };
+}
+preserveScroll('renderWard','ward-list');
+preserveScroll('renderTriage','triage-list');
+
+// B. Stable action order: shuffle once per case step, not on every render
+const _renderActions=window.renderActions;
+window.renderActions=function(p,step){
+  if(!p||!step){ return _renderActions.apply(this,arguments); }
+  const key=p.currStep+':'+(_diff||'');
+  if(p._stableKey!==key||!p._stableOrder){
+    let actions=[...(step.actions||[])].map((a,i)=>i);
+    if((typeof _diff!=='undefined'?_diff:'')==='student'){
+      const wrongIdx=(step.actions||[]).findIndex(a=>a.score<2);
+      if(wrongIdx>-1) actions=actions.filter(i=>i!==wrongIdx);
+    }
+    actions.sort(()=>Math.random()-.5);
+    p._stableOrder=actions; p._stableKey=key;
+  }
+  // Render from the cached order
+  const cont=document.getElementById('ch-actions'); if(!cont) return;
+  if(p.acted){ return _renderActions.call(this,p,step); }
+  const shuffled=p._stableOrder.map(i=>({...step.actions[i],_origIdx:i}));
+  p._shuffledActions=shuffled;
+  window._actionMap=window._actionMap||{};
+  shuffled.forEach((a,i)=>{ window._actionMap[p.id+'_'+i]=a; });
+  const availableTeam=TEAM_MEMBERS.filter(m=>m.id!=='attend'&&m.cases<m.maxCases);
+  const delegateHtml=availableTeam.length?`
+    <div style="grid-column:1/-1;margin-top:8px;padding-top:10px;border-top:1px solid var(--b1);">
+      <div style="font-family:var(--font-m);font-size:8px;color:var(--t3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;">👥 Delegate to Team Member</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${availableTeam.map(m=>`<button onclick="delegateCase('${p.id}','${m.id}')" style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:7px 12px;font-family:var(--font-m);font-size:9px;color:var(--t2);cursor:pointer;" onmouseover="this.style.borderColor='var(--teal2)'" onmouseout="this.style.borderColor='var(--b2)'">${m.name}<span style="display:block;font-size:7px;color:var(--t3);">${m.role} · Fatigue ${m.fatigue}% · Skill ${Math.round(m.skill)}%</span></button>`).join('')}
+      </div>
+    </div>`:'';
+  cont.innerHTML=shuffled.map((a,i)=>`
+    <button class="action-btn" id="act-btn-${p.id}-${i}" onclick="takeActionByIdx('${p.id}',${i})">
+      <div class="act-opt"><span class="kbd">${i+1}</span></div>
+      <div class="act-title">${a.text}</div>
+    </button>`).join('')+delegateHtml;
+};
+
+// C. Richer H&P pane: quick-facts chips + live acuity bar under the HPI
+const DIFF_NAMES=['','Routine','Complex','Critical'];
+const _renderChart=window.renderChart;
+window.renderChart=function(pId){
+  _renderChart.apply(this,arguments);
+  const p=pId&&typeof getPt==='function'?getPt(pId):null;
+  const hpi=document.getElementById('ch-hpi');
+  if(!p||!hpi){ const old=document.getElementById('hpi-facts');if(old)old.remove();const ob=document.getElementById('hpi-acuity');if(ob)ob.remove();return; }
+  let facts=document.getElementById('hpi-facts');
+  if(!facts){ facts=document.createElement('div'); facts.id='hpi-facts'; hpi.insertAdjacentElement('afterend',facts); }
+  const hp=Math.max(0,Math.min(100,Math.round(p.health)));
+  const hpCol=hp<25?'var(--crimson3)':hp<60?'var(--orange3)':'var(--green3)';
+  const acuity=hp<25?'CRITICAL':hp<60?'SERIOUS':'STABLE';
+  facts.innerHTML=[
+    `<span class="hpi-chip">👤 <b>${p.age||'?'}y ${p.sex||''}</b></span>`,
+    `<span class="hpi-chip">📋 <b>${(p.cat||'clinical').toUpperCase()}</b></span>`,
+    `<span class="hpi-chip">⚙ <b>${DIFF_NAMES[p.diff]||'Routine'}</b> case</span>`,
+    `<span class="hpi-chip">📍 <b>${p.loc||'Ward'}</b></span>`,
+    (p.tags||[]).length?`<span class="hpi-chip">🏷 <b>${p.tags.join(' · ').toUpperCase()}</b></span>`:''
+  ].join('');
+  let bar=document.getElementById('hpi-acuity');
+  if(!bar){ bar=document.createElement('div'); bar.id='hpi-acuity'; facts.insertAdjacentElement('afterend',bar); }
+  bar.innerHTML=`<div class="lbl"><span>PATIENT CONDITION</span><span style="color:${hpCol}">${acuity} · ${hp}%</span></div>
+    <div class="track"><div class="fill" style="width:${hp}%;background:linear-gradient(90deg,${hpCol},${hpCol}cc);box-shadow:0 0 10px ${hpCol}66;"></div></div>`;
+};
+
+// E. playTone was referenced throughout the game but never defined —
+//    every UI sound call threw. Real WebAudio synth, unlocked on first input.
+let _ac=null, _muted=false;
+function ac(){
+  if(_ac) return _ac;
+  try{ _ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ _ac=null; }
+  return _ac;
+}
+window.playTone=function(freq,dur,vol,type){
+  if(_muted) return;
+  const ctx=ac(); if(!ctx) return;
+  try{
+    if(ctx.state==='suspended') ctx.resume();
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type||'sine'; o.frequency.value=freq||440;
+    g.gain.setValueAtTime(0,ctx.currentTime);
+    g.gain.linearRampToValueAtTime(vol!=null?vol:.05,ctx.currentTime+.008);
+    g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+(dur||.1));
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+(dur||.1)+.05);
+  }catch(e){}
+};
+document.addEventListener('pointerdown',function once(){ ac(); document.removeEventListener('pointerdown',once); });
+
+// D. Keep the acuity bar live as health decays — update the bar alone,
+//    never rebuilding the pane (so hover states and buttons stay put)
+setInterval(()=>{
+  try{
+    if(typeof _activePatientId==='undefined'||!_activePatientId) return;
+    const p=getPt(_activePatientId); const bar=document.getElementById('hpi-acuity');
+    if(!p||!bar) return;
+    const hp=Math.max(0,Math.min(100,Math.round(p.health)));
+    const hpCol=hp<25?'var(--crimson3)':hp<60?'var(--orange3)':'var(--green3)';
+    const acuity=hp<25?'CRITICAL':hp<60?'SERIOUS':'STABLE';
+    bar.innerHTML=`<div class="lbl"><span>PATIENT CONDITION</span><span style="color:${hpCol}">${acuity} · ${hp}%</span></div>
+      <div class="track"><div class="fill" style="width:${hp}%;background:linear-gradient(90deg,${hpCol},${hpCol}cc);box-shadow:0 0 10px ${hpCol}66;"></div></div>`;
+  }catch(e){}
+},5000);
+})();
+</script>
+
 </body>
 </html>

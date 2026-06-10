@@ -22716,14 +22716,34 @@ function getSpoofRival(careerKey, country){
 (function(){
   let THREE_READY = false, THREE_FAILED = false, world = null;
 
+  function loadScriptChain(urls, done){
+    let i = 0;
+    (function next(){
+      if(i >= urls.length){ done(false); return; }
+      const s = document.createElement('script');
+      s.src = urls[i++];
+      s.onload  = function(){ done(true); };
+      s.onerror = function(){ next(); };
+      document.head.appendChild(s);
+    })();
+  }
   function loadThree(cb){
     if(THREE_READY){ cb(true); return; }
     if(THREE_FAILED){ cb(false); return; }
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/three@0.160.0/build/three.min.js';
-    s.onload  = function(){ THREE_READY = true; cb(true); };
-    s.onerror = function(){ THREE_FAILED = true; cb(false); };
-    document.head.appendChild(s);
+    // r147 — last release shipping classic-script example loaders
+    loadScriptChain([
+      'https://unpkg.com/three@0.147.0/build/three.min.js',
+      'https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js',
+    ], function(ok){
+      if(!ok){ THREE_FAILED = true; cb(false); return; }
+      // GLTFLoader is an enhancement: the world runs without it
+      loadScriptChain([
+        'https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js',
+        'https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js',
+      ], function(){
+        THREE_READY = true; cb(true);
+      });
+    });
   }
 
   // ── World container + HUD
@@ -23132,7 +23152,9 @@ function getSpoofRival(careerKey, country){
       return grp;
     }
 
+    const kenneySwaps = [];
     layout.forEach(b => {
+      let _swapRef = null;
       const wx = (b.x - 50) * 2.4, wz = (b.y - 50) * 2.4;
       const h  = b.type === 'home' || b.type === 'neighbor' ? 5 : 8 + ((b.x * 7 + b.y * 13) % 9);
       const wD = 10 + ((b.x * 3 + b.y) % 5);
@@ -23148,6 +23170,7 @@ function getSpoofRival(careerKey, country){
             new T.MeshLambertMaterial({color:0x3a2418}));
           roof.position.set(wx, h + 1.5, wz); roof.rotation.y = Math.PI/4;
           roof.castShadow = true; scene.add(roof);
+          _swapRef = {x:wx, z:wz, w:wD, parts:[roof], kind:(b.id === 'home' ? 0 : 1 + (b.x % 3))};
         }
       } else {
         const wallM = new T.MeshLambertMaterial({color:col, map:facade, emissive:0xc98a3a, emissiveIntensity:0.45, emissiveMap:facade});
@@ -23195,6 +23218,7 @@ function getSpoofRival(careerKey, country){
       box.position.set(wx, h/2, wz);
       box.castShadow = true; box.receiveShadow = true;
       scene.add(box);
+      if(_swapRef){ _swapRef.parts.push(box); kenneySwaps.push(_swapRef); }
       // Masjid dome + minaret + arched front
       if(b.id === 'masjid'){
         const dome = new T.Mesh(new T.SphereGeometry(wD*0.42, 18, 12, 0, Math.PI*2, 0, Math.PI/2),
@@ -23389,6 +23413,7 @@ function getSpoofRival(careerKey, country){
     })();
 
     return {T, renderer, scene, cam, interactives, colliders, npcs,
+            kenneySwaps:kenneySwaps,
             clouds:clouds, birds:birds, lampFlk:lampFlk, car:car,
             sky:skyMat, sunSp:sunSp, moonSp:moonSp, starPts:starPts,
             hemi:hemi, sunL:sun, dome:scene.userData.masjidDome || null,
@@ -24760,6 +24785,65 @@ function getSpoofRival(careerKey, country){
     _speechTimer = setTimeout(function(){ el.style.opacity = '0'; }, 4200);
   }
 
+  // ── Kenney City Kit (CC0, kenney.nl) — real modelled houses, trees,
+  //    a fountain, and a garage, vendored in ./models. Loads after the
+  //    world is already playable; failure changes nothing.
+  function enhanceWithKenney(w){
+    if(w.kenneyDone || !window.THREE || !THREE.GLTFLoader) return;
+    w.kenneyDone = true;
+    const loader = new THREE.GLTFLoader();
+    const cache = {};
+    function get(name, cb){
+      if(cache[name]){ cb(cache[name]); return; }
+      loader.load('models/' + name + '.glb', function(g){
+        g.scene.traverse(function(o){ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+        cache[name] = g.scene; cb(g.scene);
+      }, undefined, function(){ /* keep procedural */ });
+    }
+    // Swap family homes for modelled houses
+    const houses = ['building-small-a', 'building-small-b', 'building-small-c', 'building-small-d'];
+    (w.kenneySwaps || []).forEach(function(sw){
+      get(houses[sw.kind % 4], function(model){
+        sw.parts.forEach(function(m){ w.ext.scene.remove(m); });
+        const inst = model.clone();
+        const s = sw.w * 0.62;
+        inst.scale.set(s, s, s);
+        inst.position.set(sw.x, 0, sw.z);
+        inst.rotation.y = Math.PI; // door faces the street pad
+        w.ext.scene.add(inst);
+      });
+    });
+    // Garage beside your car's parking spot
+    get('building-garage', function(model){
+      const g = model.clone();
+      g.scale.set(6, 6, 6);
+      g.position.set(-16.5, 0, -24);
+      g.rotation.y = Math.PI / 2;
+      w.ext.scene.add(g);
+    });
+    // Fountain plaza at the central crossing
+    get('pavement-fountain', function(model){
+      const fo = model.clone();
+      fo.scale.set(7, 7, 7);
+      fo.position.set(14, 0.02, 14);
+      w.ext.scene.add(fo);
+      w.ext.colliders.push({x:14, z:14, half:3.2});
+    });
+    // Modelled tree clusters scattered off-road
+    get('grass-trees', function(model){
+      for(let i = 0; i < 8; i++){
+        const t = model.clone();
+        const tx = (Math.sin(i*73.1)*0.5+0.5) * 280 - 140;
+        const tz = (Math.sin(i*131.7)*0.5+0.5) * 280 - 140;
+        if(Math.abs(tx) < 12 || Math.abs(tz) < 12) continue;
+        t.scale.set(6, 6, 6);
+        t.position.set(tx, 0, tz);
+        t.rotation.y = i * 1.3;
+        w.ext.scene.add(t);
+      }
+    });
+  }
+
   window.openLyfeWorld = function(){
     const c = LIFE && LIFE.char;
     if(c && c.age < 5){ toast('Too young to wander the city alone.'); return; }
@@ -24782,6 +24866,7 @@ function getSpoofRival(careerKey, country){
       // Refresh the living parts on every visit: family ages, kids are
       // born, properties get bought and sold between sessions in here.
       try { buildFamily(world); buildProperties(world); } catch(e){}
+      try { enhanceWithKenney(world); } catch(e){}
       startLoop();
     });
   };

@@ -22732,6 +22732,12 @@ function getSpoofRival(careerKey, country){
 #lyfe-world{position:fixed;inset:0;z-index:5500;background:#060f0a;display:none;}
 #lyfe-world.open{display:block;}
 #lw-canvas{position:absolute;inset:0;width:100%;height:100%;}
+#lw-film{position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(2,6,4,0.42) 100%);}
+#lw-film::after{content:'';position:absolute;inset:0;opacity:0.05;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2'/></filter><rect width='90' height='90' filter='url(%23n)'/></svg>");
+  animation:lwGrain 0.45s steps(2) infinite;}
+@keyframes lwGrain{50%{transform:translate(2px,-2px);}}
 #lw-cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;
   border-radius:50%;background:rgba(201,169,97,.9);box-shadow:0 0 8px rgba(201,169,97,.6);pointer-events:none;}
 #lw-prompt{position:absolute;left:50%;bottom:18%;transform:translateX(-50%);
@@ -22760,6 +22766,7 @@ function getSpoofRival(careerKey, country){
   const wrap = document.createElement('div');
   wrap.id = 'lyfe-world';
   wrap.innerHTML = '<canvas id="lw-canvas"></canvas>'
+    + '<div id="lw-film"></div>'
     + '<div id="lw-cross"></div>'
     + '<div id="lw-loc">Your neighborhood</div>'
     + '<button id="lw-exit">✕ Leave</button>'
@@ -22777,11 +22784,27 @@ function getSpoofRival(careerKey, country){
     const canvas = document.getElementById('lw-canvas');
     const renderer = new T.WebGLRenderer({canvas:canvas, antialias:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Filmic grading — the GTA/Fallout golden-hour look
+    if(T.ACESFilmicToneMapping !== undefined){
+      renderer.toneMapping = T.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+    }
     const scene = new T.Scene();
-    scene.background = new T.Color(0x0e1f2e);
-    scene.fog = new T.Fog(0x0e1f2e, 60, 220);
+    scene.fog = new T.FogExp2(0x182431, 0.0058);
 
-    const cam = new T.PerspectiveCamera(72, 1, 0.1, 400);
+    // Gradient sky dome — burnt-gold horizon bleeding into deep teal night
+    const skyMat = new T.ShaderMaterial({
+      side: T.BackSide, depthWrite: false, fog: false,
+      uniforms: { top:{value:new T.Color(0x0a1626)}, mid:{value:new T.Color(0x27384a)}, low:{value:new T.Color(0xb06a2e)} },
+      vertexShader: 'varying float vY; void main(){ vY = normalize(position).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 low; varying float vY;'
+        + 'void main(){ float h = clamp(vY, -0.05, 1.0);'
+        + ' vec3 c = h < 0.18 ? mix(low, mid, smoothstep(-0.05, 0.18, h)) : mix(mid, top, smoothstep(0.18, 0.7, h));'
+        + ' gl_FragColor = vec4(c, 1.0); }',
+    });
+    scene.add(new T.Mesh(new T.SphereGeometry(380, 24, 16), skyMat));
+
+    const cam = new T.PerspectiveCamera(72, 1, 0.1, 800);
     cam.position.set(0, 1.7, 10);
 
     // Dusk lighting — matches the illuminated-manuscript palette
@@ -22819,6 +22842,30 @@ function getSpoofRival(careerKey, country){
       return sp;
     }
 
+    // Facade textures — grids of warm lit windows on dark concrete.
+    //  Three shared variants keep draw cost low; emissive map sells dusk.
+    function facadeTex(seed){
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
+      const g = cv.getContext('2d');
+      g.fillStyle = '#1c2026'; g.fillRect(0, 0, 256, 256);
+      let rnd = seed;
+      const rand = function(){ rnd = (rnd * 16807) % 2147483647; return rnd / 2147483647; };
+      for(let y = 16; y < 240; y += 30){
+        for(let x = 14; x < 240; x += 26){
+          const lit = rand() < 0.42;
+          g.fillStyle = lit
+            ? (rand() < 0.7 ? '#e8b45a' : '#b8d4e8')
+            : (rand() < 0.5 ? '#0c0e12' : '#141820');
+          g.fillRect(x, y, 16, 20);
+          if(lit){ g.fillStyle = 'rgba(232,180,90,0.25)'; g.fillRect(x-3, y-3, 22, 26); }
+        }
+      }
+      const tex = new T.CanvasTexture(cv);
+      tex.colorSpace = T.SRGBColorSpace || tex.colorSpace;
+      return tex;
+    }
+    const facades = [facadeTex(7919), facadeTex(104729), facadeTex(1299709)];
+
     // Buildings from CITY_LAYOUT (plus masjid + souq, added below)
     const interactives = [], colliders = [];
     const layout = (typeof CITY_LAYOUT !== 'undefined' ? CITY_LAYOUT.slice() : []);
@@ -22832,15 +22879,25 @@ function getSpoofRival(careerKey, country){
       const h  = b.type === 'home' || b.type === 'neighbor' ? 5 : 8 + ((b.x * 7 + b.y * 13) % 9);
       const wD = 10 + ((b.x * 3 + b.y) % 5);
       const col = TYPE_COL[b.type] || 0x5a5a6a;
-      const box = new T.Mesh(new T.BoxGeometry(wD, h, wD),
-        new T.MeshLambertMaterial({color:col}));
+      const lowRise = (b.type === 'home' || b.type === 'neighbor' || b.id === 'masjid' || b.type === 'masjid');
+      let box;
+      if(lowRise){
+        box = new T.Mesh(new T.BoxGeometry(wD, h, wD), new T.MeshLambertMaterial({color:col}));
+      } else {
+        // Tinted facade walls + plain roof — every side glows with windows
+        const f = facades[(b.x + b.y) % 3];
+        const wallM = new T.MeshLambertMaterial({color:col, map:f, emissive:0xc98a3a, emissiveIntensity:0.45, emissiveMap:f});
+        const roofM = new T.MeshLambertMaterial({color:0x14181c});
+        box = new T.Mesh(new T.BoxGeometry(wD, h, wD), [wallM, wallM, roofM, roofM, wallM, wallM]);
+        box.material[0].map.repeat && f.repeat.set(1, 1);
+        // Rooftop clutter — parapet + AC unit silhouettes
+        const para = new T.Mesh(new T.BoxGeometry(wD + 0.4, 0.5, wD + 0.4), roofM);
+        para.position.set(wx, h + 0.25, wz); scene.add(para);
+        const ac = new T.Mesh(new T.BoxGeometry(1.6, 1, 1.6), new T.MeshLambertMaterial({color:0x2a3038}));
+        ac.position.set(wx + wD*0.22, h + 1, wz - wD*0.18); scene.add(ac);
+      }
       box.position.set(wx, h/2, wz);
       scene.add(box);
-      // Windows: emissive strip
-      const win = new T.Mesh(new T.BoxGeometry(wD + 0.1, h * 0.5, wD + 0.1),
-        new T.MeshLambertMaterial({color:0x1a1408, emissive:0xc9a961, emissiveIntensity:0.18, transparent:true, opacity:0.35}));
-      win.position.copy(box.position);
-      scene.add(win);
       // Masjid dome + minaret
       if(b.id === 'masjid'){
         const dome = new T.Mesh(new T.SphereGeometry(wD*0.42, 18, 12, 0, Math.PI*2, 0, Math.PI/2),
@@ -22889,7 +22946,93 @@ function getSpoofRival(careerKey, country){
     starGeo.setAttribute('position', new T.BufferAttribute(pos,3));
     scene.add(new T.Points(starGeo, new T.PointsMaterial({color:0xe8dcc0, size:0.8, transparent:true, opacity:0.7})));
 
+    // Radial-glow texture (shared by sun, moon, lamp pools)
+    function glowTex(inner, outer){
+      const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
+      const g = cv.getContext('2d');
+      const gr = g.createRadialGradient(64,64,2, 64,64,62);
+      gr.addColorStop(0, inner); gr.addColorStop(0.35, outer); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr; g.fillRect(0,0,128,128);
+      return new T.CanvasTexture(cv);
+    }
+
+    // Setting sun — huge warm glow hugging the horizon (fake bloom)
+    const sunSp = new T.Sprite(new T.SpriteMaterial({
+      map: glowTex('rgba(255,220,150,1)','rgba(220,120,40,0.55)'),
+      transparent:true, depthWrite:false, fog:false }));
+    sunSp.scale.set(150, 150, 1);
+    sunSp.position.set(-260, 38, 160);
+    scene.add(sunSp);
+
+    // Crescent-pale moon, opposite sky
+    const moonSp = new T.Sprite(new T.SpriteMaterial({
+      map: glowTex('rgba(230,238,248,0.95)','rgba(160,180,210,0.30)'),
+      transparent:true, depthWrite:false, fog:false }));
+    moonSp.scale.set(34, 34, 1);
+    moonSp.position.set(220, 150, -200);
+    scene.add(moonSp);
+
+    // Drifting clouds — flat sprites catching the sundown
+    const clouds = [];
+    for(let i = 0; i < 7; i++){
+      const cl = new T.Sprite(new T.SpriteMaterial({
+        map: glowTex('rgba(90,80,95,0.55)','rgba(60,60,80,0.25)'),
+        transparent:true, depthWrite:false, fog:false, opacity:0.55 }));
+      cl.scale.set(90 + i*18, 22 + (i%3)*8, 1);
+      cl.position.set(-300 + i*95, 95 + (i%4)*22, -180 + (i%5)*80);
+      scene.add(cl);
+      clouds.push(cl);
+    }
+
+    // Street lamps down the main roads — emissive heads, fake light cones,
+    // warm pools on the asphalt. No extra real lights = cheap and pretty.
+    const lampFlk = [];
+    const lampHead = new T.MeshLambertMaterial({color:0xffd890, emissive:0xffc468, emissiveIntensity:1.4});
+    const poleMat  = new T.MeshLambertMaterial({color:0x20262c});
+    const poolTex  = glowTex('rgba(255,196,104,0.5)','rgba(255,160,60,0.18)');
+    for(let i = -4; i <= 4; i++){
+      if(i === 0) continue;
+      [[i*40, 6.5],[6.5, i*40]].forEach(function(p, side){
+        const px = side ? p[0] : p[0], pz = side ? p[1] : p[1];
+        const x = side === 0 ? i*40 : 6.5, z = side === 0 ? 6.5 : i*40;
+        const pole = new T.Mesh(new T.CylinderGeometry(0.12, 0.16, 6, 6), poleMat);
+        pole.position.set(x, 3, z); scene.add(pole);
+        const head = new T.Mesh(new T.SphereGeometry(0.35, 8, 6), lampHead);
+        head.position.set(x, 6, z); scene.add(head);
+        const cone = new T.Mesh(new T.ConeGeometry(2.4, 5.6, 12, 1, true),
+          new T.MeshBasicMaterial({color:0xffc468, transparent:true, opacity:0.07, depthWrite:false, side:T.DoubleSide}));
+        cone.position.set(x, 3.2, z); scene.add(cone);
+        const pool = new T.Mesh(new T.PlaneGeometry(7,7),
+          new T.MeshBasicMaterial({map:poolTex, transparent:true, depthWrite:false}));
+        pool.rotation.x = -Math.PI/2; pool.position.set(x, 0.04, z); scene.add(pool);
+        lampFlk.push(cone);
+      });
+    }
+
+    // Distant skyline — dark towers ringing the horizon for depth
+    for(let i = 0; i < 26; i++){
+      const a = (i / 26) * Math.PI * 2;
+      const r = 270 + (i % 5) * 18;
+      const th = 24 + ((i * 37) % 50);
+      const tw = 14 + ((i * 13) % 16);
+      const tower = new T.Mesh(new T.BoxGeometry(tw, th, tw),
+        new T.MeshLambertMaterial({color:0x10161e, emissive:0x2a3848, emissiveIntensity:0.25}));
+      tower.position.set(Math.cos(a)*r, th/2, Math.sin(a)*r);
+      scene.add(tower);
+    }
+
+    // Birds — small dark chevrons circling over the rooftops
+    const birds = [];
+    for(let i = 0; i < 5; i++){
+      const bd = new T.Mesh(new T.ConeGeometry(0.25, 1.0, 4),
+        new T.MeshBasicMaterial({color:0x0a0e12}));
+      bd.rotation.x = Math.PI/2;
+      scene.add(bd);
+      birds.push({m:bd, r:30 + i*9, h:26 + i*4, ph:i*1.3, sp:0.25 + i*0.04});
+    }
+
     return {T, renderer, scene, cam, interactives, colliders, npcs,
+            clouds:clouds, birds:birds, lampFlk:lampFlk,
             ext:{scene:scene, colliders:colliders, interactives:interactives},
             interiors:{}, mode:'ext', bounds:190, extPos:null,
             yaw:0, pitch:0, keys:{}, joy:{x:0,y:0}, near:null, raf:0};
@@ -23063,6 +23206,23 @@ function getSpoofRival(careerKey, country){
       w.cam.rotation.order = 'YXZ';
       w.cam.rotation.y = w.yaw;
       w.cam.rotation.x = w.pitch;
+
+      // Atmosphere (outdoors only)
+      if(w.mode === 'ext'){
+        if(w.clouds) for(let ci = 0; ci < w.clouds.length; ci++){
+          const cl = w.clouds[ci];
+          cl.position.x += dt * (1.2 + ci * 0.18);
+          if(cl.position.x > 340) cl.position.x = -340;
+        }
+        if(w.birds) for(const bd of w.birds){
+          const t = now/1000 * bd.sp + bd.ph;
+          bd.m.position.set(Math.cos(t)*bd.r, bd.h + Math.sin(t*2.3)*1.5, Math.sin(t)*bd.r);
+          bd.m.rotation.y = -t;
+        }
+        if(w.lampFlk) for(let li = 0; li < w.lampFlk.length; li++){
+          w.lampFlk[li].material.opacity = 0.06 + 0.02 * Math.sin(now/180 + li*2.7);
+        }
+      }
 
       // NPC wander (outdoors only)
       for(const n of (w.mode === 'ext' ? w.npcs : [])){

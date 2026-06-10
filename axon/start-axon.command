@@ -1,16 +1,12 @@
 #!/bin/bash
-# Double-click this on a Mac to launch AXON.
-# It starts a tiny local server in this folder and opens it in your browser.
+# Double-click this on a Mac to launch AXON with full machine access.
+# It starts the AXON bridge (a tiny local server in this folder) and opens it.
 cd "$(dirname "$0")"
-PORT=8723
-echo "Starting AXON at http://localhost:$PORT ..."
-# open the browser shortly after the server starts
-( sleep 1; open "http://localhost:$PORT/index.html" ) &
-# prefer python3, fall back to python
+echo "Starting AXON ..."
 if command -v python3 >/dev/null 2>&1; then
-  python3 -m http.server $PORT
+  python3 bridge.py
 elif command -v python >/dev/null 2>&1; then
-  python -m SimpleHTTPServer $PORT
+  python bridge.py
 else
   echo "Python was not found. Install it once with: xcode-select --install"
   echo "Then double-click this file again."

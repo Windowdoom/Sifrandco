@@ -5,6 +5,7 @@ import { pushUser, pushAxon, pushSys, setState, touch, idleMs } from './dom.js';
 import { speak, stopSpeak, initSTT, convoMode } from './voice.js';
 import * as ai from './ai.js';
 import * as ui from './ui.js';
+import { probeBridge, bridgeOnline, bridgeInfo, setConfirmer } from './bridge.js';
 
 function reply(text){ const h = pushAxon(text); h.finalize(text); speak(text); }
 function greet(){ const h=new Date().getHours(); return h<5?'Still awake':h<12?'Good morning':h<17?'Good afternoon':h<22?'Good evening':'Late night'; }
@@ -94,6 +95,45 @@ function briefing(){
 
 function submit(){ const i=document.getElementById('cmd'); const text=i.value.trim(); if(!text) return; i.value=''; stopSpeak(); pushUser(text); route(text); }
 
+// confirm card for any action that touches the machine
+const ACTION_TITLE = { write:'Write a file', exec:'Run a command', run_code:'Execute code', open:'Open on your machine' };
+function describeAction(name, args){
+  if(name==='write') return { sub:args.path, body:(args.content||'').slice(0,600) };
+  if(name==='exec') return { sub:args.cwd||'', body:args.cmd };
+  if(name==='run_code') return { sub:(args.lang||'python')+' snippet', body:args.code };
+  if(name==='open') return { sub:'', body:args.target };
+  return { sub:'', body:JSON.stringify(args) };
+}
+function confirmAction(name, args){
+  return new Promise(resolve=>{
+    const d = describeAction(name, args);
+    const wrap = document.createElement('div'); wrap.className='confirm-scrim';
+    wrap.innerHTML = `<div class="confirm-card">
+      <div class="confirm-h">AXON wants to: ${ACTION_TITLE[name]||name}</div>
+      ${d.sub?`<div class="confirm-sub">${d.sub.replace(/[<>]/g,'')}</div>`:''}
+      <pre class="confirm-body">${(d.body||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</pre>
+      <div class="confirm-btns">
+        <button class="gbtn" data-no>Deny</button>
+        <button class="gbtn go" data-yes>Approve</button>
+      </div></div>`;
+    document.body.appendChild(wrap);
+    const done = v=>{ wrap.remove(); resolve(v); };
+    wrap.querySelector('[data-yes]').onclick = ()=>done(true);
+    wrap.querySelector('[data-no]').onclick = ()=>done(false);
+    wrap.addEventListener('click', e=>{ if(e.target===wrap) done(false); });
+    wrap.querySelector('[data-yes]').focus();
+  });
+}
+setConfirmer(confirmAction);
+
+function updateBridgeChip(){
+  const chip = document.getElementById('bridgeChip'); if(!chip) return;
+  const on = bridgeOnline();
+  chip.classList.toggle('on', on);
+  chip.querySelector('.btxt').textContent = on ? 'machine linked' : 'no bridge';
+  chip.title = on ? `Connected to your computer (${bridgeInfo().os}). AXON can act on files and apps with your approval.` : 'Launch with start-axon to give AXON hands on your machine.';
+}
+
 /* ambient particle field behind the orb */
 function startParticles(){
   const cv = document.getElementById('field'); if(!cv) return;
@@ -122,6 +162,8 @@ async function boot(){
   await store.init();
   ui.updateBadges(); ui.updateSpacePill();
   startParticles();
+  await probeBridge(); updateBridgeChip();
+  setInterval(async ()=>{ await probeBridge(); updateBridgeChip(); }, 15000);
   document.getElementById('send').addEventListener('click', submit);
   document.getElementById('cmd').addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
   document.getElementById('spacePill').addEventListener('click', ()=>ui.openDrawer('spaces'));

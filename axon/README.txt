@@ -11,6 +11,28 @@ Manual alternative (any computer with Python):
    python3 -m http.server 8723
    then visit http://localhost:8723 in Chrome, Edge, or Safari.
 
+MACHINE ACCESS — AXON NOW HAS HANDS (the bridge)
+start-axon launches a tiny local server (bridge.py, pure Python, no installs)
+that serves the app AND gives AXON real control of your computer:
+  - Search and read any file under your home folder (free, instant).
+  - Write and create files, run shell commands, open apps and URLs, and write
+    and execute code (Python, JS, bash) in a scratch sandbox.
+Reading and searching happen freely. Anything that changes your machine pops a
+confirm card showing the exact file, command, or code, and waits for one tap.
+The brain (Claude or local) drives these tools in a loop, so you can say things
+like "find my tax notes and summarize them", "make a folder on my Desktop and
+write today's plan into it", or "run this script and tell me what broke", and it
+actually does it. Header shows "machine linked" when the bridge is connected.
+
+SAFETY
+  - The bridge binds to 127.0.0.1 only and is never on the network.
+  - A fresh random token each launch; only the AXON page can call the tools.
+  - Reads/writes are confined to approved folders (your home by default).
+  - Every write, command, and code run is logged to axon-bridge.log.
+  - Opening index.html directly (no bridge) still works for chat, notes, recall,
+    and the offline engine — you just lose the machine powers until you launch
+    with start-axon.
+
 WHAT IS NEW IN AXON 2
 - Instant offline answers with NO brain and NO internet: arithmetic of any
   complexity, unit conversions (length, mass, volume, temperature, time, speed,

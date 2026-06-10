@@ -6,6 +6,7 @@ import { retrieve, relevantMemories, trimHistory } from './retrieval.js';
 import { pushAxon, setState } from './dom.js';
 import { speak, makeSpeaker, speakingActive } from './voice.js';
 import { offlineAnswer } from './offline.js';
+import { bridgeOnline, bridgeInfo, runTool, TOOL_SCHEMAS } from './bridge.js';
 
 export let history = [];
 export function setHistory(h){ history = h || []; }
@@ -15,10 +16,16 @@ let aborter = null;
 export function stopGeneration(){ if(aborter){ aborter.abort(); aborter = null; } }
 export function isGenerating(){ return !!aborter; }
 
+function bridgeBlurb(){
+  if(!bridgeOnline()) return '';
+  const i = bridgeInfo();
+  return `\n\nMACHINE ACCESS: You are connected to Danial's computer (${i.os||'local'}, home ${i.home||'~'}) through a local bridge. You have tools to list and read files, search his disk, write files, run shell commands, execute code you write, and open files or apps. Use them to actually do things, not just describe them. Reading and searching are free; writes, commands, code execution, and opening things ask Danial for one-tap confirmation, so propose the precise action. Prefer searching and reading his real files over guessing. Keep destructive operations minimal and explain them before proposing. When a task is done, report what you actually did and what came back.`;
+}
+
 export function sysPrompt(){
   const sp = activeSpace();
   const profile = S.profile ? `WHAT YOU KNOW ABOUT DANIAL:\n${S.profile}\n\n` : '';
-  return profile + `You are AXON, the personal assistant for Danial. You help with anything he brings: medicine and USMLE study, writing and creative work, his tutoring business, faith and Quran or Arabic study, finances, planning, and daily life. Right now he is focused in the "${sp?sp.name:'General'}" space. Today is ${new Date().toDateString()}.
+  return profile + bridgeBlurb() + `You are AXON, the personal assistant for Danial. You help with anything he brings: medicine and USMLE study, writing and creative work, his tutoring business, faith and Quran or Arabic study, finances, planning, and daily life. Right now he is focused in the "${sp?sp.name:'General'}" space. Today is ${new Date().toDateString()}.
 
 Voice: calm, capable, warm, a trusted chief of staff with light dry wit. Replies are often read aloud, so lead with the useful part and keep it tight unless he asks for depth. You remember the recent conversation, so follow the thread and resolve references like "that" or "it" from context.
 
@@ -66,8 +73,8 @@ export async function ask(question, replyOffline){
     speak(inst.text);
     return;
   }
-  if(S.engine === 'local') return askLocal(question);
-  if(S.engine === 'api') return askAPI(question);
+  if(S.engine === 'local') return bridgeOnline() ? askLocalAgent(question) : askLocal(question);
+  if(S.engine === 'api') return bridgeOnline() ? askAPIAgent(question) : askAPI(question);
   // no brain: try recall from the user's own knowledge before giving up
   const rec = offlineAnswer(question, { recallFallback:true });
   if(rec){
@@ -152,6 +159,84 @@ async function askAPI(question){
     if(e.name==='AbortError' && handle.getText && handle.getText()){ speaker.flush(); finalizeReply(handle, handle.getText()); setState(null); }
     else failSoft(handle, e, question);
   }
+  finally{ aborter = null; }
+}
+
+// ---- agentic Claude: tool-use loop over the machine bridge ----
+const TOOL_LABEL = { list:'listing files', read:'reading', search:'searching the disk', write:'writing a file', exec:'running a command', run_code:'executing code', open:'opening' };
+
+async function askAPIAgent(question){
+  const ctx = buildContext(question);
+  const handle = pushAxon('', ctx.label);
+  if(!S.apiKey){ const m='The Claude brain needs your API key. Add it in Settings.'; handle.setPlain(m); speak(m); return; }
+  setState('thinking');
+  const msgs = trimHistory(history.slice(0,-1), 6000);
+  msgs.push({ role:'user', content:(ctx.block?ctx.block+'---\n\n':'')+question });
+  aborter = new AbortController();
+  let finalText = '';
+  try{
+    for(let step=0; step<8; step++){
+      const res = await fetchWithRetry('https://api.anthropic.com/v1/messages',{
+        method:'POST', signal: aborter.signal,
+        headers:{ 'content-type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+        body: JSON.stringify({ model:S.model, max_tokens:2000, system:sysPrompt(), messages:msgs, tools:TOOL_SCHEMAS })
+      });
+      if(!res.ok){ const t=await res.text(); throw new Error(res.status===401?'Your API key was rejected.':'API error '+res.status+'. '+t.slice(0,120)); }
+      const data = await res.json();
+      const blocks = data.content || [];
+      const text = blocks.filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+      if(text){ finalText = text; handle.setStream(finalText); }
+      const toolUses = blocks.filter(b=>b.type==='tool_use');
+      if(!toolUses.length || data.stop_reason!=='tool_use'){ break; }
+      msgs.push({ role:'assistant', content: blocks });
+      const results = [];
+      for(const tu of toolUses){
+        handle.setStream((finalText?finalText+'\n\n':'') + `_${TOOL_LABEL[tu.name]||tu.name}…_`);
+        let out;
+        try{ out = await runTool(tu.name, tu.input || {}); }
+        catch(e){ out = { error:e.message }; }
+        results.push({ type:'tool_result', tool_use_id:tu.id, content: JSON.stringify(out).slice(0, 12000) });
+      }
+      msgs.push({ role:'user', content: results });
+      setState('thinking');
+    }
+    speak(finalText);
+    finalizeReply(handle, finalText || 'Done.');
+    if(!S.speak || !speakingActive()) setState(null);
+  }catch(e){ failSoft(handle, e, question); }
+  finally{ aborter = null; }
+}
+
+// ---- agentic local model: JSON-action protocol the small model can follow ----
+function localAgentSys(){
+  return sysPrompt() + `\n\nTO USE A TOOL, reply with ONLY a fenced block and nothing else:\n\`\`\`action\n{"tool":"search","args":{"query":"taxes","path":"~"}}\n\`\`\`\nTools: list{path}, read{path}, search{query,path}, write{path,content}, exec{cmd}, run_code{lang,code}, open{target}. After you see the RESULT, either call another tool the same way or give your final plain answer with no action block. Use at most a few tools.`;
+}
+async function askLocalAgent(question){
+  const ctx = buildContext(question);
+  const handle = pushAxon('Waking the local brain...', ctx.label);
+  setState('thinking');
+  aborter = new AbortController();
+  try{
+    const eng = await loadLocal(handle); handle.setPlain('');
+    const convo = [{ role:'system', content:localAgentSys() }, ...trimHistory(history.slice(0,-1), 3000),
+                   { role:'user', content:(ctx.block?ctx.block+'---\n\n':'')+question }];
+    let finalText = '';
+    for(let step=0; step<5; step++){
+      if(aborter.signal.aborted) break;
+      const r = await eng.chat.completions.create({ messages:convo, temperature:0.5, max_tokens:900 });
+      const reply = r.choices?.[0]?.message?.content?.trim() || '';
+      const m = reply.match(/```action\s*([\s\S]*?)```/);
+      if(!m){ finalText = reply; handle.setStream(finalText); break; }
+      let act; try{ act = JSON.parse(m[1].trim()); }catch(e){ finalText = reply; break; }
+      handle.setStream(`_${TOOL_LABEL[act.tool]||act.tool}…_`);
+      let out; try{ out = await runTool(act.tool, act.args||{}); }catch(e){ out = { error:e.message }; }
+      convo.push({ role:'assistant', content: reply });
+      convo.push({ role:'user', content: 'RESULT:\n' + JSON.stringify(out).slice(0, 6000) });
+    }
+    speak(finalText);
+    finalizeReply(handle, finalText || 'Done.');
+    if(!S.speak || !speakingActive()) setState(null);
+  }catch(e){ failSoft(handle, e, question); }
   finally{ aborter = null; }
 }
 

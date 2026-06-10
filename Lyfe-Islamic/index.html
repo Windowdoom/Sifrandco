@@ -25156,6 +25156,150 @@ function getSpoofRival(careerKey, country){
   };
 })();
 
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SHAREABLE DEATH CARD — the life, rendered as one image worth posting
+// ═══════════════════════════════════════════════════════════════════════
+(function(){
+  function buildDeathCard(){
+    const c = LIFE && LIFE.char;
+    if(!c) return null;
+    const W = 720, H = 900;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+
+    // Parchment-dark ground with vignette
+    const bg = g.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#0d1a12'); bg.addColorStop(0.5, '#0a1410'); bg.addColorStop(1, '#060f0a');
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    const vg = g.createRadialGradient(W/2, H/2, 120, W/2, H/2, 620);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.45)');
+    g.fillStyle = vg; g.fillRect(0, 0, W, H);
+
+    // Gold double frame
+    g.strokeStyle = '#c9a961'; g.lineWidth = 3; g.strokeRect(22, 22, W-44, H-44);
+    g.strokeStyle = 'rgba(201,169,97,0.35)'; g.lineWidth = 1; g.strokeRect(32, 32, W-64, H-64);
+    // Corner ornaments
+    g.fillStyle = '#c9a961';
+    [[40,40],[W-40,40],[40,H-40],[W-40,H-40]].forEach(function(p){
+      g.beginPath(); g.arc(p[0], p[1], 4, 0, 7); g.fill();
+    });
+
+    // Bismillah + title
+    g.textAlign = 'center';
+    g.fillStyle = 'rgba(201,169,97,0.85)';
+    g.font = '26px Georgia, serif';
+    g.fillText('\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650', W/2, 86);
+    g.fillStyle = '#e8dcc0';
+    g.font = 'bold 44px Georgia, serif';
+    g.fillText(c.firstName + ' ' + c.lastName, W/2, 158);
+    g.fillStyle = 'rgba(232,220,192,0.65)';
+    g.font = '19px Georgia, serif';
+    g.fillText((c.born || '') + ' — ' + ((c.born || 0) + (c.age || 0)) + '  ·  ' + (c.age || 0) + ' years  ·  Generation ' + (LIFE.generation || 1), W/2, 192);
+    if(c.cause){
+      g.fillStyle = 'rgba(232,220,192,0.45)';
+      g.font = 'italic 16px Georgia, serif';
+      g.fillText(String(c.cause), W/2, 220);
+    }
+    // Divider
+    const dg = g.createLinearGradient(120, 0, W-120, 0);
+    dg.addColorStop(0, 'rgba(201,169,97,0)'); dg.addColorStop(0.5, 'rgba(201,169,97,0.8)'); dg.addColorStop(1, 'rgba(201,169,97,0)');
+    g.fillStyle = dg; g.fillRect(120, 240, W-240, 2);
+
+    // Stats — two columns
+    const fl = c.flags || {};
+    const occ = c.career && typeof CAREERS === 'object' && CAREERS[c.career.key]
+      ? CAREERS[c.career.key].rungs[c.career.rungIdx].title
+      : (c.career && c.career.title) || '—';
+    const kids = (c.children || []).length;
+    const nw = (typeof totalEstateValue === 'function') ? totalEstateValue(c) : (c.money || 0);
+    const rows = [
+      ['Occupation', String(occ)],
+      ['Net worth', fmtMoney(nw)],
+      ['Children raised', String(kids)],
+      ['Iman at the end', String(Math.round(c.iman || c.faith || 0)) + ' / 100'],
+      ['Longest salah streak', (fl.salahStreakYears || 0) + ' years'],
+      ['Hajj', fl.hajjDone ? 'Completed \u2713' : '—'],
+      ['Quran memorised', Math.round(c.hafizProgress || 0) + '%'],
+      ['Tahajjud nights', String(fl.tahajjudCount || 0)],
+      ['Sadaqah jariyah', (fl.sadaqahJariyahCount || 0) + (fl.sadaqahJariyahTotal ? ' (' + fmtMoney(fl.sadaqahJariyahTotal) + ')' : '')],
+      ['Tawbah made', String(c.tawbahCount || 0)],
+      ['Halal acts', String(fl.halalLegacy || 0)],
+      ['Haram acts', String(fl.haramLegacy || 0)],
+    ];
+    g.textAlign = 'left';
+    rows.forEach(function(r, i){
+      const col = i % 2, row = Math.floor(i / 2);
+      const x = col === 0 ? 70 : W/2 + 20;
+      const y = 295 + row * 78;
+      g.fillStyle = 'rgba(201,169,97,0.75)';
+      g.font = '13px Georgia, serif';
+      g.fillText(r[0].toUpperCase(), x, y);
+      g.fillStyle = '#e8dcc0';
+      g.font = 'bold 24px Georgia, serif';
+      g.fillText(r[1], x, y + 30);
+    });
+
+    // Hadith footer
+    g.textAlign = 'center';
+    g.fillStyle = dg; g.fillRect(120, 772, W-240, 2);
+    g.fillStyle = 'rgba(232,220,192,0.6)';
+    g.font = 'italic 16px Georgia, serif';
+    g.fillText('"When a person dies, their deeds end except three: sadaqah jariyah,', W/2, 806);
+    g.fillText('beneficial knowledge, or a righteous child who prays for them."', W/2, 830);
+    g.fillStyle = 'rgba(201,169,97,0.6)';
+    g.font = '13px Georgia, serif';
+    g.fillText('Sahih Muslim 1631   ·   LYFE — ISLAMIC EDITION', W/2, 864);
+    return cv;
+  }
+
+  window.shareDeathCard = function(){
+    const cv = buildDeathCard();
+    if(!cv){ toast('No life to remember yet.'); return; }
+    cv.toBlob(function(blob){
+      if(!blob){ toast('Could not render the card.'); return; }
+      const file = new File([blob], 'my-lyfe.png', {type:'image/png'});
+      // Native share sheet where available (mobile)
+      if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file], title:'My Lyfe', text:'One life, lived. Lyfe — Islamic Edition.'})
+          .catch(function(){ downloadCard(blob); });
+      } else {
+        downloadCard(blob);
+      }
+    }, 'image/png');
+    function downloadCard(blob){
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'my-lyfe.png';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+      toast('Death card saved. Post it.');
+    }
+  };
+
+  // Button on the death screen
+  if(typeof showDeathScreen === 'function'){
+    const _orig = showDeathScreen;
+    showDeathScreen = function(){
+      _orig.apply(this, arguments);
+      setTimeout(function(){
+        const screen = document.getElementById('death-screen');
+        if(!screen || screen.querySelector('#share-card-btn')) return;
+        const btn = document.createElement('button');
+        btn.id = 'share-card-btn';
+        btn.className = 'act-btn';
+        btn.style.cssText = 'margin-top:10px;background:linear-gradient(135deg,#c9a961,#a07830);color:#0a0e08;font-weight:700;border-radius:22px;padding:11px 26px;border:none;cursor:pointer;letter-spacing:.06em;';
+        btn.textContent = '📜 Share Your Life Card';
+        btn.onclick = function(){ shareDeathCard(); };
+        // place next to the existing action buttons if present
+        const anchorBtn = screen.querySelector('.act-btn');
+        if(anchorBtn && anchorBtn.parentNode) anchorBtn.parentNode.insertBefore(btn, anchorBtn);
+        else screen.appendChild(btn);
+      }, 120);
+    };
+  }
+})();
+
 </script>
 </body>
 </html>

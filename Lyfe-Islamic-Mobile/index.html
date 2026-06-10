@@ -22716,14 +22716,34 @@ function getSpoofRival(careerKey, country){
 (function(){
   let THREE_READY = false, THREE_FAILED = false, world = null;
 
+  function loadScriptChain(urls, done){
+    let i = 0;
+    (function next(){
+      if(i >= urls.length){ done(false); return; }
+      const s = document.createElement('script');
+      s.src = urls[i++];
+      s.onload  = function(){ done(true); };
+      s.onerror = function(){ next(); };
+      document.head.appendChild(s);
+    })();
+  }
   function loadThree(cb){
     if(THREE_READY){ cb(true); return; }
     if(THREE_FAILED){ cb(false); return; }
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/three@0.160.0/build/three.min.js';
-    s.onload  = function(){ THREE_READY = true; cb(true); };
-    s.onerror = function(){ THREE_FAILED = true; cb(false); };
-    document.head.appendChild(s);
+    // r147 — last release shipping classic-script example loaders
+    loadScriptChain([
+      'https://unpkg.com/three@0.147.0/build/three.min.js',
+      'https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js',
+    ], function(ok){
+      if(!ok){ THREE_FAILED = true; cb(false); return; }
+      // GLTFLoader is an enhancement: the world runs without it
+      loadScriptChain([
+        'https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js',
+        'https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js',
+      ], function(){
+        THREE_READY = true; cb(true);
+      });
+    });
   }
 
   // ── World container + HUD
@@ -22781,6 +22801,119 @@ function getSpoofRival(careerKey, country){
   // Building palette by type
   const TYPE_COL = { home:0x7a5a3a, school:0x4a6a8a, medical:0x8a4a4a, civic:0x6a6a7a,
                      shop:0x8a6a3a, entertainment:0x6a4a8a, neighbor:0x5a6a4a, masjid:0x3a7a5a };
+
+  // ── People with faces ─────────────────────────────────────────
+  //  Each face is a canvas: skin base, two eyes, brows, nose, mouth,
+  //  optional beard / hijab. Drawn once per person, baked to texture.
+  function faceTex(T, opts){
+    const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
+    const g = cv.getContext('2d');
+    // Skin base
+    g.fillStyle = '#' + opts.skin.toString(16).padStart(6, '0');
+    g.fillRect(0, 0, 128, 128);
+    // Soft shading on cheek and brow
+    const grad = g.createRadialGradient(64, 70, 6, 64, 70, 60);
+    grad.addColorStop(0, 'rgba(255,235,210,0.15)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.25)');
+    g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+    // Hair / hijab cap on top half (front-facing)
+    if(opts.hijab){
+      g.fillStyle = '#' + opts.hair.toString(16).padStart(6, '0');
+      g.beginPath();
+      g.moveTo(8, 70); g.lineTo(8, 22);
+      g.quadraticCurveTo(64, -6, 120, 22); g.lineTo(120, 70);
+      g.quadraticCurveTo(64, 78, 8, 70); g.fill();
+    } else {
+      g.fillStyle = '#' + opts.hair.toString(16).padStart(6, '0');
+      g.beginPath();
+      g.moveTo(18, 50); g.quadraticCurveTo(64, 4, 110, 50);
+      g.lineTo(110, 38); g.quadraticCurveTo(64, 12, 18, 38); g.fill();
+    }
+    // Brows
+    g.fillStyle = '#2a1a10';
+    g.fillRect(36, 56, 18, 4); g.fillRect(74, 56, 18, 4);
+    // Eyes
+    g.fillStyle = '#ffffff'; g.beginPath();
+    g.arc(45, 68, 6, 0, 7); g.arc(83, 68, 6, 0, 7); g.fill();
+    g.fillStyle = '#1a1812'; g.beginPath();
+    g.arc(45 + (opts.gazeR||0), 68, 2.5, 0, 7);
+    g.arc(83 + (opts.gazeR||0), 68, 2.5, 0, 7); g.fill();
+    // Nose
+    g.strokeStyle = 'rgba(0,0,0,0.30)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(64, 72); g.lineTo(62, 84); g.lineTo(68, 84); g.stroke();
+    // Mouth
+    g.strokeStyle = '#3a1410'; g.lineWidth = 2.5;
+    g.beginPath();
+    if(opts.smile) g.arc(64, 96, 8, 0.1, Math.PI - 0.1);
+    else g.moveTo(56, 98), g.lineTo(72, 98);
+    g.stroke();
+    // Beard
+    if(opts.beard){
+      g.fillStyle = '#' + opts.hair.toString(16).padStart(6, '0');
+      g.beginPath();
+      g.moveTo(36, 90); g.quadraticCurveTo(64, 124, 92, 90);
+      g.quadraticCurveTo(80, 108, 64, 110);
+      g.quadraticCurveTo(48, 108, 36, 90); g.fill();
+    }
+    const tex = new T.CanvasTexture(cv);
+    tex.colorSpace = T.SRGBColorSpace || tex.colorSpace;
+    return tex;
+  }
+
+  function makePerson(T, seed){
+    const grp = new T.Group();
+    const skin = [0xe8c4a0, 0xc89a72, 0x9a6a48, 0x6a4630][seed % 4];
+    const cloth = [0x8a7a5a, 0x5a7a8a, 0x7a5a7a, 0x5a8a5a, 0x9a8a6a, 0x4a5a6a][seed % 6];
+    const hair = [0x14110c, 0x3a2618, 0x5a4028, 0x8a6a48, 0x4a3024][seed % 5];
+    const isFemale = (seed % 3) === 0;
+    const beard = !isFemale && (seed % 4) === 1;
+    const hijab = isFemale && (seed % 2) === 0;
+    const tex = faceTex(T, {skin:skin, hair:hair, beard:beard, hijab:hijab, smile:(seed%5)>1, gazeR:((seed%3)-1)});
+
+    // Outfit
+    const outfit = isFemale && hijab ? 0x4a3868 : cloth;
+    const body = new T.Mesh(new T.CapsuleGeometry(0.36, 0.92, 4, 10),
+      new T.MeshLambertMaterial({color:outfit}));
+    body.position.y = 0.95; body.castShadow = true; grp.add(body);
+
+    // Head — face texture only on the front cap
+    const headMat  = new T.MeshLambertMaterial({color:0xffffff, map:tex});
+    const skinMat  = new T.MeshLambertMaterial({color:skin});
+    const hairMat  = new T.MeshLambertMaterial({color:hair});
+    const head = new T.Mesh(new T.SphereGeometry(0.27, 14, 10), [headMat, skinMat, hairMat, skinMat, skinMat, skinMat]);
+    // Apply the face only on the front segment by using groups
+    const headGeo = new T.SphereGeometry(0.27, 16, 12);
+    const headSimple = new T.Mesh(headGeo, new T.MeshLambertMaterial({color:skin}));
+    headSimple.position.y = 1.85; headSimple.castShadow = true; grp.add(headSimple);
+    // Face plane glued to the front of the head
+    const facePlane = new T.Mesh(new T.PlaneGeometry(0.46, 0.46),
+      new T.MeshLambertMaterial({color:0xffffff, map:tex, transparent:true, alphaTest:0.05}));
+    facePlane.position.set(0, 1.85, 0.255);
+    grp.add(facePlane);
+    // Hair cap behind the face
+    if(!hijab){
+      const cap = new T.Mesh(new T.SphereGeometry(0.28, 14, 8, 0, Math.PI*2, 0, Math.PI/2.1),
+        new T.MeshLambertMaterial({color:hair}));
+      cap.position.y = 1.85; cap.castShadow = true; grp.add(cap);
+    }
+
+    // Limbs — articulated for a walk cycle
+    const armMat = new T.MeshLambertMaterial({color:outfit});
+    const skinL  = new T.MeshLambertMaterial({color:skin});
+    const armL = new T.Mesh(new T.CapsuleGeometry(0.10, 0.62, 4, 6), armMat);
+    const armR = new T.Mesh(new T.CapsuleGeometry(0.10, 0.62, 4, 6), armMat);
+    armL.position.set(-0.40, 1.18, 0); armR.position.set(0.40, 1.18, 0);
+    armL.castShadow = armR.castShadow = true;
+    grp.add(armL); grp.add(armR);
+    const legL = new T.Mesh(new T.CapsuleGeometry(0.13, 0.70, 4, 6), armMat);
+    const legR = new T.Mesh(new T.CapsuleGeometry(0.13, 0.70, 4, 6), armMat);
+    legL.position.set(-0.16, 0.40, 0); legR.position.set(0.16, 0.40, 0);
+    legL.castShadow = legR.castShadow = true;
+    grp.add(legL); grp.add(legR);
+
+    return {grp:grp, armL:armL, armR:armR, legL:legL, legR:legR, face:facePlane};
+  }
+
 
   function buildWorld(){
     const T = window.THREE;
@@ -23019,7 +23152,9 @@ function getSpoofRival(careerKey, country){
       return grp;
     }
 
+    const kenneySwaps = [];
     layout.forEach(b => {
+      let _swapRef = null;
       const wx = (b.x - 50) * 2.4, wz = (b.y - 50) * 2.4;
       const h  = b.type === 'home' || b.type === 'neighbor' ? 5 : 8 + ((b.x * 7 + b.y * 13) % 9);
       const wD = 10 + ((b.x * 3 + b.y) % 5);
@@ -23035,6 +23170,7 @@ function getSpoofRival(careerKey, country){
             new T.MeshLambertMaterial({color:0x3a2418}));
           roof.position.set(wx, h + 1.5, wz); roof.rotation.y = Math.PI/4;
           roof.castShadow = true; scene.add(roof);
+          _swapRef = {x:wx, z:wz, w:wD, parts:[roof], kind:(b.id === 'home' ? 0 : 1 + (b.x % 3))};
         }
       } else {
         const wallM = new T.MeshLambertMaterial({color:col, map:facade, emissive:0xc98a3a, emissiveIntensity:0.45, emissiveMap:facade});
@@ -23082,6 +23218,7 @@ function getSpoofRival(careerKey, country){
       box.position.set(wx, h/2, wz);
       box.castShadow = true; box.receiveShadow = true;
       scene.add(box);
+      if(_swapRef){ _swapRef.parts.push(box); kenneySwaps.push(_swapRef); }
       // Masjid dome + minaret + arched front
       if(b.id === 'masjid'){
         const dome = new T.Mesh(new T.SphereGeometry(wD*0.42, 18, 12, 0, Math.PI*2, 0, Math.PI/2),
@@ -23134,122 +23271,10 @@ function getSpoofRival(careerKey, country){
       top.position.set(tx,4.2,tz); top.castShadow = true; scene.add(top);
     }
 
-    // ── People with faces ─────────────────────────────────────────
-    //  Each face is a canvas: skin base, two eyes, brows, nose, mouth,
-    //  optional beard / hijab. Drawn once per person, baked to texture.
-    function faceTex(opts){
-      const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
-      const g = cv.getContext('2d');
-      // Skin base
-      g.fillStyle = '#' + opts.skin.toString(16).padStart(6, '0');
-      g.fillRect(0, 0, 128, 128);
-      // Soft shading on cheek and brow
-      const grad = g.createRadialGradient(64, 70, 6, 64, 70, 60);
-      grad.addColorStop(0, 'rgba(255,235,210,0.15)');
-      grad.addColorStop(1, 'rgba(0,0,0,0.25)');
-      g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
-      // Hair / hijab cap on top half (front-facing)
-      if(opts.hijab){
-        g.fillStyle = '#' + opts.hair.toString(16).padStart(6, '0');
-        g.beginPath();
-        g.moveTo(8, 70); g.lineTo(8, 22);
-        g.quadraticCurveTo(64, -6, 120, 22); g.lineTo(120, 70);
-        g.quadraticCurveTo(64, 78, 8, 70); g.fill();
-      } else {
-        g.fillStyle = '#' + opts.hair.toString(16).padStart(6, '0');
-        g.beginPath();
-        g.moveTo(18, 50); g.quadraticCurveTo(64, 4, 110, 50);
-        g.lineTo(110, 38); g.quadraticCurveTo(64, 12, 18, 38); g.fill();
-      }
-      // Brows
-      g.fillStyle = '#2a1a10';
-      g.fillRect(36, 56, 18, 4); g.fillRect(74, 56, 18, 4);
-      // Eyes
-      g.fillStyle = '#ffffff'; g.beginPath();
-      g.arc(45, 68, 6, 0, 7); g.arc(83, 68, 6, 0, 7); g.fill();
-      g.fillStyle = '#1a1812'; g.beginPath();
-      g.arc(45 + (opts.gazeR||0), 68, 2.5, 0, 7);
-      g.arc(83 + (opts.gazeR||0), 68, 2.5, 0, 7); g.fill();
-      // Nose
-      g.strokeStyle = 'rgba(0,0,0,0.30)'; g.lineWidth = 2;
-      g.beginPath(); g.moveTo(64, 72); g.lineTo(62, 84); g.lineTo(68, 84); g.stroke();
-      // Mouth
-      g.strokeStyle = '#3a1410'; g.lineWidth = 2.5;
-      g.beginPath();
-      if(opts.smile) g.arc(64, 96, 8, 0.1, Math.PI - 0.1);
-      else g.moveTo(56, 98), g.lineTo(72, 98);
-      g.stroke();
-      // Beard
-      if(opts.beard){
-        g.fillStyle = '#' + opts.hair.toString(16).padStart(6, '0');
-        g.beginPath();
-        g.moveTo(36, 90); g.quadraticCurveTo(64, 124, 92, 90);
-        g.quadraticCurveTo(80, 108, 64, 110);
-        g.quadraticCurveTo(48, 108, 36, 90); g.fill();
-      }
-      const tex = new T.CanvasTexture(cv);
-      tex.colorSpace = T.SRGBColorSpace || tex.colorSpace;
-      return tex;
-    }
-
-    function makePerson(seed){
-      const grp = new T.Group();
-      const skin = [0xe8c4a0, 0xc89a72, 0x9a6a48, 0x6a4630][seed % 4];
-      const cloth = [0x8a7a5a, 0x5a7a8a, 0x7a5a7a, 0x5a8a5a, 0x9a8a6a, 0x4a5a6a][seed % 6];
-      const hair = [0x14110c, 0x3a2618, 0x5a4028, 0x8a6a48, 0x4a3024][seed % 5];
-      const isFemale = (seed % 3) === 0;
-      const beard = !isFemale && (seed % 4) === 1;
-      const hijab = isFemale && (seed % 2) === 0;
-      const tex = faceTex({skin:skin, hair:hair, beard:beard, hijab:hijab, smile:(seed%5)>1, gazeR:((seed%3)-1)});
-
-      // Outfit
-      const outfit = isFemale && hijab ? 0x4a3868 : cloth;
-      const body = new T.Mesh(new T.CapsuleGeometry(0.36, 0.92, 4, 10),
-        new T.MeshLambertMaterial({color:outfit}));
-      body.position.y = 0.95; body.castShadow = true; grp.add(body);
-
-      // Head — face texture only on the front cap
-      const headMat  = new T.MeshLambertMaterial({color:0xffffff, map:tex});
-      const skinMat  = new T.MeshLambertMaterial({color:skin});
-      const hairMat  = new T.MeshLambertMaterial({color:hair});
-      const head = new T.Mesh(new T.SphereGeometry(0.27, 14, 10), [headMat, skinMat, hairMat, skinMat, skinMat, skinMat]);
-      // Apply the face only on the front segment by using groups
-      const headGeo = new T.SphereGeometry(0.27, 16, 12);
-      const headSimple = new T.Mesh(headGeo, new T.MeshLambertMaterial({color:skin}));
-      headSimple.position.y = 1.85; headSimple.castShadow = true; grp.add(headSimple);
-      // Face plane glued to the front of the head
-      const facePlane = new T.Mesh(new T.PlaneGeometry(0.46, 0.46),
-        new T.MeshLambertMaterial({color:0xffffff, map:tex, transparent:true, alphaTest:0.05}));
-      facePlane.position.set(0, 1.85, 0.255);
-      grp.add(facePlane);
-      // Hair cap behind the face
-      if(!hijab){
-        const cap = new T.Mesh(new T.SphereGeometry(0.28, 14, 8, 0, Math.PI*2, 0, Math.PI/2.1),
-          new T.MeshLambertMaterial({color:hair}));
-        cap.position.y = 1.85; cap.castShadow = true; grp.add(cap);
-      }
-
-      // Limbs — articulated for a walk cycle
-      const armMat = new T.MeshLambertMaterial({color:outfit});
-      const skinL  = new T.MeshLambertMaterial({color:skin});
-      const armL = new T.Mesh(new T.CapsuleGeometry(0.10, 0.62, 4, 6), armMat);
-      const armR = new T.Mesh(new T.CapsuleGeometry(0.10, 0.62, 4, 6), armMat);
-      armL.position.set(-0.40, 1.18, 0); armR.position.set(0.40, 1.18, 0);
-      armL.castShadow = armR.castShadow = true;
-      grp.add(armL); grp.add(armR);
-      const legL = new T.Mesh(new T.CapsuleGeometry(0.13, 0.70, 4, 6), armMat);
-      const legR = new T.Mesh(new T.CapsuleGeometry(0.13, 0.70, 4, 6), armMat);
-      legL.position.set(-0.16, 0.40, 0); legR.position.set(0.16, 0.40, 0);
-      legL.castShadow = legR.castShadow = true;
-      grp.add(legL); grp.add(legR);
-
-      return {grp:grp, armL:armL, armR:armR, legL:legL, legR:legR, face:facePlane};
-    }
-
     // Pedestrians — face plane always toward viewer-ish direction
     const npcs = [];
     for(let i = 0; i < 14; i++){
-      const p = makePerson(i * 7 + 3);
+      const p = makePerson(T, i * 7 + 3);
       const horiz = i % 2 === 0;
       const side = (i % 4 < 2) ? 5.6 : -5.6;
       p.grp.position.set(horiz ? -160 + i*23 : side, 0, horiz ? side : -160 + i*23);
@@ -23388,6 +23413,7 @@ function getSpoofRival(careerKey, country){
     })();
 
     return {T, renderer, scene, cam, interactives, colliders, npcs,
+            kenneySwaps:kenneySwaps,
             clouds:clouds, birds:birds, lampFlk:lampFlk, car:car,
             sky:skyMat, sunSp:sunSp, moonSp:moonSp, starPts:starPts,
             hemi:hemi, sunL:sun, dome:scene.userData.masjidDome || null,
@@ -23458,83 +23484,569 @@ function getSpoofRival(careerKey, country){
     }
   }
 
-  // ── Interiors — a walkable room per building type
+  // ── Interiors — every room laid out like the real place
+  //  Floor textures, furniture, fixtures, and a staff member with a
+  //  face behind every counter. Rooms are cached per building.
+
+  function floorTex(T, kind){
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
+    const g = cv.getContext('2d');
+    if(kind === 'checker'){            // marble — city hall, bank
+      for(let y = 0; y < 8; y++) for(let x = 0; x < 8; x++){
+        g.fillStyle = (x + y) % 2 ? '#cfc8b8' : '#8a8478';
+        g.fillRect(x*32, y*32, 32, 32);
+        g.fillStyle = 'rgba(255,255,255,0.06)';
+        g.fillRect(x*32, y*32, 32, 3);
+      }
+    } else if(kind === 'lino'){        // linoleum — grocery, clinic
+      g.fillStyle = '#b8bdb2'; g.fillRect(0,0,256,256);
+      g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 2;
+      for(let i = 0; i <= 8; i++){
+        g.beginPath(); g.moveTo(i*32, 0); g.lineTo(i*32, 256); g.stroke();
+        g.beginPath(); g.moveTo(0, i*32); g.lineTo(256, i*32); g.stroke();
+      }
+      for(let i = 0; i < 240; i++){
+        g.fillStyle = 'rgba(0,0,0,' + (0.03 + Math.random()*0.05) + ')';
+        g.fillRect(Math.random()*256, Math.random()*256, 2, 2);
+      }
+    } else if(kind === 'wood'){        // planks — library, school, home
+      for(let r = 0; r < 8; r++){
+        g.fillStyle = ['#6a4a2c','#75522f','#5e4226','#6f4e2e'][r % 4];
+        g.fillRect(0, r*32, 256, 32);
+        g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(0, r*32); g.lineTo(256, r*32); g.stroke();
+        g.fillStyle = 'rgba(0,0,0,0.25)';
+        g.fillRect((r*97) % 256, r*32, 2, 32);
+      }
+    } else if(kind === 'carpet'){      // prayer rows — masjid
+      g.fillStyle = '#1d4a2c'; g.fillRect(0,0,256,256);
+      for(let r = 0; r < 5; r++){
+        g.fillStyle = r % 2 ? '#27583a' : '#1a3f28';
+        g.fillRect(0, r*52 + 8, 256, 36);
+        g.fillStyle = '#c9a961';
+        g.fillRect(0, r*52 + 6, 256, 2);
+        // mihrab-pointing arch motifs
+        for(let x = 14; x < 256; x += 42){
+          g.beginPath(); g.strokeStyle = 'rgba(201,169,97,0.5)'; g.lineWidth = 2;
+          g.arc(x + 10, r*52 + 40, 9, Math.PI, 0); g.stroke();
+        }
+      }
+    } else {                            // dark — club, cinema, gym
+      g.fillStyle = '#1c1a20'; g.fillRect(0,0,256,256);
+      for(let i = 0; i < 120; i++){
+        g.fillStyle = 'rgba(255,255,255,' + Math.random()*0.03 + ')';
+        g.fillRect(Math.random()*256, Math.random()*256, 3, 3);
+      }
+    }
+    const t = new T.CanvasTexture(cv);
+    t.wrapS = t.wrapT = T.RepeatWrapping;
+    return t;
+  }
+
+  function textBoardTex(T, lines, bg, ink){
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
+    const g = cv.getContext('2d');
+    g.fillStyle = bg; g.fillRect(0,0,512,256);
+    g.strokeStyle = 'rgba(255,255,255,0.25)'; g.lineWidth = 6; g.strokeRect(6,6,500,244);
+    g.fillStyle = ink; g.font = '28px Georgia, serif'; g.textAlign = 'left';
+    lines.forEach(function(t, i){ g.fillText(t, 30, 56 + i*44, 452); });
+    return new T.CanvasTexture(cv);
+  }
+
+  function bookSpineTex(T, seed){
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+    const g = cv.getContext('2d');
+    g.fillStyle = '#241a10'; g.fillRect(0,0,256,64);
+    let r = seed;
+    const rnd = function(){ r = (r*9301+49297) % 233280; return r/233280; };
+    const cols = ['#7a2c2c','#2c4a6a','#3a6a3a','#8a6a2c','#5a3a6a','#a05a2c','#3a5a5a'];
+    for(let x = 2; x < 250;){
+      const w = 7 + rnd()*9;
+      g.fillStyle = cols[(r|0) % cols.length];
+      g.fillRect(x, 4 + rnd()*4, w, 56 - rnd()*8);
+      g.fillStyle = 'rgba(255,235,180,0.35)';
+      g.fillRect(x + 1, 18, w - 2, 2);
+      x += w + 2;
+    }
+    return new T.CanvasTexture(cv);
+  }
+
   function buildInterior(b){
     const T = window.THREE;
     const scene = new T.Scene();
-    const HALF = 13;
     const type = b.id === 'masjid' ? 'masjid' : b.type;
-    const floors = { masjid:0x1d4a2c, medical:0xcfd8d2, school:0x6a5638, shop:0x4a3a2c,
-                     civic:0x3a3a44, entertainment:0x2c2436, home:0x4a3826, neighbor:0x4a3826 };
+    const id = b.id;
+    const HALF = (type === 'shop' || id === 'souq') ? 15 : 14;
+    const CEIL = (id === 'cityhall' || id === 'bank' || type === 'masjid') ? 7.5 : 5.2;
     scene.background = new T.Color(0x0a0f0c);
 
-    // Floor / ceiling / walls
-    const floor = new T.Mesh(new T.PlaneGeometry(HALF*2, HALF*2),
-      new T.MeshLambertMaterial({color:floors[type] || 0x3a3a3a}));
-    floor.rotation.x = -Math.PI/2; scene.add(floor);
-    const ceil = new T.Mesh(new T.PlaneGeometry(HALF*2, HALF*2),
-      new T.MeshLambertMaterial({color:0x241c12}));
-    ceil.rotation.x = Math.PI/2; ceil.position.y = 6; scene.add(ceil);
-    const wallMat = new T.MeshLambertMaterial({color: type==='masjid' ? 0x3a5a44 : 0x4a4438});
-    [[0,-HALF,HALF*2,0.4],[0,HALF,HALF*2,0.4],[-HALF,0,0.4,HALF*2],[HALF,0,0.4,HALF*2]].forEach(p => {
-      const wall = new T.Mesh(new T.BoxGeometry(p[2], 6, p[3]), wallMat);
-      wall.position.set(p[0], 3, p[1]); scene.add(wall);
-    });
-
-    scene.add(new T.AmbientLight(0x887755, 0.7));
-    const lamp = new T.PointLight(0xc9a961, 1.2, 40);
-    lamp.position.set(0, 5, 0); scene.add(lamp);
-
     const colliders = [];
-    function prop(geo, col, x, y, z, solid){
-      const m = new T.Mesh(geo, new T.MeshLambertMaterial({color:col}));
-      m.position.set(x, y, z); scene.add(m);
-      if(solid) colliders.push({x:x, z:z, half:1.4});
+    function addCol(x, z, half){ colliders.push({x:x, z:z, half:half}); }
+    function mesh(geo, mat, x, y, z, ry){
+      const m = new T.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      if(ry) m.rotation.y = ry;
+      m.castShadow = true;
+      scene.add(m);
       return m;
     }
-
-    // Per-type furnishing + desk label
-    let deskLabel = 'Speak to the clerk', deskX = 0, deskZ = -HALF + 4;
-    if(type === 'masjid'){
-      deskLabel = 'Pray & speak to the imam';
-      // Mihrab niche + gold trim
-      prop(new T.BoxGeometry(4, 5, 0.8), 0x2c5a3a, 0, 2.5, -HALF + 0.6, false);
-      prop(new T.BoxGeometry(4.6, 0.4, 1), 0xc9a961, 0, 5, -HALF + 0.6, false);
-      // Prayer rug rows
-      for(let r = 0; r < 4; r++)
-        for(let q = -2; q <= 2; q++)
-          prop(new T.BoxGeometry(1.6, 0.05, 2.6), q%2 ? 0x7a2c2c : 0x2c4a6a, q*2.4, 0.03, -HALF + 6 + r*3, false);
-      // Hanging lamps
-      for(let i = -1; i <= 1; i++){
-        const l = prop(new T.SphereGeometry(0.4, 10, 8), 0xc9a961, i*6, 4.2, 0, false);
-        l.material.emissive = new T.Color(0xc9a961); l.material.emissiveIntensity = 0.7;
-      }
-    } else if(type === 'medical'){
-      deskLabel = 'Reception';
-      for(let i = 0; i < 4; i++){
-        prop(new T.BoxGeometry(2, 0.8, 4), 0xe8e8e8, -HALF + 3, 0.4, -HALF + 4 + i*5, true);
-        prop(new T.BoxGeometry(1.6, 0.3, 1), 0x6a8acA, -HALF + 3, 0.95, -HALF + 2.8 + i*5, false);
-      }
-      prop(new T.BoxGeometry(5, 1.2, 1.6), 0xcfd8d2, deskX, 0.6, deskZ, true);
-    } else if(type === 'school'){
-      deskLabel = 'See the registrar';
-      for(let r = 0; r < 3; r++)
-        for(let q = -1; q <= 1; q++)
-          prop(new T.BoxGeometry(2, 0.9, 1.2), 0x6a5638, q*4, 0.45, -2 + r*3.5, true);
-      prop(new T.BoxGeometry(8, 3, 0.2), 0x14241a, 0, 2.5, -HALF + 0.5, false); // board
-      prop(new T.BoxGeometry(5, 1.2, 1.6), 0x4a3a28, deskX, 0.6, deskZ, true);
-    } else if(type === 'shop'){
-      deskLabel = 'Browse & buy';
-      for(let i = 0; i < 3; i++){
-        prop(new T.BoxGeometry(1.2, 2.4, 8), 0x5a4632, -6 + i*6, 1.2, 0, true);
-      }
-      prop(new T.BoxGeometry(5, 1.2, 1.6), 0x6a5238, deskX, 0.6, deskZ, true);
-    } else {
-      prop(new T.BoxGeometry(5, 1.2, 1.6), 0x4a4438, deskX, 0.6, deskZ, true);
-      prop(new T.BoxGeometry(3, 0.7, 1.4), 0x3a3430, 5, 0.35, 2, true);
+    function lam(col, extra){
+      const o = Object.assign({color:col}, extra || {});
+      return new T.MeshLambertMaterial(o);
     }
 
-    // Desk glow + exit glow
+    // Shell: floor / ceiling / walls
+    const floorKind = type === 'masjid' ? 'carpet'
+      : (id === 'cityhall' || id === 'bank') ? 'checker'
+      : (type === 'shop' || type === 'medical' || id === 'police' || id === 'mall') ? 'lino'
+      : (id === 'library' || type === 'school' || type === 'home' || type === 'neighbor' || id === 'restaurant') ? 'wood'
+      : 'dark';
+    const ft = floorTex(T, floorKind);
+    ft.repeat.set(HALF/4, HALF/4);
+    if(floorKind === 'carpet') ft.repeat.set(1, HALF/6);
+    const floor = new T.Mesh(new T.PlaneGeometry(HALF*2, HALF*2), lam(0xffffff, {map:ft}));
+    floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
+    const ceil = new T.Mesh(new T.PlaneGeometry(HALF*2, HALF*2), lam(0x2a241c));
+    ceil.rotation.x = Math.PI/2; ceil.position.y = CEIL; scene.add(ceil);
+    const wallCol = type === 'masjid' ? 0x3a5a44
+      : (id === 'cityhall' || id === 'bank') ? 0x6a6254
+      : type === 'medical' ? 0xb8c4be
+      : type === 'school' ? 0x9a8d6e
+      : (type === 'home' || type === 'neighbor') ? 0x8a7a5e
+      : 0x4a4438;
+    const wallMat = lam(wallCol);
+    [[0,-HALF,HALF*2,0.4],[0,HALF,HALF*2,0.4],[-HALF,0,0.4,HALF*2],[HALF,0,0.4,HALF*2]].forEach(pn => {
+      const wall = new T.Mesh(new T.BoxGeometry(pn[2], CEIL, pn[3]), wallMat);
+      wall.position.set(pn[0], CEIL/2, pn[1]); wall.receiveShadow = true; scene.add(wall);
+    });
+    // Baseboard trim
+    [[0,-HALF+0.25],[0,HALF-0.25]].forEach(pn => {
+      const tr = new T.Mesh(new T.BoxGeometry(HALF*2, 0.3, 0.15), lam(0x2a2018));
+      tr.position.set(pn[0], 0.15, pn[1]); scene.add(tr);
+    });
+
+    // Ceiling strip lights + ambient
+    scene.add(new T.AmbientLight(0x887755, type === 'medical' ? 0.95 : 0.65));
+    const stripMat = lam(0xfff4d8, {emissive:0xfff0c8, emissiveIntensity:0.95});
+    for(let i = -1; i <= 1; i++){
+      const strip = new T.Mesh(new T.BoxGeometry(HALF*1.2, 0.12, 0.7), stripMat);
+      strip.position.set(0, CEIL - 0.1, i * HALF * 0.55);
+      scene.add(strip);
+    }
+    const lamp = new T.PointLight(type === 'medical' ? 0xeef2f0 : 0xc9a961, 1.15, 60);
+    lamp.position.set(0, CEIL - 1, 0); scene.add(lamp);
+
+    let deskLabel = 'Speak to the clerk', deskX = 0, deskZ = -HALF + 4;
+    let staffSeed = 0; for(let i = 0; i < id.length; i++) staffSeed += id.charCodeAt(i);
+    let staff = null, staffAt = null;
+
+    // ════ GROCERY / SOUQ / MALL — aisles, produce, freezers, checkout
+    if(type === 'shop' || id === 'mall'){
+      deskLabel = 'Checkout — browse & buy'; deskX = 5; deskZ = HALF - 5.5;
+      const aisleX = [-9, -4.5, 0, 4.5];
+      const prodCols = [0xc23b3b, 0xe8a13a, 0x3b8a4a, 0x3a6ac2, 0xb8b13a, 0x8a4ac2, 0xc2723a];
+      aisleX.forEach(function(ax, ai){
+        const unit = mesh(new T.BoxGeometry(1.6, 2.3, HALF*1.2), lam(0x9a9488), ax, 1.15, -1.5);
+        addCol(ax, -1.5, 1.4); addCol(ax, -6, 1.4); addCol(ax, 3, 1.4);
+        for(let lvl = 0; lvl < 3; lvl++){
+          for(let zi = 0; zi < 8; zi++){
+            const pz = -HALF*0.55 + zi * (HALF*1.1)/8 + 0.8;
+            for(const side of [-1, 1]){
+              const prod = new T.Mesh(new T.BoxGeometry(0.5, 0.45, 0.7),
+                lam(prodCols[(ai*3 + lvl*5 + zi) % prodCols.length]));
+              prod.position.set(ax + side*0.95, 0.55 + lvl*0.75, pz);
+              scene.add(prod);
+            }
+          }
+        }
+      });
+      // Freezer wall — emissive white units along the left wall
+      for(let i = 0; i < 5; i++){
+        mesh(new T.BoxGeometry(0.9, 2.2, 2.4), lam(0xdfe8ea, {emissive:0xcfe2ea, emissiveIntensity:0.5}),
+          -HALF + 0.9, 1.1, -HALF + 3 + i*2.8);
+      }
+      addCol(-HALF + 0.9, -HALF + 8, 2.2);
+      // Produce crates near the entrance
+      for(let i = 0; i < 6; i++){
+        const crate = mesh(new T.BoxGeometry(1.3, 0.8, 1.3), lam(0x8a6a3a),
+          HALF - 3 - (i % 3) * 1.8, 0.4, HALF - 7 - Math.floor(i/3) * 1.8);
+        const tops = new T.Mesh(new T.BoxGeometry(1.1, 0.25, 1.1),
+          lam([0xc23b3b, 0x3b8a4a, 0xe8a13a, 0x6a8a2a, 0xc2723a, 0x8a3a5a][i]));
+        tops.position.set(crate.position.x, 0.9, crate.position.z); scene.add(tops);
+      }
+      addCol(HALF - 4, HALF - 8, 2.4);
+      // Two checkout counters; staff behind one
+      for(const cx of [3, 7]){
+        mesh(new T.BoxGeometry(2.6, 1.05, 1.2), lam(0x6a5a48), cx, 0.52, HALF - 5.5);
+        mesh(new T.BoxGeometry(0.55, 0.5, 0.5), lam(0x2a2e34, {emissive:0x3a5a4a, emissiveIntensity:0.6}),
+          cx - 0.8, 1.3, HALF - 5.5);
+        addCol(cx, HALF - 5.5, 1.3);
+      }
+      staffAt = {x:3, z:HALF - 4.0, ry:Math.PI};
+
+    // ════ CITY HALL — columns, service windows, waiting rows
+    } else if(id === 'cityhall'){
+      deskLabel = 'Window 4 — citizen services';
+      for(const px of [-7, 7]) for(const pz of [-5, 5]){
+        mesh(new T.CylinderGeometry(0.7, 0.8, CEIL, 12), lam(0xb8ad94), px, CEIL/2, pz);
+        addCol(px, pz, 1.0);
+      }
+      // Long service counter with three glass windows
+      mesh(new T.BoxGeometry(16, 1.15, 1.4), lam(0x5a4c38), 0, 0.57, -HALF + 4);
+      addCol(0, -HALF + 4, 1.4); addCol(-6, -HALF + 4, 1.4); addCol(6, -HALF + 4, 1.4);
+      for(const wx of [-5.5, 0, 5.5]){
+        const glass = new T.Mesh(new T.PlaneGeometry(3.4, 2.2),
+          lam(0xa8c4d8, {transparent:true, opacity:0.35, emissive:0x88a4b8, emissiveIntensity:0.25}));
+        glass.position.set(wx, 2.3, -HALF + 3.95); scene.add(glass);
+        const div = new T.Mesh(new T.BoxGeometry(0.18, 2.6, 0.3), lam(0x3a3026));
+        div.position.set(wx + 2.4, 2.4, -HALF + 4); scene.add(div);
+      }
+      // Waiting rows
+      for(let r = 0; r < 3; r++) for(let cIdx = 0; cIdx < 2; cIdx++){
+        mesh(new T.BoxGeometry(5.4, 0.5, 0.9), lam(0x4a5668),
+          -3.6 + cIdx*7.2, 0.45, 1.5 + r*2.4);
+        mesh(new T.BoxGeometry(5.4, 0.9, 0.18), lam(0x4a5668),
+          -3.6 + cIdx*7.2, 1.0, 1.95 + r*2.4);
+        addCol(-3.6 + cIdx*7.2, 1.7 + r*2.4, 2.6);
+      }
+      // Notice board
+      const nb = new T.Mesh(new T.PlaneGeometry(5, 2.6),
+        lam(0xffffff, {map:textBoardTex(T, ['NOTICES','· Zakat census forms — Window 2','· Marriage registrations — Window 4','· Property deeds — Window 5'], '#3a4252', '#e8e4d8')}));
+      nb.position.set(HALF - 0.25, 2.6, 0); nb.rotation.y = -Math.PI/2; scene.add(nb);
+      staffAt = {x:0, z:-HALF + 2.6, ry:0};
+
+    // ════ BANK — tellers, vault door, rope queue
+    } else if(id === 'bank'){
+      deskLabel = 'Teller — accounts & finance';
+      mesh(new T.BoxGeometry(14, 1.15, 1.4), lam(0x4a3c2c), 0, 0.57, -HALF + 4);
+      addCol(0, -HALF + 4, 1.4); addCol(-5, -HALF + 4, 1.4); addCol(5, -HALF + 4, 1.4);
+      for(const wx of [-4.5, 0, 4.5]){
+        const glass = new T.Mesh(new T.PlaneGeometry(2.8, 2.0),
+          lam(0xc8d8e0, {transparent:true, opacity:0.4}));
+        glass.position.set(wx, 2.2, -HALF + 3.95); scene.add(glass);
+      }
+      // Vault — great steel circle on the back wall
+      const vault = new T.Mesh(new T.CylinderGeometry(2.2, 2.2, 0.5, 24),
+        lam(0x6a7078, {emissive:0x2a3038, emissiveIntensity:0.3}));
+      vault.rotation.x = Math.PI/2;
+      vault.position.set(-HALF + 0.4, 2.4, 4); vault.rotation.z = Math.PI/2; scene.add(vault);
+      const hub = new T.Mesh(new T.CylinderGeometry(0.5, 0.5, 0.7, 12), lam(0x8a9098));
+      hub.rotation.z = Math.PI/2; hub.position.set(-HALF + 0.7, 2.4, 4); scene.add(hub);
+      for(let s = 0; s < 4; s++){
+        const spoke = new T.Mesh(new T.BoxGeometry(0.18, 0.18, 2.6), lam(0x8a9098));
+        spoke.position.set(-HALF + 0.75, 2.4, 4); spoke.rotation.x = s * Math.PI/4;
+        scene.add(spoke);
+      }
+      // Queue rope posts
+      for(let i = 0; i < 4; i++){
+        mesh(new T.CylinderGeometry(0.08, 0.12, 1.1, 8), lam(0xc9a961), -3 + i*2, 0.55, 2);
+        const rope = new T.Mesh(new T.CylinderGeometry(0.04, 0.04, 1.85, 6), lam(0x7a1822));
+        rope.rotation.z = Math.PI/2; rope.position.set(-2 + i*2, 0.95, 2);
+        if(i < 3) scene.add(rope);
+      }
+      // Potted plants
+      for(const px of [-HALF + 1.5, HALF - 1.5]){
+        mesh(new T.CylinderGeometry(0.5, 0.4, 0.7, 10), lam(0x8a4a2c), px, 0.35, HALF - 2);
+        mesh(new T.SphereGeometry(0.75, 8, 6), lam(0x2c5a2c), px, 1.4, HALF - 2);
+      }
+      staffAt = {x:0, z:-HALF + 2.6, ry:0};
+
+    // ════ CLINIC / HOSPITAL — reception, waiting, curtained bays
+    } else if(type === 'medical'){
+      deskLabel = 'Reception — see the doctor';
+      mesh(new T.BoxGeometry(5.5, 1.1, 1.5), lam(0xcfd8d2), 0, 0.55, -HALF + 4);
+      addCol(0, -HALF + 4, 1.6);
+      // Three curtained bays along the left wall
+      for(let i = 0; i < 3; i++){
+        const bz = -HALF + 4 + i*6;
+        mesh(new T.BoxGeometry(2.1, 0.7, 3.6), lam(0xe8eceb), -HALF + 2.6, 0.55, bz);
+        mesh(new T.BoxGeometry(1.7, 0.28, 0.9), lam(0x6a8aca), -HALF + 2.6, 1.0, bz - 1.1);
+        addCol(-HALF + 2.6, bz, 1.6);
+        // curtain rail + curtain
+        const rail = new T.Mesh(new T.CylinderGeometry(0.04, 0.04, 4.4, 6), lam(0x8a9098));
+        rail.rotation.x = Math.PI/2; rail.position.set(-HALF + 4.2, 2.6, bz); scene.add(rail);
+        const curt = new T.Mesh(new T.PlaneGeometry(2.6, 2.1),
+          lam(0x9ab8c4, {side:T.DoubleSide, transparent:true, opacity:0.85}));
+        curt.position.set(-HALF + 4.2, 1.55, bz + 0.8); curt.rotation.y = Math.PI/2; scene.add(curt);
+        // IV stand
+        mesh(new T.CylinderGeometry(0.04, 0.3, 1.9, 8), lam(0x9aa4aa), -HALF + 1.5, 0.95, bz + 1.5);
+      }
+      // Waiting chairs
+      for(let i = 0; i < 6; i++){
+        mesh(new T.BoxGeometry(0.85, 0.5, 0.85), lam(0x4a7a8a),
+          HALF - 2.2, 0.45, -HALF + 3.5 + i*2.3);
+        mesh(new T.BoxGeometry(0.85, 0.95, 0.16), lam(0x4a7a8a),
+          HALF - 2.2, 1.0, -HALF + 3.9 + i*2.3);
+      }
+      addCol(HALF - 2.2, 0, 1.4);
+      // Eye chart
+      const chart = new T.Mesh(new T.PlaneGeometry(1.2, 2),
+        lam(0xffffff, {map:textBoardTex(T, ['E','F P','T O Z','L P E D'], '#f4f4f0', '#1a1a1a')}));
+      chart.position.set(0, 2.4, -HALF + 0.25); scene.add(chart);
+      staffAt = {x:0, z:-HALF + 2.6, ry:0};
+
+    // ════ SCHOOL — blackboard, desks, globe
+    } else if(type === 'school'){
+      deskLabel = 'The registrar\'s office';
+      const board = new T.Mesh(new T.PlaneGeometry(9, 3),
+        lam(0xffffff, {map:textBoardTex(T, ['Today: The water cycle','HW: pages 42-45','"Seek knowledge from the','  cradle to the grave."'], '#14241a', '#e8e4d0')}));
+      board.position.set(0, 2.5, -HALF + 0.25); scene.add(board);
+      // Teacher desk + globe
+      mesh(new T.BoxGeometry(3.2, 1.0, 1.4), lam(0x5a4630), -3, 0.5, -HALF + 3.4);
+      addCol(-3, -HALF + 3.4, 1.6);
+      mesh(new T.SphereGeometry(0.4, 12, 10), lam(0x3a6ac2), -2, 1.45, -HALF + 3.4);
+      // Student desks 3×3 with chairs
+      for(let r = 0; r < 3; r++) for(let q = -1; q <= 1; q++){
+        mesh(new T.BoxGeometry(1.9, 0.85, 1.1), lam(0x6a5638), q*4.2, 0.42, -2 + r*3.4);
+        mesh(new T.BoxGeometry(0.9, 0.5, 0.9), lam(0x4a3a28), q*4.2, 0.45, -0.8 + r*3.4);
+        addCol(q*4.2, -1.7 + r*3.4, 1.2);
+      }
+      // World map poster
+      const map = new T.Mesh(new T.PlaneGeometry(3.4, 2.2),
+        lam(0x3a6a9a, {emissive:0x2a4a6a, emissiveIntensity:0.2}));
+      map.position.set(HALF - 0.25, 2.4, -2); map.rotation.y = -Math.PI/2; scene.add(map);
+      staffAt = {x:-3, z:-HALF + 2.2, ry:0};
+
+    // ════ MASJID — pillars, minbar, chandelier, Quran wall
+    } else if(type === 'masjid'){
+      deskLabel = 'Pray & speak to the imam';
+      // Mihrab niche
+      mesh(new T.BoxGeometry(4.2, 5, 0.9), lam(0x2c5a3a), 0, 2.5, -HALF + 0.6);
+      mesh(new T.BoxGeometry(4.8, 0.4, 1.1), lam(0xc9a961), 0, 5.1, -HALF + 0.6);
+      const niche = new T.Mesh(new T.CircleGeometry(1.5, 16, 0, Math.PI),
+        lam(0xc9a961, {emissive:0xc9a961, emissiveIntensity:0.4}));
+      niche.position.set(0, 3.2, -HALF + 1.06); scene.add(niche);
+      // Minbar — three-step pulpit
+      for(let s = 0; s < 3; s++){
+        mesh(new T.BoxGeometry(1.4, 0.5 + s*0.5, 1.2 - s*0.3), lam(0x5a4028),
+          3.6, (0.5 + s*0.5)/2, -HALF + 2.2 + s*0.5);
+      }
+      addCol(3.6, -HALF + 2.6, 1.2);
+      // Pillars + arches
+      for(const px of [-7, 7]) for(const pz of [-4, 4]){
+        mesh(new T.CylinderGeometry(0.55, 0.65, CEIL, 10), lam(0xd8cdb0), px, CEIL/2, pz);
+        addCol(px, pz, 0.9);
+      }
+      // Chandelier — gold ring with lamps
+      const ring = new T.Mesh(new T.TorusGeometry(2.2, 0.1, 8, 24), lam(0xc9a961));
+      ring.rotation.x = Math.PI/2; ring.position.set(0, CEIL - 1.8, 0); scene.add(ring);
+      for(let i = 0; i < 6; i++){
+        const a = i/6 * Math.PI*2;
+        const bulb = new T.Mesh(new T.SphereGeometry(0.18, 8, 6),
+          lam(0xffe4b0, {emissive:0xffd890, emissiveIntensity:1.2}));
+        bulb.position.set(Math.cos(a)*2.2, CEIL - 2.1, Math.sin(a)*2.2); scene.add(bulb);
+      }
+      // Quran shelf wall
+      const shelf = mesh(new T.BoxGeometry(0.5, 2.6, 7), lam(0x4a3424), HALF - 0.7, 1.3, 2);
+      const spines = new T.Mesh(new T.PlaneGeometry(6.6, 2.2),
+        lam(0xffffff, {map:bookSpineTex(T, 313)}));
+      spines.position.set(HALF - 0.42, 1.4, 2); spines.rotation.y = -Math.PI/2; scene.add(spines);
+      addCol(HALF - 0.7, 2, 1.2);
+      // Shoe cubbies by the door
+      for(let i = 0; i < 3; i++)
+        mesh(new T.BoxGeometry(2.2, 0.4, 0.9), lam(0x3a2c1c), -HALF + 2, 0.2 + i*0.5, HALF - 2);
+      addCol(-HALF + 2, HALF - 2, 1.3);
+      staffAt = {x:1.5, z:-HALF + 3.2, ry:0.4};
+
+    // ════ LIBRARY — stacks and reading lamps
+    } else if(id === 'library'){
+      deskLabel = 'The front desk';
+      mesh(new T.BoxGeometry(4.4, 1.05, 1.3), lam(0x4a3424), 0, 0.52, -HALF + 3.6);
+      addCol(0, -HALF + 3.6, 1.5);
+      for(let i = 0; i < 4; i++){
+        const sx = -8 + i*5.2;
+        mesh(new T.BoxGeometry(1.1, 3.2, 9), lam(0x4a3424), sx, 1.6, 1.5);
+        addCol(sx, -1, 1.2); addCol(sx, 4, 1.2);
+        for(const side of [-1, 1]){
+          for(let lvl = 0; lvl < 4; lvl++){
+            const sp = new T.Mesh(new T.PlaneGeometry(8.4, 0.62),
+              lam(0xffffff, {map:bookSpineTex(T, i*97 + lvl*31 + side*7 + 100)}));
+            sp.position.set(sx + side*0.56, 0.7 + lvl*0.78, 1.5);
+            sp.rotation.y = side > 0 ? -Math.PI/2 : Math.PI/2;
+            scene.add(sp);
+          }
+        }
+      }
+      // Reading table with green banker lamps
+      mesh(new T.BoxGeometry(5, 0.95, 1.8), lam(0x5e4226), 4, 0.47, HALF - 4);
+      addCol(4, HALF - 4, 2);
+      for(const lx of [2.6, 5.4]){
+        mesh(new T.CylinderGeometry(0.05, 0.08, 0.5, 6), lam(0xc9a961), lx, 1.2, HALF - 4);
+        mesh(new T.SphereGeometry(0.16, 8, 6), lam(0x2c6a3a, {emissive:0x4aff8a, emissiveIntensity:0.7}),
+          lx, 1.5, HALF - 4);
+      }
+      staffAt = {x:0, z:-HALF + 2.2, ry:0};
+
+    // ════ RESTAURANT — tables, pendants, menu board, kitchen pass
+    } else if(id === 'restaurant'){
+      deskLabel = 'The host stand — a table for you';
+      const menu = new T.Mesh(new T.PlaneGeometry(4.5, 2.4),
+        lam(0xffffff, {map:textBoardTex(T, ['— TODAY —','Lamb mandi ........ 18','Chicken kabsa ..... 14','Knafeh ............. 7'], '#241a10', '#e8d8b0')}));
+      menu.position.set(0, 2.6, -HALF + 0.25); scene.add(menu);
+      // Kitchen pass — warm glowing window
+      const pass = new T.Mesh(new T.PlaneGeometry(3.4, 1.5),
+        lam(0xffc468, {emissive:0xff9c40, emissiveIntensity:0.9}));
+      pass.position.set(-HALF + 0.25, 1.9, -3); pass.rotation.y = Math.PI/2; scene.add(pass);
+      mesh(new T.BoxGeometry(3.4, 1.05, 1.2), lam(0x4a3424), 0, 0.52, -HALF + 4);
+      addCol(0, -HALF + 4, 1.4);
+      // Round tables with chairs + pendant bulbs above each
+      const spots = [[-6,-1],[0,0.5],[6,-1],[-4,5.5],[3.5,6]];
+      spots.forEach(function(s, si){
+        mesh(new T.CylinderGeometry(1.15, 1.15, 0.1, 14), lam(0x6a4a2c), s[0], 0.95, s[1]);
+        mesh(new T.CylinderGeometry(0.12, 0.3, 0.95, 8), lam(0x3a2c1c), s[0], 0.47, s[1]);
+        addCol(s[0], s[1], 1.5);
+        for(let ci = 0; ci < 3; ci++){
+          const a = ci/3 * Math.PI*2 + si;
+          mesh(new T.BoxGeometry(0.6, 0.95, 0.6), lam(0x5a3a28),
+            s[0] + Math.cos(a)*1.8, 0.45, s[1] + Math.sin(a)*1.8);
+        }
+        const cord = new T.Mesh(new T.CylinderGeometry(0.02, 0.02, CEIL - 2.4, 4), lam(0x1a1410));
+        cord.position.set(s[0], CEIL - (CEIL-2.4)/2, s[1]); scene.add(cord);
+        const bulb = new T.Mesh(new T.SphereGeometry(0.16, 8, 6),
+          lam(0xffd890, {emissive:0xffc468, emissiveIntensity:1.3}));
+        bulb.position.set(s[0], 2.4, s[1]); scene.add(bulb);
+      });
+      staffAt = {x:1.6, z:-HALF + 3.2, ry:0.3};
+
+    // ════ NIGHTCLUB / CINEMA — by id
+    } else if(id === 'club'){
+      deskLabel = 'The bar';
+      // Dance floor — glowing checker
+      const dfcv = document.createElement('canvas'); dfcv.width = 128; dfcv.height = 128;
+      const dg = dfcv.getContext('2d');
+      const dcols = ['#ff3a8a','#3affd8','#ffd83a','#8a3aff'];
+      for(let y = 0; y < 4; y++) for(let x = 0; x < 4; x++){
+        dg.fillStyle = dcols[(x + y*3) % 4]; dg.fillRect(x*32, y*32, 32, 32);
+      }
+      const dfTex = new T.CanvasTexture(dfcv);
+      const df = new T.Mesh(new T.PlaneGeometry(8, 8),
+        lam(0xffffff, {map:dfTex, emissive:0xffffff, emissiveIntensity:0.45, emissiveMap:dfTex}));
+      df.rotation.x = -Math.PI/2; df.position.set(0, 0.02, 1); scene.add(df);
+      // Bar + bottles
+      mesh(new T.BoxGeometry(7, 1.15, 1.3), lam(0x241a14), 0, 0.57, -HALF + 3.6);
+      addCol(0, -HALF + 3.6, 1.5);
+      for(let i = 0; i < 9; i++){
+        mesh(new T.CylinderGeometry(0.09, 0.11, 0.55, 6),
+          lam([0x3affd8, 0xffd83a, 0xff3a8a, 0x8aff3a][i % 4], {emissive:0x444444, emissiveIntensity:0.3}),
+          -2.8 + i*0.7, 1.65, -HALF + 1.2);
+      }
+      mesh(new T.BoxGeometry(7, 0.12, 0.8), lam(0x3a2c20), 0, 1.35, -HALF + 1.2);
+      // DJ booth + spot cones
+      mesh(new T.BoxGeometry(2.6, 1.3, 1.4), lam(0x14141c, {emissive:0x3a3aff, emissiveIntensity:0.3}),
+        HALF - 3, 0.65, -HALF + 4);
+      addCol(HALF - 3, -HALF + 4, 1.6);
+      [[0xff3a8a, -4], [0x3affd8, 0], [0xffd83a, 4]].forEach(function(s){
+        const spot = new T.Mesh(new T.ConeGeometry(1.8, 5, 12, 1, true),
+          new T.MeshBasicMaterial({color:s[0], transparent:true, opacity:0.10, side:T.DoubleSide, depthWrite:false}));
+        spot.position.set(s[1], CEIL - 2.4, 1); scene.add(spot);
+      });
+      staffAt = {x:1.8, z:-HALF + 2.2, ry:0};
+    } else if(id === 'cinema'){
+      deskLabel = 'Tickets & popcorn';
+      // Screen — pale glowing wall
+      const scr = new T.Mesh(new T.PlaneGeometry(11, 4.6),
+        lam(0xc8d4e0, {emissive:0xaac0d8, emissiveIntensity:0.8}));
+      scr.position.set(0, 2.8, -HALF + 0.3); scene.add(scr);
+      // Raked seat rows
+      for(let r = 0; r < 4; r++) for(let q = -3; q <= 3; q++){
+        if(Math.abs(q) === 1 && r === 0) continue;
+        mesh(new T.BoxGeometry(1.1, 0.55 + r*0.12, 1.0), lam(0x6a1c24),
+          q*1.7, (0.55 + r*0.12)/2, 0.5 + r*2.2);
+        mesh(new T.BoxGeometry(1.1, 0.9, 0.18), lam(0x5a141c),
+          q*1.7, 0.8 + r*0.12, 1.0 + r*2.2);
+      }
+      addCol(0, 3, 6.5);
+      mesh(new T.BoxGeometry(3, 1.05, 1.2), lam(0x4a2c1c), HALF - 3.4, 0.52, HALF - 3.4);
+      addCol(HALF - 3.4, HALF - 3.4, 1.4);
+      deskX = HALF - 3.4; deskZ = HALF - 3.4;
+      staffAt = {x:HALF - 3.4, z:HALF - 2.0, ry:Math.PI};
+
+    // ════ GYM ════
+    } else if(id === 'gym'){
+      deskLabel = 'The front desk';
+      mesh(new T.BoxGeometry(3.4, 1.05, 1.2), lam(0x2c3038), 0, 0.52, -HALF + 3.6);
+      addCol(0, -HALF + 3.6, 1.4);
+      // Mirror wall
+      const mirror = new T.Mesh(new T.PlaneGeometry(HALF*1.6, 3),
+        lam(0xb8c8d4, {emissive:0x8898a8, emissiveIntensity:0.35}));
+      mirror.position.set(0, 1.9, -HALF + 0.3); scene.add(mirror);
+      // Treadmills
+      for(let i = 0; i < 3; i++){
+        mesh(new T.BoxGeometry(1.0, 0.35, 2.4), lam(0x1c2026), -6 + i*2.4, 0.17, 3);
+        mesh(new T.BoxGeometry(1.0, 1.3, 0.18), lam(0x2c3038), -6 + i*2.4, 0.85, 1.9);
+        addCol(-6 + i*2.4, 3, 1.3);
+      }
+      // Bench press: bench + bar + plates
+      mesh(new T.BoxGeometry(0.7, 0.5, 2.2), lam(0x6a1c24), 5, 0.45, 4);
+      const bar = new T.Mesh(new T.CylinderGeometry(0.05, 0.05, 3.4, 8), lam(0x9aa4aa));
+      bar.rotation.z = Math.PI/2; bar.position.set(5, 1.35, 3.4); scene.add(bar);
+      for(const side of [-1.4, 1.4]){
+        const plate = new T.Mesh(new T.CylinderGeometry(0.42, 0.42, 0.14, 12), lam(0x14181c));
+        plate.rotation.z = Math.PI/2; plate.position.set(5 + side, 1.35, 3.4); scene.add(plate);
+      }
+      addCol(5, 4, 1.6);
+      // Dumbbell rack
+      mesh(new T.BoxGeometry(3, 0.9, 0.7), lam(0x2c3038), HALF - 2.4, 0.45, -3);
+      for(let i = 0; i < 5; i++)
+        mesh(new T.SphereGeometry(0.16 + i*0.03, 8, 6), lam(0x14181c), HALF - 3.5 + i*0.55, 1.05, -3);
+      addCol(HALF - 2.4, -3, 1.4);
+      staffAt = {x:1.6, z:-HALF + 2.2, ry:0};
+
+    // ════ HOME — sofa, kitchen, dining, bed
+    } else if(type === 'home' || type === 'neighbor'){
+      deskLabel = type === 'home' ? 'Rest at home' : 'Sit with the neighbors';
+      // Rug
+      const rug = new T.Mesh(new T.CircleGeometry(2.6, 24),
+        lam(0x7a2c2c, {map:null}));
+      rug.rotation.x = -Math.PI/2; rug.position.set(0, 0.02, 1); scene.add(rug);
+      // L-sofa + TV
+      mesh(new T.BoxGeometry(4, 0.8, 1.3), lam(0x4a5668), 0, 0.4, 3.6);
+      mesh(new T.BoxGeometry(1.3, 0.8, 2.6), lam(0x4a5668), -2.4, 0.4, 2.4);
+      addCol(0, 3.6, 2); addCol(-2.4, 2.4, 1.4);
+      const tv = new T.Mesh(new T.PlaneGeometry(2.6, 1.5),
+        lam(0x10141c, {emissive:0x2a3a5a, emissiveIntensity:0.5}));
+      tv.position.set(0, 1.6, -HALF + 0.3); scene.add(tv);
+      // Kitchen along right wall
+      mesh(new T.BoxGeometry(0.9, 1.0, 6), lam(0x8a8478), HALF - 1.2, 0.5, -2);
+      mesh(new T.BoxGeometry(0.9, 0.9, 1.2), lam(0xd8d8d4), HALF - 1.2, 0.45, -5.4); // fridge base
+      mesh(new T.BoxGeometry(0.9, 1.1, 1.2), lam(0xd8d8d4), HALF - 1.2, 1.45, -5.4);
+      addCol(HALF - 1.2, -2, 1.2); addCol(HALF - 1.2, -5.4, 1.2);
+      // Dining table
+      mesh(new T.BoxGeometry(2.6, 0.95, 1.6), lam(0x6a4a2c), -5, 0.47, -3);
+      addCol(-5, -3, 1.8);
+      for(const a of [[-6.2,-3],[-3.8,-3],[-5,-4.2],[-5,-1.8]])
+        mesh(new T.BoxGeometry(0.55, 0.9, 0.55), lam(0x5a3a28), a[0], 0.42, a[1]);
+      // Bed in far corner
+      mesh(new T.BoxGeometry(2.2, 0.6, 3.2), lam(0x7a6a4a), -HALF + 2.2, 0.3, -HALF + 3);
+      mesh(new T.BoxGeometry(1.8, 0.25, 0.9), lam(0xd8d4c8), -HALF + 2.2, 0.72, -HALF + 1.9);
+      addCol(-HALF + 2.2, -HALF + 3, 1.8);
+      // Family photos
+      for(let i = 0; i < 3; i++){
+        const ph = new T.Mesh(new T.PlaneGeometry(0.7, 0.9),
+          lam([0xc9a961, 0x8a9a6a, 0x6a8a9a][i], {emissive:0x222222, emissiveIntensity:0.2}));
+        ph.position.set(-3 + i*1.4, 2.4, -HALF + 0.28); scene.add(ph);
+      }
+
+    // ════ Fallback office ════
+    } else {
+      mesh(new T.BoxGeometry(5, 1.2, 1.6), lam(0x4a4438), deskX, 0.6, deskZ);
+      addCol(deskX, deskZ, 1.8);
+      mesh(new T.BoxGeometry(3, 0.7, 1.4), lam(0x3a3430), 5, 0.35, 2);
+      addCol(5, 2, 1.6);
+      staffAt = {x:0, z:-HALF + 2.4, ry:0};
+    }
+
+    // Staff member with a face behind the counter
+    if(staffAt){
+      const sp = makePerson(T, staffSeed * 13 + 5);
+      sp.grp.position.set(staffAt.x, 0, staffAt.z);
+      sp.grp.rotation.y = (staffAt.ry || 0) + Math.PI; // face the room
+      scene.add(sp.grp);
+      staff = {m:sp.grp, face:sp.face, armL:sp.armL, armR:sp.armR, ph:staffSeed % 7};
+      addCol(staffAt.x, staffAt.z, 0.6);
+    }
+
+    // Desk + exit pads
     const deskGlow = new T.Mesh(new T.CylinderGeometry(1.5, 1.5, 0.1, 16),
       new T.MeshBasicMaterial({color:0xc9a961, transparent:true, opacity:0.35}));
     deskGlow.position.set(deskX, 0.06, deskZ + 2.4); scene.add(deskGlow);
@@ -23546,7 +24058,7 @@ function getSpoofRival(careerKey, country){
       {kind:'desk', b:{name:b.name, icon:b.icon, action:b.action}, label:deskLabel, x:deskX, z:deskZ + 2.4, glow:deskGlow},
       {kind:'exit', b:{name:'outside', icon:'🚪'}, label:'Step outside', x:0, z:HALF - 2, glow:exitGlow},
     ];
-    return {scene:scene, colliders:colliders, interactives:interactives, half:HALF};
+    return {scene:scene, colliders:colliders, interactives:interactives, half:HALF, staff:staff};
   }
 
   function enterInterior(b){
@@ -23559,6 +24071,7 @@ function getSpoofRival(careerKey, country){
       }
     }
     const room = w.interiors[b.id];
+    w.curRoom = room;
     w.extPos = {x:w.cam.position.x, z:w.cam.position.z, yaw:w.yaw, pitch:w.pitch};
     w.mode = 'int';
     w.scene = room.scene; w.colliders = room.colliders; w.interactives = room.interactives;
@@ -23585,6 +24098,7 @@ function getSpoofRival(careerKey, country){
   function exitInterior(){
     const w = world;
     w.mode = 'ext';
+    w.curRoom = null;
     w.scene = w.ext.scene; w.colliders = w.ext.colliders; w.interactives = w.ext.interactives;
     w.bounds = 190;
     if(w.extPos){
@@ -23945,6 +24459,19 @@ function getSpoofRival(careerKey, country){
         }
       }
 
+      // Staff idle: gentle sway, face follows you around the counter
+      if(w.mode === 'int' && w.curRoom && w.curRoom.staff){
+        const st = w.curRoom.staff;
+        const sway = Math.sin(now/900 + st.ph) * 0.05;
+        if(st.armL) st.armL.rotation.x = sway;
+        if(st.armR) st.armR.rotation.x = -sway;
+        if(st.face){
+          const dx = w.cam.position.x - st.m.position.x, dz = w.cam.position.z - st.m.position.z;
+          const want = Math.atan2(dx, dz) - st.m.rotation.y;
+          st.face.rotation.y += (want - st.face.rotation.y) * 0.08;
+        }
+      }
+
       // Minimap (throttled)
       if(w.mode === 'ext' && now - (w._mmLast || 0) > 120){
         w._mmLast = now;
@@ -24258,6 +24785,65 @@ function getSpoofRival(careerKey, country){
     _speechTimer = setTimeout(function(){ el.style.opacity = '0'; }, 4200);
   }
 
+  // ── Kenney City Kit (CC0, kenney.nl) — real modelled houses, trees,
+  //    a fountain, and a garage, vendored in ./models. Loads after the
+  //    world is already playable; failure changes nothing.
+  function enhanceWithKenney(w){
+    if(w.kenneyDone || !window.THREE || !THREE.GLTFLoader) return;
+    w.kenneyDone = true;
+    const loader = new THREE.GLTFLoader();
+    const cache = {};
+    function get(name, cb){
+      if(cache[name]){ cb(cache[name]); return; }
+      loader.load('models/' + name + '.glb', function(g){
+        g.scene.traverse(function(o){ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+        cache[name] = g.scene; cb(g.scene);
+      }, undefined, function(){ /* keep procedural */ });
+    }
+    // Swap family homes for modelled houses
+    const houses = ['building-small-a', 'building-small-b', 'building-small-c', 'building-small-d'];
+    (w.kenneySwaps || []).forEach(function(sw){
+      get(houses[sw.kind % 4], function(model){
+        sw.parts.forEach(function(m){ w.ext.scene.remove(m); });
+        const inst = model.clone();
+        const s = sw.w * 0.62;
+        inst.scale.set(s, s, s);
+        inst.position.set(sw.x, 0, sw.z);
+        inst.rotation.y = Math.PI; // door faces the street pad
+        w.ext.scene.add(inst);
+      });
+    });
+    // Garage beside your car's parking spot
+    get('building-garage', function(model){
+      const g = model.clone();
+      g.scale.set(6, 6, 6);
+      g.position.set(-16.5, 0, -24);
+      g.rotation.y = Math.PI / 2;
+      w.ext.scene.add(g);
+    });
+    // Fountain plaza at the central crossing
+    get('pavement-fountain', function(model){
+      const fo = model.clone();
+      fo.scale.set(7, 7, 7);
+      fo.position.set(14, 0.02, 14);
+      w.ext.scene.add(fo);
+      w.ext.colliders.push({x:14, z:14, half:3.2});
+    });
+    // Modelled tree clusters scattered off-road
+    get('grass-trees', function(model){
+      for(let i = 0; i < 8; i++){
+        const t = model.clone();
+        const tx = (Math.sin(i*73.1)*0.5+0.5) * 280 - 140;
+        const tz = (Math.sin(i*131.7)*0.5+0.5) * 280 - 140;
+        if(Math.abs(tx) < 12 || Math.abs(tz) < 12) continue;
+        t.scale.set(6, 6, 6);
+        t.position.set(tx, 0, tz);
+        t.rotation.y = i * 1.3;
+        w.ext.scene.add(t);
+      }
+    });
+  }
+
   window.openLyfeWorld = function(){
     const c = LIFE && LIFE.char;
     if(c && c.age < 5){ toast('Too young to wander the city alone.'); return; }
@@ -24280,6 +24866,7 @@ function getSpoofRival(careerKey, country){
       // Refresh the living parts on every visit: family ages, kids are
       // born, properties get bought and sold between sessions in here.
       try { buildFamily(world); buildProperties(world); } catch(e){}
+      try { enhanceWithKenney(world); } catch(e){}
       startLoop();
     });
   };
@@ -24467,6 +25054,7 @@ body{
 `;
   document.head.appendChild(m);
 })();
+
 
 
 

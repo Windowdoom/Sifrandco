@@ -22772,6 +22772,9 @@ function getSpoofRival(careerKey, country){
     + '<button id="lw-exit">✕ Leave</button>'
     + '<div id="lw-prompt"></div>'
     + '<div id="lw-hint">WASD move · mouse look · E enter · Esc leave</div>'
+    + '<canvas id="lw-minimap" width="132" height="132" style="position:absolute;'
+    +   'top:calc(58px + env(safe-area-inset-top,0px));right:14px;width:132px;height:132px;'
+    +   'pointer-events:none;"></canvas>'
     + '<div id="lw-joy"><div id="lw-joy-knob"></div></div>';
   document.body.appendChild(wrap);
 
@@ -23276,6 +23279,144 @@ function getSpoofRival(careerKey, country){
     }
   }
 
+  // ── Family in the world — spouse and kids near the house, each with
+  //    a name tag and things to say. Rebuilt every time you enter.
+  function nameTag(T, text){
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+    const g = cv.getContext('2d');
+    g.fillStyle = 'rgba(6,15,10,0.78)'; g.fillRect(0,0,256,64);
+    g.strokeStyle = 'rgba(201,169,97,0.6)'; g.lineWidth = 3; g.strokeRect(2,2,252,60);
+    g.fillStyle = '#e8dcc0'; g.font = 'bold 30px Georgia,serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, 128, 33, 240);
+    const sp = new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(cv), transparent:true}));
+    sp.scale.set(4.4, 1.1, 1);
+    return sp;
+  }
+
+  function buildFamily(w){
+    const T = w.T, c = LIFE && LIFE.char;
+    if(w.familyGrp){ w.ext.scene.remove(w.familyGrp); }
+    w.family = [];
+    w.familyGrp = new T.Group();
+    if(!c) return;
+    const HX = -9.6, HZ = -33.6; // your house
+    const members = [];
+    if(c.partner && c.partner.alive !== false)
+      members.push({who:'spouse', name:c.partner.firstName, col:0x8a5a7a, h:1.65, ref:c.partner});
+    (c.children || []).filter(k => k.alive !== false && (k.age||0) >= 3).slice(0, 4).forEach(function(k, i){
+      members.push({who:'kid', name:k.name || k.firstName || 'Little one', col:0x5a8a7a,
+                    h: Math.min(1.5, 0.7 + (k.age||5) * 0.05), ref:k});
+    });
+    members.forEach(function(m, i){
+      const cap = new T.Mesh(new T.CapsuleGeometry(0.38 * (m.h/1.65), m.h * 0.62, 4, 8),
+        new T.MeshLambertMaterial({color:m.col}));
+      const px = HX + 4 + i * 2.4, pz = HZ + 9 + (i % 2) * 2.5;
+      cap.position.set(px, m.h * 0.55, pz);
+      w.familyGrp.add(cap);
+      const tag = nameTag(T, m.name);
+      tag.position.set(px, m.h + 1.0, pz);
+      w.familyGrp.add(tag);
+      w.family.push({m:cap, tag:tag, x:px, z:pz, hx:px, hz:pz, a:Math.random()*6.28, t:1+Math.random()*3,
+                     who:m.who, name:m.name, ref:m.ref, talked:false});
+    });
+    w.ext.scene.add(w.familyGrp);
+  }
+
+  const FAMILY_LINES = {
+    spouse: function(p, c){
+      const compat = (p && p.compat) || 50;
+      if(compat >= 75) return [
+        '"There you are. The house is quiet without your noise."',
+        '"Walk with me later? Just around the block. Like before."',
+        '"I made your favourite. It\'s either ready or burnt — come find out."',
+      ];
+      if(compat >= 45) return [
+        '"Oh — you\'re home early. Good. Or… is everything okay?"',
+        '"The bills are on the table. I\'m not saying anything. I\'m just saying where they are."',
+        '"We should talk tonight. Nothing bad. Mostly nothing bad."',
+      ];
+      return [
+        '"...We keep missing each other. In every sense, lately."',
+        '"Your dinner\'s in the fridge. It\'s been in the fridge a lot this year."',
+      ];
+    },
+    kid: function(k, c){
+      const age = (k && k.age) || 6;
+      if(age < 7) return [
+        '"BABA! Watch this! No wait — watch THIS!"',
+        '"Can we get ice cream? You said maybe LAST time. Maybe means yes."',
+        '"I drew you. You\'re the circle with the legs."',
+      ];
+      if(age < 13) return [
+        '"Did you know a falcon can dive at 300 km/h? I\'m going to be a falcon."',
+        '"Everyone at school has a phone. EVERYONE. I checked."',
+        '"Race you to the lamppost. Loser does the dishes for Mama."',
+      ];
+      if(age < 18) return [
+        '"Hey. ...Nothing. Just— hey." *goes back to phone*',
+        '"Can I borrow the car when I pass my test? Hypothetically. This is hypothetical."',
+        '"I prayed fajr on my own today. Don\'t make it a thing. ...Okay you can make it a small thing."',
+      ];
+      return [
+        '"Salam, I was just heading out — but I\'ve got a minute for you. Always."',
+        '"I\'ve been meaning to call. I know, I know. I\'m here now."',
+      ];
+    },
+  };
+
+  function talkToFamily(f){
+    const c = LIFE && LIFE.char;
+    const pool = FAMILY_LINES[f.who];
+    let lines;
+    try { lines = pool(f.ref, c); } catch(e){ lines = ['"..."']; }
+    showWorldSpeech((f.who === 'spouse' ? '💞 ' : '👧 ') + f.name + ': ' + lines[Math.floor(Math.random()*lines.length)]);
+    if(c && !f.talked){
+      f.talked = true; // once per visit
+      c.happiness = clamp(c.happiness + 2, 0, 100);
+      if(c.sakina !== undefined) c.sakina = clamp(c.sakina + 1, 0, 100);
+      if(typeof renderAll === 'function') renderAll();
+    }
+  }
+
+  // ── Your real-estate empire — owned properties rise in the NE district
+  function buildProperties(w){
+    const T = w.T, c = LIFE && LIFE.char;
+    if(w.propGrp){ w.ext.scene.remove(w.propGrp); }
+    w.propGrp = new T.Group();
+    w.propInteractives = [];
+    // Clear last visit's property pads/colliders before rebuilding
+    w.ext.interactives = w.ext.interactives.filter(function(x){ return !x.isProp; });
+    w.ext.colliders    = w.ext.colliders.filter(function(x){ return !x.isProp; });
+    if(!c || !c.properties || !c.properties.length){ w.ext.scene.add(w.propGrp); return; }
+    c.properties.slice(0, 9).forEach(function(p, i){
+      const px = 95 + (i % 3) * 22, pz = -95 - Math.floor(i / 3) * 22;
+      const hh = 4 + Math.min(8, ((p.currentValue || 100000) / 250000));
+      const house = new T.Mesh(new T.BoxGeometry(8, hh, 8),
+        new T.MeshLambertMaterial({color: p.rentedOut ? 0x4a6a4a : 0x6a5a40}));
+      house.position.set(px, hh/2, pz);
+      w.propGrp.add(house);
+      const roof = new T.Mesh(new T.ConeGeometry(6.4, 3, 4),
+        new T.MeshLambertMaterial({color:0x3a2c20}));
+      roof.rotation.y = Math.PI/4; roof.position.set(px, hh + 1.5, pz);
+      w.propGrp.add(roof);
+      const tag = nameTag(T, (p.rentedOut ? '🔑 ' : '') + (p.nickname || 'Property'));
+      tag.position.set(px, hh + 4, pz);
+      w.propGrp.add(tag);
+      const glow = new T.Mesh(new T.CylinderGeometry(1.5, 1.5, 0.1, 16),
+        new T.MeshBasicMaterial({color:0xc9a961, transparent:true, opacity:0.3}));
+      glow.position.set(px, 0.06, pz + 6);
+      w.propGrp.add(glow);
+      w.propInteractives.push({kind:'desk', isProp:true,
+                               b:{name:p.nickname || 'Property', icon:'🏘️', action:'openRealEstate'},
+                               label:'manage ' + (p.nickname || 'property'), x:px, z:pz + 6, glow:glow});
+      w.ext.colliders.push({x:px, z:pz, half:4.8, isProp:true});
+    });
+    w.ext.scene.add(w.propGrp);
+    w.propInteractives.forEach(function(it){ w.ext.interactives.push(it); });
+    if(w.mode === 'ext'){ w.interactives = w.ext.interactives; w.colliders = w.ext.colliders; }
+  }
+
   // ── Controls + loop
   function startLoop(){
     const w = world;
@@ -23391,6 +23532,19 @@ function getSpoofRival(careerKey, country){
         n.m.rotation.y = -n.a + Math.PI/2;
       }
 
+      // Family drift gently near home
+      if(w.mode === 'ext' && w.family) for(const f of w.family){
+        f.t -= dt;
+        if(f.t <= 0){ f.a = Math.random()*Math.PI*2; f.t = 2 + Math.random()*5; }
+        f.x += Math.cos(f.a) * dt * 0.7;
+        f.z += Math.sin(f.a) * dt * 0.7;
+        // tether to home spot
+        f.x = Math.max(f.hx - 6, Math.min(f.hx + 6, f.x));
+        f.z = Math.max(f.hz - 5, Math.min(f.hz + 5, f.z));
+        f.m.position.x = f.x; f.m.position.z = f.z;
+        f.tag.position.x = f.x; f.tag.position.z = f.z;
+      }
+
       // Proximity → prompt
       w.near = null;
       if(w.mode === 'car'){
@@ -23412,7 +23566,16 @@ function getSpoofRival(careerKey, country){
         if(w.mode === 'ext' && w.car){
           const d2 = (nx-w.car.x)*(nx-w.car.x) + (nz-w.car.z)*(nz-w.car.z);
           if(d2 < 22 && d2 < best){
+            best = d2;
             w.near = {kind:'car', b:{name:w.car.name, icon:'🚗'}, label:'drive your ' + w.car.name};
+          }
+        }
+        // Family beats everything when you're beside them
+        if(w.mode === 'ext' && w.family) for(const f of w.family){
+          const d2 = (nx-f.x)*(nx-f.x) + (nz-f.z)*(nz-f.z);
+          if(d2 < 14 && d2 < best){
+            best = d2;
+            w.near = {kind:'family', f:f, b:{name:f.name, icon:(f.who==='spouse'?'💞':'👧')}, label:'talk to ' + f.name};
           }
         }
         if(w.near){
@@ -23428,14 +23591,61 @@ function getSpoofRival(careerKey, country){
         }
       }
 
+      // Minimap (throttled)
+      if(w.mode === 'ext' && now - (w._mmLast || 0) > 120){
+        w._mmLast = now;
+        drawMinimap(w, nx, nz);
+      }
+
       w.renderer.render(w.scene, w.cam);
     }
     w.raf = requestAnimationFrame(tick);
   }
 
+  // ── Minimap — building dots, roads, your arrow, the car, the family
+  function drawMinimap(w, px, pz){
+    const cv = document.getElementById('lw-minimap');
+    if(!cv) return;
+    const g = cv.getContext('2d');
+    const S = cv.width, scale = S / 400; // world ±200 → canvas
+    const mx = function(x){ return S/2 + x * scale; };
+    const mz = function(z){ return S/2 + z * scale; };
+    g.clearRect(0, 0, S, S);
+    g.fillStyle = 'rgba(6,15,10,0.78)';
+    g.beginPath(); g.arc(S/2, S/2, S/2, 0, 7); g.fill();
+    g.save();
+    g.beginPath(); g.arc(S/2, S/2, S/2 - 2, 0, 7); g.clip();
+    // roads
+    g.strokeStyle = 'rgba(120,130,140,0.5)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(0, S/2); g.lineTo(S, S/2); g.moveTo(S/2, 0); g.lineTo(S/2, S); g.stroke();
+    // buildings
+    for(const it of w.ext.interactives){
+      if(it.kind && !it.isProp) continue;
+      const t = it.b && it.b.name && it.b.name.indexOf('Masjid') >= 0;
+      g.fillStyle = t ? '#c9a961' : (it.isProp ? '#7ab87a' : 'rgba(180,190,200,0.75)');
+      g.fillRect(mx(it.x) - 2, mz(it.z) - 2, t ? 5 : 4, t ? 5 : 4);
+    }
+    // car
+    if(w.car){ g.fillStyle = '#e8b45a'; g.fillRect(mx(w.car.x)-2, mz(w.car.z)-2, 4, 4); }
+    // family
+    if(w.family) for(const f of w.family){
+      g.fillStyle = '#ff8ab0'; g.fillRect(mx(f.x)-1.5, mz(f.z)-1.5, 3, 3);
+    }
+    // you — arrow rotated by yaw
+    g.translate(mx(px), mz(pz));
+    g.rotate(-w.yaw);
+    g.fillStyle = '#6fc3a8';
+    g.beginPath(); g.moveTo(0, -6); g.lineTo(4, 5); g.lineTo(-4, 5); g.closePath(); g.fill();
+    g.restore();
+    // ring
+    g.strokeStyle = 'rgba(201,169,97,0.45)'; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(S/2, S/2, S/2 - 1, 0, 7); g.stroke();
+  }
+
   function enterBuilding(){
     const w = world;
     if(!w || !w.near) return;
+    if(w.near.kind === 'family'){ talkToFamily(w.near.f); return; }
     if(w.near.kind === 'car'){
       // Behind the wheel
       const c = LIFE && LIFE.char;
@@ -23713,6 +23923,9 @@ function getSpoofRival(careerKey, country){
           return;
         }
       }
+      // Refresh the living parts on every visit: family ages, kids are
+      // born, properties get bought and sold between sessions in here.
+      try { buildFamily(world); buildProperties(world); } catch(e){}
       startLoop();
     });
   };

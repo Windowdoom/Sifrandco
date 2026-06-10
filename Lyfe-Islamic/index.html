@@ -24438,6 +24438,14 @@ function getSpoofRival(careerKey, country){
             w.near = {kind:'car', b:{name:w.car.name, icon:'🚗'}, label:'drive your ' + w.car.name};
           }
         }
+        // The grave — quiet priority when you stand before it
+        if(w.mode === 'ext' && w.grave){
+          const d2 = (nx-w.grave.x)*(nx-w.grave.x) + (nz-w.grave.z)*(nz-w.grave.z);
+          if(d2 < 12 && d2 < best){
+            best = d2;
+            w.near = {kind:'grave', b:{name:w.grave.name, icon:'🪦'}, label:'make du\'a for ' + w.grave.name};
+          }
+        }
         // Family beats everything when you're beside them
         if(w.mode === 'ext' && w.family) for(const f of w.family){
           const d2 = (nx-f.x)*(nx-f.x) + (nz-f.z)*(nz-f.z);
@@ -24527,6 +24535,24 @@ function getSpoofRival(careerKey, country){
     const w = world;
     if(!w || !w.near) return;
     if(w.near.kind === 'family'){ talkToFamily(w.near.f); return; }
+    if(w.near.kind === 'grave'){
+      const c = LIFE && LIFE.char;
+      showWorldSpeech('🪦 You stood at the grave and made du\'a: "O Allah, forgive them, have mercy on them, and make their grave a garden." Rabbi irhamhuma kama rabbayani saghira.');
+      if(c){
+        c.sakina = clamp((c.sakina||50) + 3, 0, 100);
+        c.iman   = clamp((c.iman||0) + 1, 0, 100);
+        c.faith  = c.iman;
+        c.flags = c.flags || {};
+        c.flags.duaCount = (c.flags.duaCount||0) + 1;
+        if(!w._gravePrayed){
+          w._gravePrayed = true;
+          pushEvent('good', '🪦 You visited your parent\'s grave and made du\'a. The righteous child who prays for them. (Sahih Muslim 1631) Sakina +3.');
+          if(typeof renderAll === 'function') renderAll();
+          if(typeof saveLife === 'function') saveLife();
+        }
+      }
+      return;
+    }
     if(w.near.kind === 'car'){
       // Behind the wheel
       const c = LIFE && LIFE.char;
@@ -24943,6 +24969,191 @@ function getSpoofRival(careerKey, country){
       }
     };
   }
+})();
+
+
+// ═══════════════════════════════════════════════════════════════════════
+//  GENERATIONAL DEEN — what passes down besides the money
+//
+//  · Faraid (Quran 4:11) division option on the inheritance screen
+//  · The heir's iman is seeded from the parent's nasl legacy
+//  · The parent's madhab is the home the heir was raised in
+//  · The parent's grave appears by the masjid in the 3D world —
+//    visiting it to make du'a is a real act with real effect
+//  · Sadaqah jariyah keeps paying barakah to the line (Muslim 1631)
+// ═══════════════════════════════════════════════════════════════════════
+(function(){
+  if(typeof inheritAs !== 'function' || typeof continueAs !== 'function') return;
+
+  // ── Faraid option injected into the inheritance decision modal
+  const _origContinue = continueAs;
+  continueAs = function(kidName){
+    const oldChar = LIFE && LIFE.char;
+    _origContinue.apply(this, arguments);
+    if(!oldChar || oldChar.religion !== 'islam') return;
+    const liveKids = (oldChar.children || []).filter(k => k.alive);
+    if(liveKids.length < 2) return;
+    setTimeout(function(){
+      const body = document.getElementById('modal-body');
+      const modal = document.getElementById('modal');
+      if(!body || !modal || !modal.classList.contains('show')) return;
+      if(body.querySelector('[data-faraid]')) return;
+      const sons = liveKids.filter(k => k.sex === 'm').length;
+      const daughters = liveKids.length - sons;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.setAttribute('data-faraid', '1');
+      card.style.cssText = 'cursor:pointer;border-color:rgba(74,222,128,0.4);';
+      card.onclick = function(){ finalizeInheritance('faraid'); };
+      card.innerHTML = '<div class="card-ico">☪</div>'
+        + '<div class="card-body"><div class="card-title" style="color:#4ade80;">Divide by Faraid (Islamic shares)</div>'
+        + '<div class="card-meta">"Allah instructs you concerning your children: for the male, the equal of the portion of two females." (Quran 4:11). '
+        + sons + ' son' + (sons===1?'':'s') + ', ' + daughters + ' daughter' + (daughters===1?'':'s')
+        + '. The division the deceased would have wanted. No resentment; the family knows it is fair because it is revealed.</div></div>'
+        + '<div class="card-act"><button class="card-btn green">Choose</button></div>';
+      body.insertBefore(card, body.children[1] || null);
+    }, 60);
+  };
+
+  // ── Wrap inheritAs: faraid math + the deen transfer
+  const _origInherit = inheritAs;
+  inheritAs = function(kidName, mode){
+    const oldChar = LIFE && LIFE.char;
+    const wasMuslim = oldChar && oldChar.religion === 'islam';
+    // Snapshot the parent's spiritual estate before the swap
+    const snap = !oldChar ? null : {
+      name: oldChar.firstName + ' ' + oldChar.lastName,
+      sex: oldChar.sex,
+      madhab: oldChar.madhab || null,
+      halal: (oldChar.flags || {}).halalLegacy || 0,
+      haram: (oldChar.flags || {}).haramLegacy || 0,
+      sjCount: (oldChar.flags || {}).sadaqahJariyahCount || 0,
+      sjTotal: (oldChar.flags || {}).sadaqahJariyahTotal || 0,
+      salahStreak: (oldChar.flags || {}).salahStreakYears || 0,
+      hajj: !!(oldChar.flags || {}).hajjDone,
+      kidIman: (function(){
+        const k = (oldChar.children || []).find(x => x.name === kidName);
+        return k && k.iman != null ? k.iman : null;
+      })(),
+    };
+
+    let faraidAdjust = 0;
+    let realMode = mode;
+    if(mode === 'faraid' && oldChar){
+      // Compute this heir's faraid share vs the equal share the base
+      // engine will grant, then correct the difference afterwards.
+      const liveKids = (oldChar.children || []).filter(k => k.alive);
+      const estate = (typeof computeEstate === 'function') ? computeEstate(oldChar) : {totalAfterTax: oldChar.money || 0};
+      const kid = liveKids.find(k => k.name === kidName);
+      const units = liveKids.reduce(function(s, k){ return s + (k.sex === 'm' ? 2 : 1); }, 0);
+      const myUnits = kid && kid.sex === 'm' ? 2 : 1;
+      const faraidShare = Math.floor(estate.totalAfterTax * myUnits / Math.max(1, units));
+      const equalShare  = Math.floor(estate.totalAfterTax / Math.max(1, liveKids.length));
+      faraidAdjust = faraidShare - equalShare;
+      realMode = 'equal';
+    }
+
+    _origInherit.call(this, kidName, realMode);
+
+    const c = LIFE && LIFE.char;
+    if(!c) return;
+    if(faraidAdjust !== 0){
+      c.money += faraidAdjust;
+      pushEvent('milestone', '☪ The estate was divided by faraid (Quran 4:11). Your share: '
+        + (faraidAdjust > 0 ? 'the double portion of a son.' : 'the appointed portion.')
+        + ' The family accepted it without a word of dispute.');
+    }
+
+    // ── The deen transfer
+    if(wasMuslim && snap){
+      c.religion = 'islam';
+      if(typeof initIslamicChar === 'function') initIslamicChar(c);
+      // Starting iman: the child's own seeded iman if it exists,
+      // else derived from the parent's nasl balance
+      if(snap.kidIman != null){
+        c.iman = clamp(snap.kidIman, 5, 95);
+      } else {
+        const net = snap.halal - snap.haram;
+        c.iman = clamp(35 + Math.floor(clamp(net * 0.4, -15, 12)), 5, 95);
+      }
+      c.faith = c.iman;
+      c.kabairFlags = {};          // your record is your own (Quran 53:38)
+      c.tawbahCount = 0;
+      c.flags = c.flags || {};
+      c.flags.halalLegacy = 0;     // the ledger restarts; the influence remains
+      c.flags.haramLegacy = 0;
+      // Raised in the parent's madhab
+      if(snap.madhab){
+        c.madhab = snap.madhab;
+        c.flags.madhabPromptShown = true;
+        pushEvent('', '📚 You were raised in the ' + (MADHABS[snap.madhab] ? MADHABS[snap.madhab].name : snap.madhab) + ' madhab of your ' + (snap.sex === 'f' ? 'mother' : 'father') + '. It is yours to keep or to study beyond.');
+      }
+      // The grave — placed in the world, visitable
+      c.flags.parentGrave = {
+        name: snap.name, sex: snap.sex, hajj: snap.hajj,
+        salahStreak: snap.salahStreak,
+      };
+      // Sadaqah jariyah keeps working for the dead — and blesses the line
+      if(snap.sjCount > 0){
+        c.flags.inheritedSJ = {count: snap.sjCount, total: snap.sjTotal, from: snap.name};
+        pushEvent('milestone', '🕊 ' + snap.name + '\'s sadaqah jariyah (' + snap.sjCount + ' endowment' + (snap.sjCount===1?'':'s') + ', ' + fmtMoney(snap.sjTotal) + ') keeps running. "When a person dies, their deeds end except three..." (Sahih Muslim 1631). The barakah reaches you yearly.');
+      }
+      pushEvent('milestone', '🌱 Generation ' + LIFE.generation + '. What they planted, you water. What they broke, you may repair.');
+      if(typeof renderAll === 'function') renderAll();
+      if(typeof saveLife === 'function') saveLife();
+    }
+  };
+
+  // ── Yearly barakah trickle from inherited sadaqah jariyah
+  if(typeof ageUp === 'function'){
+    const _origAge = ageUp;
+    ageUp = function(){
+      _origAge.apply(this, arguments);
+      const c = LIFE && LIFE.char;
+      if(!c || !c.alive || c.religion !== 'islam') return;
+      const sj = (c.flags || {}).inheritedSJ;
+      if(sj && sj.count > 0){
+        c.barakah = clamp((c.barakah || 50) + 1, 0, 100);
+        if(Math.random() < 0.12){
+          pushEvent('good', '🕊 A well your ' + 'family' + ' endowed still gives water. ' + sj.from + '\'s ledger is still open. Barakah +1.');
+        }
+      }
+    };
+  }
+})();
+
+// ── The parent's grave in the 3D world — visit to make du'a
+(function(){
+  if(typeof buildFamily !== 'function') return;
+  const _orig = buildFamily;
+  buildFamily = function(w){
+    _orig.apply(this, arguments);
+    try {
+      const T = w.T, c = LIFE && LIFE.char;
+      if(w.graveGrp){ w.ext.scene.remove(w.graveGrp); w.grave = null; }
+      const g = c && c.flags && c.flags.parentGrave;
+      if(!g) return;
+      w.graveGrp = new T.Group();
+      // Behind the masjid (masjid sits at world 0, ~91)
+      const gx = 8, gz = 100;
+      const stone = new T.Mesh(new T.BoxGeometry(1.1, 1.5, 0.25),
+        new T.MeshLambertMaterial({color:0x8a8478}));
+      stone.position.set(gx, 0.75, gz); stone.castShadow = true;
+      w.graveGrp.add(stone);
+      const cap = new T.Mesh(new T.CylinderGeometry(0.56, 0.56, 0.25, 12, 1, false, 0, Math.PI),
+        new T.MeshLambertMaterial({color:0x8a8478}));
+      cap.rotation.z = Math.PI/2; cap.rotation.y = Math.PI/2;
+      cap.position.set(gx, 1.5, gz); w.graveGrp.add(cap);
+      const mound = new T.Mesh(new T.BoxGeometry(1.2, 0.25, 2.4),
+        new T.MeshLambertMaterial({color:0x4a3a28}));
+      mound.position.set(gx, 0.12, gz + 1.4); w.graveGrp.add(mound);
+      const glow = new T.Mesh(new T.CylinderGeometry(1.4, 1.4, 0.08, 14),
+        new T.MeshBasicMaterial({color:0x6fc3a8, transparent:true, opacity:0.25}));
+      glow.position.set(gx, 0.05, gz + 3); w.graveGrp.add(glow);
+      w.ext.scene.add(w.graveGrp);
+      w.grave = {x:gx, z:gz + 3, glow:glow, name:g.name};
+    } catch(e){}
+  };
 })();
 
 </script>

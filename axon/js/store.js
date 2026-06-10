@@ -25,6 +25,7 @@ function openDB(){
     };
     r.onsuccess = ()=>{ _db = r.result; res(_db); };
     r.onerror = ()=>rej(r.error);
+    r.onblocked = ()=>rej(new Error('Another AXON tab is holding the database. Close other AXON tabs and reload.'));
   });
 }
 function tx(store,mode){ return _db.transaction(store,mode).objectStore(store); }

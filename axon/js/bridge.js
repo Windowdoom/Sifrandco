@@ -9,7 +9,7 @@ export function bridgeInfo(){ return info; }
 
 export async function probeBridge(){
   try{
-    const res = await fetch('/__axon/token', { cache:'no-store' });
+    const res = await fetch('/__axon/token', { cache:'no-store', signal: AbortSignal.timeout ? AbortSignal.timeout(2500) : undefined });
     if(!res.ok) throw 0;
     const d = await res.json();
     token = d.token; info = d; online = true;

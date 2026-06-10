@@ -166,10 +166,12 @@ async function boot(){
   await store.init();
   ui.updateBadges(); ui.updateSpacePill();
   startParticles();
-  await probeBridge(); updateBridgeChip();
+  // bridge + knowledge intake run off the critical path; the UI never waits on them
+  probeBridge().then(()=>{
+    updateBridgeChip();
+    if(bridgeOnline()) ingestKnowledgeFolder(null).then(msg=>{ if(msg){ ui.updateBadges(); pushSys(msg); } }).catch(()=>{});
+  });
   setInterval(async ()=>{ await probeBridge(); updateBridgeChip(); }, 15000);
-  if(bridgeOnline()){ ingestKnowledgeFolder(m=>{ const bt=document.getElementById('bootText'); if(bt) bt.textContent=m; })
-    .then(msg=>{ if(msg){ ui.updateBadges(); pushSys(msg); } }).catch(()=>{}); }
   document.getElementById('send').addEventListener('click', submit);
   document.getElementById('cmd').addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
   document.getElementById('spacePill').addEventListener('click', ()=>ui.openDrawer('spaces'));
@@ -221,4 +223,7 @@ function proactiveLine(idle){
   return pick(["What are we working on?","Where shall we begin?","Your move. I am all ears."]);
 }
 
-window.addEventListener('load', ()=>setTimeout(boot, 200));
+// failsafe: the boot veil lifts no matter what goes wrong underneath
+setTimeout(()=>{ const v=document.getElementById('veil'); if(v && !v.classList.contains('gone')){ v.classList.add('gone'); const bt=document.getElementById('bootText'); if(bt) bt.textContent='online'; } }, 4500);
+
+window.addEventListener('load', ()=>setTimeout(()=>{ boot().catch(e=>{ document.getElementById('veil')?.classList.add('gone'); pushSys('Boot hiccup: '+e.message+'. The app is still usable.'); }); }, 200));

@@ -22732,6 +22732,12 @@ function getSpoofRival(careerKey, country){
 #lyfe-world{position:fixed;inset:0;z-index:5500;background:#060f0a;display:none;}
 #lyfe-world.open{display:block;}
 #lw-canvas{position:absolute;inset:0;width:100%;height:100%;}
+#lw-film{position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(2,6,4,0.42) 100%);}
+#lw-film::after{content:'';position:absolute;inset:0;opacity:0.05;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2'/></filter><rect width='90' height='90' filter='url(%23n)'/></svg>");
+  animation:lwGrain 0.45s steps(2) infinite;}
+@keyframes lwGrain{50%{transform:translate(2px,-2px);}}
 #lw-cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;
   border-radius:50%;background:rgba(201,169,97,.9);box-shadow:0 0 8px rgba(201,169,97,.6);pointer-events:none;}
 #lw-prompt{position:absolute;left:50%;bottom:18%;transform:translateX(-50%);
@@ -22760,11 +22766,15 @@ function getSpoofRival(careerKey, country){
   const wrap = document.createElement('div');
   wrap.id = 'lyfe-world';
   wrap.innerHTML = '<canvas id="lw-canvas"></canvas>'
+    + '<div id="lw-film"></div>'
     + '<div id="lw-cross"></div>'
     + '<div id="lw-loc">Your neighborhood</div>'
     + '<button id="lw-exit">✕ Leave</button>'
     + '<div id="lw-prompt"></div>'
     + '<div id="lw-hint">WASD move · mouse look · E enter · Esc leave</div>'
+    + '<canvas id="lw-minimap" width="132" height="132" style="position:absolute;'
+    +   'top:calc(58px + env(safe-area-inset-top,0px));right:14px;width:132px;height:132px;'
+    +   'pointer-events:none;"></canvas>'
     + '<div id="lw-joy"><div id="lw-joy-knob"></div></div>';
   document.body.appendChild(wrap);
 
@@ -22777,15 +22787,32 @@ function getSpoofRival(careerKey, country){
     const canvas = document.getElementById('lw-canvas');
     const renderer = new T.WebGLRenderer({canvas:canvas, antialias:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Filmic grading — the GTA/Fallout golden-hour look
+    if(T.ACESFilmicToneMapping !== undefined){
+      renderer.toneMapping = T.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+    }
     const scene = new T.Scene();
-    scene.background = new T.Color(0x0e1f2e);
-    scene.fog = new T.Fog(0x0e1f2e, 60, 220);
+    scene.fog = new T.FogExp2(0x182431, 0.0058);
 
-    const cam = new T.PerspectiveCamera(72, 1, 0.1, 400);
+    // Gradient sky dome — burnt-gold horizon bleeding into deep teal night
+    const skyMat = new T.ShaderMaterial({
+      side: T.BackSide, depthWrite: false, fog: false,
+      uniforms: { top:{value:new T.Color(0x0a1626)}, mid:{value:new T.Color(0x27384a)}, low:{value:new T.Color(0xb06a2e)} },
+      vertexShader: 'varying float vY; void main(){ vY = normalize(position).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 low; varying float vY;'
+        + 'void main(){ float h = clamp(vY, -0.05, 1.0);'
+        + ' vec3 c = h < 0.18 ? mix(low, mid, smoothstep(-0.05, 0.18, h)) : mix(mid, top, smoothstep(0.18, 0.7, h));'
+        + ' gl_FragColor = vec4(c, 1.0); }',
+    });
+    scene.add(new T.Mesh(new T.SphereGeometry(380, 24, 16), skyMat));
+
+    const cam = new T.PerspectiveCamera(72, 1, 0.1, 800);
     cam.position.set(0, 1.7, 10);
 
     // Dusk lighting — matches the illuminated-manuscript palette
-    scene.add(new T.HemisphereLight(0x35506a, 0x141d14, 0.9));
+    const hemi = new T.HemisphereLight(0x35506a, 0x141d14, 0.9);
+    scene.add(hemi);
     const sun = new T.DirectionalLight(0xc9a961, 1.1);
     sun.position.set(-40, 55, 25);
     scene.add(sun);
@@ -22819,6 +22846,30 @@ function getSpoofRival(careerKey, country){
       return sp;
     }
 
+    // Facade textures — grids of warm lit windows on dark concrete.
+    //  Three shared variants keep draw cost low; emissive map sells dusk.
+    function facadeTex(seed){
+      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
+      const g = cv.getContext('2d');
+      g.fillStyle = '#1c2026'; g.fillRect(0, 0, 256, 256);
+      let rnd = seed;
+      const rand = function(){ rnd = (rnd * 16807) % 2147483647; return rnd / 2147483647; };
+      for(let y = 16; y < 240; y += 30){
+        for(let x = 14; x < 240; x += 26){
+          const lit = rand() < 0.42;
+          g.fillStyle = lit
+            ? (rand() < 0.7 ? '#e8b45a' : '#b8d4e8')
+            : (rand() < 0.5 ? '#0c0e12' : '#141820');
+          g.fillRect(x, y, 16, 20);
+          if(lit){ g.fillStyle = 'rgba(232,180,90,0.25)'; g.fillRect(x-3, y-3, 22, 26); }
+        }
+      }
+      const tex = new T.CanvasTexture(cv);
+      tex.colorSpace = T.SRGBColorSpace || tex.colorSpace;
+      return tex;
+    }
+    const facades = [facadeTex(7919), facadeTex(104729), facadeTex(1299709)];
+
     // Buildings from CITY_LAYOUT (plus masjid + souq, added below)
     const interactives = [], colliders = [];
     const layout = (typeof CITY_LAYOUT !== 'undefined' ? CITY_LAYOUT.slice() : []);
@@ -22832,20 +22883,31 @@ function getSpoofRival(careerKey, country){
       const h  = b.type === 'home' || b.type === 'neighbor' ? 5 : 8 + ((b.x * 7 + b.y * 13) % 9);
       const wD = 10 + ((b.x * 3 + b.y) % 5);
       const col = TYPE_COL[b.type] || 0x5a5a6a;
-      const box = new T.Mesh(new T.BoxGeometry(wD, h, wD),
-        new T.MeshLambertMaterial({color:col}));
+      const lowRise = (b.type === 'home' || b.type === 'neighbor' || b.id === 'masjid' || b.type === 'masjid');
+      let box;
+      if(lowRise){
+        box = new T.Mesh(new T.BoxGeometry(wD, h, wD), new T.MeshLambertMaterial({color:col}));
+      } else {
+        // Tinted facade walls + plain roof — every side glows with windows
+        const f = facades[(b.x + b.y) % 3];
+        const wallM = new T.MeshLambertMaterial({color:col, map:f, emissive:0xc98a3a, emissiveIntensity:0.45, emissiveMap:f});
+        const roofM = new T.MeshLambertMaterial({color:0x14181c});
+        box = new T.Mesh(new T.BoxGeometry(wD, h, wD), [wallM, wallM, roofM, roofM, wallM, wallM]);
+        box.material[0].map.repeat && f.repeat.set(1, 1);
+        // Rooftop clutter — parapet + AC unit silhouettes
+        const para = new T.Mesh(new T.BoxGeometry(wD + 0.4, 0.5, wD + 0.4), roofM);
+        para.position.set(wx, h + 0.25, wz); scene.add(para);
+        const ac = new T.Mesh(new T.BoxGeometry(1.6, 1, 1.6), new T.MeshLambertMaterial({color:0x2a3038}));
+        ac.position.set(wx + wD*0.22, h + 1, wz - wD*0.18); scene.add(ac);
+      }
       box.position.set(wx, h/2, wz);
       scene.add(box);
-      // Windows: emissive strip
-      const win = new T.Mesh(new T.BoxGeometry(wD + 0.1, h * 0.5, wD + 0.1),
-        new T.MeshLambertMaterial({color:0x1a1408, emissive:0xc9a961, emissiveIntensity:0.18, transparent:true, opacity:0.35}));
-      win.position.copy(box.position);
-      scene.add(win);
       // Masjid dome + minaret
       if(b.id === 'masjid'){
         const dome = new T.Mesh(new T.SphereGeometry(wD*0.42, 18, 12, 0, Math.PI*2, 0, Math.PI/2),
           new T.MeshLambertMaterial({color:0xc9a961}));
         dome.position.set(wx, h, wz); scene.add(dome);
+        scene.userData.masjidDome = dome;
         const min = new T.Mesh(new T.CylinderGeometry(0.8, 1, h*2.1, 10),
           new T.MeshLambertMaterial({color:0xd8cdb0}));
         min.position.set(wx + wD*0.62, h*1.05, wz + wD*0.62); scene.add(min);
@@ -22887,12 +22949,199 @@ function getSpoofRival(careerKey, country){
     const pos = new Float32Array(300*3);
     for(let i=0;i<300;i++){ pos[i*3]=(Math.random()-0.5)*600; pos[i*3+1]=80+Math.random()*150; pos[i*3+2]=(Math.random()-0.5)*600; }
     starGeo.setAttribute('position', new T.BufferAttribute(pos,3));
-    scene.add(new T.Points(starGeo, new T.PointsMaterial({color:0xe8dcc0, size:0.8, transparent:true, opacity:0.7})));
+    const starPts = new T.Points(starGeo, new T.PointsMaterial({color:0xe8dcc0, size:0.8, transparent:true, opacity:0.7}));
+    scene.add(starPts);
+
+    // Radial-glow texture (shared by sun, moon, lamp pools)
+    function glowTex(inner, outer){
+      const cv = document.createElement('canvas'); cv.width = 128; cv.height = 128;
+      const g = cv.getContext('2d');
+      const gr = g.createRadialGradient(64,64,2, 64,64,62);
+      gr.addColorStop(0, inner); gr.addColorStop(0.35, outer); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr; g.fillRect(0,0,128,128);
+      return new T.CanvasTexture(cv);
+    }
+
+    // Setting sun — huge warm glow hugging the horizon (fake bloom)
+    const sunSp = new T.Sprite(new T.SpriteMaterial({
+      map: glowTex('rgba(255,220,150,1)','rgba(220,120,40,0.55)'),
+      transparent:true, depthWrite:false, fog:false }));
+    sunSp.scale.set(150, 150, 1);
+    sunSp.position.set(-260, 38, 160);
+    scene.add(sunSp);
+
+    // Crescent-pale moon, opposite sky
+    const moonSp = new T.Sprite(new T.SpriteMaterial({
+      map: glowTex('rgba(230,238,248,0.95)','rgba(160,180,210,0.30)'),
+      transparent:true, depthWrite:false, fog:false }));
+    moonSp.scale.set(34, 34, 1);
+    moonSp.position.set(220, 150, -200);
+    scene.add(moonSp);
+
+    // Drifting clouds — flat sprites catching the sundown
+    const clouds = [];
+    for(let i = 0; i < 7; i++){
+      const cl = new T.Sprite(new T.SpriteMaterial({
+        map: glowTex('rgba(90,80,95,0.55)','rgba(60,60,80,0.25)'),
+        transparent:true, depthWrite:false, fog:false, opacity:0.55 }));
+      cl.scale.set(90 + i*18, 22 + (i%3)*8, 1);
+      cl.position.set(-300 + i*95, 95 + (i%4)*22, -180 + (i%5)*80);
+      scene.add(cl);
+      clouds.push(cl);
+    }
+
+    // Street lamps down the main roads — emissive heads, fake light cones,
+    // warm pools on the asphalt. No extra real lights = cheap and pretty.
+    const lampFlk = [];
+    const lampHead = new T.MeshLambertMaterial({color:0xffd890, emissive:0xffc468, emissiveIntensity:1.4});
+    const poleMat  = new T.MeshLambertMaterial({color:0x20262c});
+    const poolTex  = glowTex('rgba(255,196,104,0.5)','rgba(255,160,60,0.18)');
+    for(let i = -4; i <= 4; i++){
+      if(i === 0) continue;
+      [[i*40, 6.5],[6.5, i*40]].forEach(function(p, side){
+        const px = side ? p[0] : p[0], pz = side ? p[1] : p[1];
+        const x = side === 0 ? i*40 : 6.5, z = side === 0 ? 6.5 : i*40;
+        const pole = new T.Mesh(new T.CylinderGeometry(0.12, 0.16, 6, 6), poleMat);
+        pole.position.set(x, 3, z); scene.add(pole);
+        const head = new T.Mesh(new T.SphereGeometry(0.35, 8, 6), lampHead);
+        head.position.set(x, 6, z); scene.add(head);
+        const cone = new T.Mesh(new T.ConeGeometry(2.4, 5.6, 12, 1, true),
+          new T.MeshBasicMaterial({color:0xffc468, transparent:true, opacity:0.07, depthWrite:false, side:T.DoubleSide}));
+        cone.position.set(x, 3.2, z); scene.add(cone);
+        const pool = new T.Mesh(new T.PlaneGeometry(7,7),
+          new T.MeshBasicMaterial({map:poolTex, transparent:true, depthWrite:false}));
+        pool.rotation.x = -Math.PI/2; pool.position.set(x, 0.04, z); scene.add(pool);
+        lampFlk.push(cone);
+      });
+    }
+
+    // Distant skyline — dark towers ringing the horizon for depth
+    for(let i = 0; i < 26; i++){
+      const a = (i / 26) * Math.PI * 2;
+      const r = 270 + (i % 5) * 18;
+      const th = 24 + ((i * 37) % 50);
+      const tw = 14 + ((i * 13) % 16);
+      const tower = new T.Mesh(new T.BoxGeometry(tw, th, tw),
+        new T.MeshLambertMaterial({color:0x10161e, emissive:0x2a3848, emissiveIntensity:0.25}));
+      tower.position.set(Math.cos(a)*r, th/2, Math.sin(a)*r);
+      scene.add(tower);
+    }
+
+    // Birds — small dark chevrons circling over the rooftops
+    const birds = [];
+    for(let i = 0; i < 5; i++){
+      const bd = new T.Mesh(new T.ConeGeometry(0.25, 1.0, 4),
+        new T.MeshBasicMaterial({color:0x0a0e12}));
+      bd.rotation.x = Math.PI/2;
+      scene.add(bd);
+      birds.push({m:bd, r:30 + i*9, h:26 + i*4, ph:i*1.3, sp:0.25 + i*0.04});
+    }
+
+    // Your car — parked on the road outside your house, if you own one
+    let car = null;
+    (function(){
+      const c = LIFE && LIFE.char;
+      if(!c || !c.carId || c.carId === 'none' || c.carId === 'bike' || c.carId === 'scooter') return;
+      const spec = (typeof CARS !== 'undefined' && CARS.find(x => x.id === c.carId)) || {name:'Car', mph:120, status:3};
+      const grp = new T.Group();
+      const bodyCol = spec.status >= 8 ? 0x8a1820 : spec.status >= 6 ? 0x10141c : spec.status >= 4 ? 0x2a4a6a : 0x6a6258;
+      const body = new T.Mesh(new T.BoxGeometry(2.3, 0.8, 4.8), new T.MeshLambertMaterial({color:bodyCol}));
+      body.position.y = 0.75; grp.add(body);
+      const cabin = new T.Mesh(new T.BoxGeometry(2.0, 0.7, 2.3),
+        new T.MeshLambertMaterial({color:0x0c1014, emissive:0x1a2430, emissiveIntensity:0.4}));
+      cabin.position.set(0, 1.45, -0.3); grp.add(cabin);
+      const wheelG = new T.CylinderGeometry(0.42, 0.42, 0.3, 12);
+      const wheelM = new T.MeshLambertMaterial({color:0x0a0a0a});
+      [[-1.05,1.5],[1.05,1.5],[-1.05,-1.5],[1.05,-1.5]].forEach(p => {
+        const wh = new T.Mesh(wheelG, wheelM);
+        wh.rotation.z = Math.PI/2; wh.position.set(p[0], 0.42, p[1]); grp.add(wh);
+      });
+      // Headlights + tail lights
+      [[-0.7, 2.42, 0xfff2c0],[0.7, 2.42, 0xfff2c0],[-0.7, -2.42, 0xff3a30],[0.7, -2.42, 0xff3a30]].forEach(p => {
+        const lt = new T.Mesh(new T.SphereGeometry(0.13, 8, 6),
+          new T.MeshBasicMaterial({color:p[2]}));
+        lt.position.set(p[0], 0.85, p[1]); grp.add(lt);
+      });
+      // Headlight beam pools
+      const beam = new T.Mesh(new T.PlaneGeometry(5, 9),
+        new T.MeshBasicMaterial({map:glowTex('rgba(255,242,192,0.35)','rgba(255,220,140,0.12)'), transparent:true, depthWrite:false}));
+      beam.rotation.x = -Math.PI/2; beam.position.set(0, 0.05, 7); grp.add(beam);
+      const px = -9.6, pz = -22;
+      grp.position.set(px, 0, pz);
+      scene.add(grp);
+      car = {grp:grp, x:px, z:pz, heading:0, speed:0, name:spec.name,
+             maxSp: 16 + (spec.mph || 100) * 0.12};
+    })();
 
     return {T, renderer, scene, cam, interactives, colliders, npcs,
+            clouds:clouds, birds:birds, lampFlk:lampFlk, car:car,
+            sky:skyMat, sunSp:sunSp, moonSp:moonSp, starPts:starPts,
+            hemi:hemi, sunL:sun, dome:scene.userData.masjidDome || null,
+            dayStart:performance.now(), adhan:false, adhanClaimed:false,
             ext:{scene:scene, colliders:colliders, interactives:interactives},
             interiors:{}, mode:'ext', bounds:190, extPos:null,
             yaw:0, pitch:0, keys:{}, joy:{x:0,y:0}, near:null, raf:0};
+  }
+
+  // ── Day/night engine — a full day every 5 minutes. The world starts
+  //    at golden hour; maghrib falls as the sun dips, and answering the
+  //    adhan at the masjid carries a real reward.
+  const DAY_KEYS = [
+    // t, skyLow, skyMid, skyTop, fog, hemiI, sunI, sunCol, starO
+    {t:0.00, low:0x8a4a6a, mid:0x2e3e5e, top:0x0c1424, fog:0x2a2436, hemiI:0.55, sunI:0.5, sunCol:0xe8a0b0, starO:0.35}, // dawn
+    {t:0.18, low:0x9ab8d0, mid:0x4a78a8, top:0x1e4a7a, fog:0x5a7a96, hemiI:1.15, sunI:1.3, sunCol:0xfff2d8, starO:0.0},  // morning
+    {t:0.40, low:0xa8c4d8, mid:0x5588b8, top:0x2a5a8a, fog:0x6a8aa8, hemiI:1.25, sunI:1.45, sunCol:0xffffff, starO:0.0}, // midday
+    {t:0.55, low:0xb06a2e, mid:0x27384a, top:0x0a1626, fog:0x182431, hemiI:0.9,  sunI:1.1, sunCol:0xc9a961, starO:0.25}, // golden hour
+    {t:0.62, low:0x7a3a3a, mid:0x1c2436, top:0x060e1c, fog:0x141a26, hemiI:0.6,  sunI:0.5, sunCol:0xb05a30, starO:0.6},  // maghrib
+    {t:0.75, low:0x1a2030, mid:0x0e1622, top:0x060c16, fog:0x0c1218, hemiI:0.35, sunI:0.1, sunCol:0x405068, starO:0.95}, // night
+    {t:1.00, low:0x8a4a6a, mid:0x2e3e5e, top:0x0c1424, fog:0x2a2436, hemiI:0.55, sunI:0.5, sunCol:0xe8a0b0, starO:0.35}, // wrap to dawn
+  ];
+  const DAY_LEN_MS = 300000;
+  const _ca = {}, _cb = {}; // scratch colors
+  function lerpHex(T, a, b, f, scratchA, scratchB){
+    scratchA.set ? scratchA.set(a) : null;
+    const colA = new T.Color(a), colB = new T.Color(b);
+    return colA.lerp(colB, f);
+  }
+  function updateDayNight(w, now){
+    // World time starts at golden hour (t = 0.50)
+    const t = ((now - w.dayStart) / DAY_LEN_MS + 0.50) % 1;
+    let i = 0;
+    while(i < DAY_KEYS.length - 1 && DAY_KEYS[i+1].t < t) i++;
+    const A = DAY_KEYS[i], B = DAY_KEYS[Math.min(i+1, DAY_KEYS.length-1)];
+    const f = (t - A.t) / Math.max(0.0001, (B.t - A.t));
+    const T = w.T;
+    w.sky.uniforms.low.value = lerpHex(T, A.low, B.low, f, _ca, _cb);
+    w.sky.uniforms.mid.value = lerpHex(T, A.mid, B.mid, f, _ca, _cb);
+    w.sky.uniforms.top.value = lerpHex(T, A.top, B.top, f, _ca, _cb);
+    if(w.scene.fog) w.scene.fog.color = lerpHex(T, A.fog, B.fog, f, _ca, _cb);
+    w.hemi.intensity = A.hemiI + (B.hemiI - A.hemiI) * f;
+    w.sunL.intensity = A.sunI + (B.sunI - A.sunI) * f;
+    w.sunL.color = lerpHex(T, A.sunCol, B.sunCol, f, _ca, _cb);
+    w.starPts.material.opacity = A.starO + (B.starO - A.starO) * f;
+    // Sun arcs across the sky: rises east, sets west
+    const sa = (t - 0.04) * Math.PI;                  // crude solar arc
+    w.sunSp.position.set(-Math.cos(sa) * 280, Math.max(6, Math.sin(sa) * 180), 160 - Math.sin(sa) * 120);
+    w.sunSp.material.opacity = Math.max(0.12, Math.min(1, Math.sin(sa) + 0.35));
+    w.moonSp.material.opacity = w.starPts.material.opacity;
+    // Lamps breathe up after sundown
+    const nightF = t > 0.58 || t < 0.10 ? 1 : (t > 0.50 ? (t - 0.50) / 0.08 : 0);
+    if(w.lampFlk) for(const cone of w.lampFlk){ cone.material.opacity = 0.02 + nightF * 0.07; }
+
+    // ── Maghrib adhan window
+    const inMaghrib = t >= 0.585 && t <= 0.66;
+    if(inMaghrib && !w.adhan){
+      w.adhan = true; w.adhanClaimed = false;
+      showWorldSpeech('🕌 The maghrib adhan rises over the rooftops. The masjid glows.');
+      if(typeof toast === 'function') toast('Maghrib. The masjid is calling.');
+    }
+    if(!inMaghrib && w.adhan && t > 0.66){ w.adhan = false; }
+    if(w.dome){
+      const base = 0.0, pulse = w.adhan ? 0.55 + 0.35 * Math.sin(now/220) : base;
+      w.dome.material.emissive = w.dome.material.emissive || new T.Color(0xc9a961);
+      w.dome.material.emissive.set(0xc9a961);
+      w.dome.material.emissiveIntensity = pulse;
+    }
   }
 
   // ── Interiors — a walkable room per building type
@@ -23002,7 +23251,21 @@ function getSpoofRival(careerKey, country){
     w.bounds = room.half - 1;
     w.cam.position.set(0, 1.7, room.half - 3.5);
     w.yaw = 0; w.pitch = 0;
-    if(typeof sfx === 'function') try{ sfx('milestone'); }catch(e){}
+    // Answering the maghrib adhan at the masjid carries a reward
+    if(b.id === 'masjid' && w.adhan && !w.adhanClaimed){
+      w.adhanClaimed = true;
+      const c = LIFE && LIFE.char;
+      if(c && c.religion === 'islam'){
+        c.sakina = clamp((c.sakina||50) + 3, 0, 100);
+        c.iman   = clamp((c.iman||0) + 2, 0, 100);
+        c.faith  = c.iman;
+        if(typeof pushEvent === 'function')
+          pushEvent('good', '🕌 You heard the maghrib adhan and answered it. Sakina +3, Iman +2.');
+        showWorldSpeech('"You came at the call. That is most of the religion." — the imam, smiling.');
+        if(typeof renderAll === 'function') renderAll();
+        if(typeof saveLife === 'function') saveLife();
+      }
+    }
   }
 
   function exitInterior(){
@@ -23014,6 +23277,144 @@ function getSpoofRival(careerKey, country){
       w.cam.position.set(w.extPos.x, 1.7, w.extPos.z);
       w.yaw = w.extPos.yaw; w.pitch = w.extPos.pitch;
     }
+  }
+
+  // ── Family in the world — spouse and kids near the house, each with
+  //    a name tag and things to say. Rebuilt every time you enter.
+  function nameTag(T, text){
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+    const g = cv.getContext('2d');
+    g.fillStyle = 'rgba(6,15,10,0.78)'; g.fillRect(0,0,256,64);
+    g.strokeStyle = 'rgba(201,169,97,0.6)'; g.lineWidth = 3; g.strokeRect(2,2,252,60);
+    g.fillStyle = '#e8dcc0'; g.font = 'bold 30px Georgia,serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, 128, 33, 240);
+    const sp = new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(cv), transparent:true}));
+    sp.scale.set(4.4, 1.1, 1);
+    return sp;
+  }
+
+  function buildFamily(w){
+    const T = w.T, c = LIFE && LIFE.char;
+    if(w.familyGrp){ w.ext.scene.remove(w.familyGrp); }
+    w.family = [];
+    w.familyGrp = new T.Group();
+    if(!c) return;
+    const HX = -9.6, HZ = -33.6; // your house
+    const members = [];
+    if(c.partner && c.partner.alive !== false)
+      members.push({who:'spouse', name:c.partner.firstName, col:0x8a5a7a, h:1.65, ref:c.partner});
+    (c.children || []).filter(k => k.alive !== false && (k.age||0) >= 3).slice(0, 4).forEach(function(k, i){
+      members.push({who:'kid', name:k.name || k.firstName || 'Little one', col:0x5a8a7a,
+                    h: Math.min(1.5, 0.7 + (k.age||5) * 0.05), ref:k});
+    });
+    members.forEach(function(m, i){
+      const cap = new T.Mesh(new T.CapsuleGeometry(0.38 * (m.h/1.65), m.h * 0.62, 4, 8),
+        new T.MeshLambertMaterial({color:m.col}));
+      const px = HX + 4 + i * 2.4, pz = HZ + 9 + (i % 2) * 2.5;
+      cap.position.set(px, m.h * 0.55, pz);
+      w.familyGrp.add(cap);
+      const tag = nameTag(T, m.name);
+      tag.position.set(px, m.h + 1.0, pz);
+      w.familyGrp.add(tag);
+      w.family.push({m:cap, tag:tag, x:px, z:pz, hx:px, hz:pz, a:Math.random()*6.28, t:1+Math.random()*3,
+                     who:m.who, name:m.name, ref:m.ref, talked:false});
+    });
+    w.ext.scene.add(w.familyGrp);
+  }
+
+  const FAMILY_LINES = {
+    spouse: function(p, c){
+      const compat = (p && p.compat) || 50;
+      if(compat >= 75) return [
+        '"There you are. The house is quiet without your noise."',
+        '"Walk with me later? Just around the block. Like before."',
+        '"I made your favourite. It\'s either ready or burnt — come find out."',
+      ];
+      if(compat >= 45) return [
+        '"Oh — you\'re home early. Good. Or… is everything okay?"',
+        '"The bills are on the table. I\'m not saying anything. I\'m just saying where they are."',
+        '"We should talk tonight. Nothing bad. Mostly nothing bad."',
+      ];
+      return [
+        '"...We keep missing each other. In every sense, lately."',
+        '"Your dinner\'s in the fridge. It\'s been in the fridge a lot this year."',
+      ];
+    },
+    kid: function(k, c){
+      const age = (k && k.age) || 6;
+      if(age < 7) return [
+        '"BABA! Watch this! No wait — watch THIS!"',
+        '"Can we get ice cream? You said maybe LAST time. Maybe means yes."',
+        '"I drew you. You\'re the circle with the legs."',
+      ];
+      if(age < 13) return [
+        '"Did you know a falcon can dive at 300 km/h? I\'m going to be a falcon."',
+        '"Everyone at school has a phone. EVERYONE. I checked."',
+        '"Race you to the lamppost. Loser does the dishes for Mama."',
+      ];
+      if(age < 18) return [
+        '"Hey. ...Nothing. Just— hey." *goes back to phone*',
+        '"Can I borrow the car when I pass my test? Hypothetically. This is hypothetical."',
+        '"I prayed fajr on my own today. Don\'t make it a thing. ...Okay you can make it a small thing."',
+      ];
+      return [
+        '"Salam, I was just heading out — but I\'ve got a minute for you. Always."',
+        '"I\'ve been meaning to call. I know, I know. I\'m here now."',
+      ];
+    },
+  };
+
+  function talkToFamily(f){
+    const c = LIFE && LIFE.char;
+    const pool = FAMILY_LINES[f.who];
+    let lines;
+    try { lines = pool(f.ref, c); } catch(e){ lines = ['"..."']; }
+    showWorldSpeech((f.who === 'spouse' ? '💞 ' : '👧 ') + f.name + ': ' + lines[Math.floor(Math.random()*lines.length)]);
+    if(c && !f.talked){
+      f.talked = true; // once per visit
+      c.happiness = clamp(c.happiness + 2, 0, 100);
+      if(c.sakina !== undefined) c.sakina = clamp(c.sakina + 1, 0, 100);
+      if(typeof renderAll === 'function') renderAll();
+    }
+  }
+
+  // ── Your real-estate empire — owned properties rise in the NE district
+  function buildProperties(w){
+    const T = w.T, c = LIFE && LIFE.char;
+    if(w.propGrp){ w.ext.scene.remove(w.propGrp); }
+    w.propGrp = new T.Group();
+    w.propInteractives = [];
+    // Clear last visit's property pads/colliders before rebuilding
+    w.ext.interactives = w.ext.interactives.filter(function(x){ return !x.isProp; });
+    w.ext.colliders    = w.ext.colliders.filter(function(x){ return !x.isProp; });
+    if(!c || !c.properties || !c.properties.length){ w.ext.scene.add(w.propGrp); return; }
+    c.properties.slice(0, 9).forEach(function(p, i){
+      const px = 95 + (i % 3) * 22, pz = -95 - Math.floor(i / 3) * 22;
+      const hh = 4 + Math.min(8, ((p.currentValue || 100000) / 250000));
+      const house = new T.Mesh(new T.BoxGeometry(8, hh, 8),
+        new T.MeshLambertMaterial({color: p.rentedOut ? 0x4a6a4a : 0x6a5a40}));
+      house.position.set(px, hh/2, pz);
+      w.propGrp.add(house);
+      const roof = new T.Mesh(new T.ConeGeometry(6.4, 3, 4),
+        new T.MeshLambertMaterial({color:0x3a2c20}));
+      roof.rotation.y = Math.PI/4; roof.position.set(px, hh + 1.5, pz);
+      w.propGrp.add(roof);
+      const tag = nameTag(T, (p.rentedOut ? '🔑 ' : '') + (p.nickname || 'Property'));
+      tag.position.set(px, hh + 4, pz);
+      w.propGrp.add(tag);
+      const glow = new T.Mesh(new T.CylinderGeometry(1.5, 1.5, 0.1, 16),
+        new T.MeshBasicMaterial({color:0xc9a961, transparent:true, opacity:0.3}));
+      glow.position.set(px, 0.06, pz + 6);
+      w.propGrp.add(glow);
+      w.propInteractives.push({kind:'desk', isProp:true,
+                               b:{name:p.nickname || 'Property', icon:'🏘️', action:'openRealEstate'},
+                               label:'manage ' + (p.nickname || 'property'), x:px, z:pz + 6, glow:glow});
+      w.ext.colliders.push({x:px, z:pz, half:4.8, isProp:true});
+    });
+    w.ext.scene.add(w.propGrp);
+    w.propInteractives.forEach(function(it){ w.ext.interactives.push(it); });
+    if(w.mode === 'ext'){ w.interactives = w.ext.interactives; w.colliders = w.ext.colliders; }
   }
 
   // ── Controls + loop
@@ -23037,32 +23438,88 @@ function getSpoofRival(careerKey, country){
       w.raf = requestAnimationFrame(tick);
       const dt = Math.min(0.05, (now - clock.last)/1000); clock.last = now;
 
-      // Move
-      const sp = (w.keys['shift'] ? 14 : 7) * dt;
-      let mx = 0, mz = 0;
-      if(w.keys['w'] || w.keys['arrowup'])    mz -= 1;
-      if(w.keys['s'] || w.keys['arrowdown'])  mz += 1;
-      if(w.keys['a'] || w.keys['arrowleft'])  mx -= 1;
-      if(w.keys['d'] || w.keys['arrowright']) mx += 1;
-      mx += w.joy.x; mz += w.joy.y;
-      const len = Math.hypot(mx, mz) || 1;
-      const sin = Math.sin(w.yaw), cos = Math.cos(w.yaw);
-      let nx = w.cam.position.x + (mx*cos - mz*sin) * sp / len * (len>0.01?1:0);
-      let nz = w.cam.position.z + (mx*sin + mz*cos) * sp / len * (len>0.01?1:0);
-      // Bounds + building collision
-      nx = Math.max(-w.bounds, Math.min(w.bounds, nx));
-      nz = Math.max(-w.bounds, Math.min(w.bounds, nz));
-      for(const c of w.colliders){
-        const dx = nx - c.x, dz = nz - c.z;
-        if(Math.abs(dx) < c.half && Math.abs(dz) < c.half){
-          if(Math.abs(dx) > Math.abs(dz)) nx = c.x + Math.sign(dx) * c.half;
-          else nz = c.z + Math.sign(dz) * c.half;
+      let nx = w.cam.position.x, nz = w.cam.position.z;
+      if(w.mode === 'car' && w.car){
+        // ── Driving
+        const cs = w.car;
+        const gas   = (w.keys['w'] || w.keys['arrowup'])   || w.joy.y < -0.25;
+        const brake = (w.keys['s'] || w.keys['arrowdown']) || w.joy.y >  0.25;
+        let steer = 0;
+        if(w.keys['a'] || w.keys['arrowleft'])  steer += 1;
+        if(w.keys['d'] || w.keys['arrowright']) steer -= 1;
+        steer -= w.joy.x;
+        cs.speed += ((gas ? 16 : 0) - (brake ? 26 : 0)) * dt;
+        cs.speed *= (1 - 1.0 * dt);                       // rolling friction
+        cs.speed = Math.max(-7, Math.min(cs.maxSp, cs.speed));
+        if(Math.abs(cs.speed) > 0.3){
+          cs.heading += steer * dt * 1.9 * Math.min(1, Math.abs(cs.speed)/9) * Math.sign(cs.speed);
+        }
+        const fx = Math.sin(cs.heading), fz = Math.cos(cs.heading);
+        let cxn = cs.x + fx * cs.speed * dt;
+        let czn = cs.z + fz * cs.speed * dt;
+        cxn = Math.max(-185, Math.min(185, cxn));
+        czn = Math.max(-185, Math.min(185, czn));
+        for(const c of w.colliders){
+          const dx = cxn - c.x, dz = czn - c.z;
+          if(Math.abs(dx) < c.half + 1.4 && Math.abs(dz) < c.half + 1.4){
+            if(Math.abs(dx) > Math.abs(dz)) cxn = c.x + Math.sign(dx) * (c.half + 1.4);
+            else czn = c.z + Math.sign(dz) * (c.half + 1.4);
+            cs.speed *= -0.18;                            // crunch, bounce back
+          }
+        }
+        cs.x = cxn; cs.z = czn;
+        cs.grp.position.set(cs.x, 0, cs.z);
+        cs.grp.rotation.y = cs.heading;
+        // Hood camera — first person behind the wheel
+        w.cam.position.set(cs.x - fx*0.4, 1.45, cs.z - fz*0.4);
+        w.cam.lookAt(cs.x + fx*12, 1.2 + w.pitch*4, cs.z + fz*12);
+        nx = cs.x; nz = cs.z;
+      } else {
+        // ── Walking
+        const sp = (w.keys['shift'] ? 14 : 7) * dt;
+        let mx = 0, mz = 0;
+        if(w.keys['w'] || w.keys['arrowup'])    mz -= 1;
+        if(w.keys['s'] || w.keys['arrowdown'])  mz += 1;
+        if(w.keys['a'] || w.keys['arrowleft'])  mx -= 1;
+        if(w.keys['d'] || w.keys['arrowright']) mx += 1;
+        mx += w.joy.x; mz += w.joy.y;
+        const len = Math.hypot(mx, mz) || 1;
+        const sin = Math.sin(w.yaw), cos = Math.cos(w.yaw);
+        nx = w.cam.position.x + (mx*cos - mz*sin) * sp / len * (len>0.01?1:0);
+        nz = w.cam.position.z + (mx*sin + mz*cos) * sp / len * (len>0.01?1:0);
+        // Bounds + building collision
+        nx = Math.max(-w.bounds, Math.min(w.bounds, nx));
+        nz = Math.max(-w.bounds, Math.min(w.bounds, nz));
+        for(const c of w.colliders){
+          const dx = nx - c.x, dz = nz - c.z;
+          if(Math.abs(dx) < c.half && Math.abs(dz) < c.half){
+            if(Math.abs(dx) > Math.abs(dz)) nx = c.x + Math.sign(dx) * c.half;
+            else nz = c.z + Math.sign(dz) * c.half;
+          }
+        }
+        w.cam.position.x = nx; w.cam.position.z = nz;
+        w.cam.rotation.order = 'YXZ';
+        w.cam.rotation.y = w.yaw;
+        w.cam.rotation.x = w.pitch;
+      }
+
+      // Atmosphere (outdoors only)
+      if(w.mode !== 'int') updateDayNight(w, now);
+      if(w.mode === 'ext'){
+        if(w.clouds) for(let ci = 0; ci < w.clouds.length; ci++){
+          const cl = w.clouds[ci];
+          cl.position.x += dt * (1.2 + ci * 0.18);
+          if(cl.position.x > 340) cl.position.x = -340;
+        }
+        if(w.birds) for(const bd of w.birds){
+          const t = now/1000 * bd.sp + bd.ph;
+          bd.m.position.set(Math.cos(t)*bd.r, bd.h + Math.sin(t*2.3)*1.5, Math.sin(t)*bd.r);
+          bd.m.rotation.y = -t;
+        }
+        if(w.lampFlk) for(let li = 0; li < w.lampFlk.length; li++){
+          w.lampFlk[li].material.opacity = 0.06 + 0.02 * Math.sin(now/180 + li*2.7);
         }
       }
-      w.cam.position.x = nx; w.cam.position.z = nz;
-      w.cam.rotation.order = 'YXZ';
-      w.cam.rotation.y = w.yaw;
-      w.cam.rotation.x = w.pitch;
 
       // NPC wander (outdoors only)
       for(const n of (w.mode === 'ext' ? w.npcs : [])){
@@ -23075,24 +23532,69 @@ function getSpoofRival(careerKey, country){
         n.m.rotation.y = -n.a + Math.PI/2;
       }
 
+      // Family drift gently near home
+      if(w.mode === 'ext' && w.family) for(const f of w.family){
+        f.t -= dt;
+        if(f.t <= 0){ f.a = Math.random()*Math.PI*2; f.t = 2 + Math.random()*5; }
+        f.x += Math.cos(f.a) * dt * 0.7;
+        f.z += Math.sin(f.a) * dt * 0.7;
+        // tether to home spot
+        f.x = Math.max(f.hx - 6, Math.min(f.hx + 6, f.x));
+        f.z = Math.max(f.hz - 5, Math.min(f.hz + 5, f.z));
+        f.m.position.x = f.x; f.m.position.z = f.z;
+        f.tag.position.x = f.x; f.tag.position.z = f.z;
+      }
+
       // Proximity → prompt
       w.near = null;
-      let best = 36;
-      for(const it of w.interactives){
-        const d2 = (nx-it.x)*(nx-it.x) + (nz-it.z)*(nz-it.z);
-        it.glow.material.opacity = 0.25 + 0.18 * Math.sin(now/300);
-        if(d2 < best){ best = d2; w.near = it; }
-      }
-      if(w.near){
-        const verb = w.near.kind ? w.near.label : 'enter ' + w.near.b.name;
-        prompt.textContent = (('ontouchstart' in window) ? 'Tap — ' : 'Press E — ') + verb;
-        prompt.classList.add('show');
-        loc.textContent = w.near.b.icon + ' ' + w.near.b.name;
+      if(w.mode === 'car'){
+        const kmh = Math.abs(Math.round(w.car.speed * 6.5));
+        loc.textContent = '🚗 ' + w.car.name + ' · ' + kmh + ' km/h';
+        if(Math.abs(w.car.speed) < 2.5){
+          w.near = {kind:'exitcar', b:{name:'car', icon:'🚗'}, label:'step out'};
+          prompt.textContent = (('ontouchstart' in window) ? 'Tap — ' : 'Press E — ') + 'step out';
+          prompt.classList.add('show');
+        } else prompt.classList.remove('show');
       } else {
-        prompt.classList.remove('show');
-        const c = LIFE && LIFE.char;
-        if(w.mode === 'int') loc.textContent = '🏠 Inside';
-        else loc.textContent = c ? (c.city + ' · Age ' + c.age) : 'Your neighborhood';
+        let best = 36;
+        for(const it of w.interactives){
+          const d2 = (nx-it.x)*(nx-it.x) + (nz-it.z)*(nz-it.z);
+          it.glow.material.opacity = 0.25 + 0.18 * Math.sin(now/300);
+          if(d2 < best){ best = d2; w.near = it; }
+        }
+        // Your parked car beats a building if it's closer
+        if(w.mode === 'ext' && w.car){
+          const d2 = (nx-w.car.x)*(nx-w.car.x) + (nz-w.car.z)*(nz-w.car.z);
+          if(d2 < 22 && d2 < best){
+            best = d2;
+            w.near = {kind:'car', b:{name:w.car.name, icon:'🚗'}, label:'drive your ' + w.car.name};
+          }
+        }
+        // Family beats everything when you're beside them
+        if(w.mode === 'ext' && w.family) for(const f of w.family){
+          const d2 = (nx-f.x)*(nx-f.x) + (nz-f.z)*(nz-f.z);
+          if(d2 < 14 && d2 < best){
+            best = d2;
+            w.near = {kind:'family', f:f, b:{name:f.name, icon:(f.who==='spouse'?'💞':'👧')}, label:'talk to ' + f.name};
+          }
+        }
+        if(w.near){
+          const verb = w.near.kind ? w.near.label : 'enter ' + w.near.b.name;
+          prompt.textContent = (('ontouchstart' in window) ? 'Tap — ' : 'Press E — ') + verb;
+          prompt.classList.add('show');
+          loc.textContent = w.near.b.icon + ' ' + w.near.b.name;
+        } else {
+          prompt.classList.remove('show');
+          const c = LIFE && LIFE.char;
+          if(w.mode === 'int') loc.textContent = '🏠 Inside';
+          else loc.textContent = c ? (c.city + ' · Age ' + c.age) : 'Your neighborhood';
+        }
+      }
+
+      // Minimap (throttled)
+      if(w.mode === 'ext' && now - (w._mmLast || 0) > 120){
+        w._mmLast = now;
+        drawMinimap(w, nx, nz);
       }
 
       w.renderer.render(w.scene, w.cam);
@@ -23100,9 +23602,67 @@ function getSpoofRival(careerKey, country){
     w.raf = requestAnimationFrame(tick);
   }
 
+  // ── Minimap — building dots, roads, your arrow, the car, the family
+  function drawMinimap(w, px, pz){
+    const cv = document.getElementById('lw-minimap');
+    if(!cv) return;
+    const g = cv.getContext('2d');
+    const S = cv.width, scale = S / 400; // world ±200 → canvas
+    const mx = function(x){ return S/2 + x * scale; };
+    const mz = function(z){ return S/2 + z * scale; };
+    g.clearRect(0, 0, S, S);
+    g.fillStyle = 'rgba(6,15,10,0.78)';
+    g.beginPath(); g.arc(S/2, S/2, S/2, 0, 7); g.fill();
+    g.save();
+    g.beginPath(); g.arc(S/2, S/2, S/2 - 2, 0, 7); g.clip();
+    // roads
+    g.strokeStyle = 'rgba(120,130,140,0.5)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(0, S/2); g.lineTo(S, S/2); g.moveTo(S/2, 0); g.lineTo(S/2, S); g.stroke();
+    // buildings
+    for(const it of w.ext.interactives){
+      if(it.kind && !it.isProp) continue;
+      const t = it.b && it.b.name && it.b.name.indexOf('Masjid') >= 0;
+      g.fillStyle = t ? '#c9a961' : (it.isProp ? '#7ab87a' : 'rgba(180,190,200,0.75)');
+      g.fillRect(mx(it.x) - 2, mz(it.z) - 2, t ? 5 : 4, t ? 5 : 4);
+    }
+    // car
+    if(w.car){ g.fillStyle = '#e8b45a'; g.fillRect(mx(w.car.x)-2, mz(w.car.z)-2, 4, 4); }
+    // family
+    if(w.family) for(const f of w.family){
+      g.fillStyle = '#ff8ab0'; g.fillRect(mx(f.x)-1.5, mz(f.z)-1.5, 3, 3);
+    }
+    // you — arrow rotated by yaw
+    g.translate(mx(px), mz(pz));
+    g.rotate(-w.yaw);
+    g.fillStyle = '#6fc3a8';
+    g.beginPath(); g.moveTo(0, -6); g.lineTo(4, 5); g.lineTo(-4, 5); g.closePath(); g.fill();
+    g.restore();
+    // ring
+    g.strokeStyle = 'rgba(201,169,97,0.45)'; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(S/2, S/2, S/2 - 1, 0, 7); g.stroke();
+  }
+
   function enterBuilding(){
     const w = world;
     if(!w || !w.near) return;
+    if(w.near.kind === 'family'){ talkToFamily(w.near.f); return; }
+    if(w.near.kind === 'car'){
+      // Behind the wheel
+      const c = LIFE && LIFE.char;
+      if(c && c.age < 16){ toast('Too young to drive. Walk it off.'); return; }
+      w.mode = 'car';
+      w.car.heading = w.yaw + Math.PI; // face where you were looking
+      showWorldSpeech('🚗 W gas · S brake · A/D steer. Drive safe — or don\'t.');
+      return;
+    }
+    if(w.near.kind === 'exitcar'){
+      w.mode = 'ext';
+      const fx = Math.sin(w.car.heading), fz = Math.cos(w.car.heading);
+      w.cam.position.set(w.car.x - fz*3, 1.7, w.car.z + fx*3); // step out to the side
+      w.yaw = w.car.heading; w.pitch = 0;
+      w.cam.rotation.order = 'YXZ';
+      return;
+    }
     if(w.mode === 'ext'){
       // Walk inside — interiors handle the menu at their desk
       enterInterior(w.near.b);
@@ -23132,7 +23692,8 @@ function getSpoofRival(careerKey, country){
     world.keys[k] = true;
     if(k === 'e') enterBuilding();
     if(k === 'escape'){
-      if(world.mode === 'int') exitInterior();
+      if(world.mode === 'car'){ world.mode = 'ext'; world.yaw = world.car.heading; }
+      else if(world.mode === 'int') exitInterior();
       else closeWorld();
     }
   });
@@ -23362,6 +23923,9 @@ function getSpoofRival(careerKey, country){
           return;
         }
       }
+      // Refresh the living parts on every visit: family ages, kids are
+      // born, properties get bought and sold between sessions in here.
+      try { buildFamily(world); buildProperties(world); } catch(e){}
       startLoop();
     });
   };

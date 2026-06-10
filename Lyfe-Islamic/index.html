@@ -4127,8 +4127,12 @@ function makeSeed(country, sex, customName){
 // ═══════════════════════════════════════════════════════════════════════
 //  SAVE / LOAD
 // ═══════════════════════════════════════════════════════════════════════
+const SAVE_VERSION = 3; // bump when character fields change shape
 function saveLife(){
-  try { localStorage.setItem('lyfe_save', JSON.stringify(LIFE)); } catch(e){}
+  try {
+    if(LIFE) LIFE.saveVersion = SAVE_VERSION;
+    localStorage.setItem('lyfe_save', JSON.stringify(LIFE));
+  } catch(e){}
 }
 function loadLife(){
   try {
@@ -4187,6 +4191,24 @@ function loadLife(){
         if(!c.properties) c.properties = [];
         if(!c.companies) c.companies = [];
         if(!c.hustles) c.hustles = {};
+        // ── v3: Islamic-edition fields (saves from before these systems)
+        if(c.religion === 'islam'){
+          if(c.iman == null) c.iman = c.faith != null ? c.faith : 30;
+          if(c.sakina == null) c.sakina = 50;
+          if(c.barakah == null) c.barakah = 50;
+          if(!c.kabairFlags) c.kabairFlags = {};
+          if(c.tawbahCount == null) c.tawbahCount = 0;
+          if(c.hafizProgress == null) c.hafizProgress = 0;
+          if(c.salahDaily == null) c.salahDaily = 0;
+        }
+        if(c.madhab === undefined) c.madhab = null;
+        if(c.marriagePath === undefined) c.marriagePath = null;
+        if(c.reality === undefined) c.reality = null;
+        if(c.skinTone == null) c.skinTone = 0;
+        ['iman','sakina','barakah','hafizProgress'].forEach(k => {
+          if(c[k] != null && !isFinite(c[k])) c[k] = 0;
+        });
+        LIFE.saveVersion = SAVE_VERSION;
       }
       return true;
     }
@@ -22790,6 +22812,9 @@ function getSpoofRival(careerKey, country){
     + '<div id="lw-cross"></div>'
     + '<div id="lw-loc">Your neighborhood</div>'
     + '<button id="lw-exit">✕ Leave</button>'
+    + '<button id="lw-quality" style="position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:106px;'
+    +   'font-family:var(--font-m,monospace);font-size:10px;color:rgba(201,169,97,.8);background:rgba(6,15,10,.8);'
+    +   'border:1px solid rgba(201,169,97,.3);padding:8px 13px;border-radius:20px;cursor:pointer;letter-spacing:.08em;">◐ Quality</button>'
     + '<div id="lw-prompt"></div>'
     + '<div id="lw-hint">WASD move · mouse look · E enter · Esc leave</div>'
     + '<canvas id="lw-minimap" width="132" height="132" style="position:absolute;'
@@ -22915,19 +22940,42 @@ function getSpoofRival(careerKey, country){
   }
 
 
+  function worldQuality(){
+    // 'high' | 'low' — manual choice wins, else auto-detect weak devices
+    try {
+      const manual = localStorage.getItem('lyfe_world_quality');
+      if(manual === 'high' || manual === 'low') return manual;
+    } catch(e){}
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const mem = navigator.deviceMemory || 8;
+    const cores = navigator.hardwareConcurrency || 8;
+    return (coarse && (mem <= 4 || cores <= 4)) ? 'low' : 'high';
+  }
+  window.toggleWorldQuality = function(){
+    const next = worldQuality() === 'high' ? 'low' : 'high';
+    try { localStorage.setItem('lyfe_world_quality', next); } catch(e){}
+    toast('World quality: ' + next.toUpperCase() + '. Re-entering...');
+    // Rebuild the world fresh with the new setting
+    if(world && world.raf) cancelAnimationFrame(world.raf);
+    world = null;
+    setTimeout(function(){ openLyfeWorld(); }, 200);
+  };
+
   function buildWorld(){
     const T = window.THREE;
+    const QUALITY = worldQuality();
+    const LOWQ = QUALITY === 'low';
     const canvas = document.getElementById('lw-canvas');
     const renderer = new T.WebGLRenderer({canvas:canvas, antialias:true});
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(LOWQ ? 1 : Math.min(window.devicePixelRatio, 2));
     // Filmic grading — the GTA/Fallout golden-hour look
     if(T.ACESFilmicToneMapping !== undefined){
       renderer.toneMapping = T.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.15;
     }
     // Real shadows — long dusk shadows sell the scene more than anything
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = T.PCFSoftShadowMap || renderer.shadowMap.type;
+    renderer.shadowMap.enabled = !LOWQ;
+    if(!LOWQ) renderer.shadowMap.type = T.PCFSoftShadowMap || renderer.shadowMap.type;
     const scene = new T.Scene();
     scene.fog = new T.FogExp2(0x182431, 0.0058);
 
@@ -22951,7 +22999,7 @@ function getSpoofRival(careerKey, country){
     scene.add(hemi);
     const sun = new T.DirectionalLight(0xc9a961, 1.1);
     sun.position.set(-40, 55, 25);
-    sun.castShadow = true;
+    sun.castShadow = !LOWQ;
     sun.shadow.mapSize.set(2048, 2048);
     sun.shadow.camera.left = -130; sun.shadow.camera.right = 130;
     sun.shadow.camera.top = 130;   sun.shadow.camera.bottom = -130;
@@ -23262,7 +23310,7 @@ function getSpoofRival(careerKey, country){
     });
 
     // Trees
-    for(let i = 0; i < 40; i++){
+    for(let i = 0; i < (LOWQ ? 16 : 40); i++){
       const tx = (Math.sin(i*127.3)*0.5+0.5) * 360 - 180, tz = (Math.sin(i*311.7)*0.5+0.5) * 360 - 180;
       if(Math.abs(tx) < 8 || Math.abs(tz) < 8) continue;
       const trunk = new T.Mesh(new T.CylinderGeometry(0.3,0.4,2.2,6), new T.MeshLambertMaterial({color:0x4a3520}));
@@ -23273,7 +23321,7 @@ function getSpoofRival(careerKey, country){
 
     // Pedestrians — face plane always toward viewer-ish direction
     const npcs = [];
-    for(let i = 0; i < 14; i++){
+    for(let i = 0; i < (LOWQ ? 6 : 14); i++){
       const p = makePerson(T, i * 7 + 3);
       const horiz = i % 2 === 0;
       const side = (i % 4 < 2) ? 5.6 : -5.6;
@@ -24609,6 +24657,7 @@ function getSpoofRival(careerKey, country){
   });
   wrap.addEventListener('click', function(e){
     if(e.target.id === 'lw-exit'){ closeWorld(); return; }
+    if(e.target.id === 'lw-quality'){ toggleWorldQuality(); return; }
     if(e.target.id === 'lw-prompt'){ enterBuilding(); return; }
     if(e.target.id === 'lw-canvas' && !('ontouchstart' in window)){
       e.target.requestPointerLock && e.target.requestPointerLock();

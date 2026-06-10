@@ -22729,7 +22729,7 @@ function getSpoofRival(careerKey, country){
   // ── World container + HUD
   const css = document.createElement('style');
   css.textContent = `
-#lyfe-world{position:fixed;inset:0;z-index:6500;background:#060f0a;display:none;}
+#lyfe-world{position:fixed;inset:0;z-index:5500;background:#060f0a;display:none;}
 #lyfe-world.open{display:block;}
 #lw-canvas{position:absolute;inset:0;width:100%;height:100%;}
 #lw-cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;
@@ -22890,7 +22890,130 @@ function getSpoofRival(careerKey, country){
     scene.add(new T.Points(starGeo, new T.PointsMaterial({color:0xe8dcc0, size:0.8, transparent:true, opacity:0.7})));
 
     return {T, renderer, scene, cam, interactives, colliders, npcs,
+            ext:{scene:scene, colliders:colliders, interactives:interactives},
+            interiors:{}, mode:'ext', bounds:190, extPos:null,
             yaw:0, pitch:0, keys:{}, joy:{x:0,y:0}, near:null, raf:0};
+  }
+
+  // ── Interiors — a walkable room per building type
+  function buildInterior(b){
+    const T = window.THREE;
+    const scene = new T.Scene();
+    const HALF = 13;
+    const type = b.id === 'masjid' ? 'masjid' : b.type;
+    const floors = { masjid:0x1d4a2c, medical:0xcfd8d2, school:0x6a5638, shop:0x4a3a2c,
+                     civic:0x3a3a44, entertainment:0x2c2436, home:0x4a3826, neighbor:0x4a3826 };
+    scene.background = new T.Color(0x0a0f0c);
+
+    // Floor / ceiling / walls
+    const floor = new T.Mesh(new T.PlaneGeometry(HALF*2, HALF*2),
+      new T.MeshLambertMaterial({color:floors[type] || 0x3a3a3a}));
+    floor.rotation.x = -Math.PI/2; scene.add(floor);
+    const ceil = new T.Mesh(new T.PlaneGeometry(HALF*2, HALF*2),
+      new T.MeshLambertMaterial({color:0x241c12}));
+    ceil.rotation.x = Math.PI/2; ceil.position.y = 6; scene.add(ceil);
+    const wallMat = new T.MeshLambertMaterial({color: type==='masjid' ? 0x3a5a44 : 0x4a4438});
+    [[0,-HALF,HALF*2,0.4],[0,HALF,HALF*2,0.4],[-HALF,0,0.4,HALF*2],[HALF,0,0.4,HALF*2]].forEach(p => {
+      const wall = new T.Mesh(new T.BoxGeometry(p[2], 6, p[3]), wallMat);
+      wall.position.set(p[0], 3, p[1]); scene.add(wall);
+    });
+
+    scene.add(new T.AmbientLight(0x887755, 0.7));
+    const lamp = new T.PointLight(0xc9a961, 1.2, 40);
+    lamp.position.set(0, 5, 0); scene.add(lamp);
+
+    const colliders = [];
+    function prop(geo, col, x, y, z, solid){
+      const m = new T.Mesh(geo, new T.MeshLambertMaterial({color:col}));
+      m.position.set(x, y, z); scene.add(m);
+      if(solid) colliders.push({x:x, z:z, half:1.4});
+      return m;
+    }
+
+    // Per-type furnishing + desk label
+    let deskLabel = 'Speak to the clerk', deskX = 0, deskZ = -HALF + 4;
+    if(type === 'masjid'){
+      deskLabel = 'Pray & speak to the imam';
+      // Mihrab niche + gold trim
+      prop(new T.BoxGeometry(4, 5, 0.8), 0x2c5a3a, 0, 2.5, -HALF + 0.6, false);
+      prop(new T.BoxGeometry(4.6, 0.4, 1), 0xc9a961, 0, 5, -HALF + 0.6, false);
+      // Prayer rug rows
+      for(let r = 0; r < 4; r++)
+        for(let q = -2; q <= 2; q++)
+          prop(new T.BoxGeometry(1.6, 0.05, 2.6), q%2 ? 0x7a2c2c : 0x2c4a6a, q*2.4, 0.03, -HALF + 6 + r*3, false);
+      // Hanging lamps
+      for(let i = -1; i <= 1; i++){
+        const l = prop(new T.SphereGeometry(0.4, 10, 8), 0xc9a961, i*6, 4.2, 0, false);
+        l.material.emissive = new T.Color(0xc9a961); l.material.emissiveIntensity = 0.7;
+      }
+    } else if(type === 'medical'){
+      deskLabel = 'Reception';
+      for(let i = 0; i < 4; i++){
+        prop(new T.BoxGeometry(2, 0.8, 4), 0xe8e8e8, -HALF + 3, 0.4, -HALF + 4 + i*5, true);
+        prop(new T.BoxGeometry(1.6, 0.3, 1), 0x6a8acA, -HALF + 3, 0.95, -HALF + 2.8 + i*5, false);
+      }
+      prop(new T.BoxGeometry(5, 1.2, 1.6), 0xcfd8d2, deskX, 0.6, deskZ, true);
+    } else if(type === 'school'){
+      deskLabel = 'See the registrar';
+      for(let r = 0; r < 3; r++)
+        for(let q = -1; q <= 1; q++)
+          prop(new T.BoxGeometry(2, 0.9, 1.2), 0x6a5638, q*4, 0.45, -2 + r*3.5, true);
+      prop(new T.BoxGeometry(8, 3, 0.2), 0x14241a, 0, 2.5, -HALF + 0.5, false); // board
+      prop(new T.BoxGeometry(5, 1.2, 1.6), 0x4a3a28, deskX, 0.6, deskZ, true);
+    } else if(type === 'shop'){
+      deskLabel = 'Browse & buy';
+      for(let i = 0; i < 3; i++){
+        prop(new T.BoxGeometry(1.2, 2.4, 8), 0x5a4632, -6 + i*6, 1.2, 0, true);
+      }
+      prop(new T.BoxGeometry(5, 1.2, 1.6), 0x6a5238, deskX, 0.6, deskZ, true);
+    } else {
+      prop(new T.BoxGeometry(5, 1.2, 1.6), 0x4a4438, deskX, 0.6, deskZ, true);
+      prop(new T.BoxGeometry(3, 0.7, 1.4), 0x3a3430, 5, 0.35, 2, true);
+    }
+
+    // Desk glow + exit glow
+    const deskGlow = new T.Mesh(new T.CylinderGeometry(1.5, 1.5, 0.1, 16),
+      new T.MeshBasicMaterial({color:0xc9a961, transparent:true, opacity:0.35}));
+    deskGlow.position.set(deskX, 0.06, deskZ + 2.4); scene.add(deskGlow);
+    const exitGlow = new T.Mesh(new T.CylinderGeometry(1.5, 1.5, 0.1, 16),
+      new T.MeshBasicMaterial({color:0x6fc3a8, transparent:true, opacity:0.35}));
+    exitGlow.position.set(0, 0.06, HALF - 2); scene.add(exitGlow);
+
+    const interactives = [
+      {kind:'desk', b:{name:b.name, icon:b.icon, action:b.action}, label:deskLabel, x:deskX, z:deskZ + 2.4, glow:deskGlow},
+      {kind:'exit', b:{name:'outside', icon:'🚪'}, label:'Step outside', x:0, z:HALF - 2, glow:exitGlow},
+    ];
+    return {scene:scene, colliders:colliders, interactives:interactives, half:HALF};
+  }
+
+  function enterInterior(b){
+    const w = world;
+    if(!w.interiors[b.id]){
+      try { w.interiors[b.id] = buildInterior(b); }
+      catch(e){ // fall back to direct menu
+        if(b.action && typeof window[b.action] === 'function') window[b.action]();
+        return;
+      }
+    }
+    const room = w.interiors[b.id];
+    w.extPos = {x:w.cam.position.x, z:w.cam.position.z, yaw:w.yaw, pitch:w.pitch};
+    w.mode = 'int';
+    w.scene = room.scene; w.colliders = room.colliders; w.interactives = room.interactives;
+    w.bounds = room.half - 1;
+    w.cam.position.set(0, 1.7, room.half - 3.5);
+    w.yaw = 0; w.pitch = 0;
+    if(typeof sfx === 'function') try{ sfx('milestone'); }catch(e){}
+  }
+
+  function exitInterior(){
+    const w = world;
+    w.mode = 'ext';
+    w.scene = w.ext.scene; w.colliders = w.ext.colliders; w.interactives = w.ext.interactives;
+    w.bounds = 190;
+    if(w.extPos){
+      w.cam.position.set(w.extPos.x, 1.7, w.extPos.z);
+      w.yaw = w.extPos.yaw; w.pitch = w.extPos.pitch;
+    }
   }
 
   // ── Controls + loop
@@ -22927,8 +23050,8 @@ function getSpoofRival(careerKey, country){
       let nx = w.cam.position.x + (mx*cos - mz*sin) * sp / len * (len>0.01?1:0);
       let nz = w.cam.position.z + (mx*sin + mz*cos) * sp / len * (len>0.01?1:0);
       // Bounds + building collision
-      nx = Math.max(-190, Math.min(190, nx));
-      nz = Math.max(-190, Math.min(190, nz));
+      nx = Math.max(-w.bounds, Math.min(w.bounds, nx));
+      nz = Math.max(-w.bounds, Math.min(w.bounds, nz));
       for(const c of w.colliders){
         const dx = nx - c.x, dz = nz - c.z;
         if(Math.abs(dx) < c.half && Math.abs(dz) < c.half){
@@ -22941,8 +23064,8 @@ function getSpoofRival(careerKey, country){
       w.cam.rotation.y = w.yaw;
       w.cam.rotation.x = w.pitch;
 
-      // NPC wander
-      for(const n of w.npcs){
+      // NPC wander (outdoors only)
+      for(const n of (w.mode === 'ext' ? w.npcs : [])){
         n.t -= dt;
         if(n.t <= 0){ n.a = Math.random()*Math.PI*2; n.t = 2 + Math.random()*4; }
         n.m.position.x += Math.cos(n.a) * dt * 1.6;
@@ -22961,13 +23084,15 @@ function getSpoofRival(careerKey, country){
         if(d2 < best){ best = d2; w.near = it; }
       }
       if(w.near){
-        prompt.textContent = (('ontouchstart' in window) ? 'Tap here to enter ' : 'Press E — enter ') + w.near.b.name;
+        const verb = w.near.kind ? w.near.label : 'enter ' + w.near.b.name;
+        prompt.textContent = (('ontouchstart' in window) ? 'Tap — ' : 'Press E — ') + verb;
         prompt.classList.add('show');
         loc.textContent = w.near.b.icon + ' ' + w.near.b.name;
       } else {
         prompt.classList.remove('show');
         const c = LIFE && LIFE.char;
-        loc.textContent = c ? (c.city + ' · Age ' + c.age) : 'Your neighborhood';
+        if(w.mode === 'int') loc.textContent = '🏠 Inside';
+        else loc.textContent = c ? (c.city + ' · Age ' + c.age) : 'Your neighborhood';
       }
 
       w.renderer.render(w.scene, w.cam);
@@ -22978,22 +23103,38 @@ function getSpoofRival(careerKey, country){
   function enterBuilding(){
     const w = world;
     if(!w || !w.near) return;
-    const action = w.near.b.action;
-    closeWorld();
-    if(action && typeof window[action] === 'function'){
-      try { window[action](); } catch(e){ toast('Closed for the day.'); }
-    } else if(typeof toast === 'function'){
-      toast(w.near.b.name + ' is closed.');
+    if(w.mode === 'ext'){
+      // Walk inside — interiors handle the menu at their desk
+      enterInterior(w.near.b);
+      return;
+    }
+    // Inside a building
+    if(w.near.kind === 'exit'){ exitInterior(); return; }
+    if(w.near.kind === 'desk'){
+      const action = w.near.b.action;
+      // Spoken line first, then the menu opens over the 3D room
+      if(typeof worldDialogue === 'function') worldDialogue(w.near.b);
+      if(action && typeof window[action] === 'function'){
+        try { window[action](); } catch(e){ toast('Closed for the day.'); }
+      } else if(typeof toast === 'function'){
+        toast(w.near.b.name + ' is closed.');
+      }
     }
   }
 
   // ── Input wiring
   document.addEventListener('keydown', function(e){
     if(!wrap.classList.contains('open') || !world) return;
+    // Don't steal keys while a game menu is open over the world
+    const modal = document.getElementById('modal');
+    if(modal && modal.classList.contains('show')) return;
     const k = e.key.toLowerCase();
     world.keys[k] = true;
     if(k === 'e') enterBuilding();
-    if(k === 'escape') closeWorld();
+    if(k === 'escape'){
+      if(world.mode === 'int') exitInterior();
+      else closeWorld();
+    }
   });
   document.addEventListener('keyup', function(e){
     if(world) world.keys[e.key.toLowerCase()] = false;
@@ -23058,6 +23199,148 @@ function getSpoofRival(careerKey, country){
     wrap.classList.remove('open');
     if(world && world.raf) cancelAnimationFrame(world.raf);
     if(document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
+  }
+
+  // ── World dialogue — every keeper of every door has a voice.
+  //    Lines vary by who you are: career, iman, money, health, record.
+  const W_DIALOGUE = {
+    masjid: function(c){
+      const iman = (c && c.iman) || 0;
+      if(c && (c.flags||{}).hajjDone) return [
+        '"Hajji! Come in, come in. The front row remembers you."',
+        '"The one who has seen the Kaaba carries it in his face. Welcome."',
+      ];
+      if(iman >= 70) return [
+        '"As-salamu alaykum. The masjid is brighter when you\'re in it."',
+        '"You again, mashallah. The angels know your footsteps by now."',
+        '"We saved your spot by the pillar. You know the one."',
+      ];
+      if(iman >= 35) return [
+        '"As-salamu alaykum, friend. It\'s been a little while."',
+        '"Come in. Nobody asks where you\'ve been — only that you came."',
+        '"The door is the hardest part. You\'ve already done it."',
+      ];
+      return [
+        '"As-salamu alaykum. Don\'t stand at the door — whoever you\'ve been, come in."',
+        '"The rug doesn\'t ask questions, brother. Sit."',
+        '"Every man who walks in here walked in the first time once."',
+      ];
+    },
+    bank: function(c){
+      const m = (c && c.money) || 0;
+      const lines = [];
+      if(m > 1000000) lines.push('"Ah — our private client. Tea? We have a desk for people like you."',
+        '"The manager would like a word. A good word, I assure you."');
+      else if(m < 200) lines.push('"...I can show you the balance, but you may want to sit down first."',
+        '"We all start somewhere. Most start about here, honestly."');
+      else lines.push('"Next, please. How can I help you today?"',
+        '"Deposits on the left, dreams on the right."');
+      if(c && c.religion === 'islam') lines.push('"Between us — ask about the murabaha accounts. The interest ones will follow you."');
+      return lines;
+    },
+    school: function(c){
+      const s = (c && c.smarts) || 0;
+      if(s >= 85) return ['"The teachers argue about who gets you next term. Pleasant arguing."',
+        '"Your last paper is on the corkboard. Someone framed it. We don\'t know who."'];
+      if(s >= 55) return ['"Solid work this term. The gap between good and great is mostly chairs and hours."',
+        '"You ask better questions than you used to. That\'s the whole game."'];
+      return ['"Look — grades are a photo, not a film. Show me the next frame."',
+        '"You\'re not behind. You\'re just not finished."'];
+    },
+    university: function(c){
+      return ['"Enrollment\'s through that door. Regret is through the other one — pick wisely."',
+        '"Four years goes fast. The loan does not. Read everything before you sign."',
+        '"The library is open till midnight. The excuses close at nine."'];
+    },
+    hospital: function(c){
+      const h = (c && c.health) || 0;
+      if(h < 35) return ['"Sir— please sit down. No, now. I\'m calling someone."',
+        '"You should have come in months ago. We\'ll work with what walked in."'];
+      if(h > 80) return ['"Checkup? You look healthier than my staff. Go ahead through."',
+        '"If everyone came in looking like you, I\'d be out of a job. Through there."'];
+      return ['"Take a number. The doctor will see what the years have done."',
+        '"Insurance card, ID, and no heroics in my waiting room please."'];
+    },
+    mall: function(){ return ['"Welcome in! Everything\'s on sale except the things you actually want."',
+      '"You break it, you buy it. You buy it, you forget it. Circle of retail."']; },
+    souq: function(c){
+      return ['"Best prices in the city! ...Okay, second best. Best HONEST prices."',
+        '"For you, my friend? Special discount. I say that to everyone, but for you I mean it."',
+        '"Fresh this morning, wallahi. Smell it. SMELL it. See?"',
+        '"You walk away, the price walks down. That\'s the dance, habibi."'];
+    },
+    restaurant: function(c){
+      const m = (c && c.money) || 0;
+      if(m > 100000) return ['"Your usual table, of course. The chef started when he saw your car."'];
+      return ['"Table for one? The shame is complimentary. I\'m joking — sit anywhere."',
+        '"Today\'s special is whatever didn\'t sell yesterday, served with confidence."'];
+    },
+    club: function(c){
+      if(c && c.religion === 'islam' && (c.iman||0) >= 40) return [
+        '"You sure, chief? You don\'t look like you actually want to be here."',
+        '"Door\'s open. So is the masjid down the street. Just saying."'];
+      return ['"No fights, no phones on the dancefloor, no telling your mother."',
+        '"Twenty cover. The regret\'s free."'];
+    },
+    gym: function(c){
+      const h = (c && c.health) || 0;
+      if(h > 75) return ['"There he is! You\'re the before-and-after poster now, you know that?"'];
+      return ['"First day? Everyone\'s first day looks like that. Go easy, then don\'t."',
+        '"The machines don\'t judge. The mirrors do, a little."'];
+    },
+    bank_default: null,
+    library: function(){ return ['"Shh. ...Sorry, habit. What can I find you?"',
+      '"The good stuff\'s on the third shelf. People stop reading at eye level."']; },
+    cityhall: function(c){
+      if(c && (c.flags||{}).felonyRecord) return ['"...Your file has a file, sir. Window six."'];
+      return ['"Forms, queues, stamps. Democracy\'s glamorous backstage. Next!"',
+        '"Window four for permits. Window five for complaining about window four."'];
+    },
+    police: function(c){
+      if(c && (c.flags||{}).felonyRecord) return ['"Well, well. Behaving ourselves these days, are we?"',
+        '"I remember you. Good. Keep it that way — boring."'];
+      return ['"Everything alright, citizen? Report\'s that way. Coffee\'s terrible, fair warning."'];
+    },
+    park: function(){ return ['"Lovely evening for it. The ducks are political today, mind the bread line."']; },
+    cinema: function(){ return ['"One ticket? The armrest battle is yours to lose."',
+      '"Popcorn costs more than the film. We know. We\'re sorry. We\'re not."']; },
+    home: function(c){
+      if(c && c.partner) return ['You\'re home. Someone left the light on for you.'];
+      return ['You\'re home. The quiet has a shape to it.'];
+    },
+  };
+
+  window.worldDialogue = function(b){
+    const c = LIFE && LIFE.char;
+    let pool = null;
+    const key = (b.name || '').toLowerCase();
+    if(W_DIALOGUE[b.id]) pool = W_DIALOGUE[b.id];
+    else if(key.indexOf('masjid') >= 0) pool = W_DIALOGUE.masjid;
+    else if(key.indexOf('residence') >= 0) pool = function(){ return ['"Oh! Neighbor! Come in, come in — ignore the mess, it\'s structural."']; };
+    if(!pool) return;
+    let lines;
+    try { lines = pool(c); } catch(e){ return; }
+    if(!lines || !lines.length) return;
+    showWorldSpeech(b.icon + ' ' + lines[Math.floor(Math.random()*lines.length)]);
+  };
+
+  let _speechTimer = null;
+  function showWorldSpeech(text){
+    let el = document.getElementById('lw-speech');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'lw-speech';
+      el.style.cssText = 'position:absolute;left:50%;bottom:28%;transform:translateX(-50%);'
+        + 'max-width:min(86vw,560px);font-family:Georgia,serif;font-size:14.5px;line-height:1.55;'
+        + 'color:#e8dcc0;background:rgba(6,15,10,.92);border:1px solid rgba(201,169,97,.45);'
+        + 'border-radius:12px;padding:13px 20px;text-align:center;pointer-events:none;'
+        + 'box-shadow:0 6px 30px rgba(0,0,0,.6);transition:opacity .3s;';
+      wrap.appendChild(el);
+    }
+    el.textContent = text;
+    el.style.opacity = '1';
+    if(_speechTimer) clearTimeout(_speechTimer);
+    _speechTimer = setTimeout(function(){ el.style.opacity = '0'; }, 4200);
   }
 
   window.openLyfeWorld = function(){

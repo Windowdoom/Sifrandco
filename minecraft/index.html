@@ -30,6 +30,28 @@
   .slot .key {
     position: absolute; top: 1px; left: 3px; color: #ddd; font-size: 10px; text-shadow: 1px 1px 0 #000;
   }
+  .slot .count {
+    position: absolute; bottom: 0; right: 3px; color: #fff; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 0 #000;
+  }
+  #hearts {
+    position: fixed; left: 50%; bottom: 72px; transform: translateX(-50%);
+    z-index: 10; font-size: 19px; letter-spacing: 1px; pointer-events: none;
+    text-shadow: 1px 1px 0 #000;
+  }
+  #damageFlash {
+    position: fixed; inset: 0; background: rgba(190, 0, 0, 0.4); opacity: 0;
+    pointer-events: none; z-index: 6; transition: opacity 0.35s;
+  }
+  #death {
+    position: fixed; inset: 0; z-index: 25; background: rgba(120, 0, 0, 0.55);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    color: #fff; text-align: center;
+  }
+  #death h1 { font-size: 44px; text-shadow: 3px 3px 0 #300; }
+  #death .btn {
+    margin-top: 16px; padding: 12px 36px; background: #6c9c43; border: 3px solid #444;
+    font-size: 20px; color: #fff; cursor: pointer;
+  }
   #minimap {
     position: fixed; top: 10px; right: 10px; z-index: 10;
     border: 3px solid rgba(0,0,0,0.6); border-radius: 4px;
@@ -68,6 +90,9 @@
 <div id="crosshair"></div>
 <div id="hotbar"></div>
 <canvas id="minimap" width="160" height="160"></canvas>
+<div id="hearts"></div>
+<div id="damageFlash"></div>
+<div id="death"><h1>You died!</h1><div class="btn" id="respawnBtn">Respawn</div></div>
 <div id="waterOverlay"></div>
 <div id="toast"></div>
 <div id="info"></div>
@@ -75,8 +100,10 @@
   <h1>MineClone</h1>
   <p>WASD — move &nbsp;•&nbsp; Space — jump &nbsp;•&nbsp; Shift — sprint &nbsp;•&nbsp; F — fly</p>
   <p>Hold left click — mine &nbsp;•&nbsp; <b>E</b> or right click — place &nbsp;•&nbsp; <b>Q</b> or middle click — pick block</p>
-  <p>1–9 / scroll — select block</p>
-  <p style="margin-top:10px;color:#9c9">Your world saves automatically in this browser.</p>
+  <p>1–9 / scroll — select block &nbsp;•&nbsp; <b>G</b> — survival / creative mode</p>
+  <p style="margin-top:10px;color:#c99">Survival: mine blocks to collect them, watch your hearts —
+  pigs roam by day, zombies hunt at night.</p>
+  <p style="color:#9c9">Your world saves automatically in this browser.</p>
   <div class="btn">Click to Play</div>
   <div class="reset" id="resetWorld">Reset world</div>
 </div>
@@ -701,6 +728,9 @@ function saveWorld() {
       player: { x: player.pos.x, y: player.pos.y, z: player.pos.z, yaw: player.yaw, pitch: player.pitch, fly: player.flying },
       hotbar: hotbarBlocks,
       time: worldTime,
+      mode: gameMode,
+      hp: hp,
+      inv: inventory,
     }));
     saveDirty = false;
   } catch (err) { /* storage unavailable */ }
@@ -725,6 +755,20 @@ const player = {
 let worldTime = 0.30;  // 0 = sunrise, 0.25 = noon
 let hotbarBlocks = [...HOTBAR_DEFAULT];
 
+// world spawn: dry land, away from trees (also used for respawning)
+const WORLD_SPAWN = new THREE.Vector3(8.5, 50, 8.5);
+for (let r = 0; r < 400; r += 4) {
+  const x = 8 + r, z = 8;
+  if (terrainHeight(x, z) > SEA + 1 && !vegAt(x, z)) {
+    WORLD_SPAWN.set(x + 0.5, terrainHeight(x, z) + 2, z + 0.5);
+    break;
+  }
+}
+
+let gameMode = 'survival';
+let hp = 20, airLeft = 10, regenTimer = 0, drownTimer = 0, dead = false;
+const inventory = {};   // block id -> count (survival mode)
+
 const saved = loadWorld();
 if (saved && saved.player) {
   player.pos.set(saved.player.x, saved.player.y, saved.player.z);
@@ -732,15 +776,11 @@ if (saved && saved.player) {
   player.flying = !!saved.player.fly;
   if (saved.hotbar) hotbarBlocks = saved.hotbar;
   if (typeof saved.time === 'number') worldTime = saved.time;
+  if (saved.mode) gameMode = saved.mode;
+  if (typeof saved.hp === 'number') hp = saved.hp > 0 ? saved.hp : 20;
+  if (saved.inv) Object.assign(inventory, saved.inv);
 } else {
-  // spawn on dry land, away from trees
-  for (let r = 0; r < 400; r += 4) {
-    const x = 8 + r, z = 8;
-    if (terrainHeight(x, z) > SEA + 1 && !vegAt(x, z)) {
-      player.pos.set(x + 0.5, terrainHeight(x, z) + 2, z + 0.5);
-      break;
-    }
-  }
+  player.pos.copy(WORLD_SPAWN);
 }
 
 const keys = {};
@@ -782,6 +822,7 @@ document.addEventListener('keydown', (e) => {
     player.flying = !player.flying; player.vel.y = 0;
     showToast(player.flying ? 'Flying' : 'Walking');
   }
+  if (e.code === 'KeyG' && locked) setGameMode(gameMode === 'survival' ? 'creative' : 'survival');
   // trackpad-friendly alternatives to right/middle click
   if (e.code === 'KeyE' && locked && !e.repeat) {
     audioCtx();
@@ -809,7 +850,10 @@ document.addEventListener('wheel', (e) => {
 document.addEventListener('mousedown', (e) => {
   if (!locked) return;
   audioCtx();
-  if (e.button === 0) { mining = true; }
+  if (e.button === 0) {
+    const m = mobRaycast(4);
+    if (m) attackMob(m); else mining = true;
+  }
   else if (e.button === 1) {
     const hit = raycast();
     if (hit && hit.block !== BEDROCK) {
@@ -845,6 +889,11 @@ function tryPlace() {
   const px = hit.x + hit.nx, py = hit.y + hit.ny, pz = hit.z + hit.nz;
   if (NON_SOLID.has(getBlock(px, py, pz)) && !intersectsPlayer(px, py, pz)) {
     const b = hotbarBlocks[selectedSlot];
+    if (gameMode === 'survival') {
+      if ((inventory[b] || 0) <= 0) { showToast('Out of ' + BLOCK_NAMES[b] + ' — mine some!'); return; }
+      inventory[b]--;
+      updateHotbarCounts();
+    }
     setBlock(px, py, pz, b, true);
     playSound('place', b);
   }
@@ -903,6 +952,7 @@ function updateMining(dt) {
   if (mineProgress >= 1) {
     setBlock(hit.x, hit.y, hit.z, AIR, true);
     playSound('break', hit.block);
+    gainBlock(hit.block);
     mineTarget = null;
     mineProgress = 0;
     crackMesh.visible = false;
@@ -917,17 +967,19 @@ function updateMining(dt) {
 // ---------------------------------------------------------------- physics
 function isSolid(x, y, z) { return !NON_SOLID.has(getBlock(x, y, z)); }
 
-function collide(pos) {
-  const minX = Math.floor(pos.x - PLAYER_W / 2), maxX = Math.floor(pos.x + PLAYER_W / 2 - 1e-6);
-  const minY = Math.floor(pos.y), maxY = Math.floor(pos.y + PLAYER_H - 1e-6);
-  const minZ = Math.floor(pos.z - PLAYER_W / 2), maxZ = Math.floor(pos.z + PLAYER_W / 2 - 1e-6);
+function collideBox(pos, w, h) {
+  const minX = Math.floor(pos.x - w / 2), maxX = Math.floor(pos.x + w / 2 - 1e-6);
+  const minY = Math.floor(pos.y), maxY = Math.floor(pos.y + h - 1e-6);
+  const minZ = Math.floor(pos.z - w / 2), maxZ = Math.floor(pos.z + w / 2 - 1e-6);
   for (let x = minX; x <= maxX; x++) for (let y = minY; y <= maxY; y++) for (let z = minZ; z <= maxZ; z++) {
     if (isSolid(x, y, z)) return true;
   }
   return false;
 }
+function collide(pos) { return collideBox(pos, PLAYER_W, PLAYER_H); }
 
 let bobPhase = 0, stepTimer = 0, isMoving = false, sprinting = false;
+let peakY = 0, wasOnGround = true;
 function physics(dt) {
   sprinting = !!(keys['ShiftLeft'] || keys['ShiftRight']);
   const speed = sprinting ? 8.5 : 5.2;
@@ -961,6 +1013,15 @@ function physics(dt) {
     player.vel.y = Math.max(player.vel.y, -50);
     tryMove(move.x * dt, player.vel.y * dt, move.z * dt);
   }
+
+  // fall damage
+  if (!player.onGround && !player.flying) peakY = Math.max(peakY, player.pos.y);
+  if (player.onGround && !wasOnGround) {
+    const fall = peakY - player.pos.y;
+    if (fall > 3.5 && !inWater && !player.flying) damage(Math.floor(fall - 3));
+  }
+  if (player.onGround || player.flying || inWater) peakY = player.pos.y;
+  wasOnGround = player.onGround;
 
   // head bob + footsteps
   if (isMoving && player.onGround && !player.flying) {
@@ -1003,11 +1064,18 @@ hotbarBlocks.forEach((b, i) => {
   const k = document.createElement('span'); k.className = 'key'; k.textContent = i + 1;
   const icon = document.createElement('canvas');
   icon.width = TILE_PX; icon.height = TILE_PX;
-  slot.appendChild(k); slot.appendChild(icon);
+  const cnt = document.createElement('span'); cnt.className = 'count';
+  slot.appendChild(k); slot.appendChild(icon); slot.appendChild(cnt);
   hotbarEl.appendChild(slot);
   slotEls.push(slot); slotIcons.push(icon);
   drawSlotIcon(i);
 });
+function updateHotbarCounts() {
+  slotEls.forEach((slot, i) => {
+    const cnt = slot.querySelector('.count');
+    cnt.textContent = gameMode === 'survival' ? (inventory[hotbarBlocks[i]] || 0) : '';
+  });
+}
 function drawSlotIcon(i) {
   const g = slotIcons[i].getContext('2d');
   g.imageSmoothingEnabled = false;
@@ -1019,6 +1087,273 @@ function selectSlot(i) {
   selectedSlot = i;
   slotEls[selectedSlot].classList.add('active');
   showToast(BLOCK_NAMES[hotbarBlocks[i]]);
+}
+
+// ---------------------------------------------------------------- health & game mode
+const heartsEl = document.getElementById('hearts');
+const damageFlashEl = document.getElementById('damageFlash');
+const deathEl = document.getElementById('death');
+let flashTimer = null;
+
+function updateHearts() {
+  if (gameMode === 'creative') { heartsEl.textContent = ''; return; }
+  let s = '';
+  for (let i = 0; i < 10; i++) {
+    if (hp >= i * 2 + 2) s += '<span style="color:#e23">❤</span>';
+    else if (hp >= i * 2 + 1) s += '<span style="color:#e88">❤</span>';
+    else s += '<span style="color:#444">❤</span>';
+  }
+  heartsEl.innerHTML = s;
+}
+function damage(n) {
+  if (gameMode === 'creative' || dead || n <= 0) return;
+  hp = Math.max(0, hp - n);
+  updateHearts();
+  playSound('break', IRON);
+  damageFlashEl.style.opacity = 1;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { damageFlashEl.style.opacity = 0; }, 120);
+  if (hp <= 0) die();
+}
+function heal(n) {
+  if (hp <= 0) return;
+  hp = Math.min(20, hp + n);
+  updateHearts();
+}
+function die() {
+  dead = true;
+  mining = false; rightHeld = false;
+  saveWorld();
+  document.exitPointerLock();
+  deathEl.style.display = 'flex';
+}
+document.getElementById('respawnBtn').addEventListener('click', () => {
+  hp = 20; airLeft = 10; dead = false;
+  player.pos.copy(WORLD_SPAWN);
+  player.vel.set(0, 0, 0);
+  peakY = player.pos.y;
+  updateHearts();
+  deathEl.style.display = 'none';
+  canvas.requestPointerLock();
+});
+function setGameMode(mode) {
+  gameMode = mode;
+  updateHearts();
+  updateHotbarCounts();
+  showToast(mode === 'creative' ? 'Creative mode' : 'Survival mode');
+}
+
+// survival inventory helpers
+function gainBlock(b) {
+  if (gameMode === 'creative') return;
+  inventory[b] = (inventory[b] || 0) + 1;
+  if (!hotbarBlocks.includes(b)) {
+    // drop it into an empty (zero-count) slot so it's usable right away
+    for (let i = 0; i < hotbarBlocks.length; i++) {
+      if ((inventory[hotbarBlocks[i]] || 0) === 0) {
+        hotbarBlocks[i] = b;
+        drawSlotIcon(i);
+        break;
+      }
+    }
+  }
+  updateHotbarCounts();
+}
+
+// ---------------------------------------------------------------- mobs
+const mobs = [];
+let mobSpawnTimer = 0, lastDay = 1;
+
+function boxPart(group, w, h, d, x, y, z, color, mats) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color }));
+  m.position.set(x, y, z);
+  group.add(m);
+  mats.push(m.material);
+  return m;
+}
+function makeMob(type, x, y, z) {
+  const g = new THREE.Group();
+  const mats = [];
+  let w, h, hpMax, speed;
+  if (type === 'pig') {
+    w = 0.9; h = 0.9; hpMax = 10; speed = 1.2;
+    boxPart(g, 0.8, 0.5, 1.1, 0, 0.55, 0, 0xeda3a8, mats);          // body
+    boxPart(g, 0.5, 0.45, 0.45, 0, 0.75, -0.7, 0xf0b0b5, mats);     // head
+    boxPart(g, 0.18, 0.12, 0.06, 0, 0.68, -0.95, 0xd98a90, mats);   // snout
+    for (const [dx, dz] of [[-0.25,-0.35],[0.25,-0.35],[-0.25,0.35],[0.25,0.35]])
+      boxPart(g, 0.22, 0.3, 0.22, dx, 0.15, dz, 0xe89ca2, mats);    // legs
+  } else { // zombie
+    w = 0.6; h = 1.9; hpMax = 20; speed = 2.6;
+    boxPart(g, 0.55, 0.7, 0.3, 0, 1.1, 0, 0x3f7a3a, mats);          // torso
+    boxPart(g, 0.5, 0.5, 0.5, 0, 1.7, 0, 0x55a04c, mats);           // head
+    boxPart(g, 0.2, 0.7, 0.2, -0.14, 0.4, 0, 0x2e5c8a, mats);       // legs
+    boxPart(g, 0.2, 0.7, 0.2, 0.14, 0.4, 0, 0x2e5c8a, mats);
+    const arm1 = boxPart(g, 0.18, 0.65, 0.18, -0.37, 1.3, -0.18, 0x3f7a3a, mats);
+    const arm2 = boxPart(g, 0.18, 0.65, 0.18, 0.37, 1.3, -0.18, 0x3f7a3a, mats);
+    arm1.rotation.x = arm2.rotation.x = -Math.PI / 2.2;             // arms out front
+  }
+  scene.add(g);
+  return {
+    type, w, h, speed,
+    pos: new THREE.Vector3(x, y, z),
+    vel: new THREE.Vector3(),
+    yaw: Math.random() * Math.PI * 2,
+    hp: hpMax,
+    group: g, mats,
+    aiTimer: 0, atkCool: 0, flash: 0, onGround: false,
+    wanderX: 0, wanderZ: 0,
+  };
+}
+function removeMob(m) {
+  scene.remove(m.group);
+  m.group.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  const i = mobs.indexOf(m);
+  if (i >= 0) mobs.splice(i, 1);
+}
+function mobTryMove(m, dx, dy, dz) {
+  const p = m.pos;
+  let blockedH = false;
+  p.x += dx;
+  if (collideBox(p, m.w, m.h)) { p.x -= dx; blockedH = true; }
+  p.z += dz;
+  if (collideBox(p, m.w, m.h)) { p.z -= dz; blockedH = true; }
+  p.y += dy;
+  m.onGround = false;
+  if (collideBox(p, m.w, m.h)) {
+    p.y -= dy;
+    if (dy < 0) m.onGround = true;
+    m.vel.y = 0;
+  }
+  return blockedH;
+}
+function updateMobs(dt) {
+  mobSpawnTimer += dt;
+  if (mobSpawnTimer > 2.5) {
+    mobSpawnTimer = 0;
+    trySpawnMobs();
+  }
+  const pp = player.pos;
+  for (let i = mobs.length - 1; i >= 0; i--) {
+    const m = mobs[i];
+    const dist = m.pos.distanceTo(pp);
+    if (dist > 90) { removeMob(m); continue; }
+
+    // zombies burn in daylight
+    if (m.type === 'zombie' && lastDay > 0.35) {
+      m.hp -= dt * 5;
+      m.flash = 0.08;
+      if (m.hp <= 0) { removeMob(m); continue; }
+    }
+
+    // AI: desired horizontal motion
+    let mx = 0, mz = 0;
+    if (m.type === 'zombie' && dist < 28 && !dead) {
+      const dx = pp.x - m.pos.x, dz = pp.z - m.pos.z;
+      const l = Math.hypot(dx, dz) || 1;
+      mx = dx / l * m.speed; mz = dz / l * m.speed;
+      m.yaw = Math.atan2(-dx, -dz) + Math.PI;
+      m.atkCool -= dt;
+      if (dist < 2.3 && Math.abs(m.pos.y - pp.y) < 2.5 && m.atkCool <= 0) {
+        m.atkCool = 1.2;
+        damage(3);
+        const kx = (pp.x - m.pos.x) / (dist || 1), kz = (pp.z - m.pos.z) / (dist || 1);
+        player.vel.y = Math.max(player.vel.y, 4);
+        player.pos.x += kx * 0.1; player.pos.z += kz * 0.1;
+      }
+    } else {
+      m.aiTimer -= dt;
+      if (m.aiTimer <= 0) {
+        m.aiTimer = 2 + Math.random() * 4;
+        if (Math.random() < 0.55) {
+          m.yaw = Math.random() * Math.PI * 2;
+          m.wanderX = -Math.sin(m.yaw) * m.speed;
+          m.wanderZ = -Math.cos(m.yaw) * m.speed;
+        } else { m.wanderX = 0; m.wanderZ = 0; }
+      }
+      mx = m.wanderX; mz = m.wanderZ;
+    }
+
+    // knockback decay folded into velocity
+    m.vel.x *= Math.pow(0.02, dt); m.vel.z *= Math.pow(0.02, dt);
+    m.vel.y += GRAVITY * dt;
+    m.vel.y = Math.max(m.vel.y, -40);
+    const inWater = getBlock(Math.floor(m.pos.x), Math.floor(m.pos.y + 0.3), Math.floor(m.pos.z)) === WATER;
+    if (inWater) { m.vel.y = Math.max(m.vel.y, -1.5); if (Math.random() < 0.1) m.vel.y = 3.5; }
+    const blocked = mobTryMove(m, (mx + m.vel.x) * dt, m.vel.y * dt, (mz + m.vel.z) * dt);
+    if (blocked && m.onGround) m.vel.y = 7.5;  // hop up one block
+
+    if (m.pos.y < -10) { removeMob(m); continue; }
+
+    // hurt flash
+    if (m.flash > 0) {
+      m.flash -= dt;
+      const on = m.flash > 0;
+      for (const mat of m.mats) mat.emissive.setHex(on ? 0x881111 : 0x000000);
+    }
+
+    m.group.position.copy(m.pos);
+    m.group.rotation.y = m.yaw;
+  }
+}
+function trySpawnMobs() {
+  const isNight = lastDay < 0.12;
+  const want = isNight ? 'zombie' : 'pig';
+  const count = mobs.filter(m => m.type === want).length;
+  if (count >= 6) return;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = 24 + Math.random() * 20;
+    const x = Math.floor(player.pos.x + Math.cos(a) * r);
+    const z = Math.floor(player.pos.z + Math.sin(a) * r);
+    let t = columnTop(x, z);
+    // drop below tree canopy (and the air gap under it) to the actual ground
+    while (t > 1 && [AIR, LEAVES, WOOD].includes(getBlock(x, t, z))) t--;
+    const ground = getBlock(x, t, z);
+    if (ground === WATER || ground === AIR || t >= HEIGHT - 4) continue;
+    if (want === 'pig' && ground !== GRASS && ground !== SNOW && ground !== SAND) continue;
+    if (getBlock(x, t + 1, z) !== AIR || getBlock(x, t + 2, z) !== AIR) continue;
+    const m = makeMob(want, x + 0.5, t + 1, z + 0.5);
+    if (collideBox(m.pos, m.w, m.h)) { scene.remove(m.group); continue; }
+    mobs.push(m);
+    return;
+  }
+}
+// ray vs mob AABB; returns nearest mob within maxDist
+function mobRaycast(maxDist) {
+  const dir = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
+  const o = player.pos.clone(); o.y += EYE;
+  let best = null, bestT = maxDist;
+  for (const m of mobs) {
+    const min = [m.pos.x - m.w / 2, m.pos.y, m.pos.z - m.w / 2];
+    const max = [m.pos.x + m.w / 2, m.pos.y + m.h, m.pos.z + m.w / 2];
+    const od = [o.x, o.y, o.z], dd = [dir.x, dir.y, dir.z];
+    let t0 = 0, t1 = bestT, ok = true;
+    for (let a = 0; a < 3; a++) {
+      if (Math.abs(dd[a]) < 1e-9) {
+        if (od[a] < min[a] || od[a] > max[a]) { ok = false; break; }
+      } else {
+        let ta = (min[a] - od[a]) / dd[a], tb = (max[a] - od[a]) / dd[a];
+        if (ta > tb) { const tmp = ta; ta = tb; tb = tmp; }
+        t0 = Math.max(t0, ta); t1 = Math.min(t1, tb);
+        if (t0 > t1) { ok = false; break; }
+      }
+    }
+    if (ok && t0 < bestT) { bestT = t0; best = m; }
+  }
+  return best;
+}
+function attackMob(m) {
+  m.hp -= 4;
+  m.flash = 0.15;
+  playSound('break', WOOD);
+  const dx = m.pos.x - player.pos.x, dz = m.pos.z - player.pos.z;
+  const l = Math.hypot(dx, dz) || 1;
+  m.vel.x += dx / l * 7; m.vel.z += dz / l * 7;
+  m.vel.y = 4.5;
+  if (m.hp <= 0) {
+    if (m.type === 'pig') { heal(4); showToast('+2 ❤'); }
+    removeMob(m);
+  }
 }
 
 // ---------------------------------------------------------------- minimap
@@ -1066,6 +1401,7 @@ function updateSky(dt) {
   const sunDir = new THREE.Vector3(Math.cos(ang), Math.sin(ang), 0.3).normalize();
   const elev = sunDir.y;
   const day = THREE.MathUtils.clamp((elev + 0.1) / 0.3, 0, 1);
+  lastDay = day;
 
   sun.position.copy(sunDir);
   sun.intensity = 0.75 * day;
@@ -1108,7 +1444,7 @@ function loop(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
 
-  if (locked) {
+  if (locked && !dead) {
     physics(dt);
     updateMining(dt);
     if (rightHeld) {
@@ -1118,6 +1454,23 @@ function loop(now) {
   }
   updateChunks(player.pos.x, player.pos.z);
   updateSky(dt);
+  updateMobs(dt);
+
+  // drowning + slow regeneration (survival)
+  if (gameMode === 'survival' && !dead) {
+    const eyeB = getBlock(Math.floor(player.pos.x), Math.floor(player.pos.y + EYE), Math.floor(player.pos.z));
+    if (eyeB === WATER) {
+      airLeft -= dt;
+      if (airLeft <= 0) {
+        drownTimer += dt;
+        if (drownTimer > 1) { drownTimer = 0; damage(2); }
+      }
+    } else { airLeft = 10; drownTimer = 0; }
+    if (hp < 20) {
+      regenTimer += dt;
+      if (regenTimer > 5) { regenTimer = 0; heal(1); }
+    }
+  }
 
   // camera: head bob + sprint FOV
   camera.position.copy(player.pos);
@@ -1151,11 +1504,13 @@ function loop(now) {
   if (fpsTime >= 0.5) { fps = Math.round(fpsCount / fpsTime); fpsCount = 0; fpsTime = 0; }
   const hour = ((worldTime * 24 + 6) % 24) | 0;
   infoEl.textContent = `FPS: ${fps}\nXYZ: ${player.pos.x.toFixed(1)} ${player.pos.y.toFixed(1)} ${player.pos.z.toFixed(1)}` +
-    `\n${biomeAt(Math.floor(player.pos.x), Math.floor(player.pos.z))} • ${String(hour).padStart(2, '0')}:00` +
+    `\n${biomeAt(Math.floor(player.pos.x), Math.floor(player.pos.z))} • ${String(hour).padStart(2, '0')}:00 • ${gameMode}` +
     (player.flying ? '\nFLYING' : '');
 
   renderer.render(scene, camera);
 }
+updateHearts();
+updateHotbarCounts();
 requestAnimationFrame(loop);
 </script>
 </body>

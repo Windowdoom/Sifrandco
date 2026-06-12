@@ -74,7 +74,7 @@
 <div id="overlay">
   <h1>MineClone</h1>
   <p>WASD — move &nbsp;•&nbsp; Space — jump &nbsp;•&nbsp; Shift — sprint &nbsp;•&nbsp; F — fly</p>
-  <p>Hold left click — mine &nbsp;•&nbsp; Right click — place &nbsp;•&nbsp; Middle click — pick block</p>
+  <p>Hold left click — mine &nbsp;•&nbsp; <b>E</b> or right click — place &nbsp;•&nbsp; <b>Q</b> or middle click — pick block</p>
   <p>1–9 / scroll — select block</p>
   <p style="margin-top:10px;color:#9c9">Your world saves automatically in this browser.</p>
   <div class="btn">Click to Play</div>
@@ -782,10 +782,26 @@ document.addEventListener('keydown', (e) => {
     player.flying = !player.flying; player.vel.y = 0;
     showToast(player.flying ? 'Flying' : 'Walking');
   }
+  // trackpad-friendly alternatives to right/middle click
+  if (e.code === 'KeyE' && locked && !e.repeat) {
+    audioCtx();
+    rightHeld = true; placeTimer = 0; tryPlace();
+  }
+  if (e.code === 'KeyQ' && locked) {
+    const hit = raycast();
+    if (hit && hit.block !== BEDROCK) {
+      hotbarBlocks[selectedSlot] = hit.block;
+      drawSlotIcon(selectedSlot);
+      showToast(BLOCK_NAMES[hit.block]);
+    }
+  }
   const n = parseInt(e.key);
   if (n >= 1 && n <= hotbarBlocks.length) selectSlot(n - 1);
 });
-document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+document.addEventListener('keyup', (e) => {
+  keys[e.code] = false;
+  if (e.code === 'KeyE') rightHeld = false;
+});
 document.addEventListener('wheel', (e) => {
   if (!locked) return;
   selectSlot((selectedSlot + (e.deltaY > 0 ? 1 : -1) + hotbarBlocks.length) % hotbarBlocks.length);

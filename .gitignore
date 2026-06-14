@@ -2,4 +2,5 @@ dist/
 .DS_Store
 node_modules/
 *.log
-AXON.zip
+# downloadable build artifacts (regenerated from source; not committed)
+*.zip

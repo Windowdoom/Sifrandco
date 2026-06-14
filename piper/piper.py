@@ -176,7 +176,7 @@ _STOP={"the","and","for","with","that","this","what","you","your","are","was","f
 def _kind_of(name):
     n=name.lower()
     if re.search(r"islam|quran|qur'an|deen|dua|hijjah|hadith|tafsir|salah|iman|kitab", n): return "islamic"
-    if re.search(r"journal|me\b|personal|profile|codex", n): return "personal"
+    if re.search(r"journal|personal|profile|codex|arcbook|companion|weekly plan|master plan|life plan|loophole|\bdanial\b", n): return "personal"
     return "reference"
 
 def _chunk(t, size=900):

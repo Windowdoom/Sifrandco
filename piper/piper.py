@@ -37,6 +37,7 @@ os.makedirs(KNOWLEDGE, exist_ok=True)
 # ---------------------------------------------------------------- config
 DEFAULTS = {
     "port": 7777,
+    "host": "127.0.0.1",               # 127.0.0.1 = this machine only. "0.0.0.0" = reachable from your phone/other devices (a token is then required)
     "ollama": "http://127.0.0.1:11434",
     "model": "qwen2.5:3b",            # the local brain; pull with: ollama pull qwen2.5:3b
     "voice_model": "",                 # optional smaller/faster model for spoken turns
@@ -480,24 +481,40 @@ def brain_ask(query, history=None, voice=False):
     except Exception: pass
 
 # ---------------------------------------------------------------- HTTP server
+TOKEN = None   # set in main() when hosting beyond loopback; gates every request
+
 class H(http.server.SimpleHTTPRequestHandler):
     def __init__(self,*a,**k): super().__init__(*a, directory=SHELL, **k)
     def log_message(self,*a): pass
     def end_headers(self):
-        self.send_header("Cache-Control","no-cache, must-revalidate"); super().end_headers()
+        self.send_header("Cache-Control","no-cache, must-revalidate")
+        if getattr(self,"_cookie",None):
+            self.send_header("Set-Cookie","ptok=%s; Path=/; Max-Age=31536000; SameSite=Lax"%self._cookie)
+        super().end_headers()
+    def _auth(self):
+        if not TOKEN: return True
+        q=urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        if q.get("k",[""])[0]==TOKEN: self._cookie=TOKEN; return True
+        return ("ptok="+TOKEN) in (self.headers.get("Cookie","") or "")
+    def _deny(self):
+        b=b"<body style='font-family:sans-serif;background:#0C0A0E;color:#8A8478;text-align:center;padding:18vh'><h2 style='color:#C4973A'>\xd8\xb5\xd9\x81\xd8\xb1</h2><p>Open the full link Piper printed, including the <b>?k=</b> key.</p></body>"
+        self.send_response(401); self.send_header("Content-Type","text/html; charset=utf-8")
+        self.send_header("Content-Length",str(len(b))); self.end_headers(); self.wfile.write(b)
     def _json(self,code,obj):
         b=json.dumps(obj).encode(); self.send_response(code)
         self.send_header("Content-Type","application/json"); self.send_header("Content-Length",str(len(b)))
         self.end_headers(); self.wfile.write(b)
     def do_GET(self):
-        if self.path.startswith("/status"): return self._json(200,{"initialized":True,"locked":False,
+        if not self._auth(): return self._deny()
+        path=self.path.split("?")[0]
+        if path=="/status": return self._json(200,{"initialized":True,"locked":False,
             "brain":("ollama" if ollama_up() else "claude" if CONF["claude_key"] else "offline")})
-        if self.path.startswith("/state"): return self._json(200,{"ambient":ambient_line(),"time":ambient_line()})
-        if self.path.startswith("/memory"):
-            return self._json(200,{"memories":mem_all()[:200]})
-        if self.path=="/" or self.path=="": self.path="/index.html"
+        if path=="/state": return self._json(200,{"ambient":ambient_line(),"time":ambient_line()})
+        if path=="/memory": return self._json(200,{"memories":mem_all()[:200]})
+        if path=="/" or path=="": self.path="/index.html"+(("?"+self.path.split("?",1)[1]) if "?" in self.path else "")
         return super().do_GET()
     def do_POST(self):
+        if not self._auth(): return self._json(401,{"error":"unauthorized"})
         n=int(self.headers.get("Content-Length",0) or 0)
         try: payload=json.loads(self.rfile.read(n) or b"{}")
         except Exception: payload={}
@@ -527,22 +544,39 @@ class H(http.server.SimpleHTTPRequestHandler):
 class Threading(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads=True
 
+def _lan_ip():
+    import socket
+    try:
+        s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(("8.8.8.8",80))
+        ip=s.getsockname()[0]; s.close(); return ip
+    except Exception:
+        return "127.0.0.1"
+
 def main():
+    global TOKEN
     os.chdir(ROOT)
     n=build_index()
     if n>=0: print("  indexed %d passages from your library"%n)
-    port=CONF["port"]; httpd=None
+    host=CONF.get("host","127.0.0.1"); port=CONF["port"]; httpd=None
+    if host not in ("127.0.0.1","localhost"):
+        import secrets; TOKEN=secrets.token_urlsafe(12)   # reachable from other devices -> require a key
     for _ in range(10):
-        try: httpd=Threading(("127.0.0.1",port),H); break
+        try: httpd=Threading((host,port),H); break
         except OSError: port+=1
     if not httpd: print("  no free port found."); return
-    url="http://localhost:%d/"%port
+    local="http://localhost:%d/"%port
     brain="Ollama (%s)"%CONF["model"] if ollama_up() else ("Claude (%s)"%CONF["claude_model"] if CONF["claude_key"] else "offline only — start Ollama for full reasoning")
-    print("\n  PIPER is live.  %s"%url)
+    print("\n  PIPER is live.")
+    print("  On this machine:  %s"%local)
+    if TOKEN:
+        phone="http://%s:%d/?k=%s"%(_lan_ip(), port, TOKEN)
+        print("  From your phone (same Wi-Fi or Tailscale), open this exact link:")
+        print("    %s"%phone)
+        print("  Then Share -> Add to Home Screen to keep it as an app.")
     print("  Brain: %s"%brain)
-    print("  Drop textbooks in ./knowledge to deepen it. Control-C to stop.\n")
+    print("  Drop files in ./knowledge to deepen it. Control-C to stop.\n")
     try:
-        import webbrowser; threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+        import webbrowser; threading.Timer(0.8, lambda: webbrowser.open(local)).start()
     except Exception: pass
     try: httpd.serve_forever()
     except KeyboardInterrupt: print("\n  Piper stopped.")

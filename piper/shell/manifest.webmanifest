@@ -1,0 +1,13 @@
+{
+  "name": "Piper",
+  "short_name": "Piper",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0C0A0E",
+  "theme_color": "#0C0A0E",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

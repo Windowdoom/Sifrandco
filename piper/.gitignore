@@ -1,0 +1,7 @@
+data/
+__pycache__/
+shell/__pycache__/
+# the library stays out of git (manifesto III/VIII); it ships in the zip
+knowledge/*.txt
+knowledge/*.md
+!knowledge/README.txt

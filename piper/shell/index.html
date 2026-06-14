@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Piper · صفر</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;600&family=IBM+Plex+Serif:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/piper.css?v=1">
+</head>
+<body>
+  <main id="shell">
+    <header id="brow">
+      <button id="mark" aria-label="the six arcs" title="the six arcs">صفر</button>
+      <div id="ambient">—</div>
+      <div id="brow-r">
+        <button class="browbtn" id="memBtn" title="memory">memory</button>
+        <span id="brain" title="active brain">·</span>
+      </div>
+    </header>
+
+    <section id="stream" aria-live="polite"></section>
+
+    <section id="arcs" hidden>
+      <div class="arcs-head">the six arcs · 2026–2035</div>
+      <div class="arcs-grid">
+        <button class="arc" data-arc="RX"><b>RX</b><span>Medicine</span></button>
+        <button class="arc" data-arc="DN"><b>DN</b><span>Deen</span></button>
+        <button class="arc" data-arc="FN"><b>FN</b><span>Finance</span></button>
+        <button class="arc" data-arc="MN"><b>MN</b><span>Mind</span></button>
+        <button class="arc" data-arc="BD"><b>BD</b><span>Body</span></button>
+        <button class="arc" data-arc="CS"><b>CS</b><span>Cosmos</span></button>
+      </div>
+    </section>
+
+    <aside id="panel" hidden>
+      <header class="panel-bar"><span id="panel-title"></span><button id="panel-close" aria-label="close">✕</button></header>
+      <div id="panel-body"></div>
+    </aside>
+
+    <footer id="threshold">
+      <button id="mic" title="speak" aria-label="speak"><span class="ring"></span></button>
+      <button id="convo" title="hands-free conversation" aria-label="conversation">∞</button>
+      <form id="say">
+        <input id="text" type="text" autocomplete="off" spellcheck="false" placeholder="speak, or type to Piper">
+      </form>
+      <button id="speakToggle" title="speak replies aloud" aria-label="toggle voice">🔊</button>
+    </footer>
+  </main>
+  <script src="/piper.js?v=1"></script>
+</body>
+</html>

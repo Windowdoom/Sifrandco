@@ -5,3 +5,4 @@ shell/__pycache__/
 knowledge/*.txt
 knowledge/*.md
 !knowledge/README.txt
+data/actions.log

@@ -20,7 +20,7 @@ Everything lives next to this file. Nothing leaves the machine unless you set an
 API key and a turn routes to it.
 """
 import http.server, socketserver, json, os, sys, re, time, math, sqlite3, struct
-import urllib.request, urllib.parse, threading, platform, hashlib
+import urllib.request, urllib.parse, threading, platform, hashlib, importlib.util
 from datetime import datetime, timezone, timedelta
 try:
     from zoneinfo import ZoneInfo
@@ -362,6 +362,57 @@ def offline_answer(q):
         return awareness().split(". Let")[0]+"."
     return None
 
+# ---------------------------------------------------------------- capabilities (the ecosystem)
+CAPS_DIR = os.path.join(ROOT, "caps")
+REGISTRY = {}     # toolname -> {fn, mutating, desc, cap}
+CAP_NAMES = []
+
+def load_caps():
+    REGISTRY.clear(); CAP_NAMES.clear()
+    if not os.path.isdir(CAPS_DIR): return
+    for fn in sorted(os.listdir(CAPS_DIR)):
+        if not fn.endswith(".py") or fn.startswith("_"): continue
+        path = os.path.join(CAPS_DIR, fn)
+        try:
+            spec = importlib.util.spec_from_file_location("cap_"+fn[:-3], path)
+            mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+            man = getattr(mod, "MANIFEST", None)
+            if not man: continue
+            CAP_NAMES.append(man["name"])
+            for t in man.get("tools", []):
+                f = getattr(mod, t["name"], None)
+                if f: REGISTRY[t["name"]] = {"fn": f, "mutating": t.get("mutating", False),
+                                             "desc": t.get("desc", ""), "cap": man["name"]}
+        except Exception as e:
+            print("  capability %s failed to load: %s" % (fn, e))
+
+def tool_catalog():
+    if not REGISTRY: return ""
+    lines = []
+    for name, t in REGISTRY.items():
+        gate = " [needs allow_actions]" if t["mutating"] and not CONF.get("allow_actions") else ""
+        lines.append("- %s: %s%s" % (name, t["desc"], gate))
+    return ("\n\nTOOLS you can use to act in the world. To call one, reply with ONLY a fenced "
+            "block and nothing else:\n```action\n{\"tool\":\"web_search\",\"args\":{\"query\":\"...\"}}\n```\n"
+            "After you see the RESULT, call another tool the same way or give your final plain answer "
+            "with no action block. Use tools when they genuinely help; do not narrate them. Available:\n"
+            + "\n".join(lines))
+
+def run_tool(name, args):
+    t = REGISTRY.get(name)
+    if not t: return {"error": "no such tool: %s" % name}
+    if t["mutating"] and not CONF.get("allow_actions"):
+        return {"error": "this action is disabled. Set allow_actions:true in piper.conf to permit it."}
+    try: return t["fn"](args or {})
+    except Exception as e: return {"error": str(e)}
+
+_ACTION_RE = re.compile(r"```action\s*([\s\S]*?)```|^\s*(\{\"tool\"[\s\S]*\})\s*$")
+def parse_action(text):
+    m = _ACTION_RE.search(text or "")
+    if not m: return None
+    try: return json.loads((m.group(1) or m.group(2)).strip())
+    except Exception: return None
+
 # ---------------------------------------------------------------- model clients
 def ollama_up():
     try:
@@ -381,6 +432,20 @@ def ollama_stream(messages, model):
             tok=(obj.get("message") or {}).get("content","")
             if tok: yield tok
             if obj.get("done"): break
+
+def ollama_chat(messages, model):
+    return "".join(ollama_stream(messages, model))
+
+def claude_chat(messages, system, model, key):
+    return "".join(claude_stream(messages, system, model, key))
+
+def model_complete(system, messages):
+    """One full (non-streaming) completion from the best available brain, for tool loops."""
+    if ollama_up():
+        return ollama_chat([{"role":"system","content":system}]+messages, CONF["model"])
+    if CONF["claude_key"]:
+        return claude_chat(messages, system, CONF["claude_model"], CONF["claude_key"])
+    return ""
 
 def claude_stream(messages, system, model, key):
     payload={"model":model,"max_tokens":1800,"system":system,"messages":messages,"stream":True}
@@ -424,7 +489,13 @@ def system_prompt(query, voice):
         parts.append("From his library. Ground your answer in this. When you use a source, name it "
                      "in brackets. If it does not answer the question, say so plainly rather than "
                      "inventing:\n"+body)
+    cat=tool_catalog()
+    if cat: parts.append(cat)
     return "\n\n".join(parts)
+
+TOOL_LABEL={"web_search":"searching the web","web_fetch":"reading a page","host_info":"checking the system",
+            "disk":"checking disk","processes":"checking processes","list_dir":"listing files",
+            "read_file":"reading a file","run_command":"running a command","write_file":"writing a file"}
 
 def brain_ask(query, history=None, voice=False):
     """Generator yielding reply tokens. Picks the best available brain each turn."""
@@ -454,20 +525,40 @@ def brain_ask(query, history=None, voice=False):
         if turn.get("piper"): messages.append({"role":"assistant","content":turn["piper"]})
     messages.append({"role":"user","content":query})
 
+    have_model = ollama_up() or bool(CONF["claude_key"])
     full=[]
     try:
-        if ollama_up():
-            model=CONF["voice_model"] if (voice and CONF["voice_model"]) else CONF["model"]
-            for tok in ollama_stream([{"role":"system","content":sys_p}]+messages, model):
-                full.append(tok); yield tok
-        elif CONF["claude_key"]:
-            for tok in claude_stream(messages, sys_p, CONF["claude_model"], CONF["claude_key"]):
-                full.append(tok); yield tok
-        else:
+        if not have_model:
             off=offline_answer(query)
             msg = off or ("No brain is reachable. Start Ollama (ollama serve) and pull a model, or set "
                           "a Claude key in piper.conf. I can still do math, dates, and recall offline.")
             full.append(msg); yield msg
+        elif REGISTRY and not _trivial(query):
+            # tool loop: the model may call capabilities before answering
+            convo=list(messages)
+            reply_text=""
+            for step in range(4):
+                text=model_complete(sys_p, convo).strip()
+                act=parse_action(text)
+                if act and step<3:
+                    yield "· %s…\n"%TOOL_LABEL.get(act.get("tool"), act.get("tool",""))
+                    result=run_tool(act.get("tool"), act.get("args"))
+                    convo.append({"role":"assistant","content":text})
+                    convo.append({"role":"user","content":"RESULT: "+json.dumps(result)[:5000]})
+                    continue
+                reply_text=re.sub(r"```action[\s\S]*?```","",text).strip() or text
+                for i in range(0,len(reply_text),6): yield reply_text[i:i+6]
+                break
+            full.append(reply_text)
+        else:
+            # streaming fast path (trivial turns, or no capabilities)
+            model=CONF["voice_model"] if (voice and CONF["voice_model"]) else CONF["model"]
+            if ollama_up():
+                for tok in ollama_stream([{"role":"system","content":sys_p}]+messages, model):
+                    full.append(tok); yield tok
+            else:
+                for tok in claude_stream(messages, sys_p, CONF["claude_model"], CONF["claude_key"]):
+                    full.append(tok); yield tok
     except Exception as e:
         off=offline_answer(query)
         if off: full.append(off); yield off
@@ -557,6 +648,9 @@ def main():
     os.chdir(ROOT)
     n=build_index()
     if n>=0: print("  indexed %d passages from your library"%n)
+    load_caps()
+    if CAP_NAMES: print("  capabilities: %s%s"%(", ".join(CAP_NAMES),
+                        "" if CONF.get("allow_actions") else "  (actions read-only; set allow_actions:true to let it change things)"))
     host=CONF.get("host","127.0.0.1"); port=CONF["port"]; httpd=None
     if host not in ("127.0.0.1","localhost"):
         import secrets; TOKEN=secrets.token_urlsafe(12)   # reachable from other devices -> require a key

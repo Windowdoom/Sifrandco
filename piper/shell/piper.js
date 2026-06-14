@@ -76,7 +76,8 @@
         for(const p of parts){
           const line=p.replace(/^data: /,"").trim(); if(!line)continue;
           let o; try{o=JSON.parse(line);}catch{continue;}
-          if(o.t){ reply+=o.t; said.textContent=reply; stream.scrollTop=stream.scrollHeight; speakChunk(reply); }
+          if(o.confirm){ showConfirm(o.confirm, o.cid); }
+          else if(o.t){ reply+=o.t; said.textContent=reply; stream.scrollTop=stream.scrollHeight; speakChunk(reply); }
         }
       }
     }catch(e){ reply=reply||"the mind is unreachable from here."; said.textContent=reply; }
@@ -87,6 +88,24 @@
   }
 
   form.addEventListener("submit", e=>{ e.preventDefault(); const t=input.value; input.value=""; ask(t); });
+
+  // ── per-action confirm card ──
+  function showConfirm(act, cid){
+    clearVeil();
+    const card=document.createElement("div"); card.className="turn confirm-card";
+    const a=(act.args||{}); const argstr=Object.keys(a).map(k=>k+": "+JSON.stringify(a[k])).join("\n");
+    card.innerHTML='<div class="who">piper wants to act</div>'+
+      '<div class="cfm-tool">'+(act.tool||"")+(act.desc?' — '+act.desc:'')+'</div>'+
+      '<pre class="cfm-args">'+argstr.replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]))+'</pre>'+
+      '<div class="cfm-btns"><button class="cfm-no">deny</button><button class="cfm-yes">approve</button></div>';
+    stream.appendChild(card); stream.scrollTop=stream.scrollHeight;
+    const decide=ok=>{ fetch("/resume",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({cid,ok})}); card.querySelectorAll("button").forEach(b=>b.disabled=true);
+        card.classList.add(ok?"approved":"denied");
+        card.querySelector(".cfm-btns").innerHTML='<span class="cfm-done">'+(ok?"approved":"denied")+'</span>'; };
+    card.querySelector(".cfm-yes").onclick=()=>decide(true);
+    card.querySelector(".cfm-no").onclick=()=>decide(false);
+  }
 
   // ── speech in ──
   let recog=null; const SR=window.SpeechRecognition||window.webkitSpeechRecognition;

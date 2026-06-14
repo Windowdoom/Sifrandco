@@ -79,6 +79,19 @@ body{background:radial-gradient(1200px 800px at 50% -8%,#15111c 0%,var(--bg) 55%
 .mem .x{font-family:var(--serif);font-size:14px;line-height:1.5}
 .mem-empty{color:var(--text-dim);font-size:13px}
 
+/* per-action confirm card */
+.confirm-card{border:1px solid var(--accent);border-radius:12px;padding:14px 16px;background:rgba(196,151,58,.05)}
+.confirm-card .who{color:var(--accent)}
+.cfm-tool{font-family:var(--mono);font-size:13px;color:var(--text);margin:4px 0 8px}
+.cfm-args{font-family:var(--mono);font-size:12px;color:var(--text-dim);background:rgba(0,0,0,.25);
+  border:1px solid var(--border);border-radius:8px;padding:10px;white-space:pre-wrap;max-height:180px;overflow:auto;margin-bottom:10px}
+.cfm-btns{display:flex;gap:8px;justify-content:flex-end}
+.cfm-btns button{font-family:var(--mono);font-size:12px;padding:7px 16px;border-radius:7px;cursor:pointer;border:1px solid var(--border);background:var(--bg-soft);color:var(--text)}
+.cfm-yes{border-color:var(--accent)!important;color:var(--accent)!important}
+.cfm-no:hover{border-color:var(--err)}
+.cfm-done{font-family:var(--mono);font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px}
+.confirm-card.denied{opacity:.6}
+
 /* threshold */
 #threshold{display:flex;align-items:center;gap:12px;padding-top:16px;border-top:1px solid var(--border)}
 #mic,#convo,#speakToggle{flex:0 0 auto;width:42px;height:42px;border:1px solid var(--border);border-radius:50%;

@@ -64,8 +64,17 @@ silent until your first click, so click once after it loads.
 
 `piper.py` is the whole core: a stdlib HTTP server serving `shell/`, the reasoning loop
 (`brain_ask`), memory (SQLite), retrieval (SQLite FTS5), awareness (local prayer-time and
-Hijri computation), and the model clients. The shell (`shell/`) is plain HTML/CSS/JS that
-talks to the core over server-sent events. The design language — masjid-at-night black,
-illuminated-manuscript amber, aged parchment — is from the SifarOS manifesto.
+Hijri computation), the model clients, and a capability registry. The shell (`shell/`) is
+plain HTML/CSS/JS over server-sent events. Capabilities (`caps/`) are plugins — each file
+adds tools Piper can call: `web`, `system`, `home` (Home Assistant), `mcp` (the open tool
+ecosystem), and `tasks`. Actions that change your machine ask first (the confirm card).
+
+## The full manual
+
+Everything is documented in `docs/`, written so you can rebuild from zero years from now:
+install per-OS, the brains, knowledge, memory, capabilities, actions/safety, Home Assistant,
+MCP, phone/mesh, the always-on home server, security, troubleshooting, and
+`docs/13-RECREATE-FROM-ZERO.md` — how to bring Piper back from nothing but the idea.
+See `ROADMAP.md` for the decade arc.
 
 صفر — the point from which everything begins.

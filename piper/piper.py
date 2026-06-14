@@ -20,7 +20,7 @@ Everything lives next to this file. Nothing leaves the machine unless you set an
 API key and a turn routes to it.
 """
 import http.server, socketserver, json, os, sys, re, time, math, sqlite3, struct
-import urllib.request, urllib.parse, threading, platform, hashlib, importlib.util
+import urllib.request, urllib.parse, threading, platform, hashlib, importlib.util, secrets
 from datetime import datetime, timezone, timedelta
 try:
     from zoneinfo import ZoneInfo
@@ -389,8 +389,9 @@ def load_caps():
 def tool_catalog():
     if not REGISTRY: return ""
     lines = []
+    mode = actions_mode()
     for name, t in REGISTRY.items():
-        gate = " [needs allow_actions]" if t["mutating"] and not CONF.get("allow_actions") else ""
+        gate = " [blocked: actions off]" if (t["mutating"] and mode=="off") else (" [asks you first]" if t["mutating"] and mode=="confirm" else "")
         lines.append("- %s: %s%s" % (name, t["desc"], gate))
     return ("\n\nTOOLS you can use to act in the world. To call one, reply with ONLY a fenced "
             "block and nothing else:\n```action\n{\"tool\":\"web_search\",\"args\":{\"query\":\"...\"}}\n```\n"
@@ -398,13 +399,28 @@ def tool_catalog():
             "with no action block. Use tools when they genuinely help; do not narrate them. Available:\n"
             + "\n".join(lines))
 
-def run_tool(name, args):
+def actions_mode():
+    # "off" | "confirm" | "auto". Back-compat: allow_actions:true means auto.
+    m = CONF.get("actions")
+    if m in ("off","confirm","auto"): return m
+    return "auto" if CONF.get("allow_actions") else "confirm"
+
+def run_tool(name, args, approved=False):
     t = REGISTRY.get(name)
     if not t: return {"error": "no such tool: %s" % name}
-    if t["mutating"] and not CONF.get("allow_actions"):
-        return {"error": "this action is disabled. Set allow_actions:true in piper.conf to permit it."}
+    if t["mutating"]:
+        mode = actions_mode()
+        if mode == "off": return {"error": "actions are off. Set actions:\"confirm\" in piper.conf."}
+        if mode == "confirm" and not approved: return {"needs_confirm": True}
     try: return t["fn"](args or {})
     except Exception as e: return {"error": str(e)}
+
+# pending confirmations: a mutating tool waits here for the shell's approval
+PENDING = {}
+def resume_action(cid, ok):
+    p = PENDING.get(cid)
+    if p: p["ok"] = bool(ok); p["event"].set(); return True
+    return False
 
 _ACTION_RE = re.compile(r"```action\s*([\s\S]*?)```|^\s*(\{\"tool\"[\s\S]*\})\s*$")
 def parse_action(text):
@@ -535,14 +551,23 @@ def brain_ask(query, history=None, voice=False):
             full.append(msg); yield msg
         elif REGISTRY and not _trivial(query):
             # tool loop: the model may call capabilities before answering
-            convo=list(messages)
-            reply_text=""
-            for step in range(4):
+            convo=list(messages); reply_text=""
+            for step in range(5):
                 text=model_complete(sys_p, convo).strip()
                 act=parse_action(text)
-                if act and step<3:
-                    yield "· %s…\n"%TOOL_LABEL.get(act.get("tool"), act.get("tool",""))
-                    result=run_tool(act.get("tool"), act.get("args"))
+                if act and step<4 and act.get("tool") in REGISTRY:
+                    tool=act.get("tool"); targs=act.get("args") or {}
+                    t=REGISTRY[tool]
+                    if t["mutating"] and actions_mode()=="confirm":
+                        cid=secrets.token_urlsafe(8); ev=threading.Event()
+                        PENDING[cid]={"event":ev,"ok":False}
+                        yield {"confirm":{"tool":tool,"args":targs,"desc":t["desc"]},"cid":cid}
+                        ev.wait(150); ok=PENDING.pop(cid,{}).get("ok",False)
+                        result=run_tool(tool,targs,approved=True) if ok else {"declined":"you did not approve this"}
+                        yield "· %s\n"%("done" if ok else "skipped")
+                    else:
+                        yield "· %s…\n"%TOOL_LABEL.get(tool,tool)
+                        result=run_tool(tool,targs)
                     convo.append({"role":"assistant","content":text})
                     convo.append({"role":"user","content":"RESULT: "+json.dumps(result)[:5000]})
                     continue
@@ -613,6 +638,8 @@ class H(http.server.SimpleHTTPRequestHandler):
             return self._json(200,{"ok":True})  # open mode: no passphrase wall on portable build
         if self.path.startswith("/forget"):
             return self._json(200,{"removed":mem_forget(payload.get("text",""))})
+        if self.path.startswith("/resume"):
+            return self._json(200,{"ok":resume_action(payload.get("cid",""), payload.get("ok",False))})
         if self.path.startswith("/ask"):
             return self._stream_ask(payload)
         return self._json(404,{"error":"no such endpoint"})
@@ -623,8 +650,9 @@ class H(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cache-Control","no-cache"); self.send_header("Connection","close")
         self.end_headers()
         try:
-            for tok in brain_ask(payload.get("text",""), payload.get("history"), bool(payload.get("voice"))):
-                self.wfile.write(("data: "+json.dumps({"t":tok})+"\n\n").encode()); self.wfile.flush()
+            for ev in brain_ask(payload.get("text",""), payload.get("history"), bool(payload.get("voice"))):
+                obj = {"t":ev} if isinstance(ev,str) else ev
+                self.wfile.write(("data: "+json.dumps(obj)+"\n\n").encode()); self.wfile.flush()
             self.wfile.write(b"data: {\"done\":true}\n\n"); self.wfile.flush()
         except (BrokenPipeError, ConnectionResetError):
             pass
@@ -649,8 +677,10 @@ def main():
     n=build_index()
     if n>=0: print("  indexed %d passages from your library"%n)
     load_caps()
-    if CAP_NAMES: print("  capabilities: %s%s"%(", ".join(CAP_NAMES),
-                        "" if CONF.get("allow_actions") else "  (actions read-only; set allow_actions:true to let it change things)"))
+    if CAP_NAMES:
+        m=actions_mode()
+        note={"off":"  (actions off)","confirm":"  (it asks before changing anything)","auto":"  (actions auto-run, logged)"}.get(m,"")
+        print("  capabilities: %s%s"%(", ".join(sorted(CAP_NAMES)), note))
     host=CONF.get("host","127.0.0.1"); port=CONF["port"]; httpd=None
     if host not in ("127.0.0.1","localhost"):
         import secrets; TOKEN=secrets.token_urlsafe(12)   # reachable from other devices -> require a key

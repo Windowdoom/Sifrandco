@@ -538,6 +538,42 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 .typewriter.done::after{display:none;}
 
 /* Mobile responsive */
+@media (max-width:1600px){
+  #topbar{gap:8px;padding:0 12px;}
+  .npc-btn{padding:4px 9px;font-size:8.5px;letter-spacing:.06em;}
+  .tb-met{min-width:46px;}
+  .tb-met-val{font-size:11px;}
+  .tb-met-lbl{font-size:6.5px;}
+  .tb-metrics{gap:6px;}
+  #case-progress{font-size:8.5px;padding:3px 8px;}
+  #sound-toggle{padding:3px 8px;font-size:8.5px;}
+  .tb-wdtag{display:none;}
+}
+@media (max-width:1400px){
+  #topbar{gap:6px;padding:0 10px;}
+  .npc-btn{padding:4px 7px;font-size:7.5px;letter-spacing:.04em;}
+  .npc-btn .badge{font-size:7px;padding:1px 3px;}
+  .tb-brand{font-size:11px;}
+  .tb-shift{font-size:9px;padding:2px 8px;}
+  .tb-rank{font-size:8.5px;padding:2px 7px;}
+  .tb-met{min-width:40px;}
+  .tb-met-val{font-size:10.5px;}
+  .tb-met-lbl{display:none;}
+  .chap-chip{font-size:8px;padding:2px 7px;letter-spacing:.12em;}
+  #streak-display{font-size:9px;padding:2px 6px;}
+  #ward-panel{width:280px;}
+  #stats-panel{width:300px;}
+}
+@media (max-width:1200px){
+  #ward-panel{width:240px;}
+  #stats-panel{width:260px;}
+  .tb-brand{font-size:10px;}
+  .tb-shift{display:none;}
+  #case-progress{display:none;}
+  .tb-metrics{gap:4px;}
+  .tb-met{min-width:34px;}
+  .tb-met-val{font-size:10px;}
+}
 @media (max-width:900px){
   #ward-panel{width:200px;}
   #stats-panel{width:200px;}
@@ -897,6 +933,230 @@ button,input{cursor:pointer;border:none;outline:none;font-family:var(--font-b);t
 #pa-msg{white-space:nowrap;animation:tickerScroll 18s linear infinite;}
 @keyframes tickerScroll{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
 
+/* ── LIFE SYSTEM (story arcs, finances, side gigs) ── */
+#life-panel{position:fixed;inset:0;z-index:6600;background:rgba(0,0,0,.92);display:none;
+  align-items:center;justify-content:center;font-family:var(--font-m);}
+#life-panel.show{display:flex;animation:popIn .3s ease;}
+.life-box{width:min(92vw,920px);max-height:88vh;background:linear-gradient(180deg,#0a121f,#050a14);
+  border:1px solid var(--gold2);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 0 60px rgba(0,0,0,.6);}
+.life-hdr{padding:14px 22px;border-bottom:1px solid #2a3850;background:linear-gradient(180deg,#13213a,#0a1424);
+  display:flex;align-items:center;gap:14px;}
+.life-hdr-t{font-size:11px;letter-spacing:.32em;color:var(--gold2);text-transform:uppercase;flex:1;}
+.life-hdr-money{font-family:var(--font-s);font-size:18px;color:#7fff90;font-weight:900;letter-spacing:.04em;}
+.life-hdr-money.neg{color:#ff7070;}
+.life-x{background:none;border:1px solid #444;color:#ccc;padding:4px 10px;cursor:pointer;border-radius:3px;font-family:var(--font-m);font-size:10px;letter-spacing:.18em;}
+.life-x:hover{background:#1a1a1a;}
+.life-body{padding:16px 22px;overflow-y:auto;color:#dcdcdc;font-family:var(--font-s);font-size:13px;line-height:1.55;}
+.life-tabs{display:flex;border-bottom:1px solid #2a3850;background:#070d18;}
+.life-tab{flex:1;padding:9px 12px;background:none;border:none;color:#7a8aa0;font-family:var(--font-m);font-size:10px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;border-bottom:2px solid transparent;}
+.life-tab.active{color:var(--gold2);border-bottom-color:var(--gold2);background:#0d1828;}
+.life-tab:hover:not(.active){color:#aab8c8;}
+.life-section{margin-bottom:18px;}
+.life-section-h{font-family:var(--font-m);font-size:10px;letter-spacing:.22em;color:var(--gold2);text-transform:uppercase;margin-bottom:7px;border-bottom:1px solid #1f2a3a;padding-bottom:4px;}
+.life-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dotted #1a2030;font-family:var(--font-s);font-size:12.5px;}
+.life-row-k{color:#9aaabc;}
+.life-row-v{color:#e8e8e8;font-weight:600;}
+.life-row-v.good{color:#7fff90;}
+.life-row-v.bad{color:#ff8080;}
+.life-history{font-family:var(--font-s);font-size:12px;color:#aab8c8;line-height:1.55;padding:5px 0;border-bottom:1px dotted #1a2030;}
+.life-history-d{font-family:var(--font-m);font-size:9px;color:#586878;letter-spacing:.18em;text-transform:uppercase;}
+.life-empty{color:#5a6878;font-style:italic;text-align:center;padding:30px 12px;}
+.life-secret{padding:8px 11px;margin:6px 0;background:#1a0808;border:1px dashed #6a2828;border-radius:3px;color:#ff9595;font-family:var(--font-s);font-size:12px;font-style:italic;}
+.life-secret::before{content:'🤫 ';opacity:0.85;}
+
+/* Life Event Overlay (story-driven scene) */
+#life-event-overlay{position:fixed;inset:0;z-index:6650;background:rgba(0,0,0,.94);display:none;
+  align-items:center;justify-content:center;font-family:var(--font-m);padding:24px;}
+#life-event-overlay.show{display:flex;animation:popIn .35s ease;}
+.le-box{width:min(94vw,720px);max-height:90vh;background:linear-gradient(180deg,#0a121f,#050a14);
+  border:1px solid var(--gold2);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 0 70px rgba(0,0,0,.7);}
+.le-tag{padding:9px 18px;font-size:10px;letter-spacing:.28em;color:var(--gold2);text-transform:uppercase;
+  background:linear-gradient(90deg,#1a1408,#0a0a14 60%);border-bottom:1px solid #2a2010;}
+.le-tag.dark{color:#ff8080;background:linear-gradient(90deg,#180808,#0a0a14 60%);border-bottom-color:#3a1010;}
+.le-title{padding:14px 22px 4px;font-family:var(--font-m);font-size:20px;font-weight:900;
+  color:#ffe6a0;letter-spacing:.06em;}
+.le-setting{padding:6px 22px 14px;font-family:var(--font-s);font-size:14px;color:#e0e6ec;line-height:1.55;}
+.le-speaker{padding:10px 22px;background:#0d1828;border-top:1px solid #2a3850;border-bottom:1px solid #2a3850;
+  display:flex;gap:14px;align-items:flex-start;}
+.le-portrait{width:54px;height:54px;flex-shrink:0;background:#0a1422;border:1px solid #2a3850;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:24px;}
+.le-spk-name{font-family:var(--font-m);font-size:10px;letter-spacing:.2em;color:var(--gold2);text-transform:uppercase;margin-bottom:4px;}
+.le-spk-line{font-family:var(--font-s);font-size:14.5px;color:#fff;font-style:italic;line-height:1.45;}
+.le-choices{padding:14px 22px 20px;display:flex;flex-direction:column;gap:9px;}
+.le-choice{background:#0d1828;border:1px solid #2a3850;border-radius:4px;padding:11px 14px;text-align:left;
+  cursor:pointer;color:#e8e8e8;font-family:var(--font-s);font-size:13.5px;line-height:1.45;
+  transition:all .15s;}
+.le-choice:hover{border-color:var(--gold2);background:#13213a;transform:translateX(3px);}
+.le-effects{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;}
+.le-eff{font-family:var(--font-m);font-size:9px;letter-spacing:.12em;padding:2px 7px;border-radius:2px;
+  background:#1a2030;color:#9aaabc;text-transform:uppercase;}
+.le-eff.pos{color:#7fff90;background:#0e2a14;}
+.le-eff.neg{color:#ff8080;background:#2a0e0e;}
+.le-eff.dark{color:#c898ff;background:#2a1a3a;}
+.le-result{padding:18px 22px;font-family:var(--font-s);font-size:14px;color:#dde4ec;line-height:1.6;background:#08111e;border-top:1px solid #2a3850;}
+.le-result-h{font-family:var(--font-m);font-size:9px;letter-spacing:.28em;color:var(--gold2);text-transform:uppercase;margin-bottom:8px;}
+.le-cont{margin:14px 22px 22px;padding:10px 18px;background:linear-gradient(90deg,var(--gold2),#b8801a);color:#000;
+  border:none;border-radius:4px;cursor:pointer;font-family:var(--font-m);font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;font-weight:900;}
+.le-cont:hover{filter:brightness(1.1);}
+
+/* Side Gig Modal */
+#sidegig-overlay{position:fixed;inset:0;z-index:6640;background:rgba(0,0,0,.92);display:none;
+  align-items:center;justify-content:center;font-family:var(--font-m);padding:24px;}
+#sidegig-overlay.show{display:flex;animation:popIn .3s ease;}
+.sg-box{width:min(92vw,640px);background:linear-gradient(180deg,#0a121f,#050a14);
+  border:1px solid var(--gold2);border-radius:8px;overflow:hidden;}
+.sg-hdr{padding:14px 22px;background:linear-gradient(180deg,#1a1408,#0a0a14);border-bottom:1px solid #2a3850;
+  font-size:11px;letter-spacing:.3em;color:var(--gold2);text-transform:uppercase;}
+.sg-sub{padding:10px 22px 4px;font-family:var(--font-s);font-size:13px;color:#aab8c8;font-style:italic;}
+.sg-grid{padding:14px 18px 18px;display:grid;grid-template-columns:1fr;gap:9px;}
+.sg-opt{background:#0d1828;border:1px solid #2a3850;border-radius:4px;padding:12px 14px;cursor:pointer;
+  display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:center;transition:all .15s;}
+.sg-opt:hover{border-color:var(--gold2);background:#13213a;}
+.sg-opt.locked{opacity:0.45;cursor:not-allowed;}
+.sg-opt-name{font-family:var(--font-m);font-size:12px;letter-spacing:.12em;color:#ffe6a0;text-transform:uppercase;}
+.sg-opt-pay{font-family:var(--font-s);font-size:18px;color:#7fff90;font-weight:900;}
+.sg-opt-pay.neg{color:#ff7070;}
+.sg-opt-desc{grid-column:1 / -1;font-family:var(--font-s);font-size:12.5px;color:#aab8c8;line-height:1.45;margin-top:2px;}
+.sg-opt-cost{grid-column:1 / -1;font-family:var(--font-m);font-size:9px;letter-spacing:.15em;color:#ff9595;text-transform:uppercase;margin-top:4px;}
+.sg-skip{margin:0 18px 18px;padding:9px;width:calc(100% - 36px);background:#1a2030;color:#aab8c8;
+  border:1px solid #2a3850;border-radius:3px;font-family:var(--font-m);font-size:10px;letter-spacing:.2em;cursor:pointer;text-transform:uppercase;}
+.sg-skip:hover{background:#22304a;color:#fff;}
+
+/* ── BEDSIDE ROOM (in-world case visualization) ── */
+#bedside-room{position:relative;height:170px;
+  background:
+    linear-gradient(180deg,#1c2940 0%,#1c2940 48%,#0b121f 48%,#0b121f 100%);
+  border-top:1px solid #2c3a52;border-bottom:1px solid #2c3a52;overflow:hidden;
+  display:none;}
+#bedside-room.show{display:block;animation:br-fadein .35s ease;}
+@keyframes br-fadein{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.br-floor{position:absolute;left:0;right:0;top:48%;bottom:0;
+  background:
+    repeating-linear-gradient(90deg,#0e1828 0,#0e1828 36px,#13213a 36px,#13213a 72px),
+    repeating-linear-gradient(0deg,transparent 0,transparent 35px,rgba(255,255,255,.03) 35px,rgba(255,255,255,.03) 36px);}
+.br-wall-line{position:absolute;left:0;right:0;top:48%;height:1px;background:#2c3a52;}
+.br-bed{position:absolute;right:7%;top:54px;width:200px;height:88px;z-index:3;
+  filter:drop-shadow(0 4px 4px rgba(0,0,0,.45));}
+.br-bed svg{width:100%;height:100%;image-rendering:pixelated;}
+.br-doctor{position:absolute;bottom:8px;right:calc(7% + 210px);width:48px;height:72px;z-index:4;
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,.55));}
+.br-doctor svg{width:100%;height:100%;image-rendering:pixelated;}
+.br-doctor.acting{animation:br-doc-bob .5s ease 2;}
+@keyframes br-doc-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+.br-iv-pole{position:absolute;top:8px;right:5%;width:14px;height:120px;z-index:2;pointer-events:none;}
+.br-iv-pole::before{content:'';position:absolute;left:6px;top:0;width:2px;height:100%;background:#7a8aa0;}
+.br-iv-pole::after{content:'';position:absolute;left:0;top:8px;width:14px;height:18px;
+  background:linear-gradient(180deg,rgba(180,220,255,.7),rgba(120,160,210,.85));border:1px solid #8aa8c8;border-radius:2px;}
+.br-monitor-wall{position:absolute;top:10px;right:24%;width:70px;height:42px;
+  background:linear-gradient(180deg,#021810,#001208);border:2px solid #2c3a52;border-radius:3px;
+  font-family:var(--font-m);font-size:7px;letter-spacing:.18em;color:#5ee27a;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.4;
+  box-shadow:inset 0 0 8px rgba(80,230,120,.35);}
+.br-monitor-wall .br-mw-hr{font-size:14px;color:#7fff90;letter-spacing:.05em;}
+.br-monitor-wall.abn{border-color:#ff5050;color:#ff8080;box-shadow:inset 0 0 8px rgba(255,80,80,.5);}
+.br-monitor-wall.abn .br-mw-hr{color:#ff5050;}
+.br-crash-cart{position:absolute;bottom:10px;left:5%;width:38px;height:52px;z-index:2;
+  background:linear-gradient(180deg,#d03e2c 0 18px,#a02820 18px 22px,#d03e2c 22px 40px,#7a1a14 40px 48px,#3a3a3a 48px 52px);
+  border:1px solid #5a1410;border-radius:2px;
+  box-shadow:0 3px 4px rgba(0,0,0,.5);}
+.br-crash-cart::before{content:'+';position:absolute;top:4px;left:50%;transform:translateX(-50%);
+  color:#fff;font-family:var(--font-m);font-size:14px;font-weight:900;}
+.br-chair{position:absolute;bottom:10px;left:14%;width:24px;height:34px;z-index:2;
+  background:linear-gradient(180deg,#3a4a64 0 14px,#22304a 14px 18px,#3a4a64 18px 28px,#1a2436 28px 34px);
+  border:1px solid #142036;border-radius:2px;}
+.br-speech{position:absolute;top:8px;left:50%;transform:translateX(-58%);max-width:62%;z-index:5;
+  background:#fff;color:#101820;padding:7px 12px 8px;border-radius:9px;
+  font-family:var(--font-s);font-size:11.5px;line-height:1.35;
+  box-shadow:0 3px 10px rgba(0,0,0,.5);
+  animation:br-speech-pop .35s ease;}
+@keyframes br-speech-pop{from{opacity:0;transform:translate(-58%,-6px);}to{opacity:1;transform:translate(-58%,0);}}
+.br-speech::after{content:'';position:absolute;bottom:-7px;right:18%;
+  border:7px solid transparent;border-top-color:#fff;border-bottom:0;}
+.br-speech-tag{font-family:var(--font-m);font-size:8px;letter-spacing:.18em;color:#7080a0;
+  text-transform:uppercase;margin-bottom:3px;}
+.br-tag{position:absolute;top:8px;left:14px;z-index:5;
+  font-family:var(--font-m);font-size:9px;letter-spacing:.2em;
+  background:rgba(0,0,0,.55);color:var(--gold2);padding:3px 8px;border-radius:2px;
+  border-left:2px solid var(--gold2);text-transform:uppercase;}
+.br-tag.crit{color:#ff8080;border-left-color:#ff5050;}
+
+/* ── CASE TIMER (live decision window) ── */
+.case-timer{margin:0 0 14px;padding:10px 12px;background:linear-gradient(180deg,#1a0d0d,#0a0404);
+  border:1px solid #4a1a1a;border-radius:6px;font-family:var(--font-m);}
+.case-timer.warning{border-color:#b88030;box-shadow:0 0 10px rgba(255,170,60,.18);}
+.case-timer.critical{border-color:#ff3030;box-shadow:0 0 14px rgba(255,80,80,.4);animation:ct-pulse .55s infinite alternate;}
+@keyframes ct-pulse{from{box-shadow:0 0 8px rgba(255,80,80,.3);}to{box-shadow:0 0 20px rgba(255,80,80,.7);}}
+.ct-label{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.22em;color:#ff8888;margin-bottom:6px;text-transform:uppercase;}
+.ct-icon{font-size:13px;}
+.ct-time{margin-left:auto;font-size:15px;color:#ffd060;font-weight:900;letter-spacing:.05em;}
+.case-timer.critical .ct-time{color:#ff5050;}
+.ct-bar{height:7px;background:#1a0808;border-radius:3px;overflow:hidden;border:1px solid #2a0e0e;}
+.ct-fill{height:100%;width:100%;background:linear-gradient(90deg,#4caf50 0%,#ffd060 60%,#ff5050 100%);
+  transition:width .12s linear;}
+.case-timer.warning .ct-fill{background:linear-gradient(90deg,#ffd060,#ff8030);}
+.case-timer.critical .ct-fill{background:linear-gradient(90deg,#ff5050,#ff2020);}
+.ct-sub{font-size:9px;color:#a07070;letter-spacing:.15em;margin-top:5px;text-transform:uppercase;}
+
+/* ── CHAPTER CHIP (storm intensity badge in topbar) ── */
+.chap-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:11px;
+  font-family:var(--font-m);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  border:1px solid #2a3e58;background:#0a1422;color:#7fa4cc;}
+.chap-chip.s1{border-color:#3a5078;background:#0e1a2e;color:#9fb8d6;}
+.chap-chip.s2{border-color:#5a4830;background:#1a1408;color:#d0a060;animation:chip-drizzle 2.4s infinite;}
+.chap-chip.s3{border-color:#a04030;background:#1f0a0a;color:#ff8060;animation:chip-storm .9s infinite;}
+@keyframes chip-drizzle{0%,100%{box-shadow:none;}50%{box-shadow:0 0 8px rgba(255,170,80,.35);}}
+@keyframes chip-storm{0%,100%{box-shadow:0 0 6px rgba(255,80,40,.4);}50%{box-shadow:0 0 14px rgba(255,80,40,.85);}}
+.chap-chip-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* ── PRESSURE EVENT (mid-case NPC interruption) ── */
+.pressure-event{position:fixed;top:90px;right:18px;z-index:7200;
+  background:linear-gradient(180deg,#1a0808,#0a0303);border:1px solid #ff3030;border-radius:6px;
+  padding:12px 14px;min-width:260px;max-width:320px;font-family:var(--font-m);
+  box-shadow:0 0 24px rgba(255,40,40,.5);animation:pe-slam .25s ease;}
+@keyframes pe-slam{from{transform:translateX(80%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.pe-hdr{font-size:9px;letter-spacing:.25em;color:#ff7070;margin-bottom:5px;text-transform:uppercase;}
+.pe-name{font-size:14px;color:#ffd060;margin-bottom:6px;font-weight:900;}
+.pe-line{font-size:12px;color:#e0c0a0;line-height:1.45;margin-bottom:8px;}
+.pe-cost{font-size:10px;color:#ff8080;letter-spacing:.1em;text-transform:uppercase;}
+
+/* ── EXPLORE NPC NAMEPLATE COLORS ── */
+.ex-actor.npc.named .ex-actor-name{background:rgba(20,30,50,.92);border-left:2px solid var(--gold2);}
+.ex-actor.npc.named.patel .ex-actor-name{border-left-color:#1dd6c4;}
+.ex-actor.npc.named.rivera .ex-actor-name{border-left-color:#66bb6a;}
+.ex-actor.npc.named.vance .ex-actor-name{border-left-color:#ef5350;}
+.ex-actor.npc.named.okafor .ex-actor-name{border-left-color:#9575cd;}
+.ex-actor.npc.named.kim .ex-actor-name{border-left-color:#f5a623;}
+
+/* ── STORM / INFRASTRUCTURE OVERLAYS (Campaign chapters 2+) ── */
+.storm-overlay{position:fixed;inset:0;pointer-events:none;z-index:300;opacity:0;transition:opacity 1s;}
+.storm-overlay.active{opacity:1;}
+.storm-rain{position:absolute;inset:0;background:
+  repeating-linear-gradient(105deg,transparent 0,transparent 6px,rgba(140,180,220,.045) 6px,rgba(140,180,220,.045) 7px);
+  animation:storm-rain 0.6s linear infinite;}
+@keyframes storm-rain{from{background-position:0 0;}to{background-position:60px 120px;}}
+.storm-flash{position:absolute;inset:0;background:rgba(180,200,240,0);transition:background .08s;}
+.storm-flash.flash{background:rgba(220,230,250,.18);}
+.power-flicker{animation:pwr-flicker 0.18s ease;}
+@keyframes pwr-flicker{0%{filter:none;}30%{filter:brightness(.25);}55%{filter:brightness(1.05);}80%{filter:brightness(.5);}100%{filter:none;}}
+
+/* ── EXPLORE MAP HAZARDS ── */
+.ex-hazard{position:absolute;pointer-events:none;border-radius:4px;box-sizing:border-box;}
+.ex-hazard.flood{background:linear-gradient(180deg,rgba(40,100,160,.35),rgba(20,60,120,.55));
+  border:1px solid rgba(80,160,220,.5);animation:hz-flood 2.6s infinite ease-in-out;box-shadow:inset 0 0 12px rgba(80,160,220,.3);}
+.ex-hazard.dark{background:rgba(0,0,0,.7);border:1px dashed #333;}
+.ex-hazard.fire{background:radial-gradient(circle,rgba(255,80,30,.55),rgba(180,30,10,.35));
+  border:1px solid rgba(255,120,40,.75);animation:hz-fire .35s infinite;box-shadow:inset 0 0 16px rgba(255,100,40,.5);}
+@keyframes hz-flood{0%,100%{opacity:.75;}50%{opacity:1;}}
+@keyframes hz-fire{0%,100%{opacity:.85;filter:hue-rotate(0);}50%{opacity:1;filter:hue-rotate(-12deg);}}
+.ex-hazard-label{position:absolute;top:6px;left:8px;font-family:var(--font-m);font-size:9px;letter-spacing:.18em;
+  color:#fff;background:rgba(0,0,0,.7);padding:3px 7px;border-radius:2px;text-transform:uppercase;
+  border-left:2px solid var(--gold2);}
+.ex-hazard.fire .ex-hazard-label{border-left-color:#ff5050;}
+.ex-hazard.dark .ex-hazard-label{border-left-color:#888;}
+
 /* ── EXPLORE MODE (2D top-down hospital walk) ── */
 #explore-mode{position:fixed;inset:0;z-index:5400;background:#020a14;display:none;
   overflow:hidden;font-family:var(--font-m);}
@@ -1128,6 +1388,12 @@ body.text-small { font-size: 12px; }
   </div>
 </div>
 
+<!-- ═══ STORM OVERLAY (Campaign Chapter 2+) ═══ -->
+<div id="storm-overlay" class="storm-overlay">
+  <div class="storm-rain"></div>
+  <div class="storm-flash" id="storm-flash"></div>
+</div>
+
 <!-- ═══ TIPS OVERLAY ═══ -->
 <div id="tips-overlay">
   <div id="tips-box">
@@ -1205,9 +1471,11 @@ body.text-small { font-size: 12px; }
     <div class="tb-shift" id="tb-shift">Day 1</div>
     <div class="tb-metrics" id="tb-metrics"></div>
     <div id="streak-display" class="cold">— streak</div>
+    <div id="chapter-chip" class="chap-chip" style="display:none"></div>
     <div id="case-progress">0 cases</div>
     <button id="sound-toggle" class="on" onclick="toggleSound()">🔊 SFX</button>
     <button class="npc-btn" onclick="openNPCRoster()">👥 Team <span id="npc-badge" class="badge" style="display:none">!</span></button>
+    <button class="npc-btn" onclick="openLifePanel()">💼 Life <span id="life-badge" class="badge" style="display:none">!</span></button>
     <button class="npc-btn" onclick="openExploreFromGame()">🚪 Walk</button>
     <button class="npc-btn" onclick="openFloorMap()">🏥 Floor</button>
     <button class="npc-btn" onclick="openCareerChart()">📜 Career</button>
@@ -1241,6 +1509,7 @@ body.text-small { font-size: 12px; }
           <div class="mon-label" id="mon-label">MONITORING</div>
         </div>
         <div id="reaction-strip"></div>
+        <div id="bedside-room"></div>
         <div id="pt-dialogue-slot"></div>
         <div class="chart-hdr">
           <div class="ch-hdr-wrap">
@@ -1565,6 +1834,7 @@ body.text-small { font-size: 12px; }
         <div class="ex-elev-lbl">ELEVATOR</div>
       </div>
       <div id="ex-rooms"></div>
+      <div id="ex-hazards"></div>
       <div id="ex-npcs"></div>
       <div class="ex-actor player" id="ex-player">
         <div class="ex-actor-name" id="ex-player-name">DR. YOU</div>
@@ -1582,6 +1852,34 @@ body.text-small { font-size: 12px; }
 </div>
 
 <!-- ═══ DEFIBRILLATOR MINI-GAME ═══ -->
+<!-- ═══ LIFE PANEL ═══ -->
+<div id="life-panel">
+  <div class="life-box">
+    <div class="life-hdr">
+      <div class="life-hdr-t">💼 Your Life</div>
+      <div class="life-hdr-money" id="life-money">$0</div>
+      <button class="life-x" onclick="closeLifePanel()">CLOSE</button>
+    </div>
+    <div class="life-tabs" id="life-tabs"></div>
+    <div class="life-body" id="life-body"></div>
+  </div>
+</div>
+
+<!-- ═══ LIFE EVENT OVERLAY ═══ -->
+<div id="life-event-overlay">
+  <div class="le-box" id="life-event-box"></div>
+</div>
+
+<!-- ═══ SIDE GIG OVERLAY ═══ -->
+<div id="sidegig-overlay">
+  <div class="sg-box">
+    <div class="sg-hdr">Off-Hours — Take a Side Gig?</div>
+    <div class="sg-sub">It's your day off. The phone is ringing. Money or rest.</div>
+    <div class="sg-grid" id="sg-grid"></div>
+    <button class="sg-skip" onclick="closeSideGig()">Skip — Rest This Week</button>
+  </div>
+</div>
+
 <div class="defib-overlay" id="defib-overlay">
   <div class="defib-box">
     <div class="defib-hdr">— Lifepak Defibrillator —</div>
@@ -1775,6 +2073,9 @@ const DB = [
 {id:"epiglot",tags:["peds","em"],name:"",age:4,sex:"M",initHealth:22,diff:1,cat:"clinical",loc:"Triage",steps:[{hpi:"Unvaccinated 4yo. Tripod position, drooling, muffled voice, high fever. Looks frightened.",vitals:{HR:"152",RR:"40",Temp:"103.8"},actions:[{text:"Keep calm. Minimize handling. OR for controlled intubation by anesthesia.",score:4,fx:{health:+58},nxt:"discharge",log:"Airway secured.",outTitle:"Epiglottitis Managed",outDesc:"Anesthesia secured the airway under direct laryngoscopy in the OR. Cherry-red epiglottis confirmed. He was extubated on day 3.",pearl:"Epiglottitis: do not agitate, do not examine the throat, do not start an IV in the ED. Get to the OR."},{text:"Use tongue depressor to look in throat.",score:0,fx:{legal:+75},nxt:"death",log:"Triggered fatal laryngospasm.",outTitle:"Airway Lost",outDesc:"The tongue blade touched the back of his throat and his airway slammed shut. He was 4 years old.",pearl:"Examining the oropharynx in epiglottitis triggers complete laryngospasm. Always fatal in this setting."}]}]},
 {id:"tarasoff",tags:["psych"],name:"",age:24,sex:"M",initHealth:80,diff:2,cat:"ethics",loc:"Triage",steps:[{hpi:"Actively hallucinating. States clearly: 'The voices told me to kill my neighbor John Chen tonight at his house.'",actions:[{text:"72-hour hold + Warn John Chen directly + Notify Police.",score:4,fx:{justice:+28},nxt:"discharge",log:"Tarasoff duty fulfilled.",outTitle:"Duty to Protect Fulfilled",outDesc:"You notified the police and warned John Chen personally. The patient was held and started on antipsychotics. John Chen is alive.",pearl:"Tarasoff: A specific, credible threat to an identifiable person requires you to warn that person and notify law enforcement, overriding confidentiality."},{text:"72-hour hold only. Confidentiality maintained.",score:2,fx:{justice:+10},nxt:"discharge",log:"Failed to warn named victim.",outTitle:"Incomplete Duty",outDesc:"You held the patient — good. But you didn't warn the victim or police. John Chen had no idea he was named. This is a partial Tarasoff failure.",ifNotBest:"Holding the patient is not enough. You must explicitly warn the named victim.",pearl:"Tarasoff duty has two components: warn the victim AND notify law enforcement."}]}]},
 {id:"impaired",tags:["ethics","surg"],name:"Dr. Vance",age:52,sex:"M",initHealth:100,diff:3,cat:"ethics",loc:"Ward",steps:[{hpi:"Department Chair found injecting fentanyl in the surgeon's locker room. A child is already in the OR prepped for his case. He threatens your career if you speak.",actions:[{text:"Cancel the surgery. Report to CMO and Medical Board immediately.",score:4,fx:{nonmalef:+35},nxt:"discharge",log:"Protected patient, reported impaired physician.",outTitle:"Patient Protected",outDesc:"You cancelled the case and reported it to the CMO. The child went to a different surgeon the next day. The department chair was enrolled in a physician health program.",pearl:"Patient safety overrides institutional hierarchy. Mandatory reporting of an impaired physician is not optional."},{text:"Tell him privately to sober up before the case.",score:1,fx:{legal:+70},nxt:"death",log:"Child harmed in OR.",outTitle:"Child Harmed",outDesc:"He operated impaired. The child had a preventable intraoperative complication. Both of you faced the medical board.",ifNotBest:"Handling this privately while a child is at immediate risk makes you a co-conspirator.",pearl:"Addressing impairment after the patient is already at risk is too late."}]}]},
+{id:"blackout_vent",tags:["ethics","icu","em"],name:"",age:34,sex:"M",initHealth:60,diff:3,cat:"ethics",loc:"ICU",steps:[{hpi:"BLACKOUT — MCI inbound. Generator on reserve. ONE working ventilator remains in the unit. BAY 2: 34yo construction worker, isolated thoracic crush injury, SOFA 6, expected to wean in 48h. BAY 7: 81yo end-stage COPD on home O2, septic, SOFA 14, anoxic during the power flicker. Both need the vent NOW. Bay 7's daughter is screaming in the hallway that her mother 'was here first.'",vitals:{HR:"—",BP:"—"},timeLimit:60,actions:[{text:"Allocate the vent to BAY 2 per crisis-standards triage. Palliate BAY 7 with morphine; daughter to bedside.",score:4,fx:{justice:+25,beneficence:+15,nonmalef:+10},nxt:"next",advanceNow:true,log:"Crisis-standards triage applied: vent to BAY 2.",outTitle:"Triage Held",outDesc:"You invoked the hospital's crisis standards. SOFA score and likelihood of short-term survival became the criteria — not arrival order. Now the harder part: facing Bay 7's family.",pearl:"Crisis Standards of Care suspend first-come-first-served when resources are insufficient. SOFA-based allocation maximizes lives saved. Document the protocol invoked, the criteria used, and the witnessing staff."},{text:"First-come-first-served. BAY 7 keeps the vent — she was admitted first.",score:0,fx:{justice:-30,beneficence:-25,legal:+40},nxt:"death",log:"Resource misallocated; both patients harmed.",outTitle:"Two Deaths Where One Would Have Sufficed",outDesc:"BAY 7 was moribund. The vent extended her dying by 14 hours. BAY 2 arrested on BiPAP at 0300 because the only invasive ventilator in the building was tied up. The construction worker had three kids. Risk Management opened a file the following Monday. The mortality review found the allocation indefensible.",pearl:"Justice in scarcity is not equality. It is maximizing the lives a finite resource can save."},{text:"Let the two families decide between themselves.",score:0,fx:{justice:-40,burnout:+15,legal:+55},nxt:"death",log:"Abdicated triage to families.",outTitle:"Abdication",outDesc:"The families nearly came to blows in the hallway. Security was called. Both patients deteriorated while the argument played out. Triage in disaster is the physician's responsibility — outsourcing it to grieving families is not respect for autonomy. It is abandonment.",pearl:"The physician owns the triage decision. There is no one else in the room qualified to make it."}]},{hpi:"BAY 7's daughter blocks you in the hallway, sobbing. She is not violent — she is watching her mother die. She has questions. The OR is calling for you in three minutes. Bay 2's vent is stable.",vitals:{HR:"—",BP:"—"},timeLimit:45,actions:[{text:"Sit with her at her mother's bedside. Hold her mother's hand. Tell her the truth about the protocol and why it applied tonight.",score:4,fx:{rapport:+20,beneficence:+15,nonmalef:+10},nxt:"next",advanceNow:true,log:"Family informed compassionately at the bedside.",outTitle:"Truth Held",outDesc:"You gave her four minutes. She held her mother's hand. You explained SOFA scores in plain language and named the criteria. She wept, then thanked you for not lying to her. The OR waited.",pearl:"Compassionate truth-telling in disaster is not a luxury. It is the only thing that keeps the family from suing — and the only thing that keeps you from breaking."},{text:"Call security to escort her out of the unit.",score:1,fx:{rapport:-15,legal:+20,burnout:+5},nxt:"next",advanceNow:true,log:"Family removed by security.",outTitle:"Security Called",outDesc:"Security walked her out. She came back at 0700 with a lawyer. The encounter took twelve minutes of staff time you didn't have. None of it had to happen.",ifNotBest:"She wasn't dangerous. She was the daughter of a dying woman. Security solves a violence problem, not a grief problem.",pearl:"Security is the wrong tool for grief. The right tool is four minutes and the truth."},{text:"Tell her the doctor will be with her shortly. Walk away.",score:0,fx:{rapport:-25,burnout:+15,legal:+35,nonmalef:-10},nxt:"next",advanceNow:true,log:"Avoided the family.",outTitle:"Avoided",outDesc:"She watched you walk past her into the OR. She watched the surgical tech walk past her. She watched her mother die alone. The complaint she filed the following week was three pages long, and every page was correct.",pearl:"You can defer many things in a disaster. The family is not one of them."}]},{hpi:"0530. The storm is breaking. BAY 2 weaned successfully. BAY 7 was pronounced at 0312 — peacefully, with her daughter at the bedside. The mortality review committee meets at 0700. Document the night.",vitals:{HR:"—",BP:"—"},actions:[{text:"Document the CSC protocol invoked, the SOFA scores at allocation, the witnessing nurse, the time of palliation, and the conversation with the family. Sign your name.",score:4,fx:{justice:+15,nonmalef:+15,acumen:+10},nxt:"discharge",log:"Decision and conversation both documented.",outTitle:"Record Preserved",outDesc:"Six months later, the construction worker's family sent a letter thanking you for being the only one who told them the truth. Bay 7's daughter requested a meeting with you and you sat with her for an hour. The hospital used your note as the template for the new crisis standards policy. Patel read it aloud at grand rounds.",pearl:"Documentation under crisis standards is not optional. The decision tree, the criteria, and the witnesses must all be in the chart by morning — or the protocol effectively did not exist."},{text:"Document only that the patient 'died of comorbidities.'",score:1,fx:{legal:+30,acumen:-5},nxt:"discharge",log:"Vague documentation.",outTitle:"Vague Note",outDesc:"The mortality review panel asked for the missing details. You had to reconstruct them from memory three weeks later. Nobody remembered exactly what time the vent was allocated. The hospital settled the family's case for an undisclosed sum.",ifNotBest:"Vague charting is the plaintiff's attorney's favorite document. The decision was defensible. You undefended it.",pearl:"The note that protects you is the one that is specific enough to lose its ambiguity."},{text:"Omit the triage decision entirely. Note arrest and pronouncement only.",score:0,fx:{legal:+60,nonmalef:-15},nxt:"discharge",log:"Documentation falsified by omission.",outTitle:"Omission",outDesc:"Risk Management noticed the gap. Other charts that night referenced 'the night the vent was allocated.' Yours did not. Your credentialing came up for early review. The cover-up was worse than the call.",pearl:"Hiding a defensible decision converts it into an indefensible one. Document or burn."}]}]},
+{id:"blackout_dnr",tags:["ethics","em","icu"],name:"",age:71,sex:"F",initHealth:8,diff:3,cat:"ethics",loc:"Triage",steps:[{hpi:"BLACKOUT — Floodwaters breached the lower level. Patient pulled pulseless from stairwell B by maintenance. Estimated downtime 4–6 minutes. A soaked paper from her sweater pocket appears to be an out-of-state advance directive marked DNR/DNI — signature ILLEGIBLE, witnessing physician's name unreadable. Family unreachable: phone lines down, EHR offline. Code team at bedside, paddles charged. SECONDS COUNT.",vitals:{HR:"0",BP:"0"},timeLimit:20,actions:[{text:"Initiate full resuscitation. An unverified, illegible document does not meet the legal standard for withholding care.",score:4,fx:{beneficence:+25,nonmalef:+15,autonomy:-5},nxt:"next",advanceNow:true,log:"Defaulted to resuscitation under ambiguity.",outTitle:"Code Begins",outDesc:"You called the code. Compressions started at 02:14. The team moved like they had done this a hundred times — because they had. ROSC at the 9-minute mark. Pupils sluggish but reactive. She is alive. Now the harder conversation is coming up the front entrance, soaking wet.",pearl:"Under genuine ambiguity in advance directives, the default is the reversible action. Resuscitation can be withdrawn. Death cannot."},{text:"Honor the document. Pronounce her.",score:0,fx:{autonomy:+10,legal:+70,nonmalef:-30},nxt:"death",log:"Honored an unverified DNR.",outTitle:"Wrongful Death",outDesc:"You pronounced her on the strength of a soaked piece of paper. Her son arrived at 0700, produced the rescission letter she had signed in March, and asked to see his mother. The hospital settled the wrongful-death suit out of court. Your name stayed on the complaint.",pearl:"Autonomy requires VERIFIED expression of wishes. An illegible document of unknown provenance is not verified."},{text:"Refuse to make the call. Wait for the on-call ethics consultant.",score:0,fx:{nonmalef:-25,burnout:+10,legal:+30},nxt:"death",log:"Delay killed the patient.",outTitle:"Time Was the Patient",outDesc:"Ethics committee phones were not answering. Six minutes of arrest became fifteen. There was never a decision to be made — the decision was made for you by the clock. You were the ethics consultant in the room.",pearl:"In a code, you are the decision-maker. Calling for help is good. Refusing to decide while the patient asystoles is not."}]},{hpi:"ROSC achieved. She is intubated, sedated, pupils reactive. 0712: her son walks through the front entrance, soaking wet, hand-shaking. He has paperwork. You have her wet, smudged advance directive in your scrub pocket. Disclose, or omit?",vitals:{HR:"96",BP:"108/68",O2:"96"},timeLimit:60,actions:[{text:"Take him to the family room. Show him the wet paper. Explain why you ran the code anyway. Ask him what she wanted now.",score:4,fx:{rapport:+20,autonomy:+15,beneficence:+10},nxt:"next",advanceNow:true,log:"Full disclosure to family.",outTitle:"Truth First",outDesc:"He stared at the paper for a long time. Then he produced a second document — signed in March, after her cancer remission — that rescinded the DNR. He thanked you for not throwing the first one away. He thanked you for running the code. He said he was going to write a letter.",pearl:"The wet paper is evidence. So is the conversation that follows. Both belong in the record."},{text:"Throw the paper away. Tell him the team 'did everything.'",score:0,fx:{legal:+60,rapport:-20,autonomy:-15,nonmalef:-15},nxt:"next",advanceNow:true,log:"Concealed the advance directive.",outTitle:"Concealment",outDesc:"The paper showed up in housekeeping's wet trash. A maintenance worker mentioned it to a nurse, who mentioned it to Rivera. Rivera mentioned it to the chief. By Tuesday the conversation was no longer about the code — it was about what you did with the paper.",ifNotBest:"The directive is part of the medical record from the moment you read it. Destroying it is evidence tampering.",pearl:"The defensible decision becomes indefensible the moment you hide the evidence of it."},{text:"Withdraw care immediately on the strength of the paper, before he can sit down.",score:0,fx:{legal:+70,nonmalef:-30,autonomy:-10},nxt:"death",log:"Premature withdrawal post-ROSC.",outTitle:"Premature Withdrawal",outDesc:"You extubated her before her son could put his coat down. The directive turned out to be six months out of date. The son's first sentence in the deposition was, 'I never got to say goodbye.'",pearl:"Withdrawal of care is an irrevocable act. It requires verification and family input, not haste."}]},{hpi:"Six months later. Risk Management has scheduled a closed-door meeting. The son's letter of thanks is on the table. So is the hospital attorney, who wants to ask you why you ran a code on a patient with a DNR in her sweater pocket.",vitals:{HR:"—",BP:"—"},actions:[{text:"Cite the legal standard: unverified, illegible, or non-applicable advance directives do not override the default to resuscitate. Read the protocol you followed.",score:4,fx:{justice:+25,acumen:+20,nonmalef:+10},nxt:"discharge",log:"Defended the decision on legal and ethical grounds.",outTitle:"Defended on the Standard",outDesc:"The attorney closed the file in his lap. The son's letter went into your personnel record. The chair of the ethics committee invited you to join. The mother lived another four years. She came to your white coat ceremony, when you finally had one of those.",pearl:"The decision under ambiguity is defensible. The articulation of that decision under cross-examination is what makes it stick."},{text:"Tell them you 'felt bad' for her.",score:1,fx:{burnout:+15,legal:+15,acumen:-10},nxt:"discharge",log:"Emotional defense, not clinical.",outTitle:"Defended on Feeling",outDesc:"The attorney asked a follow-up question. You did not have a good answer. The hospital required you to take a Risk Management seminar. The clinical reasoning had been correct — you just couldn't articulate it under pressure.",ifNotBest:"Compassion is not a legal standard. The reasoning was correct. The defense of it was not.",pearl:"Articulating the protocol is part of following the protocol. Practice the words."},{text:"Blame the paramedics for bringing her in at all.",score:0,fx:{legal:+40,rapport:-25,nonmalef:-15},nxt:"discharge",log:"Deflected to EMS.",outTitle:"Deflection",outDesc:"The paramedics' union filed a complaint. Your reputation on the ED-EMS interface never recovered. The chief stopped sending you the critical traumas.",pearl:"Blaming the team upstream of you is the fastest way to lose the team downstream of you."}]}]},
+{id:"blackout_staff",tags:["ethics","em"],name:"",age:42,sex:"M",initHealth:25,diff:3,cat:"ethics",loc:"Triage",steps:[{hpi:"BLACKOUT — MCI ongoing. Nurse Rivera grabs your sleeve: her husband, a paramedic, was just brought in. Chest pain, ST-elevations in V2–V4. He is hemodynamically stable. The cath lab is offline. The LAST tPA dose in the building is in your hand. BAY 4 — 36yo mother of two, late-presenting STEMI, larger anterior territory, dropping pressures — is also waiting. ONE DOSE. Rivera is begging you, quietly, in the corner of the trauma bay.",vitals:{HR:"94",BP:"118/74"},timeLimit:45,actions:[{text:"Allocate by clinical severity. tPA to BAY 4. Bridge Rivera's husband on heparin + nitro until the helicopter lifts at dawn.",score:4,fx:{justice:+30,beneficence:+25,rapport:-15},nxt:"next",advanceNow:true,log:"Allocated by clinical criteria.",outTitle:"Justice Held",outDesc:"Bay 4 received the lytic. Her ejection fraction recovered to 45%. Rivera's husband — stable, smaller infarct — was bridged on heparin and nitro until the helicopter lifted at dawn. He got his cath the next afternoon and was home in three days. Rivera did not look at you for two shifts.",pearl:"The most dangerous bias in scarcity is not malice. It is affection. The triage criteria do not change because someone you care about is in the bed."},{text:"Give the tPA to Rivera's husband. She has been your lifeline on this ward.",score:0,fx:{justice:-40,rapport:+5,legal:+60,burnout:+15},nxt:"death",log:"Allocated by relationship.",outTitle:"Favoritism Kills",outDesc:"Bay 4 arrested at 0340. Two children lost their mother because you owed Nurse Rivera a favor. Rivera figured out what you had done by the morning report. She never asked you for anything again — and she never forgave you, either.",pearl:"Loyalty to a colleague is not a clinical indication."},{text:"Split the dose between both patients.",score:0,fx:{beneficence:-25,nonmalef:-25,legal:+40},nxt:"death",log:"Subtherapeutic lysis in both.",outTitle:"Half a Dose, Twice the Death",outDesc:"Neither patient achieved therapeutic lysis. Bay 4 died of cardiogenic shock at 0410. Rivera's husband extended his infarct and was left with a 25% EF. There is no Solomonic answer in pharmacology.",pearl:"Subtherapeutic dosing of thrombolytics provides the bleeding risk without the clot lysis. There is no compromise dose."}]},{hpi:"Three nights later. Rivera has not spoken to you since. She finds you charting at 0300 in the back of the nursing station. She sits down across from you and looks you in the eye. Her husband is recovering. Bay 4 is dead. She knows what you did.",vitals:{HR:"—",BP:"—"},actions:[{text:"Tell her you followed the allocation criteria. Tell her you would do it again. Don't apologize for the decision — apologize for what it cost her.",score:4,fx:{rapport:+20,justice:+15,acumen:+10},nxt:"next",advanceNow:true,log:"Honest with Rivera.",outTitle:"Honesty Without Apology",outDesc:"She was quiet for a long time. Then she said: 'I would have hated you if you'd done it differently.' She got up, refilled your coffee, and went back to the floor. She has watched you closer ever since — not less.",pearl:"Apologize for the cost. Never apologize for the right decision. The two are different conversations."},{text:"Tell her you're sorry. Promise her you'd do it differently if you could.",score:1,fx:{rapport:+5,justice:-15,burnout:+10},nxt:"next",advanceNow:true,log:"Apologized for the right call.",outTitle:"Hollow Apology",outDesc:"She accepted the apology. But she also stopped paging you first when something was wrong on the floor. The apology had told her something about your spine that you had not meant to tell her.",ifNotBest:"Apologizing for the correct triage teaches the wrong lesson — to Rivera, to yourself, and to anyone watching.",pearl:"An apology for a defensible decision is not kindness. It is a small lie that compounds."},{text:"Tell her she can file a complaint if she wants.",score:0,fx:{rapport:-30,legal:+10,burnout:+10},nxt:"next",advanceNow:true,log:"Cold response.",outTitle:"Cold",outDesc:"She did not file. She also did not speak to you outside of clinical handoffs for the rest of the year. The ward got harder. Two nurses transferred. You stopped getting the heads-up before the codes.",pearl:"Defending the decision is not the same as defending it coldly. The patient died. Her husband almost died. Acknowledge the weight."}]},{hpi:"M&M Conference, two weeks later. Bay 4's family is in attendance — hospital policy in MCI deaths. The chief asks you to present. You can frame this honestly, or you can soften it. The conflict-of-interest moment with Rivera is in your contemporaneous note.",vitals:{HR:"—",BP:"—"},actions:[{text:"Present truthfully. Name the conflict-of-interest moment. Walk the room through how you applied the criteria despite the pressure.",score:4,fx:{justice:+30,acumen:+20,nonmalef:+15,beneficence:+10},nxt:"discharge",log:"Full M&M presentation including bias check.",outTitle:"Bias Named",outDesc:"The family asked one question — 'Did her age matter in the decision?' You answered 'No, the severity of the infarct did.' They thanked you for the honesty. The hospital adopted a conflict-of-interest disclosure protocol for tPA allocation in MCIs the following quarter. Rivera caught you in the hallway afterward and put her hand on your shoulder. She did not say anything. She did not need to.",pearl:"Name the bias you successfully overcame. The next physician facing the same temptation will need the warning. Silence on bias is the same as endorsing it."},{text:"Present the case but omit the Rivera moment. Frame it as a clinical decision only.",score:1,fx:{justice:-10,legal:+10,rapport:-5},nxt:"discharge",log:"Sanitized M&M.",outTitle:"Sanitized",outDesc:"The presentation was clean. It also taught nothing. A surgeon two years later faced the same conflict — his own brother in the bay — and made the wrong call. He told you afterward he had read your M&M summary and thought 'this guy had it easy.'",ifNotBest:"Hiding the bias you overcame doesn't protect anyone. It just means the next person facing the temptation gets no warning.",pearl:"M&M is a teaching forum. The case is the lesson. The lesson is the bias, not the diagnosis."},{text:"Frame it as a 'no-win situation' with no specifics.",score:0,fx:{justice:-25,legal:+25,nonmalef:-15,acumen:-10},nxt:"discharge",log:"Empty M&M.",outTitle:"Nothing Learned",outDesc:"The family walked out before you finished. The chief asked you privately whether there was something you weren't saying. You said no. He knew you were lying. He stopped putting you on critical case panels.",pearl:"'No-win' is the most expensive lie a physician can tell at M&M. Every case has a decision. Articulate it."}]}]},
 {id:"pericarditis",tags:["im","em"],name:"",age:22,sex:"M",initHealth:60,diff:2,cat:"clinical",loc:"Triage",steps:[{hpi:"Central chest pain worse lying flat, better leaning forward. Friction rub. ECG: diffuse ST elevations, PR depression.",vitals:{HR:"98",BP:"120/80"},actions:[{text:"NSAIDs + Colchicine.",score:4,fx:{health:+30},nxt:"discharge",log:"Pericarditis treated.",outTitle:"Pericarditis Treated",outDesc:"He improved within 48 hours on Ibuprofen and Colchicine. The friction rub resolved by day 3.",pearl:"Positional chest pain + friction rub + diffuse ST elevations = pericarditis. NSAIDs + Colchicine is the treatment."},{text:"Aspirin + Heparin for STEMI.",score:0,fx:{legal:+40},nxt:"death",log:"Anticoagulated a pericarditis patient.",outTitle:"Hemopericardium",outDesc:"Anticoagulating pericarditis can cause hemorrhagic effusion and tamponade. He developed hemopericardium.",pearl:"Pericarditis is a contraindication to anticoagulation."}]}]},
 {id:"cdiff",tags:["im","surg"],name:"",age:68,sex:"F",initHealth:40,diff:2,cat:"clinical",loc:"Ward",steps:[{hpi:"Profuse watery diarrhea on day 6 of clindamycin for a dental abscess. Fever 102.4°F.",vitals:{HR:"110",Temp:"102.4"},actions:[{text:"Stool C. diff toxin assay + PO Vancomycin.",score:4,fx:{health:+45},nxt:"discharge",log:"C. diff treated.",outTitle:"C. Difficile Treated",outDesc:"Clindamycin was stopped and oral Vancomycin started. Diarrhea resolved over 5 days.",pearl:"Antibiotic use + diarrhea = C. diff until proven otherwise. Stop the offending antibiotic. Treat with PO Vancomycin."},{text:"Loperamide (Imodium) for diarrhea control.",score:0,fx:{legal:+60},nxt:"death",log:"Toxic megacolon from anti-motility agents.",outTitle:"Toxic Megacolon",outDesc:"Anti-motility agents in C. diff prevent the infected stool from being expelled and trigger toxic megacolon.",pearl:"Anti-motility agents are absolutely contraindicated in infectious diarrhea."}]}]},
 {id:"aspirin_tox",tags:["em","peds"],name:"",age:16,sex:"F",initHealth:20,diff:3,cat:"clinical",loc:"Triage",steps:[{hpi:"Found unconscious. Empty aspirin bottle nearby. Onset 20–30 min ago. Hyperventilating, tinnitus.",vitals:{HR:"120",RR:"28"},actions:[{text:"IV Sodium Bicarbonate + urine alkalinization.",score:4,fx:{health:+50},nxt:"discharge",log:"Aspirin toxicity treated.",outTitle:"Aspirin Toxicity Treated",outDesc:"Sodium bicarb alkalinized the urine, trapping ionized aspirin and promoting excretion. She recovered over 24 hours with close monitoring.",pearl:"Aspirin toxicity: tinnitus + hyperventilation. Treat with sodium bicarbonate for urinary alkalinization."},{text:"N-acetylcysteine (NAC).",score:0,fx:{legal:+50},nxt:"death",log:"Wrong antidote used.",outTitle:"Wrong Antidote",outDesc:"NAC is for acetaminophen toxicity. She continued to deteriorate.",pearl:"NAC is for Tylenol (acetaminophen). Never confuse the two."}]}]},
@@ -2711,6 +3012,72 @@ function svgDoctor(av, opts={}){
     </g></svg>`;
 }
 
+// ── BEDSIDE ROOM RENDER ─────────────────────────────────
+// Re-skins the case interaction as an in-world hospital room:
+// pixel-art floor + back wall, patient in bed, your doctor avatar
+// standing beside them, IV pole + wall monitor + crash cart,
+// and a speech bubble carrying the patient's presenting complaint.
+function bedsideOpeningLine(p, step){
+  // Prefer a personality-driven line if present; otherwise lift the
+  // first sentence of the HPI into the patient's mouth.
+  if(p.dialogue && p.dialogue.arrival && p.dialogue.arrival.length){
+    const arr = p.dialogue.arrival;
+    return arr[Math.floor(Math.random()*arr.length)];
+  }
+  const hpi = (step && step.hpi) || '';
+  // Strip leading markers like "BLACKOUT —" and take the first natural sentence
+  const cleaned = hpi.replace(/^[A-Z ]{3,}—\s*/, '').trim();
+  const firstSentence = cleaned.split(/[.!?]/)[0];
+  if(!firstSentence) return 'Doctor — I\'m glad you\'re here.';
+  // Truncate to a reasonable speech-bubble length
+  return firstSentence.length > 180
+    ? firstSentence.slice(0, 178).replace(/[, ]+$/,'') + '…'
+    : firstSentence + '.';
+}
+
+function renderBedsideRoom(p, step, vitals){
+  const wrap = document.getElementById('bedside-room');
+  if(!wrap) return;
+  if(!p){ wrap.classList.remove('show'); wrap.innerHTML=''; return; }
+  const hr = parseInt((vitals && vitals.hr) || '0', 10);
+  const monitorAbn = hr > 120 || (hr > 0 && hr < 50);
+  const bedSvg = pixelPatientInBed(p);
+  const docSvg = pixelSpriteSVG(AVATAR, 'right', 0);
+  const critical = (p.health||100) < 30;
+  const opener = bedsideOpeningLine(p, step);
+  const speakerLabel = p.acted
+    ? 'Bedside — monitoring'
+    : (p.name ? p.name + ' · ' + (p.age!=null?p.age+' y/o':'') : 'Patient · presenting');
+  const tagText = (p.loc || 'TRIAGE') + ' · ' + (p.cat ? p.cat.toUpperCase() : 'CLINICAL');
+  wrap.innerHTML =
+    '<div class="br-floor"></div>'
+    + '<div class="br-wall-line"></div>'
+    + '<div class="br-tag' + (critical?' crit':'') + '">' + tagText + (critical ? ' · CRITICAL' : '') + '</div>'
+    + '<div class="br-monitor-wall' + (monitorAbn?' abn':'') + '">'
+    +   '<div class="br-mw-hr">' + (hr || '—') + '</div>'
+    +   '<div>BPM</div>'
+    + '</div>'
+    + '<div class="br-iv-pole"></div>'
+    + '<div class="br-crash-cart" title="Crash Cart"></div>'
+    + '<div class="br-chair"></div>'
+    + '<div class="br-bed">' + bedSvg + '</div>'
+    + '<div class="br-doctor" id="br-doctor">' + docSvg + '</div>'
+    + '<div class="br-speech">'
+    +   '<div class="br-speech-tag">' + speakerLabel + '</div>'
+    +   opener
+    + '</div>';
+  wrap.classList.add('show');
+}
+
+// ── Tiny action-feedback flourish: doctor avatar bobs after an order
+function bedsideDoctorReact(){
+  const d = document.getElementById('br-doctor');
+  if(!d) return;
+  d.classList.remove('acting');
+  void d.offsetWidth;
+  d.classList.add('acting');
+}
+
 function renderPatientSprite(p){
   // Deterministic sprite based on patient id+name
   const hash = (p.id+(p.name||'')).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
@@ -2887,6 +3254,51 @@ const CHAPTERS = [
     rank:'Attending', desc:'You are the attending. The buck stops here. Nobody is coming to save you, or them.' },
 ];
 
+// ── CAMPAIGN NARRATIVE: "The Permanence Protocol" ──
+// Gulf Coast hurricane backdrop. Sacred Heart Memorial is decaying around the player.
+// Each scene plays once when the player closes out the chapter.
+const CHAPTER_ENDS = {
+  1: {
+    npc:'patel',
+    title:'The Pressure Drop',
+    line:'Barometer dropped twelve points in the last hour. Feel it? The patients feel it — the infarcts come in waves when the pressure drops like this. Vessels remember the weather. You survived your first storm shift. Get used to the feeling: the body wants to live. The hospital, increasingly, does not. Learn the difference between what is failing in the patient and what is failing in this building. That is the Master Pivot. That is the first lesson.'
+  },
+  2: {
+    npc:'rivera',
+    title:'Systemic Decay',
+    line:'Don\'t look so spooked, Doc. The lower floors flood every August — they just don\'t usually take the CT scanner with them. We\'ve been a "safety-net hospital" since I was a candy striper, which is administrator code for "held together with tape and Nurse Rivera." I\'ll tell you what I tell every intern who makes it this far: the body is honest. It tells you what\'s wrong if you slow down enough to listen. The building lies. The chart lies. Even Patel sometimes lies. Trust the meat.'
+  },
+  3: {
+    npc:'vance',
+    title:'When the Lights Go',
+    line:'Generators kicked over twice in my last case. Twice. I had a forty-year-old splenectomy on the table when the OR went dark for six full seconds. You know what kept him alive? Not the lights. Not the monitor. My hands knew where the splenic artery was because I\'d done it a hundred times before. That\'s permanence — the anatomy you\'ve memorized doesn\'t move when the power goes out. Stop reaching for the screen, internist. The patient is right in front of you. Always was.'
+  },
+  4: {
+    npc:'okafor',
+    title:'The Water Line',
+    line:'They evacuated the NICU to the third floor at 0400. We carried the isolettes up two flights by hand because the elevators are flooded. Four of those babies were born before they were viable — by every textbook you have ever read. They are alive tonight because cells are stubborn. Because hemoglobin does not care that the chiller failed. Because a heart at thirty-two weeks will beat in the dark just like it beats in the light. Remember that the next time you are tempted to write "futile" in a chart. The body decides what is futile. We just keep up.'
+  },
+  5: {
+    npc:'kim',
+    title:'The Permanence Protocol',
+    line:'Doctor — I wrote down what Dr. Patel said our first night. About the Master Pivot. I\'ve been keeping a list ever since. Tonight, when the floor breached and Nurse Rivera was screaming for someone to run the codes, you didn\'t freeze. You pivoted. You sent Bay 2 to surgery, you held Bay 4 on the vent, and you let Bay 6 go because there was nothing left to do for her. I watched you make those calls. The National Guard hit the helipad at dawn. We all saw the sun come up over the water line. I\'m going to be a doctor because of you. I just hope I\'m the kind of doctor you became — not the kind you almost became.'
+  }
+};
+
+function queueChapterEnd(id){
+  const ce = CHAPTER_ENDS[id];
+  if(!ce || !GS.story) return;
+  GS.story.seenScenes = GS.story.seenScenes || {};
+  if(GS.story.seenScenes['end'+id]) return;
+  GS.story.seenScenes['end'+id] = true;
+  queueScene({
+    npc: ce.npc,
+    title: ce.title,
+    chapterLabel: `CHAPTER ${id} — EPILOGUE`,
+    line: ce.line
+  });
+}
+
 // Story / NPC state lives on GS and persists
 function initStory(){
   GS.story = {
@@ -2957,8 +3369,14 @@ function updateNPCsFromCase(p, act, score){
 function checkChapter(){
   if(!GS.story) return;
   const cases = GS.casesTotal || 0;
+  // Chapter 5 has no successor, so trigger its epilogue on a case-count milestone
+  if(GS.story.chapter === 5 && cases >= 70){
+    queueChapterEnd(5);
+  }
   for(let i = CHAPTERS.length-1; i >= 0; i--){
     if(cases >= CHAPTERS[i].threshold && GS.story.chapter < CHAPTERS[i].id){
+      const prevChapter = GS.story.chapter;
+      queueChapterEnd(prevChapter);
       GS.story.chapter = CHAPTERS[i].id;
       showChapterIntro(CHAPTERS[i]);
       return;
@@ -3076,6 +3494,8 @@ const NPC_LINES = {
   rivera: {
     streak3: ['Doc. Family in 4 wants to know who you are. They\'ve been asking.', 'I told 2B you\'d come back. Don\'t make a liar of me.'],
     badStreak: ['Doc. Hey. Look at me. Eyes off the screen. Reset.', 'You\'re not on tonight. Take five.'],
+    infraHot: ['Hear that hum? Generator\'s holding. Whatever you\'re doing, keep doing it.', 'AC just kicked back on in Bay 3. You earned us a cold draft.', 'Told the night charge you were finally pulling your weight. Don\'t make me a liar.'],
+    infraCold: ['CT scanner is down again, Doc. Don\'t ask. Reason it out at the bedside.', 'Pharmacy\'s out of midazolam until morning. Whatever you\'re planning — replan.', 'Power flickered three times in the last hour. The monitors lie when that happens. Trust the patient.', 'OR-2 lost suction. We\'re working with what we have. So are you.'],
     chapter2: ['Look at you. An actual doctor now. Took you long enough.'],
     highRel: ['Page me first when something\'s wrong. Always. We\'re a team.'],
     lowRel: ['I\'m noting this in the chart, Doctor. You should know that.']
@@ -3083,6 +3503,8 @@ const NPC_LINES = {
   vance: {
     streak3: ['Hmf. Not bad. Don\'t get comfortable.', 'You\'re getting somewhere. Keep cutting.'],
     badStreak: ['This is why I don\'t take consults from medicine.', 'You should be embarrassed.'],
+    infraHot: ['You\'re cutting clean even with the lights flickering. That\'s the work.', 'Heard you ran the trauma bay without imaging. Welcome to medicine.', 'Generator drops, you don\'t. Good.'],
+    infraCold: ['Generator dies one more time, I swear I\'m operating in the parking lot.', 'You froze because the monitor froze. Bad habit. The patient hasn\'t paused.', 'You\'re hesitating because the AC is gone. I\'m sweating through this gown too. Move.', 'The CT\'s offline and you\'re paralyzed. I diagnosed dissections with my hands for fifteen years before you got here.'],
     chapter3: ['You\'ve stopped flinching. That\'s the first thing.'],
     highRel: ['If you ever want to scrub in, I\'ll consider it.'],
     lowRel: ['Stay out of my OR.']
@@ -3119,6 +3541,20 @@ function tryInterlude(score){
   if(_streak >= 3) lineKey = 'streak3';
   else if(_streak <= -2 || score === 0) lineKey = 'badStreak';
   if(!lineKey) return;
+  // Hospital is failing around the player — let Rivera/Vance comment on the infrastructure
+  // 45% of the time on a hot/cold streak, once the storm has hit (chapter 2+).
+  if((GS.story?.chapter || 1) >= 2 && Math.random() < 0.45){
+    const infraKey = lineKey === 'streak3' ? 'infraHot' : 'infraCold';
+    const infraNpcs = ['rivera','vance'].filter(npcUnlocked).sort(()=>Math.random()-0.5);
+    for(const k of infraNpcs){
+      const line = pickLine(k, infraKey);
+      if(line){
+        queueScene({ npc:k, title:'', chapterLabel:`CHAPTER ${GS.story.chapter}`, line });
+        _interludeCooldown = 4;
+        return;
+      }
+    }
+  }
   // Pick npc with strongest interest
   candidates.sort(()=>Math.random()-0.5);
   for(const k of candidates){
@@ -4106,6 +4542,470 @@ function startPATimer(){
 function stopPATimer(){ clearInterval(_paTimer); _paTimer=null; }
 
 // ══════════════════════════════════════════════════════════
+// CASE TIMER — live decision-window countdown
+// ══════════════════════════════════════════════════════════
+let _caseTimer = null;
+
+function clearCaseTimer(){
+  if(_caseTimer){
+    clearInterval(_caseTimer.interval);
+    _caseTimer = null;
+  }
+  const el = document.getElementById('case-timer-bar');
+  if(el) el.remove();
+}
+
+function findWorstActionIdx(step){
+  if(!step || !step.actions || !step.actions.length) return 0;
+  let worstIdx = 0, worstScore = Infinity;
+  step.actions.forEach((a,i)=>{
+    const s = (a.score==null) ? 4 : a.score;
+    if(s < worstScore){ worstScore = s; worstIdx = i; }
+  });
+  return worstIdx;
+}
+
+function startCaseTimer(pId, seconds, worstActionIdx){
+  clearCaseTimer();
+  const actDiv = document.getElementById('ch-actions');
+  if(!actDiv || actDiv.querySelector('.act-acted-msg')) return;
+  const bar = document.createElement('div');
+  bar.id = 'case-timer-bar';
+  bar.className = 'case-timer';
+  bar.innerHTML =
+    '<div class="ct-label">'
+    + '<span class="ct-icon">⏱</span>'
+    + '<span>DECISION WINDOW</span>'
+    + '<span class="ct-time" id="ct-time">' + seconds + 's</span>'
+    + '</div>'
+    + '<div class="ct-bar"><div class="ct-fill" id="ct-fill" style="width:100%"></div></div>'
+    + '<div class="ct-sub">Patient deteriorates if you delay.</div>';
+  actDiv.insertBefore(bar, actDiv.firstChild);
+  const start = Date.now();
+  const total = seconds * 1000;
+  _caseTimer = {
+    pId: pId, worstIdx: worstActionIdx, lastTick: -1, fastForwardMs: 0,
+    interval: setInterval(function(){
+      const elapsed = (Date.now() - start) + (_caseTimer ? _caseTimer.fastForwardMs : 0);
+      const remain = Math.max(0, total - elapsed);
+      const pct = (remain / total) * 100;
+      const fill = document.getElementById('ct-fill');
+      const txt  = document.getElementById('ct-time');
+      if(fill) fill.style.width = pct + '%';
+      if(txt)  txt.textContent  = Math.ceil(remain/1000) + 's';
+      if(pct < 33){
+        bar.classList.remove('warning');
+        bar.classList.add('critical');
+      } else if(pct < 60){
+        bar.classList.add('warning');
+      }
+      // beep on each new second when in critical phase
+      const secLeft = Math.ceil(remain/1000);
+      if(pct < 33 && secLeft !== _caseTimer.lastTick && secLeft > 0){
+        _caseTimer.lastTick = secLeft;
+        if(typeof playTone === 'function') playTone(660, 0.04, 0.06, 'square');
+      }
+      if(remain <= 0){
+        clearCaseTimer();
+        if(typeof playTone === 'function') playTone(110, 0.5, 0.18, 'sawtooth');
+        const p = getPt(pId);
+        if(p && !p.acted){
+          GS.log.push('[' + (p.name||'Patient') + '] ⏱ Decision window expired — patient deteriorated.');
+          if(typeof screenFlashRed === 'function') screenFlashRed();
+          takeAction(pId, worstActionIdx);
+        }
+      }
+    }, 100)
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+// STORM SYSTEM — Gulf Coast hurricane backdrop (Campaign Ch 2+)
+// ══════════════════════════════════════════════════════════
+let _stormState = { active:false, lightningTimer:null, flickerTimer:null };
+
+function stormChapterIntensity(){
+  const ch = (GS && GS.story && GS.story.chapter) || 1;
+  // 0 = none, 1 = drizzle, 2 = heavy rain, 3 = hurricane (lightning+flicker)
+  if(ch >= 5) return 3;
+  if(ch >= 3) return 3;
+  if(ch >= 2) return 2;
+  return 0;
+}
+
+function activateStorm(){
+  const intensity = stormChapterIntensity();
+  const ov = document.getElementById('storm-overlay');
+  if(!ov) return;
+  if(intensity === 0){ deactivateStorm(); return; }
+  ov.classList.add('active');
+  ov.style.opacity = intensity === 1 ? '0.35' : intensity === 2 ? '0.7' : '1';
+  _stormState.active = true;
+  // Lightning + thunder cadence ramps with intensity
+  if(_stormState.lightningTimer) clearInterval(_stormState.lightningTimer);
+  const lightningEvery = intensity >= 3 ? 9000 : intensity === 2 ? 18000 : 32000;
+  _stormState.lightningTimer = setInterval(()=>{
+    if(Math.random() > 0.55) return;
+    const flash = document.getElementById('storm-flash');
+    if(!flash) return;
+    flash.classList.add('flash');
+    setTimeout(()=> flash.classList.remove('flash'), 90);
+    setTimeout(()=> { flash.classList.add('flash'); setTimeout(()=>flash.classList.remove('flash'), 60); }, 180);
+    if(typeof playTone === 'function'){
+      setTimeout(()=> playTone(70, 0.9, 0.18, 'sawtooth'), 700 + Math.random()*900);
+    }
+  }, lightningEvery);
+  // Power flickers — flash the topbar to suggest generators struggling
+  if(_stormState.flickerTimer) clearInterval(_stormState.flickerTimer);
+  if(intensity >= 3){
+    _stormState.flickerTimer = setInterval(()=>{
+      if(Math.random() > 0.4) return;
+      const game = document.getElementById('game');
+      if(!game) return;
+      game.classList.remove('power-flicker');
+      void game.offsetWidth;
+      game.classList.add('power-flicker');
+      if(typeof playTone === 'function') playTone(90, 0.18, 0.08, 'sawtooth');
+    }, 22000);
+  }
+}
+
+function deactivateStorm(){
+  _stormState.active = false;
+  if(_stormState.lightningTimer){ clearInterval(_stormState.lightningTimer); _stormState.lightningTimer=null; }
+  if(_stormState.flickerTimer){ clearInterval(_stormState.flickerTimer); _stormState.flickerTimer=null; }
+  const ov = document.getElementById('storm-overlay');
+  if(ov){ ov.classList.remove('active'); ov.style.opacity = '0'; }
+}
+
+// Hook into the existing chapter advancement
+const _origCheckChapter = checkChapter;
+checkChapter = function(){
+  _origCheckChapter();
+  activateStorm();
+};
+// Also re-evaluate on each game render so loaded saves restore the storm
+const _origRenderAll_storm = (typeof renderAll === 'function') ? renderAll : null;
+if(_origRenderAll_storm){
+  renderAll = function(){
+    _origRenderAll_storm.apply(this, arguments);
+    if(stormChapterIntensity() > 0 && !_stormState.active) activateStorm();
+    if(stormChapterIntensity() === 0 && _stormState.active) deactivateStorm();
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+// FLOOR HAZARDS — flood / dark / fire tiles, chapter-gated
+// ══════════════════════════════════════════════════════════
+const FLOOR_HAZARDS = {
+  ed: [
+    {chapter:2, type:'flood', x:50,  y:300, w:160, h:90,  label:'Storm Runoff'},
+    {chapter:3, type:'flood', x:1080,y:280, w:170, h:130, label:'Breach — Keep Out'},
+    {chapter:3, type:'dark',  x:430, y:380, w:220, h:110, label:'Power Out'},
+    {chapter:4, type:'flood', x:680, y:730, w:240, h:140, label:'Lower Level Flooded'},
+    {chapter:5, type:'fire',  x:240, y:300, w:90,  h:90,  label:'Bay 4 — Fire'},
+  ],
+  icu: [
+    {chapter:3, type:'dark',  x:600, y:400, w:250, h:140, label:'Generator Bay Down'},
+    {chapter:4, type:'flood', x:120, y:720, w:280, h:130, label:'Basement Backwash'},
+    {chapter:5, type:'fire',  x:900, y:350, w:90,  h:90,  label:'Vent Room — Smoke'},
+  ],
+  surg: [
+    {chapter:3, type:'dark',  x:880, y:300, w:200, h:130, label:'OR-2 No Power'},
+    {chapter:4, type:'flood', x:60,  y:710, w:300, h:150, label:'Sub-Sterile Flood'},
+    {chapter:5, type:'fire',  x:520, y:280, w:100, h:100, label:'Anesthesia Cart — Smoke'},
+  ],
+  peds: [
+    {chapter:3, type:'dark',  x:200, y:330, w:220, h:120, label:'NICU Backup Only'},
+    {chapter:4, type:'flood', x:1000,y:720, w:240, h:140, label:'Playroom Flooded'},
+  ],
+  med: [
+    {chapter:2, type:'dark',  x:780, y:330, w:200, h:120, label:'Telemetry Offline'},
+    {chapter:4, type:'flood', x:60,  y:710, w:300, h:150, label:'Pharmacy Flooded'},
+  ],
+};
+
+function currentHazards(){
+  const ch = (GS && GS.story && GS.story.chapter) || 1;
+  const list = FLOOR_HAZARDS[_ex.floorId] || [];
+  return list.filter(h => h.chapter <= ch);
+}
+
+function renderHazards(){
+  const wrap = document.getElementById('ex-hazards');
+  if(!wrap) return;
+  const hz = currentHazards();
+  wrap.innerHTML = hz.map((h,i)=>(
+    '<div class="ex-hazard ' + h.type + '" id="ex-hazard-' + i + '" '
+    + 'style="left:' + h.x + 'px;top:' + h.y + 'px;width:' + h.w + 'px;height:' + h.h + 'px;">'
+    + '<div class="ex-hazard-label">' + h.label + '</div>'
+    + '</div>'
+  )).join('');
+}
+
+function hazardBlocksAt(x, y){
+  // Flood and fire block movement. Dark zones allow passage.
+  const hz = currentHazards();
+  for(const h of hz){
+    if(h.type === 'dark') continue;
+    if(x >= h.x - 12 && x <= h.x + h.w + 12 &&
+       y >= h.y - 12 && y <= h.y + h.h + 12){
+      return h;
+    }
+  }
+  return null;
+}
+
+function hazardDarkAt(x, y){
+  const hz = currentHazards();
+  for(const h of hz){
+    if(h.type !== 'dark') continue;
+    if(x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) return h;
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════
+// CAMPAIGN NPCs IN EXPLORE MODE — named cast per floor
+// ══════════════════════════════════════════════════════════
+const CAMPAIGN_NPCS_BY_FLOOR = {
+  ed: [
+    {id:'rivera', x:380,  y:380, vx:0.55,  vy:0},
+    {id:'vance',  x:1080, y:340, vx:-0.45, vy:0.3},
+    {id:'patel',  x:240,  y:560, vx:0,     vy:0.4},
+  ],
+  icu: [
+    {id:'patel',  x:420, y:380, vx:0,    vy:0.4},
+    {id:'rivera', x:780, y:520, vx:-0.4, vy:0},
+  ],
+  surg: [
+    {id:'vance',  x:600, y:380, vx:0.55, vy:0},
+  ],
+  peds: [
+    {id:'okafor', x:480, y:380, vx:0,    vy:0.35},
+  ],
+  med: [
+    {id:'patel',  x:600, y:400, vx:0.4, vy:0},
+    {id:'kim',    x:400, y:560, vx:0,   vy:0.3},
+  ],
+  obgyn: [
+    {id:'okafor', x:540, y:400, vx:0.3, vy:0},
+  ],
+  psych: [],
+  clinic: [
+    {id:'kim',    x:520, y:380, vx:0,   vy:0.3},
+  ],
+};
+
+function syncFloorNPCs(){
+  const list = CAMPAIGN_NPCS_BY_FLOOR[_ex.floorId] || [];
+  _ex.npcs = list.map(spec => {
+    const npc = NPCS[spec.id];
+    if(!npc) return null;
+    return {
+      id: spec.id,
+      x: spec.x, y: spec.y, vx: spec.vx, vy: spec.vy,
+      name: npc.name.split(',')[0].split(' ').slice(-1)[0].toUpperCase(),
+      avatar: { gender: npc.sex, skin: npc.skin, hair: npc.hair, scrub: npc.scrub, acc: npc.acc },
+      dir: 'down', frame: 0, animT: 0,
+    };
+  }).filter(Boolean);
+}
+
+// Hallway dialogue — chapter-gated, NPC-flavored
+const HALLWAY_LINES = {
+  patel: {
+    1: ['Read the chart. Then read the patient. They do not always agree.',
+        'I want a Master Pivot for every admission tonight. Out loud.',
+        'You do not memorize medicine. You reason through it.'],
+    2: ['The internship breaks people. Don\'t be the one it breaks tonight.',
+        'Sleep when you can. The next code is fifteen minutes away.',
+        'You are moving differently. Slower. Better.'],
+    3: ['I lost a patient last shift. I will not lose another tonight.',
+        'You have the floor while I run grand rounds. Don\'t burn it down.',
+        'Vance is wrong about you. Quietly. He will never say it out loud.'],
+    4: ['Sarah is watching you. Pick the habits you want her to copy.',
+        'The hospital is breaking. The medicine is not. Remember the difference.',
+        'When did you last sleep? Don\'t answer.'],
+    5: ['You are the attending. I am the consultant now. That is new for both of us.',
+        'I went into medicine for the cases. You went in for the patients. Yours is the better reason.',
+        'Pin the storm protocol on the board. We will need it again.'],
+  },
+  rivera: {
+    1: ['Doc, family in 4 wants water. You are the closest body.',
+        'Don\'t write "noncompliant" on any chart on my floor. Ever.',
+        'If I page you, you come. That\'s the deal.'],
+    2: ['I told the chief you weren\'t useless. Don\'t make me a liar.',
+        'Coffee is in the back. Steal a cup. You earned it.',
+        'I\'ve seen worse storms. I\'ve seen worse interns. You are not on the second list.'],
+    3: ['Bay 6 is asking for you by name. That\'s the highest praise in this building.',
+        'When the lights go, I\'ll find you. Stay near the nurse station.',
+        'If I tell you a patient is fine, they are fine. If I\'m wrong, I\'ll say so.'],
+    4: ['Three nurses transferred this month. We\'re holding on with tape.',
+        'You stopped asking permission. About time.',
+        'The med students copy you now. Hope you noticed.'],
+    5: ['I\'m staying another year because of you. Just so you know.',
+        'If you ever leave Sacred Heart, I\'m coming with.',
+        'Storm season is coming again. We\'ll be ready this time.'],
+  },
+  vance: {
+    2: ['Stay out of my OR unless you have scrubbed in this calendar year.',
+        'You hesitate. Stop hesitating.',
+        'Internal medicine. The slowest specialty by design.'],
+    3: ['Decent stitch on the lac in 2. I noticed. Don\'t get used to it.',
+        'Generators are dropping again. Operate by feel. Like the old days.',
+        'If you call me one more "soft" consult I\'m billing your specialty.'],
+    4: ['You finally cut on something. About time.',
+        'Trauma bay needs a body. You\'re the body.',
+        'Don\'t tell anyone, but I\'d let you assist.'],
+    5: ['Attending now. Don\'t get comfortable.',
+        'I\'ll co-sign your privileges. Once. Use it.',
+        'You and I are the same kind of stubborn. That is not a compliment.'],
+  },
+  okafor: {
+    3: ['The little one in 8 drew you a picture. It\'s on the fridge.',
+        'Don\'t forget the parents. The child is half the work.',
+        'You would be good with kids. Have you thought about peds?'],
+    4: ['Two preemies survived last night. Cells do not read the textbook.',
+        'Sit with a family for a minute today. Just sit.',
+        'We carry the babies up the stairs when the elevators fail. They go quiet for the lift. Every time.'],
+    5: ['You handle the families beautifully. That\'s a gift.',
+        'Children remember how a doctor made them feel — even the ones who don\'t survive.',
+        'I\'m retiring at sixty-five. You\'re going to need to know peds well enough to fake it.'],
+  },
+  kim: {
+    4: ['Doctor — that thing you said about the Master Pivot, can I write it down?',
+        'I\'m matching into IM because of you.',
+        'Did you sleep last night? You don\'t look like it.'],
+    5: ['I made my rank list. You\'re going to be my reference whether you like it or not.',
+        'I want to be the kind of doctor you are.',
+        'Will you sign my white coat at graduation?'],
+  },
+};
+
+function pickHallwayLine(npcId){
+  const bank = HALLWAY_LINES[npcId] || {};
+  const ch = (GS && GS.story && GS.story.chapter) || 1;
+  // Walk down from current chapter to find available lines
+  for(let c = ch; c >= 1; c--){
+    if(bank[c] && bank[c].length){
+      return bank[c][Math.floor(Math.random()*bank[c].length)];
+    }
+  }
+  return null;
+}
+
+function talkToNPC(npcId){
+  if(!NPCS[npcId]) return;
+  const line = pickHallwayLine(npcId);
+  if(!line) return;
+  queueScene({
+    npc: npcId,
+    title: 'In the Hallway',
+    chapterLabel: 'CHAPTER ' + ((GS.story && GS.story.chapter) || 1),
+    line: line
+  });
+  // small rapport bump for engaging
+  adjustRel(npcId, +1);
+  if(typeof playTone === 'function') playTone(520, 0.06, 0.05);
+}
+
+// ══════════════════════════════════════════════════════════
+// PRESSURE EVENTS — NPC interrupts during timed cases
+// ══════════════════════════════════════════════════════════
+const PRESSURE_LINES = {
+  rivera: [
+    {line:'Doc — Bay 6 is going bad. Pressure dropped. I need you in 30 seconds.',  cost:8},
+    {line:'Code Blue forming in the next room. Wrap this up.',                       cost:10},
+    {line:'Family of 4B is at the desk, screaming. They want the doctor NOW.',       cost:6},
+  ],
+  vance: [
+    {line:'I need a second hand in OR-2. Two minutes. Decide.',                       cost:9},
+    {line:'You\'re slow. Pick something.',                                            cost:5},
+  ],
+  kim: [
+    {line:'Doctor — I have a question about your last patient. Quick one?',           cost:4},
+    {line:'Should I write up that last case or are we waiting?',                      cost:3},
+  ],
+  patel: [
+    {line:'Decision, doctor. Out loud. The Master Pivot.',                            cost:5},
+  ],
+  okafor: [
+    {line:'Peds is paging — preemie in respiratory distress. Five minutes.',          cost:7},
+  ],
+};
+
+function maybeFirePressureEvent(){
+  if(!_caseTimer) return;
+  const ch = (GS && GS.story && GS.story.chapter) || 1;
+  if(ch < 2) return;
+  // 35% chance per timed case
+  if(Math.random() > 0.35) return;
+  // Pick an NPC the player has unlocked
+  const candidates = Object.keys(NPCS).filter(npcUnlocked).filter(k => PRESSURE_LINES[k]);
+  if(!candidates.length) return;
+  const npcKey = candidates[Math.floor(Math.random()*candidates.length)];
+  const bank = PRESSURE_LINES[npcKey];
+  const item = bank[Math.floor(Math.random()*bank.length)];
+  // Fire after a brief delay so the player has seen the case
+  setTimeout(()=>{
+    if(!_caseTimer) return;
+    showPressureEvent(npcKey, item.line, item.cost);
+  }, 2200 + Math.random()*4000);
+}
+
+function showPressureEvent(npcKey, line, cost){
+  if(!_caseTimer) return;
+  const npc = NPCS[npcKey];
+  if(!npc) return;
+  // Shorten the live timer by `cost` seconds (deterioration)
+  const bar = document.getElementById('case-timer-bar');
+  if(!bar) return;
+  // Find the running interval start time and advance it
+  // Easiest: emit a one-off DOM toast + adjust by shrinking the bar's perceived total
+  const el = document.createElement('div');
+  el.className = 'pressure-event';
+  el.innerHTML =
+    '<div class="pe-hdr">⚠ Interrupt — ' + npc.name.split(' ').slice(-1)[0] + '</div>'
+    + '<div class="pe-name">' + npc.name + '</div>'
+    + '<div class="pe-line">' + line + '</div>'
+    + '<div class="pe-cost">−' + cost + 's from your decision window</div>';
+  document.body.appendChild(el);
+  if(typeof playTone === 'function') playTone(380, 0.18, 0.12, 'square');
+  setTimeout(()=> el.remove(), 4200);
+  // Apply the time cost by accelerating the timer
+  if(_caseTimer && _caseTimer.interval){
+    // Hack the start time so `remain` shrinks by cost*1000
+    // We can't access the closure's `start`, so instead immediately fast-forward by ticking
+    // We use a sidecar: store a fastForwardMs and have the interval consume it.
+    _caseTimer.fastForwardMs = (_caseTimer.fastForwardMs||0) + cost*1000;
+  }
+  if(typeof screenShake === 'function') screenShake();
+}
+
+// ══════════════════════════════════════════════════════════
+// CHAPTER CHIP — storm intensity badge in topbar
+// ══════════════════════════════════════════════════════════
+function updateChapterChip(){
+  const chip = document.getElementById('chapter-chip');
+  if(!chip) return;
+  if(!GS || !GS.story){ chip.style.display='none'; return; }
+  const ch = GS.story.chapter || 1;
+  const intensity = stormChapterIntensity();
+  chip.style.display = 'inline-flex';
+  chip.className = 'chap-chip s' + Math.min(3, intensity || 1);
+  const stormText = intensity === 0 ? 'CLEAR' : intensity === 1 ? 'DRIZZLE' : intensity === 2 ? 'STORM' : 'HURRICANE';
+  chip.innerHTML = '<span class="chap-chip-dot"></span>CH ' + ch + ' · ' + stormText;
+}
+
+// Hook chapter chip + storm into renderAll path (already wrapped above)
+const _origRenderAll_chip = renderAll;
+renderAll = function(){
+  _origRenderAll_chip.apply(this, arguments);
+  updateChapterChip();
+};
+
+// ══════════════════════════════════════════════════════════
 // EXPLORE MODE — top-down walking hospital sim
 // ══════════════════════════════════════════════════════════
 const EX_ROOMS = [
@@ -4431,7 +5331,9 @@ function exploreSetFloor(fid){
   const f = EX_FLOORS.find(x=>x.id===fid) || EX_FLOORS[7];
   document.getElementById('ex-hud-floor').textContent = f.name;
   document.getElementById('ex-hud-sub').textContent = f.sub;
+  syncFloorNPCs();
   renderExploreRooms();
+  renderExploreNPCs();
 }
 
 function renderExploreRooms(){
@@ -4459,9 +5361,11 @@ function renderExploreRooms(){
 function renderExploreNPCs(){
   const wrap = document.getElementById('ex-npcs');
   if(!wrap) return;
-  wrap.innerHTML = _ex.npcs.map((n,i)=>
-    `<div class="ex-actor npc" id="ex-npc-${i}"><div class="ex-actor-name">${n.name}</div><div id="ex-npc-sprite-${i}">${pixelSpriteSVG(n.avatar, n.dir||'down', 0)}</div></div>`
-  ).join('');
+  wrap.innerHTML = _ex.npcs.map((n,i)=>{
+    const cls = n.id ? ('npc named ' + n.id) : 'npc';
+    return `<div class="ex-actor ${cls}" id="ex-npc-${i}"><div class="ex-actor-name">${n.name}</div><div id="ex-npc-sprite-${i}">${pixelSpriteSVG(n.avatar, n.dir||'down', 0)}</div></div>`;
+  }).join('');
+  renderHazards();
 }
 
 function exploreFit(){
@@ -4494,10 +5398,23 @@ function exploreLoop(){
   const playerEl = document.getElementById('ex-player');
   if(dx||dy){
     const mag = Math.hypot(dx,dy)||1;
+    const prevX = _ex.player.x, prevY = _ex.player.y;
     _ex.player.x += (dx/mag) * _ex.player.speed;
     _ex.player.y += (dy/mag) * _ex.player.speed;
     _ex.player.x = Math.max(20, Math.min(_ex.worldW-60, _ex.player.x));
     _ex.player.y = Math.max(60, Math.min(_ex.worldH-60, _ex.player.y));
+    // Hazard collision — flood and fire push you back
+    const blocker = hazardBlocksAt(_ex.player.x, _ex.player.y);
+    if(blocker){
+      _ex.player.x = prevX; _ex.player.y = prevY;
+      if(!_ex._lastHazardWarn || Date.now() - _ex._lastHazardWarn > 1800){
+        _ex._lastHazardWarn = Date.now();
+        if(typeof paAnnounce === 'function'){
+          paAnnounce(blocker.type === 'fire' ? '🔥 FIRE — AREA SEALED' : '⚠ FLOODED — REROUTE');
+        }
+        if(typeof playTone === 'function') playTone(blocker.type==='fire'?180:240, 0.18, 0.1, 'square');
+      }
+    }
     const newDir = Math.abs(dx) > Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
     if(newDir !== _ex.player.dir){ _ex.player.dir = newDir; _ex.player.animT = 0; }
     _ex.player.animT = (_ex.player.animT||0) + 1;
@@ -4568,6 +5485,35 @@ function exploreLoop(){
     elevEl.classList.remove('active');
     _ex.nearElev = false;
   }
+  // Named-NPC proximity → bump-to-talk prompt
+  let nearestNpc = null, nndist = 70;
+  _ex.npcs.forEach((n,i)=>{
+    if(!n.id) return;
+    const d = Math.hypot(px - n.x, py - n.y);
+    if(d < nndist){ nndist = d; nearestNpc = {idx:i, npc:n}; }
+  });
+  if(nearestNpc && !_ex.nearRoom){
+    const el = document.getElementById('ex-npc-' + nearestNpc.idx);
+    if(el){
+      const tip = document.createElement('div');
+      tip.className = 'ex-prompt';
+      tip.textContent = '[E] Talk to ' + nearestNpc.npc.name;
+      el.appendChild(tip);
+    }
+    _ex.nearNPC = nearestNpc;
+  } else {
+    _ex.nearNPC = null;
+  }
+  // Dark-zone burnout — power-out tiles drain you slowly
+  if(GS && GS.burnout != null && hazardDarkAt(px, py)){
+    _ex.darkTick = (_ex.darkTick||0) + 1;
+    if(_ex.darkTick >= 360){ // ~6s at 60fps
+      _ex.darkTick = 0;
+      GS.burnout = Math.min(100, GS.burnout + 1);
+    }
+  } else {
+    _ex.darkTick = 0;
+  }
   const player = document.getElementById('ex-player');
   if(player) player.style.transform = `translate(${_ex.player.x-22}px, ${_ex.player.y-44}px)`;
   _ex.npcs.forEach((n,i)=>{
@@ -4579,6 +5525,7 @@ function exploreLoop(){
 
 function exploreInteract(){
   if(_ex.nearRoom){ enterRoomFromExplore(_ex.nearRoom.patient.id); }
+  else if(_ex.nearNPC){ talkToNPC(_ex.nearNPC.npc.id); }
   else if(_ex.nearElev){ exploreOpenFloorPicker(); }
 }
 
@@ -5787,6 +6734,7 @@ function renderChart(id){
   const v=parseVitals(step.vitals);
   renderVitals(v);
   startECG(v.hr, p);
+  renderBedsideRoom(p, step, v);
   $text('ch-hpi',step.hpi||'');
   // Show patient personality + opening dialogue
   showPatientDialogue(p, 'arrival');
@@ -5806,6 +6754,7 @@ function renderChart(id){
   const ordSec=document.getElementById('ch-orders-sec');
 
   if(p.acted){
+    clearCaseTimer();
     if(actDiv) actDiv.innerHTML='<div class="act-acted-msg">✓ ORDERS PLACED — MONITORING</div>';
     if(ordSec) ordSec.style.display=p.activeTxt?'block':'none';
     const ordList=document.getElementById('active-orders-list');
@@ -5826,6 +6775,13 @@ function renderChart(id){
           <div class="act-title">${a.text}</div>
         </button>`;
       }).join('');
+      // Start the decision-window countdown if the case step demands it
+      if(step.timeLimit && !p.acted){
+        startCaseTimer(p.id, step.timeLimit, findWorstActionIdx(step));
+        maybeFirePressureEvent();
+      } else {
+        clearCaseTimer();
+      }
     }
   }
 }
@@ -5833,6 +6789,8 @@ function renderChart(id){
 
 // ── TAKE ACTION ──
 function takeAction(pId, actIdx){
+  clearCaseTimer();
+  bedsideDoctorReact();
   const p=getPt(pId); if(!p) return;
   const step=p.steps[p.currStep];
   const act=step.actions[actIdx];
@@ -6823,6 +7781,994 @@ let OV_OPEN = false;
 
 initApp();
 sdkInit();
+
+// ══════════════════════════════════════════════════════════════════════
+// LIFE SYSTEM — story arcs, finances, family, secrets, side gigs
+// ══════════════════════════════════════════════════════════════════════
+const SALARY_BY_RANK = {
+  'MS-4': 0,
+  'Intern': 1150,            // weekly take-home for PGY-1
+  'Resident': 1280,
+  'Senior Resident': 1450,
+  'Attending': 4800,
+};
+const MONTHLY_EXPENSES_BASE = 2400; // loans, food, utilities, etc.
+
+const HOMES = {
+  apt:    { name:'Shared Apartment',  monthly: 900,  equity:0 },
+  rental: { name:'Solo Rental',       monthly: 1800, equity:0 },
+  condo:  { name:'Downtown Condo',    monthly: 2200, equity:120 },
+  house:  { name:'Two-Bedroom House', monthly: 3200, equity:340 },
+};
+
+let LIFE = null;
+function defaultLife(){
+  return {
+    money: 4500,
+    weeklySalary: 0,
+    homeId: 'apt',
+    partner: null,         // {name, relStatus, romance, kids, met:'cafeteria', avatar:{...}}
+    kids: [],              // [{name, age, milestones:[]}]
+    secrets: [],           // ['You wired bail money to your brother.', ...]
+    flags: {},             // arc progression flags, eg {romance:3, brother:2}
+    seen: {},              // event ids -> true
+    history: [],           // [{day, text}]
+    arcsCompleted: [],     // arc names that ended
+    pendingEvents: [],     // optionally queued event ids to fire next end-shift
+    npcs: {},              // {sam:{name,sex,avatar}, brother:{...}, mira:{...}}
+    weekCount: 0,          // ticks each shift; expenses hit on multiples of 4
+    fatigue: 0,            // 0-100, derived from side gigs
+  };
+}
+function loadLife(){
+  try {
+    const s = localStorage.getItem('wardLife');
+    if(s){ LIFE = JSON.parse(s); return; }
+  } catch(e){}
+  LIFE = defaultLife();
+}
+function saveLife(){
+  try { localStorage.setItem('wardLife', JSON.stringify(LIFE)); } catch(e){}
+}
+function resetLife(){ LIFE = defaultLife(); saveLife(); }
+function rankSalary(){
+  const r = (GS && GS.rankIdx!=null && CHAPTERS && CHAPTERS[GS.rankIdx]) ? CHAPTERS[GS.rankIdx].rank
+          : (GS && GS.story && CHAPTERS && CHAPTERS[GS.story.chapter-1]) ? CHAPTERS[GS.story.chapter-1].rank
+          : 'MS-4';
+  return SALARY_BY_RANK[r] || 0;
+}
+function addLifeHistory(text){
+  LIFE.history.unshift({ day: (GS && GS.day) || 1, text: text });
+  if(LIFE.history.length > 80) LIFE.history.length = 80;
+}
+function addSecret(text){
+  if(!LIFE.secrets.includes(text)) LIFE.secrets.push(text);
+}
+function lifeNotify(text){
+  // tiny floating notification — reuse the existing log if available
+  if(GS && GS.log) GS.log.push('[Life] ' + text);
+  addLifeHistory(text);
+  const badge = document.getElementById('life-badge');
+  if(badge){ badge.style.display = 'inline-block'; setTimeout(()=>{ if(badge) badge.style.display='none'; }, 8000); }
+}
+
+// ── Finances tick each shift ──
+function endShiftFinances(){
+  if(!LIFE) loadLife();
+  LIFE.weekCount = (LIFE.weekCount||0) + 1;
+  const pay = rankSalary();
+  LIFE.weeklySalary = pay;
+  LIFE.money += pay;
+  let note = pay>0 ? 'Paycheck deposited: $' + pay : 'No pay this week (you\'re a student).';
+  // Monthly expenses every 4 shifts
+  if(LIFE.weekCount % 4 === 0){
+    const homeCost = (HOMES[LIFE.homeId] || HOMES.apt).monthly;
+    const total = MONTHLY_EXPENSES_BASE + homeCost;
+    LIFE.money -= total;
+    note += ' · Monthly expenses: −$' + total + ' (rent ' + homeCost + ', life ' + MONTHLY_EXPENSES_BASE + ')';
+    if(LIFE.money < 0){
+      note += ' · You\'re in the red.';
+      if(GS) GS.burnout = Math.min(100, (GS.burnout||0) + 6);
+    }
+  }
+  lifeNotify(note);
+  saveLife();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SIDE GIGS — Moonlighting, Locums, Admin, Expert Witness, Pharma
+// ══════════════════════════════════════════════════════════════════════
+const SIDE_GIGS = {
+  moonlight: {
+    name: 'Moonlight at Urgent Care',
+    pay: 520, burnout: 14, ethics: 0, fatigue: 1,
+    unlock: function(){ return rankSalary() > 0; },
+    desc: 'One overnight at the urgent care across town. Easy money. Long Tuesday.',
+  },
+  locums: {
+    name: 'Locums Weekend (Rural)',
+    pay: 3400, burnout: 32, ethics: 0, fatigue: 3,
+    unlock: function(){ const ch=(GS&&GS.story&&GS.story.chapter)||1; return ch >= 3; },
+    desc: 'Two days at a county hospital eight hours away. They pay because no one else will go.',
+  },
+  admin: {
+    name: 'Hospital Quality Committee',
+    pay: 180, burnout: 6, ethics: 0, fatigue: 0, promotion: 4,
+    unlock: function(){ const ch=(GS&&GS.story&&GS.story.chapter)||1; return ch >= 2; },
+    desc: 'Sit in a windowless room and approve protocols. Mind-numbing. Politically useful.',
+  },
+  expert_witness: {
+    name: 'Expert Witness Testimony',
+    pay: 8400, burnout: 18, ethics: -12, fatigue: 1,
+    unlock: function(){ const ch=(GS&&GS.story&&GS.story.chapter)||1; return ch >= 4; },
+    desc: 'Testify against another physician at deposition. The check clears fast. Your reputation will remember this.',
+  },
+  pharma_consult: {
+    name: 'Pharma Advisory Board',
+    pay: 2600, burnout: 10, ethics: -18, fatigue: 0,
+    unlock: function(){ const ch=(GS&&GS.story&&GS.story.chapter)||1; return ch >= 3; },
+    desc: 'Half a day in a hotel ballroom telling a drug rep what doctors will believe. You will not love yourself.',
+  },
+};
+
+function maybeOfferSideGig(){
+  // 55% chance after each shift completion
+  if(Math.random() > 0.55) return false;
+  const eligible = Object.keys(SIDE_GIGS).filter(k => SIDE_GIGS[k].unlock());
+  if(!eligible.length) return false;
+  // Show modal with all eligible options (up to 4 randomly chosen)
+  eligible.sort(()=>Math.random()-0.5);
+  const offer = eligible.slice(0, 4);
+  const wrap = document.getElementById('sg-grid');
+  if(!wrap) return false;
+  wrap.innerHTML = offer.map(k=>{
+    const g = SIDE_GIGS[k];
+    const ethTag = g.ethics ? '<span class="sg-opt-cost">Ethics ' + g.ethics + '</span>' : '';
+    const promoTag = g.promotion ? '<span class="sg-opt-cost" style="color:#7fff90">+'+g.promotion+' promotion stock</span>' : '';
+    return '<div class="sg-opt" onclick="chooseSideGig(\'' + k + '\')">'
+      + '<div class="sg-opt-name">' + g.name + '</div>'
+      + '<div class="sg-opt-pay">+$' + g.pay + '</div>'
+      + '<div class="sg-opt-desc">' + g.desc + '</div>'
+      + '<div class="sg-opt-cost">+' + g.burnout + ' burnout · +' + g.fatigue + ' fatigue</div>'
+      + ethTag + promoTag
+      + '</div>';
+  }).join('');
+  document.getElementById('sidegig-overlay').classList.add('show');
+  return true;
+}
+
+function chooseSideGig(key){
+  const g = SIDE_GIGS[key];
+  if(!g){ closeSideGig(); return; }
+  if(!LIFE) loadLife();
+  LIFE.money += g.pay;
+  LIFE.fatigue = Math.min(100, (LIFE.fatigue||0) + (g.fatigue||0));
+  if(GS) GS.burnout = Math.min(100, (GS.burnout||0) + (g.burnout||0));
+  if(g.ethics && GS && GS.metrics){
+    // Spread ethics hit across nonmalef + justice
+    GS.metrics.nonmalef = Math.max(0, (GS.metrics.nonmalef||50) + g.ethics);
+    GS.metrics.justice  = Math.max(0, (GS.metrics.justice||50)  + Math.floor(g.ethics/2));
+  }
+  if(g.promotion && GS){ GS.xp = (GS.xp||0) + g.promotion * 6; }
+  addLifeHistory(g.name + ' — earned $' + g.pay + ', +' + g.burnout + ' burnout');
+  saveLife();
+  closeSideGig();
+  if(typeof renderAll === 'function') renderAll();
+}
+
+function closeSideGig(){
+  document.getElementById('sidegig-overlay').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// LIFE EVENTS — story arcs (romance, brother, house, affair, admin) + standalones
+// ══════════════════════════════════════════════════════════════════════
+const LIFE_EVENTS = {
+  // ─── ROMANCE ARC ───
+  romance_meet: {
+    arc:'romance', stage:1, tag:'PERSONAL · ROMANCE', dark:false, weight:3, minChapter:1,
+    prereq: function(){ return !LIFE.flags.romance; },
+    title: 'The Cafeteria',
+    setting: '2 AM. You\'re at the cafeteria eating a sandwich that has clearly been weaponized as evidence in someone\'s thesis. Someone slides into the chair across from you in scrubs. They look like they are holding the building up.',
+    speaker:'Stranger in Scrubs',
+    speakerLine:'"This sandwich is a war crime. You okay if I sit?"',
+    portrait:'lover',
+    choices:[
+      { text:'"Sit. I\'m running on three hours of sleep and a tic-tac. Tell me your worst patient of the week."',
+        apply:{ flag:{romance:1}, rapport:+3 },
+        result:'They laughed. Real one. Their name is Sam — third-year radiology. They lasted twelve minutes before their pager went off. They asked for your number before they left and you gave it without thinking.',
+        addNPC:{ id:'sam', name:'Sam (radiology resident)', sex:'F', skin:1, hair:0, scrub:0, acc:1 } },
+      { text:'"Sure. I\'m kind of in my own head though."',
+        apply:{ flag:{romance:1} },
+        result:'They sat. You ate. They left after ten minutes with a wave. You don\'t know if you blew it or not.',
+        addNPC:{ id:'sam', name:'Sam', sex:'F', skin:1, hair:0, scrub:0, acc:1 } },
+      { text:'"I\'m just leaving, actually." (you weren\'t)',
+        apply:{},
+        result:'You stood up too fast and the chair scraped. They watched you walk out. The sandwich watched you walk out. You don\'t see them again that month.' },
+    ]
+  },
+  romance_date1: {
+    arc:'romance', stage:2, tag:'PERSONAL · ROMANCE', minChapter:1, weight:3,
+    prereq: function(){ return LIFE.flags.romance === 1; },
+    title: 'The Bookstore Café',
+    setting: 'Saturday. Your one Saturday off this month. Sam texted: "I have exactly 90 minutes before I die of sleep deprivation. Make them count." They\'re at the bookstore café on Fourth.',
+    speaker:'Sam',
+    speakerLine:'"Okay. Cards on the table. Why are you actually doing this? Not medical school. This. Tonight."',
+    portrait:'lover',
+    choices:[
+      { text:'Tell them the truth about your grandmother and why you went into medicine.',
+        apply:{ flag:{romance:2}, rapport:+6 },
+        result:'They listened the whole way through. They told you theirs too — a misdiagnosed brother. You both ended up holding hands across two cooling mugs of bad coffee. You missed dinner. You did not care.' },
+      { text:'Crack a joke about being in love with your stethoscope.',
+        apply:{ flag:{romance:2}, rapport:+2 },
+        result:'They laughed. The honesty pivot didn\'t happen. You both walked out into a humid evening lighter than you went in. Lighter — and slightly farther apart than you wanted.' },
+      { text:'Try to kiss them across the table.',
+        apply:{ flag:{romance:2}, rapport:-3, money:0 },
+        result:'They turned. Not away — sideways. "Slow down, doctor." You both laughed it off, but you were redder than the espresso machine for the next twenty minutes. They left at 89 minutes. Exactly.' },
+    ]
+  },
+  romance_intimate: {
+    arc:'romance', stage:3, tag:'PERSONAL · ROMANCE', minChapter:2, weight:3,
+    prereq: function(){ return LIFE.flags.romance === 2; },
+    title: 'The First Night',
+    setting: 'It\'s been three weeks. Sam\'s post-call shift ended at the same time yours did. You both ended up at your place — the small studio you keep telling yourself you\'ll redecorate. The lights are off because you forgot to pay the electric. Neither of you mentions it.',
+    speaker:'Sam',
+    speakerLine:'"You\'re sure?"',
+    portrait:'lover',
+    choices:[
+      { text:'"Yeah. I\'m sure. Are you?"',
+        apply:{ flag:{romance:3}, rapport:+10, burnout:-6 },
+        result:'You stayed up until the windows turned gray. Neither of you slept. In the morning Sam stole your last clean scrub top and walked out into the rain like you were the most ordinary thing in the world. You leaned against the door after they left and laughed for no reason.' },
+      { text:'"Wait. We should slow down. I\'ve been on shift for sixteen hours."',
+        apply:{ flag:{romance:3}, rapport:+3 },
+        result:'They smiled the smile of someone who has been waiting to be asked exactly that. "Okay. Sleep. Together but actually sleeping." They were asleep in four minutes. You watched them for ten before joining.' },
+      { text:'Pull back. Make an excuse.',
+        apply:{ flag:{romance:2}, rapport:-8 },
+        result:'They left. They were kind about it. They were also gone by morning and the next two texts you sent landed without reply for four days. The flag rolled back. You are not where you were yesterday.' },
+    ]
+  },
+  romance_exclusive: {
+    arc:'romance', stage:4, tag:'PERSONAL · ROMANCE', minChapter:2, weight:3,
+    prereq: function(){ return LIFE.flags.romance === 3; },
+    title: 'The Conversation',
+    setting: 'Two months in. You\'re at Sam\'s place this time — actual furniture, plants that are not dying. They cooked. You ate. They put their fork down and said "I want to ask you something."',
+    speaker:'Sam',
+    speakerLine:'"Are we exclusive? I need a real answer, not a doctor answer."',
+    portrait:'lover',
+    choices:[
+      { text:'"Yes. I want that. I haven\'t wanted anything else in months."',
+        apply:{ flag:{romance:4, exclusive:1}, rapport:+8 },
+        result:'They exhaled like they had been holding it the whole meal. You both finished the wine slower. The shift sheet on your fridge looked less like a sentence after that.' },
+      { text:'"Can we figure that out in a few months? My residency —"',
+        apply:{ flag:{romance:4}, rapport:-4 },
+        result:'"Sure," they said. Sure has six meanings. You\'re not sure which one this was. They cleared the plates.' },
+      { text:'"I don\'t think I can be exclusive right now. I\'m being honest with you."',
+        apply:{ flag:{romance:0}, rapport:-15, history:'You broke it off with Sam.' },
+        result:'They thanked you for being honest. They asked you to go. You went. You walked twelve blocks before you got in the car. They didn\'t text. You knew they wouldn\'t.' },
+    ]
+  },
+  romance_engaged: {
+    arc:'romance', stage:5, tag:'PERSONAL · ROMANCE', minChapter:3, weight:2,
+    prereq: function(){ return LIFE.flags.exclusive === 1 && LIFE.flags.romance >= 4; },
+    title: 'The Ring',
+    setting: 'Eight months. You\'re standing in a jewelry store the morning before a 28-hour stretch. Your mother taught you to never spend more than two months\' salary; your salary is a punchline. You picked something simple.',
+    speaker: null,
+    speakerLine: null,
+    portrait: 'lover',
+    choices:[
+      { text:'Propose at the cafeteria where you met. (Sentimental. Public.)',
+        apply:{ flag:{romance:5, engaged:1}, rapport:+15, money:-2400, history:'Engaged to Sam.' },
+        result:'You did it at 2 AM in the same cafeteria with the same lighting. They said yes before you finished. The cashier clapped. Six other residents clapped. Someone\'s pager went off. Sam said "perfect" and meant it.' },
+      { text:'Propose quietly at home, no audience.',
+        apply:{ flag:{romance:5, engaged:1}, rapport:+12, money:-2400, history:'Engaged to Sam.' },
+        result:'Just the two of you. Sam cried first. You cried second. The ring fit on the first try. You ordered Thai food and ate it on the floor.' },
+      { text:'Wait. You\'re not ready.',
+        apply:{ flag:{romance:4} },
+        result:'You put the ring back in the case. You walked out. You did not tell Sam about the store visit. You will revisit this.' },
+    ]
+  },
+  romance_kid: {
+    arc:'romance', stage:6, tag:'PERSONAL · FAMILY', minChapter:3, weight:2,
+    prereq: function(){ return LIFE.flags.engaged === 1; },
+    title: 'The Question',
+    setting: 'You\'re married now — six months in, an actual wedding nobody embarrassed themselves at. Sam wants to talk about kids. The conversation has been pending for weeks. Tonight they brought it up over takeout.',
+    speaker: 'Sam',
+    speakerLine: '"I want to. With you. I know the timing is insane. I want to anyway."',
+    portrait: 'lover',
+    choices:[
+      { text:'"Let\'s try. I\'m terrified and I want to anyway."',
+        apply:{ flag:{romance:6, kid:1}, rapport:+10, money:-1200, history:'You and Sam decided to have a child.' },
+        result:'Eleven months later you were both standing in the L&D triage at 0340 holding a wet, screaming small person who had your eyebrows. Sam looked at you like you had pulled this off personally. The baby — your daughter — was six pounds nine ounces. Her name is Mira.',
+        addKid:{ name:'Mira', age:0 } },
+      { text:'"Not yet. Three more years of training. Please."',
+        apply:{ flag:{romance:5}, rapport:-3 },
+        result:'They nodded. They cried a little. They said "okay" and meant it. You felt the future you almost had slide into a different room. The conversation is not closed.' },
+      { text:'"Let\'s adopt. I want to. There are kids who need us."',
+        apply:{ flag:{romance:6, kid:1}, rapport:+8, money:-9500, history:'You and Sam started the adoption process.' },
+        result:'Eighteen months of paperwork later, you met a four-year-old named Mira who had spent a year in foster care and watched you across a playroom for three minutes before climbing into Sam\'s lap. The judge signed in November. She does not remember a time you were not her parents.',
+        addKid:{ name:'Mira', age:4 } },
+    ]
+  },
+  romance_strain: {
+    arc:'romance', stage:7, tag:'PERSONAL · MARRIAGE', minChapter:4, weight:2,
+    prereq: function(){ return LIFE.flags.kid === 1; },
+    title: 'The Strain',
+    setting: 'Mira is sleeping. Sam is sitting at the kitchen island with the kind of posture you only have when you\'ve been rehearsing. They have not started the conversation. You can feel it. You sit down.',
+    speaker: 'Sam',
+    speakerLine: '"You missed her recital. The third one. I covered for you to her and I\'m not doing it again. Choose."',
+    portrait: 'lover',
+    choices:[
+      { text:'"I\'ll cut the moonlighting. I\'ll be home Wednesdays. I\'m sorry."',
+        apply:{ flag:{strain_resolved:1}, rapport:+8, money:-2000, history:'You cut your side gigs to be home.' },
+        result:'You meant it and you kept it. The next recital you were in the front row. Mira pointed at you from the stage. Sam did not have to cover for you again.' },
+      { text:'"I can\'t. We need the money. You know we need the money."',
+        apply:{ flag:{strain_unresolved:1}, rapport:-12, history:'You chose moonlighting over the marriage.' },
+        result:'Sam stood up. They did not slam anything. They went upstairs. The wall between you and them grew an inch that week. It will grow.' },
+      { text:'"You think I want to be gone? You knew what this was."',
+        apply:{ flag:{strain_unresolved:1}, rapport:-20, history:'You lashed out at Sam during the strain conversation.' },
+        result:'Sam looked at you for a long time. Then they said, "I knew. I didn\'t know what it was going to do to me." They went upstairs. You slept on the couch.' },
+    ]
+  },
+
+  // ─── HOUSE ARC ───
+  house_lease: {
+    arc:'house', stage:1, tag:'PERSONAL · HOME', minChapter:2, weight:2,
+    prereq: function(){ return !LIFE.flags.house && LIFE.homeId === 'apt'; },
+    title: 'The Landlord Email',
+    setting: 'Your landlord just emailed. Lease up in 60 days. Rent goes up $400 a month if you stay. The hallway smells like a microwave.',
+    speaker: null,
+    portrait: 'realtor',
+    choices:[
+      { text:'Talk to a realtor. Maybe it\'s time.',
+        apply:{ flag:{house:1} },
+        result:'You scheduled a meeting with a realtor for next Tuesday at 6:30 AM, the only time you have.' },
+      { text:'Move to a solo rental across town. Cheaper, longer commute.',
+        apply:{ home:'rental', flag:{house:99}, history:'Moved to a solo rental.' },
+        result:'You signed the new lease. The kitchen has natural light. The shower handle wobbles. You sleep better.' },
+      { text:'Renew. Eat the increase.',
+        apply:{ flag:{house:99} },
+        result:'You signed for another year. The monthly statement looks worse. You don\'t have to move.' },
+    ]
+  },
+  house_realtor: {
+    arc:'house', stage:2, tag:'PERSONAL · HOME', minChapter:2, weight:2,
+    prereq: function(){ return LIFE.flags.house === 1; },
+    title: 'The Realtor',
+    setting: 'Tuesday, 6:30 AM. Karen the realtor has an iPad and a smile she has clearly billed before. She asks you about your "lifestyle." Your lifestyle is being on call.',
+    speaker:'Karen, Realtor',
+    speakerLine:'"Honey, with your income trajectory, you\'re ready for a starter house. Don\'t let the market scare you."',
+    portrait:'realtor',
+    choices:[
+      { text:'"A condo. Downtown. I don\'t want a yard."',
+        apply:{ flag:{house:2, house_target:'condo'} },
+        result:'Karen showed you four condos before lunch. The third had a window onto the river that made you forget you were tired.' },
+      { text:'"A house. Two bedrooms. Somewhere I can raise a kid in maybe."',
+        apply:{ flag:{house:2, house_target:'house'} },
+        result:'Karen drove you to a bungalow with a small yard and a kitchen from 1998. You could see yourself in it. That was the dangerous part.' },
+      { text:'"I changed my mind. I\'ll renew the lease."',
+        apply:{ flag:{house:99} },
+        result:'Karen was very polite about it. She gave you her card anyway. The card lived in your scrub pocket for a year.' },
+    ]
+  },
+  house_bidding: {
+    arc:'house', stage:3, tag:'PERSONAL · HOME', minChapter:3, weight:2,
+    prereq: function(){ return LIFE.flags.house === 2; },
+    title: 'The Bidding War',
+    setting: 'Two other offers came in on the place you wanted. Karen is on the phone. You are between cases at the nurse station. She wants a decision in seven minutes.',
+    speaker: 'Karen, Realtor',
+    speakerLine: '"Sweetie, you go in at twenty over asking, you get it. You go in at asking, somebody else gets it. Your call."',
+    portrait: 'realtor',
+    choices:[
+      { text:'"Go twenty over. I want it."',
+        apply:{ flag:{house:3}, home:'__target', money:-22000, history:'Closed on a new home — twenty over asking.' },
+        result:'You got the call at 4:14 PM. You sat down. You closed in six weeks. The mortgage is now a permanent character in your life. You are also a homeowner.' },
+      { text:'"Asking only. If they want it more than I do, they can have it."',
+        apply:{ flag:{house:99}, history:'Missed on a house — held the line.' },
+        result:'Somebody else got it. You felt something you didn\'t expect to feel. You went home to your apartment that night and put on the same album for the third time.' },
+      { text:'"Pull the offer. I don\'t want this." (lose your nerve)',
+        apply:{ flag:{house:99}, history:'Pulled out of a house deal.' },
+        result:'Karen sighed without sighing audibly. You went back to charting. You don\'t bring it up at home for two weeks.' },
+    ]
+  },
+  house_repair: {
+    arc:'house', stage:4, tag:'PERSONAL · HOME', minChapter:4, weight:1,
+    prereq: function(){ return LIFE.flags.house === 3; },
+    title: 'The First Real Repair',
+    setting: 'You came home at 0220 to a wet hallway. The dishwasher\'s supply line let go and ran for six hours. The whole kitchen subfloor is going to have to come up.',
+    speaker:null, portrait:'house',
+    choices:[
+      { text:'Pay a contractor. Sleep in the guest room.',
+        apply:{ money:-6800, history:'Replaced your kitchen subfloor after a flood.' },
+        result:'Three weeks of subcontractors. You ate every dinner standing up over a hot plate. The new floors are nicer than the old ones. You don\'t love that you know that.' },
+      { text:'Do it yourself on your days off.',
+        apply:{ money:-1900, burnout:+18, history:'DIY repaired the floor — over months.' },
+        result:'It took four months. The kitchen smelled like sawdust through July. You learned what a router does. You did not sleep well that summer.' },
+      { text:'Cut the leak, leave the floor. You can\'t afford it right now.',
+        apply:{ flag:{house_neglect:1}, history:'Capped the leak — left the rot.' },
+        result:'You taped a plastic sheet over the bad section. It is still there. You will pay for it later. Houses always collect what you defer.' },
+    ]
+  },
+
+  // ─── THE BROTHER ARC (dark) ───
+  brother_call: {
+    arc:'brother', stage:1, tag:'PERSONAL · FAMILY · DARK', dark:true, minChapter:2, weight:2,
+    prereq: function(){ return !LIFE.flags.brother; },
+    title: 'The 2 AM Call',
+    setting: 'Your phone rings at 0237. Your brother, Daniel. You haven\'t heard from him in eight months. He sounds like he is in a parking lot.',
+    speaker: 'Daniel · Your Brother',
+    speakerLine: '"I just need eight thousand by Friday. I\'m not asking forever. Once. I swear to God once."',
+    portrait: 'brother',
+    choices:[
+      { text:'"I\'ll wire it. We\'ll talk when you\'re sober."',
+        apply:{ flag:{brother:1, brother_paid:1}, money:-8000, history:'Wired bail money to your brother.', secret:'You wired Daniel eight thousand dollars in cash at 0240 on a Wednesday.' },
+        result:'You wired it before your next shift started. He stopped answering your texts forty-eight hours later. He told you he was "handling it." You don\'t know what it is.',
+        addNPC:{ id:'brother', name:'Daniel · Your Brother', sex:'M', skin:1, hair:1, scrub:2, acc:0 } },
+      { text:'"Tell me what it is first. The whole truth."',
+        apply:{ flag:{brother:1} },
+        result:'He breathed for a long time. He said "you wouldn\'t understand." He hung up. He didn\'t call back that night.' },
+      { text:'"I can\'t. I love you. I can\'t."',
+        apply:{ flag:{brother:1, brother_refused:1}, rapport:-10, history:'You refused to bail out your brother.' },
+        result:'He didn\'t say anything for a long time. Then he said "okay" — too quiet, too even. He hung up. You stared at the ceiling until your alarm went off.' },
+    ]
+  },
+  brother_visit: {
+    arc:'brother', stage:2, tag:'PERSONAL · FAMILY · DARK', dark:true, minChapter:3, weight:2,
+    prereq: function(){ return LIFE.flags.brother === 1; },
+    title: 'You Drive to See Him',
+    setting: 'It\'s been three weeks. You drove four hours to the address Daniel sent. He answered the door in a t-shirt you remember from college. The place smells like cigarettes that aren\'t cigarettes.',
+    speaker: 'Daniel',
+    speakerLine: '"You shouldn\'t have come. But you\'re here. Coffee?"',
+    portrait: 'brother',
+    choices:[
+      { text:'"Daniel. Tell me what you\'re into. I\'m a doctor, I can help."',
+        apply:{ flag:{brother:2, brother_truth:1}, rapport:+5 },
+        result:'He sat down. He talked for forty minutes. He owes people. The people are not kind people. You drove home knowing things you cannot un-know.',
+        secret:'Daniel owes serious people serious money. The people are not banks.' },
+      { text:'"I love you. I\'m not asking again." (you leave)',
+        apply:{ flag:{brother:2}, history:'Walked out of Daniel\'s apartment.' },
+        result:'You drove home with the windows down because the inside of the car still smelled like his place. You did not tell anyone you went. You will not be able to forget you did.' },
+      { text:'"You\'re coming home with me. Tonight. Right now."',
+        apply:{ flag:{brother:2, brother_safe:1}, money:-600, rapport:+8 },
+        result:'He laughed at first. Then he didn\'t. He packed a duffel in nine minutes. He slept on your couch for two months. He went to one NA meeting on his own. He is not safe but he is in your house.' },
+    ]
+  },
+  brother_missing: {
+    arc:'brother', stage:3, tag:'PERSONAL · FAMILY · DARK', dark:true, minChapter:3, weight:2,
+    prereq: function(){ return LIFE.flags.brother === 2 && !LIFE.flags.brother_safe; },
+    title: 'He Is Not Answering',
+    setting: 'Four days of no replies. Your mother called you crying. The detective\'s name is Park. You\'re going to be late for your shift.',
+    speaker: 'Detective Park',
+    speakerLine: '"When did you last hear from your brother? Anyone you think might want to hurt him? Anything at all."',
+    portrait: 'detective',
+    choices:[
+      { text:'Tell Park everything. The bail money. The people he owes.',
+        apply:{ flag:{brother:3, told_cops:1}, history:'You told the detective about Daniel\'s debts.' },
+        result:'Park took six pages of notes. He told you not to talk about it with anyone. He told you to keep your phone on. He told you he was sorry he had to ask.' },
+      { text:'Tell Park nothing. Say he had problems. You don\'t know details.',
+        apply:{ flag:{brother:3, hid_from_cops:1}, history:'You did not tell the detective the truth.', secret:'You lied to Detective Park about what you knew.' },
+        result:'Park nodded. He thanked you for your time. He did not believe you. You don\'t know how you can tell, but you can.' },
+    ]
+  },
+  brother_body: {
+    arc:'brother', stage:4, tag:'PERSONAL · FAMILY · DARK', dark:true, minChapter:4, weight:3,
+    prereq: function(){ return LIFE.flags.brother === 3; },
+    title: 'The County Morgue',
+    setting: 'The medical examiner\'s assistant brings you to the cold room. You\'ve been to morgues a hundred times. None of them ever had your brother in them. The sheet is white. There is a tag on the toe.',
+    speaker: 'M.E. Assistant',
+    speakerLine: '"Take your time. You only have to do this once."',
+    portrait: 'detective',
+    choices:[
+      { text:'"That\'s him. That\'s my brother."',
+        apply:{ flag:{brother:4}, history:'You identified your brother\'s body at the county morgue.', rapport:-30 },
+        result:'You signed the form. You did not cry until you were back in your car. Then you cried until your face hurt. You drove home at the speed limit because you could not feel the gas pedal.' },
+      { text:'"That\'s him. He had a tattoo." (you tell them about a tattoo only family knew about)',
+        apply:{ flag:{brother:4, identified_detail:1}, history:'You identified Daniel by a hidden tattoo.', rapport:-30, secret:'Daniel had a small tattoo on his hip that nobody outside the family knew about.' },
+        result:'The M.E. lifted the sheet. The tattoo was there. You knew before you knew. You signed the form. You walked out of the building and sat on the curb for forty minutes before someone called you a Lyft.' },
+    ]
+  },
+  brother_truth: {
+    arc:'brother', stage:5, tag:'PERSONAL · FAMILY · DARK', dark:true, minChapter:4, weight:3,
+    prereq: function(){ return LIFE.flags.brother === 4; },
+    title: 'The Truth You Can Keep',
+    setting: 'Park calls. He wants a final statement. The people Daniel owed are being indicted. Park has a theory that does not match the file. You realize, sitting in his office, that you can change what happens next.',
+    speaker: 'Detective Park',
+    speakerLine: '"You ever see your brother with a man named Reyes? Anyone who matched that description? Anything that puts Reyes there?"',
+    portrait: 'detective',
+    choices:[
+      { text:'"I saw Reyes in his apartment. I remember the date." (the truth)',
+        apply:{ flag:{brother:5, told_truth:1}, history:'You testified against the people who hurt Daniel.', rapport:+8 },
+        result:'You sat with the DA for three hours. The case went to grand jury. Reyes was indicted. You did not sleep well for six months but you started sleeping again eventually. The case took two years. You were called twice.' },
+      { text:'"No. I never saw anyone like that." (the lie that closes it)',
+        apply:{ flag:{brother:5, lied_under_oath:1}, history:'You lied to the detective about what you saw.', secret:'You saw Reyes in Daniel\'s apartment two months before he died. You did not tell the police.' },
+        result:'The case went cold. Park called twice and stopped calling. Sometimes you see a man on the street who looks like Reyes and your hands go cold. You did not testify. You will carry that.' },
+      { text:'"I want to talk to a lawyer first."',
+        apply:{ flag:{brother:5, lawyered_up:1}, money:-3200, history:'Hired a lawyer for the Daniel investigation.' },
+        result:'You spent $3,200 on a man who told you what you already knew. He helped you craft a statement that was the truth without being all of it. The case stayed open. You stayed sane.' },
+    ]
+  },
+
+  // ─── AFFAIR ARC (locked behind exclusive) ───
+  affair_flirt: {
+    arc:'affair', stage:1, tag:'PERSONAL · DANGER', dark:true, minChapter:3, weight:1,
+    prereq: function(){ return LIFE.flags.exclusive === 1 && !LIFE.flags.affair && LIFE.flags.romance >= 4; },
+    title: 'The Resident on Nights',
+    setting: 'Dr. Halsey is one of the new senior residents on the night rotation. You\'ve been on three call nights together this month. They wait at the nurse station when you\'re charting. You noticed yourself looking forward to seeing them.',
+    speaker:'Dr. Halsey',
+    speakerLine:'"Get a drink with me when this is over. Just one. Nothing weird about it. Tell yourself that\'s what it is."',
+    portrait:'colleague',
+    choices:[
+      { text:'"I can\'t. Sorry. I\'m married."',
+        apply:{ flag:{affair:99}, rapport:+5, history:'Said no to Dr. Halsey.' },
+        result:'You said it quickly so you would say it. They smiled and nodded and walked off. You went home to Sam and held them longer than usual at the door.' },
+      { text:'"One drink. As friends."',
+        apply:{ flag:{affair:1}, secret:'You agreed to a "friends only" drink with Dr. Halsey.', history:'Met Dr. Halsey for a drink.' },
+        result:'One drink became three. You walked them to their car. They almost kissed you. You almost let them. You drove home with your hands on the wheel at ten and two like it was a driving test.',
+        addNPC:{ id:'halsey', name:'Dr. Halsey · Senior Resident', sex:'F', skin:0, hair:2, scrub:0, acc:0 } },
+      { text:'"Yeah. I\'ll be there."',
+        apply:{ flag:{affair:1}, secret:'You agreed to drinks with Dr. Halsey knowing what it was.', history:'Agreed to drinks with Dr. Halsey.' },
+        result:'You knew when you said it. They knew when they heard it. The line you crossed was made of words. The words were small.',
+        addNPC:{ id:'halsey', name:'Dr. Halsey', sex:'F', skin:0, hair:2, scrub:0, acc:0 } },
+    ]
+  },
+  affair_kiss: {
+    arc:'affair', stage:2, tag:'PERSONAL · DANGER', dark:true, minChapter:3, weight:1,
+    prereq: function(){ return LIFE.flags.affair === 1; },
+    title: 'The Supply Closet',
+    setting: 'Three AM. The hallway is empty. Halsey is in the supply closet looking for an 18-gauge that doesn\'t exist on this unit. You followed them in to say something. You don\'t remember what you were going to say.',
+    speaker:'Dr. Halsey',
+    speakerLine:'"If you stay another thirty seconds I\'m going to do something. If you leave, I won\'t."',
+    portrait:'colleague',
+    choices:[
+      { text:'Leave. Now. Don\'t look back.',
+        apply:{ flag:{affair:99}, rapport:+3, history:'Walked out before the kiss with Halsey.' },
+        result:'You walked out. They didn\'t say anything. You finished your shift and drove home in silence. You poured all the bourbon down the sink that weekend. Sam asked you what was wrong. You said "long week" and meant it.' },
+      { text:'Stay.',
+        apply:{ flag:{affair:2}, secret:'You kissed Dr. Halsey in the supply closet at 0312.', history:'Kissed Dr. Halsey.' },
+        result:'You stayed thirty seconds and then a minute and then five. It was a closet that smelled like alcohol prep pads. You walked out separately. Sam was asleep when you got home. You did not sleep.' },
+    ]
+  },
+  affair_caught: {
+    arc:'affair', stage:3, tag:'PERSONAL · DANGER', dark:true, minChapter:4, weight:2,
+    prereq: function(){ return LIFE.flags.affair === 2; },
+    title: 'The Text',
+    setting: 'Sam is holding your phone. You left it on the counter when you went to shower. The screen is showing a text from Halsey. The text has two words on it. The two words are not subtle.',
+    speaker: 'Sam',
+    speakerLine: '"Don\'t lie to me. Just don\'t lie."',
+    portrait: 'lover',
+    choices:[
+      { text:'Tell them the whole truth. The closet. All of it.',
+        apply:{ flag:{affair:3, confessed:1}, rapport:-20, history:'Confessed the affair to Sam.', secret:null /* this clears the secret since it\'s in the open */ },
+        result:'They listened all the way through. They did not cry until you were finished. They asked you to sleep at a hotel for two nights. You did. They didn\'t answer your texts for a week. They eventually answered.' },
+      { text:'Tell them most of it. Soften the closet. Buy time.',
+        apply:{ flag:{affair:3, half_truth:1}, rapport:-12, secret:'You lied to Sam about how far the Halsey thing went.', history:'Told Sam a version of the affair.' },
+        result:'They wanted to believe you. They could tell you were keeping something. The thing you kept will rot in a drawer. They moved into the guest room "for a while." For a while is now four months.' },
+      { text:'Lie. Tell them it\'s a misunderstanding.',
+        apply:{ flag:{affair:3, lied:1}, rapport:-6, secret:'You lied to Sam\'s face about kissing Halsey.', history:'Lied to Sam about the affair.' },
+        result:'They went quiet. They went quiet in a way you didn\'t recognize. They didn\'t kick you out. They also stopped touching you in the kitchen, the hallway, the bed. The lie is a permanent occupant of your house now.' },
+    ]
+  },
+
+  // ─── ADMIN HELL ARC ───
+  admin_committee: {
+    arc:'admin', stage:1, tag:'PROFESSIONAL · ADMIN', minChapter:3, weight:2,
+    prereq: function(){ return !LIFE.flags.admin; },
+    title: 'The Committee',
+    setting: 'The chief calls you into his office. He has the smile he wears when he is about to charge you for something. He wants you on the Quality Improvement subcommittee. He says it will be "good for your career." It will also be three meetings a month.',
+    speaker:'Chief Carrasco',
+    speakerLine:'"Don\'t look like that. Everyone in this room was on a committee at your stage. We need a clinician who isn\'t a politician. You. Yes or no."',
+    portrait:'admin',
+    choices:[
+      { text:'"Yes. Put me on it."',
+        apply:{ flag:{admin:1}, burnout:+8, history:'Joined the QI subcommittee.' },
+        result:'You took the seat. The meetings are at 0630. The agenda items are 70% bureaucratic, 20% useful, 10% interesting. You are now visible in a way you weren\'t before.' },
+      { text:'"I\'ll think about it." (you won\'t)',
+        apply:{ flag:{admin:99}, history:'Dodged the QI subcommittee.' },
+        result:'Carrasco knew. He smiled the same smile and let you go. He picked someone else two weeks later. That someone else got promoted nine months after you didn\'t.' },
+      { text:'"I want a stipend if I do it."',
+        apply:{ flag:{admin:1, admin_paid:1}, money:+4200, burnout:+8, history:'Negotiated a stipend for committee work.' },
+        result:'He raised an eyebrow and then he raised another one. He said yes. You started getting an extra $1,400 a month. Half the committee resents you for asking. The other half wishes they had.' },
+    ]
+  },
+  admin_betrayal: {
+    arc:'admin', stage:2, tag:'PROFESSIONAL · ADMIN', minChapter:4, weight:2,
+    prereq: function(){ return LIFE.flags.admin === 1; },
+    title: 'The Memo',
+    setting: 'A memo went out under your name. You did not write it. The memo accuses the ICU nursing manager of malpractice in a sentinel event last quarter. The nursing manager is a friend of Rivera\'s. Rivera is not speaking to you.',
+    speaker:'Chief Carrasco',
+    speakerLine:'"I cleared it through you. Don\'t you remember? We talked about it last Thursday." (You did not talk about it last Thursday.)',
+    portrait:'admin',
+    choices:[
+      { text:'"That memo was not mine. Retract it. Now."',
+        apply:{ flag:{admin:2, fought_back:1}, rapport:+10, history:'Forced the chief to retract the memo.' },
+        result:'You raised your voice. You used the phrase "you put my name on something I did not write." He retracted it within forty-eight hours. Rivera waited a week, then put a coffee on your charting desk. She did not say anything. She did not need to.' },
+      { text:'"Let it stand. It\'ll blow over."',
+        apply:{ flag:{admin:2, folded:1}, rapport:-25, history:'Let the chief\'s memo stand under your name.' },
+        result:'It did not blow over. The nursing manager was reassigned. Rivera and three other nurses stopped sending you the priority pages. Patient care on your floor got fractionally worse and you knew it.' },
+      { text:'"Resign from the committee. I\'m not the chief\'s mouthpiece."',
+        apply:{ flag:{admin:99, resigned_committee:1}, rapport:+5, history:'Resigned from the committee in protest.' },
+        result:'You wrote the resignation that night. Carrasco was furious. He stopped sending opportunities your way. The committee picked a yes-man. Rivera nodded at you when you next walked past her station.' },
+    ]
+  },
+  admin_promotion: {
+    arc:'admin', stage:3, tag:'PROFESSIONAL · ADMIN', minChapter:5, weight:2,
+    prereq: function(){ return LIFE.flags.admin === 2 && LIFE.flags.fought_back === 1; },
+    title: 'The Director Track',
+    setting: 'A medical directorship opened up. The chief — same chief — is asking you to apply. He is also asking the other person you knew was coming for it. The salary is $90,000 more. The administrative load is permanent.',
+    speaker:'Chief Carrasco',
+    speakerLine:'"You earned the look at this. Whether you want the job is another conversation entirely."',
+    portrait:'admin',
+    choices:[
+      { text:'"I want it. I\'ll apply."',
+        apply:{ flag:{director:1}, money:+24000, history:'Applied for medical directorship. (Increased income.)', burnout:+6 },
+        result:'You wrote the application over three nights. You got the job. Your weekly take-home went up by $1,800. So did the meetings. So did the gray hairs. You stopped operating quite as often. You still walk the floor.' },
+      { text:'"Not yet. I want to stay clinical."',
+        apply:{ flag:{director:0}, history:'Turned down medical directorship to stay clinical.' },
+        result:'Carrasco respected it more than you expected. He told you the offer would come around again. You bought yourself another five years of staying near the patients. You did not regret it. Not most days.' },
+    ]
+  },
+
+  // ─── STANDALONES ───
+  malpractice_letter: {
+    arc:'standalone', stage:0, tag:'LEGAL · NOTICE', dark:true, minChapter:3, weight:1,
+    prereq: function(){ return !LIFE.flags.malpractice_letter; },
+    title: 'The Certified Letter',
+    setting: 'Risk Management forwarded you a letter from a family\'s attorney. Patient you cared for fourteen months ago — the family is exploring litigation. The letter is six pages. The phrase "deviation from the standard of care" appears nine times.',
+    speaker:null, portrait:'admin',
+    choices:[
+      { text:'Cooperate fully. Hand over everything.',
+        apply:{ flag:{malpractice_letter:1}, burnout:+10, history:'Cooperated with the malpractice attorney.' },
+        result:'You sat with hospital counsel for three afternoons. The case settled for a number you were not allowed to know. You did not lose your license. You did lose four pounds.' },
+      { text:'Lawyer up separately from the hospital.',
+        apply:{ flag:{malpractice_letter:1}, money:-12000, burnout:+8, history:'Hired your own attorney for the malpractice claim.' },
+        result:'Your attorney was worth what she cost. The case settled. The hospital\'s legal team and yours were not always aligned. You learned what "indemnification" actually means.' },
+      { text:'Ignore it. Hope it goes away.',
+        apply:{ flag:{malpractice_letter:1, ignored_suit:1}, burnout:+18, history:'Ignored the malpractice letter.', secret:'You ignored a certified letter from a malpractice attorney.' },
+        result:'It did not go away. It came back four months later with a complaint filed. The hospital reassigned counsel. The settlement number was higher.' },
+    ]
+  },
+  parent_sick: {
+    arc:'standalone', stage:0, tag:'PERSONAL · FAMILY', minChapter:2, weight:1,
+    prereq: function(){ return !LIFE.flags.parent_sick; },
+    title: 'The Diagnosis',
+    setting: 'Your mother called. She has cancer. Pancreatic. She knew for two weeks before she told you. She asked you not to come — she said you have residents to worry about.',
+    speaker:'Mom',
+    speakerLine:'"I know what you do. I don\'t want you flying here every weekend. I want you to call me. Okay?"',
+    portrait:'family',
+    choices:[
+      { text:'"I\'m coming home this weekend. Every weekend until further notice."',
+        apply:{ flag:{parent_sick:1, parent_visited:1}, burnout:+22, money:-2200, rapport:+8, history:'Flew home every weekend during your mother\'s illness.' },
+        result:'You flew home for eleven weekends. You were there when she went into hospice. You held her hand. You went back to work three days later because there was nothing left to do at her house. She had asked for that, too.' },
+      { text:'"I\'ll call you every day. I\'ll come for the surgery."',
+        apply:{ flag:{parent_sick:1}, burnout:+10, money:-800, history:'Called your mother every day during her illness.' },
+        result:'You called every day. You missed two days when you were post-call and asleep. She forgave you both times. You made it for the surgery. You did not make it for the death.' },
+      { text:'"I can\'t leave the hospital. I\'m sorry. I love you."',
+        apply:{ flag:{parent_sick:1, parent_neglected:1}, burnout:+5, rapport:-15, history:'Stayed at work through your mother\'s illness.', secret:'You did not go home for your mother\'s illness. You will carry that.' },
+        result:'She did not push. She understood. You did not understand yourself. She died on a Tuesday. You finished your shift and drove home and sat in the car for two hours before you went inside.' },
+    ]
+  },
+};
+
+// Decide which event (if any) fires at end of shift
+function tryFireLifeEvent(){
+  if(!LIFE) loadLife();
+  const ch = (GS && GS.story && GS.story.chapter) || 1;
+  // 60% chance per shift to attempt
+  if(Math.random() > 0.6) return false;
+  // 1) Honor any pending forced event
+  while(LIFE.pendingEvents && LIFE.pendingEvents.length){
+    const id = LIFE.pendingEvents.shift();
+    if(LIFE_EVENTS[id] && !LIFE.seen[id]){
+      playLifeEvent(id);
+      return true;
+    }
+  }
+  // 2) Find eligible events
+  const eligible = Object.keys(LIFE_EVENTS).filter(id => {
+    const ev = LIFE_EVENTS[id];
+    if(LIFE.seen[id]) return false;
+    if(ev.minChapter && ch < ev.minChapter) return false;
+    if(ev.prereq && !ev.prereq()) return false;
+    return true;
+  });
+  if(!eligible.length) return false;
+  // Prefer arc continuations over fresh arcs
+  const continuing = eligible.filter(id => {
+    const ev = LIFE_EVENTS[id];
+    return ev.arc && LIFE.flags[ev.arc] && LIFE.flags[ev.arc] === (ev.stage - 1);
+  });
+  const pool = continuing.length ? continuing : eligible;
+  // Weighted random
+  const totalWeight = pool.reduce((s, id) => s + (LIFE_EVENTS[id].weight || 1), 0);
+  let r = Math.random() * totalWeight;
+  for(const id of pool){
+    r -= (LIFE_EVENTS[id].weight || 1);
+    if(r <= 0){ playLifeEvent(id); return true; }
+  }
+  playLifeEvent(pool[0]);
+  return true;
+}
+
+let _currentLifeEvent = null;
+function playLifeEvent(id){
+  const ev = LIFE_EVENTS[id];
+  if(!ev) return;
+  _currentLifeEvent = { id: id, ev: ev };
+  const portraitEmoji = {
+    lover:'💗', brother:'🩸', realtor:'🔑', admin:'📋',
+    family:'👵', detective:'🔎', colleague:'🩺', house:'🏠'
+  }[ev.portrait] || '🩺';
+  const overlay = document.getElementById('life-event-overlay');
+  const box = document.getElementById('life-event-box');
+  const speakerBlock = ev.speaker ? (
+    '<div class="le-speaker">'
+    + '<div class="le-portrait">' + portraitEmoji + '</div>'
+    + '<div>'
+    +   '<div class="le-spk-name">' + ev.speaker + '</div>'
+    +   '<div class="le-spk-line">' + (ev.speakerLine || '') + '</div>'
+    + '</div>'
+    + '</div>'
+  ) : '';
+  const choicesHtml = ev.choices.map((c, i) => {
+    const effs = renderEventEffects(c.apply);
+    return '<button class="le-choice" onclick="chooseLifeEvent(' + i + ')">'
+      + c.text
+      + (effs ? '<div class="le-effects">' + effs + '</div>' : '')
+      + '</button>';
+  }).join('');
+  box.innerHTML =
+    '<div class="le-tag ' + (ev.dark ? 'dark' : '') + '">' + ev.tag + '</div>'
+    + '<div class="le-title">' + ev.title + '</div>'
+    + '<div class="le-setting">' + ev.setting + '</div>'
+    + speakerBlock
+    + '<div class="le-choices" id="le-choices-block">' + choicesHtml + '</div>';
+  overlay.classList.add('show');
+  if(typeof playTone === 'function') playTone(330, 0.12, 0.08, 'sine');
+}
+
+function renderEventEffects(apply){
+  if(!apply) return '';
+  const parts = [];
+  if(apply.money){
+    const cls = apply.money > 0 ? 'pos' : 'neg';
+    parts.push('<span class="le-eff ' + cls + '">' + (apply.money > 0 ? '+$' : '−$') + Math.abs(apply.money) + '</span>');
+  }
+  if(apply.burnout){
+    const cls = apply.burnout > 0 ? 'neg' : 'pos';
+    parts.push('<span class="le-eff ' + cls + '">' + (apply.burnout > 0 ? '+' : '') + apply.burnout + ' burnout</span>');
+  }
+  if(apply.rapport){
+    const cls = apply.rapport > 0 ? 'pos' : 'neg';
+    parts.push('<span class="le-eff ' + cls + '">' + (apply.rapport > 0 ? '+' : '') + apply.rapport + ' rapport</span>');
+  }
+  if(apply.secret){ parts.push('<span class="le-eff dark">+ Secret</span>'); }
+  if(apply.home){ parts.push('<span class="le-eff pos">New home</span>'); }
+  if(apply.addKid){ parts.push('<span class="le-eff pos">+ Child</span>'); }
+  if(apply.flag){
+    Object.keys(apply.flag).forEach(k=>{
+      if(k.endsWith('_target')) return;
+      parts.push('<span class="le-eff">' + k + '</span>');
+    });
+  }
+  return parts.join('');
+}
+
+function chooseLifeEvent(idx){
+  const cur = _currentLifeEvent;
+  if(!cur) return;
+  const ev = cur.ev;
+  const choice = ev.choices[idx];
+  if(!choice) return;
+  applyEventChoice(ev, choice);
+  // Replace choices with result + continue button
+  const box = document.getElementById('life-event-box');
+  const choicesBlock = document.getElementById('le-choices-block');
+  if(choicesBlock) choicesBlock.remove();
+  const resultHtml =
+    '<div class="le-result">'
+    +   '<div class="le-result-h">What Happened</div>'
+    +   (choice.result || '')
+    + '</div>'
+    + '<button class="le-cont" onclick="closeLifeEvent()">Continue</button>';
+  box.insertAdjacentHTML('beforeend', resultHtml);
+  if(typeof playTone === 'function') playTone(420, 0.06, 0.05, 'sine');
+}
+
+function applyEventChoice(ev, choice){
+  const a = choice.apply || {};
+  // Mark event as seen
+  LIFE.seen[ev.id || _currentLifeEvent.id] = true;
+  // Money
+  if(a.money){ LIFE.money += a.money; }
+  // Home change
+  if(a.home){
+    if(a.home === '__target' && LIFE.flags.house_target){
+      LIFE.homeId = LIFE.flags.house_target;
+    } else {
+      LIFE.homeId = a.home;
+    }
+  }
+  // Add NPC to LIFE registry
+  if(choice.addNPC){
+    LIFE.npcs[choice.addNPC.id] = choice.addNPC;
+    if(choice.addNPC.id === 'sam' && !LIFE.partner){
+      LIFE.partner = { name:'Sam', relStatus:'dating', met:'cafeteria', romance:50 };
+    }
+  }
+  // Add kid
+  if(choice.addKid){
+    LIFE.kids.push({ name: choice.addKid.name, age: choice.addKid.age, milestones: [] });
+    if(LIFE.partner){ LIFE.partner.relStatus = 'parents'; }
+  }
+  // Set flags
+  if(a.flag){
+    Object.keys(a.flag).forEach(k => {
+      LIFE.flags[k] = a.flag[k];
+    });
+    // Arc stage tracker mirrors named stage value
+    if(ev.arc && a.flag.hasOwnProperty(ev.arc)){
+      LIFE.flags[ev.arc] = a.flag[ev.arc];
+    }
+  }
+  // Track arc stage from ev.stage if not specified
+  if(ev.arc && ev.stage && !a.flag){
+    LIFE.flags[ev.arc] = Math.max(LIFE.flags[ev.arc]||0, ev.stage);
+  }
+  // Partner status changes based on flags
+  if(LIFE.flags.engaged === 1 && LIFE.partner){ LIFE.partner.relStatus = 'married'; }
+  if(LIFE.flags.affair === 99 && LIFE.partner){ /* no change */ }
+  // History / log
+  if(a.history){ addLifeHistory(a.history); }
+  // Secrets
+  if(a.secret){ addSecret(a.secret); }
+  // Burnout
+  if(a.burnout && GS){ GS.burnout = Math.min(100, Math.max(0, (GS.burnout||0) + a.burnout)); }
+  // Rapport (spread across all relationships)
+  if(a.rapport && GS && GS.story && GS.story.relationships){
+    Object.keys(NPCS).forEach(k => adjustRel(k, Math.sign(a.rapport)));
+  }
+  // Partner romance score
+  if(LIFE.partner && a.rapport){
+    LIFE.partner.romance = Math.max(0, Math.min(100, (LIFE.partner.romance||50) + a.rapport));
+  }
+  saveLife();
+}
+
+function closeLifeEvent(){
+  document.getElementById('life-event-overlay').classList.remove('show');
+  _currentLifeEvent = null;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// LIFE PANEL — inspect your character's state
+// ══════════════════════════════════════════════════════════════════════
+let _lifeTab = 'status';
+function openLifePanel(){
+  if(!LIFE) loadLife();
+  document.getElementById('life-panel').classList.add('show');
+  document.getElementById('life-badge').style.display = 'none';
+  renderLifePanel();
+}
+function closeLifePanel(){ document.getElementById('life-panel').classList.remove('show'); }
+function switchLifeTab(t){ _lifeTab = t; renderLifePanel(); }
+
+function renderLifePanel(){
+  const moneyStr = LIFE.money >= 0 ? '$' + LIFE.money.toLocaleString() : '−$' + Math.abs(LIFE.money).toLocaleString();
+  document.getElementById('life-money').textContent = moneyStr;
+  document.getElementById('life-money').className = 'life-hdr-money' + (LIFE.money < 0 ? ' neg' : '');
+  const body = document.getElementById('life-body');
+  const tabs = ['status','family','history','secrets'];
+  document.getElementById('life-tabs').innerHTML = tabs.map(t=>
+    '<button class="life-tab ' + (_lifeTab===t?'active':'') + '" onclick="switchLifeTab(\'' + t + '\')">' + t + '</button>'
+  ).join('');
+  if(_lifeTab === 'status'){
+    body.innerHTML = renderLifeStatus();
+  } else if(_lifeTab === 'family'){
+    body.innerHTML = renderLifeFamily();
+  } else if(_lifeTab === 'history'){
+    body.innerHTML = renderLifeHistory();
+  } else if(_lifeTab === 'secrets'){
+    body.innerHTML = renderLifeSecrets();
+  }
+}
+
+function renderLifeStatus(){
+  const home = HOMES[LIFE.homeId] || HOMES.apt;
+  const pay = rankSalary();
+  const monthly = MONTHLY_EXPENSES_BASE + home.monthly;
+  return ''
+    + '<div class="life-section">'
+    +   '<div class="life-section-h">Finances</div>'
+    +   '<div class="life-row"><span class="life-row-k">Bank Balance</span><span class="life-row-v ' + (LIFE.money<0?'bad':'good') + '">' + (LIFE.money>=0?'$':'−$') + Math.abs(LIFE.money).toLocaleString() + '</span></div>'
+    +   '<div class="life-row"><span class="life-row-k">Weekly Salary</span><span class="life-row-v good">$' + pay.toLocaleString() + '</span></div>'
+    +   '<div class="life-row"><span class="life-row-k">Monthly Expenses</span><span class="life-row-v bad">−$' + monthly.toLocaleString() + '</span></div>'
+    +   '<div class="life-row"><span class="life-row-k">Weeks Worked</span><span class="life-row-v">' + (LIFE.weekCount||0) + '</span></div>'
+    + '</div>'
+    + '<div class="life-section">'
+    +   '<div class="life-section-h">Home</div>'
+    +   '<div class="life-row"><span class="life-row-k">Residence</span><span class="life-row-v">' + home.name + '</span></div>'
+    +   '<div class="life-row"><span class="life-row-k">Monthly Cost</span><span class="life-row-v bad">−$' + home.monthly.toLocaleString() + '</span></div>'
+    +   (home.equity ? '<div class="life-row"><span class="life-row-k">Equity Building</span><span class="life-row-v good">$' + home.equity + '/mo</span></div>' : '')
+    + '</div>'
+    + '<div class="life-section">'
+    +   '<div class="life-section-h">Side Gigs Available</div>'
+    +   Object.keys(SIDE_GIGS).map(k=>{
+        const g = SIDE_GIGS[k];
+        const ok = g.unlock();
+        return '<div class="life-row"><span class="life-row-k">' + g.name + '</span><span class="life-row-v ' + (ok?'good':'') + '">' + (ok?('$'+g.pay):'locked') + '</span></div>';
+      }).join('')
+    + '</div>';
+}
+
+function renderLifeFamily(){
+  let html = '<div class="life-section"><div class="life-section-h">Partner</div>';
+  if(LIFE.partner){
+    html += '<div class="life-row"><span class="life-row-k">Name</span><span class="life-row-v">' + LIFE.partner.name + '</span></div>'
+         + '<div class="life-row"><span class="life-row-k">Status</span><span class="life-row-v">' + (LIFE.partner.relStatus || 'unknown') + '</span></div>'
+         + '<div class="life-row"><span class="life-row-k">Where you met</span><span class="life-row-v">' + (LIFE.partner.met || '?') + '</span></div>'
+         + '<div class="life-row"><span class="life-row-k">Romance</span><span class="life-row-v ' + ((LIFE.partner.romance||0)>50?'good':'bad') + '">' + (LIFE.partner.romance||0) + ' / 100</span></div>';
+  } else {
+    html += '<div class="life-empty">You haven\'t met anyone yet. You will.</div>';
+  }
+  html += '</div>';
+  html += '<div class="life-section"><div class="life-section-h">Children</div>';
+  if(LIFE.kids.length){
+    LIFE.kids.forEach(k => {
+      html += '<div class="life-row"><span class="life-row-k">' + k.name + '</span><span class="life-row-v">Age ' + k.age + '</span></div>';
+    });
+  } else {
+    html += '<div class="life-empty">No children yet.</div>';
+  }
+  html += '</div>';
+  html += '<div class="life-section"><div class="life-section-h">Extended Family</div>';
+  if(LIFE.npcs.brother){
+    html += '<div class="life-row"><span class="life-row-k">Brother</span><span class="life-row-v ' + (LIFE.flags.brother>=4?'bad':'') + '">' + (LIFE.flags.brother>=4 ? 'Deceased' : 'Daniel') + '</span></div>';
+  }
+  if(LIFE.flags.parent_sick){
+    html += '<div class="life-row"><span class="life-row-k">Mother</span><span class="life-row-v bad">Pancreatic cancer</span></div>';
+  }
+  if(!LIFE.npcs.brother && !LIFE.flags.parent_sick){
+    html += '<div class="life-empty">No major family events on record.</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderLifeHistory(){
+  if(!LIFE.history.length) return '<div class="life-empty">Your life is just starting. No entries yet.</div>';
+  return LIFE.history.map(h =>
+    '<div class="life-history">'
+    + '<div class="life-history-d">SHIFT ' + h.day + '</div>'
+    + h.text
+    + '</div>'
+  ).join('');
+}
+
+function renderLifeSecrets(){
+  if(!LIFE.secrets.length) return '<div class="life-empty">You have no secrets. (Yet.)</div>';
+  return '<div class="life-section">'
+    + '<div class="life-section-h">What only you know</div>'
+    + LIFE.secrets.map(s => '<div class="life-secret">' + s + '</div>').join('')
+    + '</div>';
+}
+
+// ── Hook end-of-shift to finances + life events + side gig offer ──
+const _origConfirmEndShift = (typeof confirmEndShift === 'function') ? confirmEndShift : null;
+if(_origConfirmEndShift){
+  confirmEndShift = function(){
+    _origConfirmEndShift.apply(this, arguments);
+    endShiftFinances();
+    // Try a life event first; if none fires, offer side gig
+    const fired = tryFireLifeEvent();
+    if(!fired){
+      setTimeout(()=> maybeOfferSideGig(), 350);
+    }
+  };
+}
+
+// Bootstrap: load LIFE on script start
+loadLife();
+if(typeof updateChapterChip === 'function') updateChapterChip();
+
 </script>
 </body>
 </html>
